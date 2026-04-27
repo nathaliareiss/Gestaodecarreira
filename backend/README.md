@@ -39,7 +39,6 @@ ambiente manualmente toda vez.
 - `HOST`: host do servidor, padrao `0.0.0.0`
 - `PORT`: porta do servidor, padrao `8000`
 - `CORS_ORIGINS`: origens liberadas para o front, padrao `http://localhost:3000`
-- `UVICORN_RELOAD`: ativa reload em dev quando `true`
 
 ## Regra de integracao
 
