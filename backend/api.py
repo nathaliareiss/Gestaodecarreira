@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import os
 from dataclasses import asdict
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
 
 from backend.models.servidora import Servidora
 from backend.schemas.carreira_api_schema import (
@@ -12,6 +14,8 @@ from backend.schemas.carreira_api_schema import (
     ResumoCarreiraResponse,
 )
 from backend.services.carreira_service import montar_resumo_funcional
+
+load_dotenv(Path(__file__).resolve().parent / ".env")
 
 
 def _ler_origens_cors() -> list[str]:
