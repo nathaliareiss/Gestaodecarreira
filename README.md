@@ -47,6 +47,14 @@ gestao-carreira
 O `backend/app.py` define a aplicacao FastAPI e registra as rotas de
 `backend/routes/`. O `backend/main.py` so inicia o servidor.
 
+No front, a estrutura principal ficou:
+
+- `frontend/app/`: entrada da rota do Next
+- `frontend/features/carreira/controller/`: estado e coordenacao
+- `frontend/features/carreira/model/`: contrato e acesso HTTP
+- `frontend/features/carreira/view/`: composicao visual da feature
+- `frontend/shared/config/`: configuracoes compartilhadas como a URL da API
+
 Os arquivos reais de ambiente ja existem no projeto:
 
 - `backend/.env`

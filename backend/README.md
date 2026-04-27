@@ -6,6 +6,8 @@ O backend continua em Python e reaproveita as camadas que ja existiam:
 - `backend/services/` para regras e calculos
 - `backend/schemas/` para entrada e saida
 - `backend/routes/` para rotas HTTP da API
+  - `health_routes.py`
+  - `carreira_routes.py`
 - `backend/controllers/` para o fluxo de terminal
 - `backend/app.py` para a aplicacao FastAPI
 - `backend/main.py` para iniciar o servidor
@@ -59,7 +61,7 @@ O backend le `backend/.env` automaticamente.
 - `GET /api/health`
 - `POST /api/carreira/resumo`
 
-As rotas ficam em `backend/routes/` e sao registradas em `backend/app.py`.
+As rotas ficam em `backend/routes/`, sao agrupadas por responsabilidade e sao registradas em `backend/app.py`.
 
 ## Variaveis de ambiente
 
