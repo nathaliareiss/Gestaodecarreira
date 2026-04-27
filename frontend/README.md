@@ -2,6 +2,14 @@
 
 Aplicacao Next.js + React para visualizar e testar o backend Python de carreira.
 
+## Como rodar
+
+```powershell
+..\run-frontend.cmd
+```
+
+Se a URL da API precisar mudar, ajuste `frontend/.env.local`.
+
 ## O que ela faz
 
 - mostra um formulario para cadastro da servidora
@@ -32,43 +40,6 @@ Aplicacao Next.js + React para visualizar e testar o backend Python de carreira.
 4. O repository chama o backend Python.
 5. A view recebe os dados e monta a tela.
 
-## Como rodar
-
-1. Entre na pasta:
-
-```powershell
-cd frontend
-```
-
-2. Instale as dependencias:
-
-```powershell
-npm install
-```
-
-3. Configure a URL do backend:
-
-Copie o exemplo:
-
-```powershell
-Copy-Item frontend\.env.local.example frontend\.env.local
-```
-
-O arquivo `frontend/.env.local` ja existe no projeto. Use esse passo so se quiser
-recriar o arquivo do zero ou voltar ao padrao.
-
-Se preferir criar do zero, use `frontend/.env.local` com:
-
-```powershell
-NEXT_PUBLIC_API_URL=http://localhost:8000
-```
-
-4. Rode o front:
-
-```powershell
-npm run dev
-```
-
 ## Variavel de ambiente
 
 - `NEXT_PUBLIC_API_URL`: URL da API Python, por exemplo `http://localhost:8000`
@@ -80,4 +51,5 @@ npm run dev
 
 ## Observacao importante
 
-O campo `tem_tempo_clt_averbado` ja vai no payload e na resposta, mas ainda nao altera as regras de calculo. Ele fica pronto para evoluirmos depois.
+O campo `tem_tempo_clt_averbado` ja vai no payload e na resposta, mas ainda nao
+altera as regras de calculo. Ele fica pronto para evoluirmos depois.

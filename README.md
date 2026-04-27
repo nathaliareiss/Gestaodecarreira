@@ -5,19 +5,36 @@ Projeto com dois blocos separados:
 - backend em Python
 - frontend em Next.js + React
 
-A ideia e simples: o backend guarda as regras de carreira, e o front serve para voce visualizar, testar e evoluir a interface sem misturar as camadas.
+## Como rodar
+
+Backend servidor:
+
+```powershell
+.\run-backend.cmd
+```
+
+Backend terminal:
+
+```powershell
+.\run-backend-cli.cmd
+```
+
+Frontend:
+
+```powershell
+.\run-frontend.cmd
+```
 
 ## Estrutura
 
 - `backend/`: codigo Python, API FastAPI, CLI e testes
-- `frontend/`: aplicacao Next.js isolada para deploy separado, organizada em MVC
-- `backend/README.md`: guia do backend
-- `frontend/README.md`: guia do front
+- `frontend/`: aplicacao Next.js separada para deploy isolado
 - `backend/routes/`: rotas HTTP da API
-- `backend/.env.example`: variaveis do backend
-- `frontend/.env.local.example`: variaveis do frontend
-- o arquivo real do backend fica em `backend/.env`
-- o arquivo real do front fica em `frontend/.env.local`
+- `backend/.env`: configuracao real do backend
+- `frontend/.env.local`: configuracao real do frontend
+- `run-backend.cmd`: atalho para subir a API
+- `run-backend-cli.cmd`: atalho para o terminal interativo
+- `run-frontend.cmd`: atalho para subir o Next
 
 ## Como o front e o back se ligam
 
@@ -28,59 +45,7 @@ A ideia e simples: o backend guarda as regras de carreira, e o front serve para 
 5. A API devolve o resultado em JSON.
 6. O front monta os cards para leitura visual.
 
-## Rodar o backend
+## Observacao
 
-Servidor HTTP:
-
-```powershell
-.\run-backend.cmd
-```
-
-Terminal interativo:
-
-```powershell
-.\run-backend-cli.cmd
-```
-
-O `backend/app.py` define a aplicacao FastAPI e registra as rotas de
-`backend/routes/`. O `backend/main.py` so inicia o servidor.
-
-No front, a estrutura principal ficou:
-
-- `frontend/app/`: entrada da rota do Next
-- `frontend/features/carreira/controller/`: estado e coordenacao
-- `frontend/features/carreira/model/`: contrato e acesso HTTP
-- `frontend/features/carreira/view/`: composicao visual da feature
-- `frontend/shared/config/`: configuracoes compartilhadas como a URL da API
-
-Os arquivos reais de ambiente ja existem no projeto:
-
-- `backend/.env`
-- `frontend/.env.local`
-
-Se quiser, edite esses arquivos diretamente. Os examples ficam como referencia.
-
-## Rodar o frontend
-
-```powershell
-.\run-frontend.cmd
-```
-
-Se quiser mudar a URL da API, crie `frontend/.env.local` com `NEXT_PUBLIC_API_URL=http://localhost:8000`.
-
-Depois acesse o front e veja o formulario em acao.
-
-## O que ja esta pronto
-
-- cadastro pelo terminal
-- calculos de carreira em services
-- API FastAPI para consumo pelo front
-- UI em Next para testar a API
-- documentacao separada para backend e frontend
-
-## Proximo passo natural
-
-Podemos evoluir em duas direcoes:
-
-1. adicionar novas regras de aposentadoria ao backend
-2. transformar o front em uma tela mais completa com historico, validacao e exportacao
+Os comandos novos usam o Python do `venv` direto, entao voce nao precisa ativar
+o ambiente manualmente toda vez.

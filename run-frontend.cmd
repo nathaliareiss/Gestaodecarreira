@@ -3,5 +3,5 @@ setlocal
 
 set "ROOT=%~dp0"
 pushd "%ROOT%frontend"
-npm run dev
+call npm run dev
 popd
