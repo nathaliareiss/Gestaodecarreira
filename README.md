@@ -28,13 +28,14 @@ A ideia e simples: o backend guarda as regras de carreira, e o front serve para 
 Terminal:
 
 ```powershell
+.\venv\Scripts\Activate.ps1
 python -m backend.main
 ```
 
 API:
 
 ```powershell
-uvicorn backend.api:app --reload --port 8000
+python -m uvicorn backend.api:app --reload --port 8000
 ```
 
 ## Rodar o frontend

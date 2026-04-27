@@ -11,11 +11,21 @@ Agora ele tambem expoe uma API FastAPI para o front em Next.
 
 ## Como rodar o terminal
 
+1. Ative o ambiente virtual:
+
+```powershell
+.\venv\Scripts\Activate.ps1
+```
+
+2. Rode o terminal interativo:
+
 ```powershell
 python -m backend.main
 ```
 
 ## Como rodar a API
+
+Com o `venv` ativado:
 
 ```powershell
 gestao-carreira-api
@@ -24,7 +34,7 @@ gestao-carreira-api
 Ou, se preferir chamar o servidor direto:
 
 ```powershell
-uvicorn backend.api:app --reload --port 8000
+python -m uvicorn backend.api:app --reload --port 8000
 ```
 
 ## Endpoints
