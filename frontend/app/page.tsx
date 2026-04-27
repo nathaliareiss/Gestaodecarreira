@@ -1,5 +1,5 @@
-import { CarreiraPage } from "@/features/carreira/carreira-page"
+import { CarreiraController } from "@/features/carreira/controller/CarreiraController"
 
 export default function HomePage() {
-  return <CarreiraPage />
+  return <CarreiraController />
 }

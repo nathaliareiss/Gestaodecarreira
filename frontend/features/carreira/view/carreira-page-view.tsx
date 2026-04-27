@@ -1,4 +1,20 @@
-import { CarreiraWorkbench } from "./components/carreira-workbench"
+import { CarreiraFormView } from "./carreira-form-view"
+import { CarreiraResultsView } from "./carreira-results-view"
+import type { CadastroCarreira, ResumoCarreira } from "../model/carreira.model"
+import type { FormEvent } from "react"
+
+type CarreiraPageViewProps = {
+  cadastro: CadastroCarreira
+  resumo: ResumoCarreira | null
+  carregando: boolean
+  erro: string | null
+  onSubmit: (evento: FormEvent<HTMLFormElement>) => void
+  onNomeChange: (valor: string) => void
+  onDataNascimentoChange: (valor: string) => void
+  onDataIngressoChange: (valor: string) => void
+  onCltChange: (valor: boolean) => void
+  onUsarExemplo: () => void
+}
 
 const blocos = [
   {
@@ -15,7 +31,18 @@ const blocos = [
   },
 ]
 
-export function CarreiraPage() {
+export function CarreiraPageView({
+  cadastro,
+  resumo,
+  carregando,
+  erro,
+  onSubmit,
+  onNomeChange,
+  onDataNascimentoChange,
+  onDataIngressoChange,
+  onCltChange,
+  onUsarExemplo,
+}: CarreiraPageViewProps) {
   return (
     <main className="page-shell">
       <div className="bg-orb bg-orb-a" />
@@ -42,8 +69,6 @@ export function CarreiraPage() {
         </div>
       </section>
 
-      <CarreiraWorkbench />
-
       <section className="notes-grid">
         <article className="note-card">
           <p className="eyebrow">Como o front fala com o back</p>
@@ -60,14 +85,28 @@ export function CarreiraPage() {
           <p className="eyebrow">Arquitetura</p>
           <h2>O que vive em cada camada</h2>
           <ul>
-            <li>Types guardam o contrato dos dados.</li>
-            <li>API isola a chamada HTTP.</li>
-            <li>Formatters tratam exibicao.</li>
-            <li>Form e Results cuidam da interface.</li>
-            <li>Workbench coordena o estado da feature.</li>
+            <li>Model guarda os dados e o contrato.</li>
+            <li>Repository faz a comunicacao HTTP.</li>
+            <li>Controller coordena o estado e as acoes.</li>
+            <li>View renderiza a interface sem regra de negocio.</li>
           </ul>
         </article>
       </section>
+
+      <div className="workbench">
+        <CarreiraFormView
+          cadastro={cadastro}
+          carregando={carregando}
+          erro={erro}
+          onSubmit={onSubmit}
+          onNomeChange={onNomeChange}
+          onDataNascimentoChange={onDataNascimentoChange}
+          onDataIngressoChange={onDataIngressoChange}
+          onCltChange={onCltChange}
+          onUsarExemplo={onUsarExemplo}
+        />
+        <CarreiraResultsView resumo={resumo} />
+      </div>
     </main>
   )
 }

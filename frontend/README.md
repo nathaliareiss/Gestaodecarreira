@@ -11,9 +11,16 @@ Aplicacao Next.js + React para visualizar e testar o backend Python de carreira.
 ## Estrutura
 
 - `frontend/app/`: rota e layout globais
-- `frontend/features/carreira/`: contrato, API, formatacao e UI da feature
-- `frontend/features/carreira/components/`: formulario, resultados e container da feature
+- `frontend/features/carreira/model/`: dados, contrato e acesso HTTP
+- `frontend/features/carreira/controller/`: estado, acoes e coordenacao da feature
+- `frontend/features/carreira/view/`: telas, componentes visuais e formatacao
 - `frontend/app/globals.css`: tema visual e responsividade
+
+## MVC no front
+
+- Model guarda os dados e conversa com a API
+- Controller controla o estado do formulario e do resultado
+- View renderiza a interface sem conhecer a regra de negocio
 
 ## Como rodar
 

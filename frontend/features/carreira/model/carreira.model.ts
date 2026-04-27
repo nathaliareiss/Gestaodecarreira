@@ -1,11 +1,11 @@
-export type CadastroCarreiraRequest = {
+export type CadastroCarreira = {
   nome: string
   data_nascimento: string
   data_ingresso: string
   tem_tempo_clt_averbado: boolean
 }
 
-export type ResumoCarreiraResponse = CadastroCarreiraRequest & {
+export type ResumoCarreira = CadastroCarreira & {
   data_25_anos_carreira: string
   idade_na_data_25_anos_carreira: number
   possui_idade_minima_na_data_25_anos_carreira: boolean
@@ -17,7 +17,7 @@ export type ResumoCarreiraResponse = CadastroCarreiraRequest & {
   nivel_na_aposentadoria: number
 }
 
-export const CADASTRO_INICIAL: CadastroCarreiraRequest = {
+export const CADASTRO_CARREIRA_INICIAL: CadastroCarreira = {
   nome: "Maria",
   data_nascimento: "1980-01-01",
   data_ingresso: "2010-01-01",

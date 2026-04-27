@@ -2,10 +2,10 @@
 
 import type { FormEvent } from "react"
 
-import type { CadastroCarreiraRequest } from "../carreira.types"
+import type { CadastroCarreira } from "../model/carreira.model"
 
-type CarreiraFormProps = {
-  form: CadastroCarreiraRequest
+type CarreiraFormViewProps = {
+  cadastro: CadastroCarreira
   carregando: boolean
   erro: string | null
   onSubmit: (evento: FormEvent<HTMLFormElement>) => void
@@ -16,8 +16,8 @@ type CarreiraFormProps = {
   onUsarExemplo: () => void
 }
 
-export function CarreiraForm({
-  form,
+export function CarreiraFormView({
+  cadastro,
   carregando,
   erro,
   onSubmit,
@@ -26,7 +26,7 @@ export function CarreiraForm({
   onDataIngressoChange,
   onCltChange,
   onUsarExemplo,
-}: CarreiraFormProps) {
+}: CarreiraFormViewProps) {
   return (
     <form className="card form-card" onSubmit={onSubmit}>
       <div className="card-header">
@@ -42,7 +42,7 @@ export function CarreiraForm({
       <label className="field">
         <span>Nome</span>
         <input
-          value={form.nome}
+          value={cadastro.nome}
           onChange={(evento) => onNomeChange(evento.target.value)}
           placeholder="Maria"
           required
@@ -54,7 +54,7 @@ export function CarreiraForm({
           <span>Data de nascimento</span>
           <input
             type="date"
-            value={form.data_nascimento}
+            value={cadastro.data_nascimento}
             onChange={(evento) => onDataNascimentoChange(evento.target.value)}
             required
           />
@@ -64,7 +64,7 @@ export function CarreiraForm({
           <span>Data de ingresso</span>
           <input
             type="date"
-            value={form.data_ingresso}
+            value={cadastro.data_ingresso}
             onChange={(evento) => onDataIngressoChange(evento.target.value)}
             required
           />
@@ -74,7 +74,7 @@ export function CarreiraForm({
       <label className="checkbox-row">
         <input
           type="checkbox"
-          checked={form.tem_tempo_clt_averbado}
+          checked={cadastro.tem_tempo_clt_averbado}
           onChange={(evento) => onCltChange(evento.target.checked)}
         />
         <span>Tem tempo CLT averbado</span>

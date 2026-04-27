@@ -1,11 +1,11 @@
-import type { ResumoCarreiraResponse } from "../carreira.types"
-import { formatarDataISO, formatarSimNao } from "../carreira.formatters"
+import type { ResumoCarreira } from "../model/carreira.model"
+import { formatarDataISO, formatarSimNao } from "./carreira.formatters"
 
-type CarreiraResultsProps = {
-  resumo: ResumoCarreiraResponse | null
+type CarreiraResultsViewProps = {
+  resumo: ResumoCarreira | null
 }
 
-export function CarreiraResults({ resumo }: CarreiraResultsProps) {
+export function CarreiraResultsView({ resumo }: CarreiraResultsViewProps) {
   return (
     <section className="card results-card">
       <div className="card-header">

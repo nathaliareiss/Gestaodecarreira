@@ -1,15 +1,12 @@
-import type {
-  CadastroCarreiraRequest,
-  ResumoCarreiraResponse,
-} from "./carreira.types"
+import type { CadastroCarreira, ResumoCarreira } from "./carreira.model"
 
 export function obterApiBaseUrl() {
   return process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"
 }
 
 export async function buscarResumoCarreira(
-  cadastro: CadastroCarreiraRequest,
-): Promise<ResumoCarreiraResponse> {
+  cadastro: CadastroCarreira,
+): Promise<ResumoCarreira> {
   const response = await fetch(`${obterApiBaseUrl()}/api/carreira/resumo`, {
     method: "POST",
     headers: {
@@ -18,9 +15,7 @@ export async function buscarResumoCarreira(
     body: JSON.stringify(cadastro),
   })
 
-  const dados = (await response.json()) as
-    | ResumoCarreiraResponse
-    | { detail?: string }
+  const dados = (await response.json()) as ResumoCarreira | { detail?: string }
 
   if (!response.ok) {
     const mensagem =
@@ -28,6 +23,6 @@ export async function buscarResumoCarreira(
     throw new Error(mensagem)
   }
 
-  return dados as ResumoCarreiraResponse
+  return dados as ResumoCarreira
 }
 
