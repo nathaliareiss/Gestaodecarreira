@@ -2,18 +2,36 @@ from datetime import date
 
 from gestao_carreira.domain.servidora import Servidora
 from gestao_carreira.services.carreira import montar_resumo_funcional
+from gestao_carreira.services.datas import parsear_data
+
+
+def ler_data(mensagem: str) -> date:
+    while True:
+        texto = input(mensagem).strip()
+        try:
+            return parsear_data(texto)
+        except ValueError as erro:
+            print(erro)
 
 
 def main() -> None:
+    print("Gestao de Carreira")
+    print("Vamos cadastrar seus dados iniciais.")
+
+    nome = input("Nome: ").strip()
+    data_nascimento = ler_data("Data de nascimento (dd/mm/aaaa): ")
+    data_ingresso = ler_data("Data de ingresso/exercicio (dd/mm/aaaa): ")
+
     servidora = Servidora(
-        nome="Nathalia",
-        data_nascimento=date(1985, 5, 10),
-        data_ingresso=date(2000, 6, 1),
+        nome=nome,
+        data_nascimento=data_nascimento,
+        data_ingresso=data_ingresso,
     )
 
     resumo = montar_resumo_funcional(servidora)
 
-    print("Gestao de Carreira")
+    print()
+    print("Resumo funcional")
     print(f"Nome: {servidora.nome}")
     print(f"Nascimento: {servidora.data_nascimento.strftime('%d/%m/%Y')}")
     print(f"Ingresso: {servidora.data_ingresso.strftime('%d/%m/%Y')}")
@@ -43,4 +61,3 @@ def main() -> None:
         f"{resumo.grau_na_aposentadoria}"
         f" | Nivel na aposentadoria: {resumo.nivel_na_aposentadoria}"
     )
-

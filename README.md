@@ -8,7 +8,6 @@ Projeto em Python para organizar dados funcionais de uma servidora publica e evo
 - `gestao_carreira/services/`: regras e calculos
 - `gestao_carreira/presentation/`: interface de execucao
 - `main.py`: ponto de entrada do projeto
-- `src/`: arquivos de estudo e testes didaticos
 
 ## Como rodar
 
@@ -24,6 +23,12 @@ Projeto em Python para organizar dados funcionais de uma servidora publica e evo
 python main.py
 ```
 
+3. Depois responda as perguntas no terminal com:
+
+- nome
+- data de nascimento no formato `dd/mm/aaaa`
+- data de ingresso/exercicio no formato `dd/mm/aaaa`
+
 ## O que o primeiro fluxo faz
 
 - calcula a data em que a carreira completa 25 anos
@@ -37,4 +42,3 @@ python main.py
 1. Entidade guarda dados.
 2. Service calcula regras.
 3. Presentation mostra resultado.
-

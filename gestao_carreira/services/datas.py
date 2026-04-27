@@ -1,6 +1,14 @@
 from datetime import date
 
 
+def parsear_data(texto: str) -> date:
+    try:
+        dia, mes, ano = map(int, texto.split("/"))
+        return date(ano, mes, dia)
+    except ValueError as exc:
+        raise ValueError("Data invalida. Use o formato dd/mm/aaaa.") from exc
+
+
 def adicionar_anos(data_base: date, anos: int) -> date:
     try:
         return data_base.replace(year=data_base.year + anos)
@@ -30,4 +38,3 @@ def anos_completos_entre(data_inicio: date, data_fim: date) -> int:
         anos -= 1
 
     return anos
-

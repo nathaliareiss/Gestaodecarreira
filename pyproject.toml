@@ -13,6 +13,5 @@ authors = [{ name = "Nathália" }]
 [project.scripts]
 gestao-carreira = "gestao_carreira.presentation.cli:main"
 
-[tool.setuptools]
-packages = ["gestao_carreira"]
-
+[tool.setuptools.packages.find]
+include = ["gestao_carreira*"]
