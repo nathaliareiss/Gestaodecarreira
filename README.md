@@ -44,6 +44,12 @@ Terminal interativo:
 gestao-carreira
 ```
 
+Se o PowerShell disser que o termo nao e reconhecido, use o executavel direto:
+
+```powershell
+.\venv\Scripts\gestao-carreira.exe
+```
+
 O `backend/app.py` define a aplicacao FastAPI e registra as rotas de
 `backend/routes/`. O `backend/main.py` so inicia o servidor.
 

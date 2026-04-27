@@ -34,11 +34,18 @@ arquivo do zero ou voltar ao padrao.
 3. Rode o terminal interativo:
 
 ```powershell
-python -m backend.main
+gestao-carreira
 ```
 
-Esse comando e interativo. Se voce abrir pelo botao de execucao da IDE sem um terminal
-com entrada, ele encerra com a mensagem de que precisa de um terminal interativo.
+Esse comando e interativo e so fica disponivel depois de ativar o `venv`.
+Se o PowerShell disser que o termo nao e reconhecido, rode o executavel direto:
+
+```powershell
+.\venv\Scripts\gestao-carreira.exe
+```
+
+Se voce abrir pelo botao de execucao da IDE sem um terminal com entrada, ele encerra
+com a mensagem de que precisa de um terminal interativo.
 
 ## Como rodar a API
 
