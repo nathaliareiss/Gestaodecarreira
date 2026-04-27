@@ -27,7 +27,7 @@ def ler_sim_nao(mensagem: str) -> bool:
         resposta = input(mensagem).strip().lower()
         if resposta in {"s", "sim"}:
             return True
-        if resposta in {"n", "nao", "não"}:
+        if resposta in {"n", "nao"}:
             return False
         print("Responda com s ou n.")
 

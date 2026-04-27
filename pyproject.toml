@@ -9,9 +9,14 @@ description = "Sistema em Python para organizar dados funcionais e de carreira"
 readme = "README.md"
 requires-python = ">=3.11"
 authors = [{ name = "Nathalia" }]
+dependencies = [
+    "fastapi>=0.136,<1.0",
+    "uvicorn[standard]>=0.46,<1.0",
+]
 
 [project.scripts]
 gestao-carreira = "controllers.carreira_controller:executar"
+gestao-carreira-api = "api:run"
 
 [tool.setuptools.packages.find]
 include = ["controllers*", "services*", "schemas*", "models*"]
