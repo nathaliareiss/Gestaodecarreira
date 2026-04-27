@@ -1,11 +1,11 @@
-import type { CadastroCarreira, ResumoCarreira } from "../model/carreira.model"
 import type { FormEvent } from "react"
 
-import { CarreiraArchitectureSection } from "./sections/carreira-architecture-section"
-import { CarreiraHeroSection } from "./sections/carreira-hero-section"
-import { CarreiraWorkbenchView } from "./carreira-workbench-view"
+import type { CadastroCarreira, ResumoCarreira } from "../model/carreira.model"
 
-type CarreiraPageViewProps = {
+import { CarreiraFormView } from "./carreira-form-view"
+import { CarreiraResultsView } from "./carreira-results-view"
+
+type CarreiraWorkbenchViewProps = {
   cadastro: CadastroCarreira
   resumo: ResumoCarreira | null
   carregando: boolean
@@ -18,7 +18,7 @@ type CarreiraPageViewProps = {
   onUsarExemplo: () => void
 }
 
-export function CarreiraPageView({
+export function CarreiraWorkbenchView({
   cadastro,
   resumo,
   carregando,
@@ -29,16 +29,11 @@ export function CarreiraPageView({
   onDataIngressoChange,
   onCltChange,
   onUsarExemplo,
-}: CarreiraPageViewProps) {
+}: CarreiraWorkbenchViewProps) {
   return (
-    <main className="page-shell">
-      <div className="bg-orb bg-orb-a" />
-      <div className="bg-orb bg-orb-b" />
-      <CarreiraHeroSection />
-      <CarreiraArchitectureSection />
-      <CarreiraWorkbenchView
+    <div className="workbench">
+      <CarreiraFormView
         cadastro={cadastro}
-        resumo={resumo}
         carregando={carregando}
         erro={erro}
         onSubmit={onSubmit}
@@ -48,6 +43,7 @@ export function CarreiraPageView({
         onCltChange={onCltChange}
         onUsarExemplo={onUsarExemplo}
       />
-    </main>
+      <CarreiraResultsView resumo={resumo} />
+    </div>
   )
 }
