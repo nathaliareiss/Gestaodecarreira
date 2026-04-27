@@ -70,3 +70,6 @@ def run() -> None:
     reload = os.getenv("UVICORN_RELOAD", "true").lower() in {"1", "true", "yes", "sim"}
     uvicorn.run("backend.api:app", host=host, port=port, reload=reload)
 
+
+if __name__ == "__main__":
+    run()

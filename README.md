@@ -32,10 +32,13 @@ Terminal:
 python -m backend.main
 ```
 
+Esse fluxo e interativo. Se a IDE nao fornecer entrada no terminal, use o
+PowerShell integrado.
+
 API:
 
 ```powershell
-python -m uvicorn backend.api:app --reload --port 8000
+python -m backend.api
 ```
 
 ## Rodar o frontend

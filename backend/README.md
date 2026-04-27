@@ -23,12 +23,15 @@ Agora ele tambem expoe uma API FastAPI para o front em Next.
 python -m backend.main
 ```
 
+Esse comando e interativo. Se voce abrir pelo botao de execucao da IDE sem um terminal
+com entrada, ele encerra com a mensagem de que precisa de um terminal interativo.
+
 ## Como rodar a API
 
 Com o `venv` ativado:
 
 ```powershell
-gestao-carreira-api
+python -m backend.api
 ```
 
 Ou, se preferir chamar o servidor direto:

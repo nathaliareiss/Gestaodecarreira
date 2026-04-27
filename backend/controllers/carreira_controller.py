@@ -7,7 +7,12 @@ from backend.services.carreira_service import montar_resumo_funcional, parsear_d
 
 def ler_data(mensagem: str) -> date:
     while True:
-        texto = input(mensagem).strip()
+        try:
+            texto = input(mensagem).strip()
+        except EOFError as exc:
+            raise SystemExit(
+                "Entrada encerrada. Execute este comando em um terminal interativo."
+            ) from exc
         try:
             return parsear_data(texto)
         except ValueError as erro:
@@ -16,7 +21,12 @@ def ler_data(mensagem: str) -> date:
 
 def ler_texto_nao_vazio(mensagem: str) -> str:
     while True:
-        texto = input(mensagem).strip()
+        try:
+            texto = input(mensagem).strip()
+        except EOFError as exc:
+            raise SystemExit(
+                "Entrada encerrada. Execute este comando em um terminal interativo."
+            ) from exc
         if texto:
             return texto
         print("Este campo nao pode ficar vazio.")
@@ -24,7 +34,12 @@ def ler_texto_nao_vazio(mensagem: str) -> str:
 
 def ler_sim_nao(mensagem: str) -> bool:
     while True:
-        resposta = input(mensagem).strip().lower()
+        try:
+            resposta = input(mensagem).strip().lower()
+        except EOFError as exc:
+            raise SystemExit(
+                "Entrada encerrada. Execute este comando em um terminal interativo."
+            ) from exc
         if resposta in {"s", "sim"}:
             return True
         if resposta in {"n", "nao"}:
