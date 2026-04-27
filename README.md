@@ -29,6 +29,7 @@ python main.py
 - nome
 - data de nascimento no formato `dd/mm/aaaa`
 - data de ingresso/exercicio no formato `dd/mm/aaaa`
+- se tem tempo CLT averbado, com `s` ou `n`
 
 ## O que o primeiro fluxo faz
 

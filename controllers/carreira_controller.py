@@ -2,6 +2,7 @@ from datetime import date
 
 from models.servidora import Servidora
 from services.carreira_service import montar_resumo_funcional, parsear_data
+from schemas.carreira_schema import CadastroCarreiraSchema
 
 
 def ler_data(mensagem: str) -> date:
@@ -13,27 +14,60 @@ def ler_data(mensagem: str) -> date:
             print(erro)
 
 
+def ler_texto_nao_vazio(mensagem: str) -> str:
+    while True:
+        texto = input(mensagem).strip()
+        if texto:
+            return texto
+        print("Este campo nao pode ficar vazio.")
+
+
+def ler_sim_nao(mensagem: str) -> bool:
+    while True:
+        resposta = input(mensagem).strip().lower()
+        if resposta in {"s", "sim"}:
+            return True
+        if resposta in {"n", "nao", "não"}:
+            return False
+        print("Responda com s ou n.")
+
+
 def executar() -> None:
     print("Gestao de Carreira")
     print("Vamos cadastrar seus dados iniciais.")
 
-    nome = input("Nome: ").strip()
+    nome = ler_texto_nao_vazio("Nome: ")
     data_nascimento = ler_data("Data de nascimento (dd/mm/aaaa): ")
     data_ingresso = ler_data("Data de ingresso/exercicio (dd/mm/aaaa): ")
+    tem_tempo_clt_averbado = ler_sim_nao("Tem tempo CLT averbado? (s/n): ")
 
-    servidora = Servidora(
+    cadastro = CadastroCarreiraSchema(
         nome=nome,
         data_nascimento=data_nascimento,
         data_ingresso=data_ingresso,
+        tem_tempo_clt_averbado=tem_tempo_clt_averbado,
+    )
+
+    servidora = Servidora(
+        nome=cadastro.nome,
+        data_nascimento=cadastro.data_nascimento,
+        data_ingresso=cadastro.data_ingresso,
+        tem_tempo_clt_averbado=cadastro.tem_tempo_clt_averbado,
     )
 
     resumo = montar_resumo_funcional(servidora)
 
     print()
-    print("Resumo funcional")
+    print("Cadastro realizado")
     print(f"Nome: {servidora.nome}")
     print(f"Nascimento: {servidora.data_nascimento.strftime('%d/%m/%Y')}")
     print(f"Ingresso: {servidora.data_ingresso.strftime('%d/%m/%Y')}")
+    print(
+        "Tempo CLT averbado: "
+        f"{'sim' if servidora.tem_tempo_clt_averbado else 'nao'}"
+    )
+    print()
+    print("Resumo funcional")
     print(
         "25 anos de carreira: "
         f"{resumo.data_25_anos_carreira.strftime('%d/%m/%Y')}"
