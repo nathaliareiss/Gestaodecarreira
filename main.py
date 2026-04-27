@@ -1,7 +1,5 @@
-from fastapi import FastAPI
+from gestao_carreira.presentation.cli import main
 
-app = FastAPI()
 
-@app.get("/")
-def home():
-    return {"message": "API rodando"}
+if __name__ == "__main__":
+    main()

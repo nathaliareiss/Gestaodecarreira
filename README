@@ -19,3 +19,4 @@ O que este primeiro passo faz:
 - cria uma função para calcular idade
 - mostra como organizar código em arquivos separados
 - prepara a base para cálculos de carreira, aposentadoria e datas futuras
+Use o arquivo `README.md` como documentacao principal do projeto.

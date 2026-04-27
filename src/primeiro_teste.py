@@ -1,10 +1,10 @@
 from datetime import date
 
-from calculos import calcular_idade
+from gestao_carreira.services.datas import calcular_idade
 
 
 def main() -> None:
-    nome = "Nathália"
+    nome = "Nathalia"
     data_nascimento = date(1985, 5, 10)
     idade = calcular_idade(data_nascimento)
 

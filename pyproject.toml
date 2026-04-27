@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gestao-carreira"
+version = "0.1.0"
+description = "Sistema em Python para organizar dados funcionais e de carreira"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{ name = "Nathália" }]
+
+[project.scripts]
+gestao-carreira = "gestao_carreira.presentation.cli:main"
+
+[tool.setuptools]
+packages = ["gestao_carreira"]
+
