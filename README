@@ -1,0 +1,21 @@
+Projeto: Gestão de Carreira
+
+Como rodar a primeira versão:
+
+1. Ative o ambiente virtual
+
+```powershell
+.\venv\Scripts\Activate.ps1
+```
+
+2. Execute o arquivo de teste
+
+```powershell
+python src\primeiro_teste.py
+```
+
+O que este primeiro passo faz:
+
+- cria uma função para calcular idade
+- mostra como organizar código em arquivos separados
+- prepara a base para cálculos de carreira, aposentadoria e datas futuras
