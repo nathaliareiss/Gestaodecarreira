@@ -1,5 +1,5 @@
-from gestao_carreira.presentation.cli import main
+from controllers.carreira_controller import executar
 
 
 if __name__ == "__main__":
-    main()
+    executar()

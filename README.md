@@ -4,9 +4,10 @@ Projeto em Python para organizar dados funcionais de uma servidora publica e evo
 
 ## Estrutura inicial
 
-- `gestao_carreira/domain/`: entidades do negocio
-- `gestao_carreira/services/`: regras e calculos
-- `gestao_carreira/presentation/`: interface de execucao
+- `models/`: entidades do negocio
+- `services/`: regras e calculos
+- `schemas/`: estruturas de entrada e saida
+- `controllers/`: interface de execucao
 - `main.py`: ponto de entrada do projeto
 
 ## Como rodar
