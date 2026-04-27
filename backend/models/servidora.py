@@ -8,3 +8,4 @@ class Servidora:
     data_nascimento: date
     data_ingresso: date
     tem_tempo_clt_averbado: bool = False
+

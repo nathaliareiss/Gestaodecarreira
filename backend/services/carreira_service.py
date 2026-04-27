@@ -1,7 +1,7 @@
 from datetime import date
 
-from models.servidora import Servidora
-from schemas.carreira_schema import ResumoCarreiraSchema
+from backend.models.servidora import Servidora
+from backend.schemas.carreira_schema import ResumoCarreiraSchema
 
 
 def parsear_data(texto: str) -> date:

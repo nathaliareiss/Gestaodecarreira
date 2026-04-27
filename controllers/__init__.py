@@ -1,2 +1,0 @@
-"""Controladores da aplicacao."""
-

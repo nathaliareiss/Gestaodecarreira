@@ -1,8 +1,9 @@
 from datetime import date
 
-from models.servidora import Servidora
-from services.carreira_service import montar_resumo_funcional, parsear_data
-from schemas.carreira_schema import CadastroCarreiraSchema
+from backend.models.servidora import Servidora
+from backend.schemas.carreira_api_schema import CadastroCarreiraRequest
+from backend.schemas.carreira_schema import CadastroCarreiraSchema
+from backend.services.carreira_service import montar_resumo_funcional, parsear_data
 
 
 def ler_data(mensagem: str) -> date:
@@ -98,3 +99,4 @@ def executar() -> None:
         f"{resumo.grau_na_aposentadoria}"
         f" | Nivel na aposentadoria: {resumo.nivel_na_aposentadoria}"
     )
+

@@ -6,12 +6,12 @@ from dataclasses import asdict
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from models.servidora import Servidora
-from schemas.carreira_api_schema import (
+from backend.models.servidora import Servidora
+from backend.schemas.carreira_api_schema import (
     CadastroCarreiraRequest,
     ResumoCarreiraResponse,
 )
-from services.carreira_service import montar_resumo_funcional
+from backend.services.carreira_service import montar_resumo_funcional
 
 
 def _ler_origens_cors() -> list[str]:
@@ -68,8 +68,5 @@ def run() -> None:
     host = os.getenv("HOST", "0.0.0.0")
     port = int(os.getenv("PORT", "8000"))
     reload = os.getenv("UVICORN_RELOAD", "true").lower() in {"1", "true", "yes", "sim"}
-    uvicorn.run("api:app", host=host, port=port, reload=reload)
+    uvicorn.run("backend.api:app", host=host, port=port, reload=reload)
 
-
-if __name__ == "__main__":
-    run()

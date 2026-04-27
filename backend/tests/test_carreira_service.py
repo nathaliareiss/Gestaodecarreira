@@ -1,8 +1,8 @@
 import unittest
 from datetime import date
 
-from models.servidora import Servidora
-from services.carreira_service import (
+from backend.models.servidora import Servidora
+from backend.services.carreira_service import (
     adicionar_anos,
     calcular_data_25_anos_carreira,
     calcular_data_idade_minima_aposentadoria,
