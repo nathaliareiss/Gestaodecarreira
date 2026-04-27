@@ -13,6 +13,7 @@ A ideia e simples: o backend guarda as regras de carreira, e o front serve para 
 - `frontend/`: aplicacao Next.js isolada para deploy separado, organizada em MVC
 - `backend/README.md`: guia do backend
 - `frontend/README.md`: guia do front
+- `backend/routes/`: rotas HTTP da API
 - `backend/.env.example`: variaveis do backend
 - `frontend/.env.local.example`: variaveis do frontend
 - o arquivo real do backend fica em `backend/.env`
@@ -43,8 +44,8 @@ Terminal interativo:
 gestao-carreira
 ```
 
-O backend/app.py define a aplicacao FastAPI. O backend/main.py so inicia o
-servidor.
+O `backend/app.py` define a aplicacao FastAPI e registra as rotas de
+`backend/routes/`. O `backend/main.py` so inicia o servidor.
 
 Os arquivos reais de ambiente ja existem no projeto:
 
