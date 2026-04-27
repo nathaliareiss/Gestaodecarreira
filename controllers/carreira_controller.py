@@ -73,11 +73,15 @@ def executar() -> None:
         f"{resumo.data_25_anos_carreira.strftime('%d/%m/%Y')}"
     )
     print(
+        "Data de idade minima para aposentadoria: "
+        f"{resumo.data_idade_minima_aposentadoria.strftime('%d/%m/%Y')}"
+    )
+    print(
         "Idade nessa data: "
         f"{resumo.idade_na_data_25_anos_carreira} anos"
     )
     print(
-        "Tera idade minima nessa data: "
+        "Tem idade minima nessa data: "
         f"{'sim' if resumo.possui_idade_minima_na_data_25_anos_carreira else 'nao'}"
     )
     print(
