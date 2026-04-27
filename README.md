@@ -13,16 +13,34 @@ Backend servidor:
 .\run-backend.cmd
 ```
 
+Se voce estiver dentro de `backend/`, o equivalente direto em Python e:
+
+```powershell
+py main.py
+```
+
 Backend terminal:
 
 ```powershell
 .\run-backend-cli.cmd
 ```
 
+Se voce estiver dentro de `backend/`, o equivalente direto em Python e:
+
+```powershell
+py controllers\carreira_controller.py
+```
+
 Frontend:
 
 ```powershell
 .\run-frontend.cmd
+```
+
+Ou, dentro de `frontend/`:
+
+```powershell
+npm run dev
 ```
 
 ## Estrutura

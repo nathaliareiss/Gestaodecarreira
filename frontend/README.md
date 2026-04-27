@@ -10,6 +10,12 @@ Aplicacao Next.js + React para visualizar e testar o backend Python de carreira.
 
 Se a URL da API precisar mudar, ajuste `frontend/.env.local`.
 
+Se você ja estiver dentro de `frontend/`, o comando direto e:
+
+```powershell
+npm run dev
+```
+
 ## O que ela faz
 
 - mostra um formulario para cadastro da servidora

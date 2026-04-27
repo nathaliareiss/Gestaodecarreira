@@ -2,6 +2,6 @@
 setlocal
 
 set "ROOT=%~dp0"
-pushd "%ROOT%"
-py -m backend.controllers
+pushd "%ROOT%backend"
+py controllers\carreira_controller.py
 popd

@@ -10,14 +10,26 @@ Servidor HTTP:
 ..\run-backend.cmd
 ```
 
+Se você ja estiver dentro da pasta `backend/`, pode usar:
+
+```powershell
+py main.py
+```
+
 Terminal interativo:
 
 ```powershell
 ..\run-backend-cli.cmd
 ```
 
-Esses comandos usam o Python do `venv` diretamente. Voce nao precisa ativar o
-ambiente manualmente toda vez.
+Se você ja estiver dentro da pasta `backend/`, pode usar:
+
+```powershell
+py controllers\carreira_controller.py
+```
+
+Esses comandos usam o Python do sistema ou do atalho `.cmd`. Voce nao precisa
+ativar o ambiente manualmente toda vez.
 
 ## Estrutura
 
