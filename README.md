@@ -29,25 +29,29 @@ A ideia e simples: o backend guarda as regras de carreira, e o front serve para 
 
 ## Rodar o backend
 
-Terminal:
+Servidor HTTP:
 
 ```powershell
 .\venv\Scripts\Activate.ps1
 python -m backend.main
 ```
 
-Esse fluxo e interativo. Se a IDE nao fornecer entrada no terminal, use o
-PowerShell integrado.
-
-API:
+Terminal interativo:
 
 ```powershell
-python -m backend.api
+.\venv\Scripts\Activate.ps1
+gestao-carreira
 ```
 
-Se quiser usar arquivo de ambiente no backend, copie `backend/.env.example` para
-`backend/.env`. No front, copie `frontend/.env.local.example` para
-`frontend/.env.local`.
+O backend/app.py define a aplicacao FastAPI. O backend/main.py so inicia o
+servidor.
+
+Os arquivos reais de ambiente ja existem no projeto:
+
+- `backend/.env`
+- `frontend/.env.local`
+
+Se quiser, edite esses arquivos diretamente. Os examples ficam como referencia.
 
 ## Rodar o frontend
 

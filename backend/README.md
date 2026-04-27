@@ -6,6 +6,8 @@ O backend continua em Python e reaproveita as camadas que ja existiam:
 - `backend/services/` para regras e calculos
 - `backend/schemas/` para entrada e saida
 - `backend/controllers/` para o fluxo de terminal
+- `backend/app.py` para a aplicacao FastAPI
+- `backend/main.py` para iniciar o servidor
 
 Agora ele tambem expoe uma API FastAPI para o front em Next.
 
@@ -23,6 +25,9 @@ Agora ele tambem expoe uma API FastAPI para o front em Next.
 Copy-Item backend\.env.example backend\.env
 ```
 
+O arquivo `backend/.env` ja existe no projeto; use isso so se quiser recriar o
+arquivo do zero ou voltar ao padrao.
+
 3. Rode o terminal interativo:
 
 ```powershell
@@ -37,13 +42,13 @@ com entrada, ele encerra com a mensagem de que precisa de um terminal interativo
 Com o `venv` ativado:
 
 ```powershell
-python -m backend.api
+python -m backend.main
 ```
 
 Ou, se preferir chamar o servidor direto:
 
 ```powershell
-python -m uvicorn backend.api:app --reload --port 8000
+python -m uvicorn backend.app:app --reload --port 8000
 ```
 
 O backend le `backend/.env` automaticamente.

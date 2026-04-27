@@ -16,7 +16,7 @@ dependencies = [
 
 [project.scripts]
 gestao-carreira = "backend.controllers.carreira_controller:executar"
-gestao-carreira-api = "backend.api:run"
+gestao-carreira-server = "backend.main:run_server"
 
 [tool.setuptools.packages.find]
 include = ["backend*"]

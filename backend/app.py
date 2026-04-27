@@ -4,9 +4,9 @@ import os
 from dataclasses import asdict
 from pathlib import Path
 
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from dotenv import load_dotenv
 
 from backend.models.servidora import Servidora
 from backend.schemas.carreira_api_schema import (
@@ -64,16 +64,3 @@ def criar_app() -> FastAPI:
 
 
 app = criar_app()
-
-
-def run() -> None:
-    import uvicorn
-
-    host = os.getenv("HOST", "0.0.0.0")
-    port = int(os.getenv("PORT", "8000"))
-    reload = os.getenv("UVICORN_RELOAD", "true").lower() in {"1", "true", "yes", "sim"}
-    uvicorn.run("backend.api:app", host=host, port=port, reload=reload)
-
-
-if __name__ == "__main__":
-    run()

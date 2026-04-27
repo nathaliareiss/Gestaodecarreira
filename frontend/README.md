@@ -44,8 +44,10 @@ Copie o exemplo:
 Copy-Item frontend\.env.local.example frontend\.env.local
 ```
 
-Esse e o arquivo real que o Next le no front. Se preferir criar do zero, use
-`frontend/.env.local` com:
+O arquivo `frontend/.env.local` ja existe no projeto. Use esse passo so se quiser
+recriar o arquivo do zero ou voltar ao padrao.
+
+Se preferir criar do zero, use `frontend/.env.local` com:
 
 ```powershell
 NEXT_PUBLIC_API_URL=http://localhost:8000
