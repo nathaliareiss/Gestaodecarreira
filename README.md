@@ -9,10 +9,8 @@ A ideia e simples: o backend guarda as regras de carreira, e o front serve para 
 
 ## Estrutura
 
-- `controllers/`, `models/`, `schemas/`, `services/`: backend Python atual
-- `api.py`: entrada HTTP do backend
+- `backend/`: codigo Python, API FastAPI, CLI e testes
 - `frontend/`: aplicacao Next.js isolada para deploy separado
-- `tests/`: testes da regra de negocio em Python
 - `backend/README.md`: guia do backend
 - `frontend/README.md`: guia do front
 
@@ -30,13 +28,13 @@ A ideia e simples: o backend guarda as regras de carreira, e o front serve para 
 Terminal:
 
 ```powershell
-python main.py
+python -m backend.main
 ```
 
 API:
 
 ```powershell
-uvicorn api:app --reload --port 8000
+uvicorn backend.api:app --reload --port 8000
 ```
 
 ## Rodar o frontend
@@ -44,9 +42,10 @@ uvicorn api:app --reload --port 8000
 ```powershell
 cd frontend
 npm install
-Copy-Item .env.example .env.local
 npm run dev
 ```
+
+Se quiser mudar a URL da API, crie `frontend/.env.local` com `NEXT_PUBLIC_API_URL=http://localhost:8000`.
 
 Depois acesse o front e veja o formulario em acao.
 

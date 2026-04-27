@@ -2,17 +2,17 @@
 
 O backend continua em Python e reaproveita as camadas que ja existiam:
 
-- `models/` para entidades
-- `services/` para regras e calculos
-- `schemas/` para entrada e saida
-- `controllers/` para o fluxo de terminal
+- `backend/models/` para entidades
+- `backend/services/` para regras e calculos
+- `backend/schemas/` para entrada e saida
+- `backend/controllers/` para o fluxo de terminal
 
 Agora ele tambem expoe uma API FastAPI para o front em Next.
 
 ## Como rodar o terminal
 
 ```powershell
-python main.py
+python -m backend.main
 ```
 
 ## Como rodar a API
@@ -24,7 +24,7 @@ gestao-carreira-api
 Ou, se preferir chamar o servidor direto:
 
 ```powershell
-uvicorn api:app --reload --port 8000
+uvicorn backend.api:app --reload --port 8000
 ```
 
 ## Endpoints

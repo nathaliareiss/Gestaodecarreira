@@ -8,6 +8,13 @@ Aplicacao Next.js + React para visualizar e testar o backend Python de carreira.
 - envia um `POST /api/carreira/resumo` para o backend
 - exibe o resumo funcional em cards
 
+## Estrutura
+
+- `frontend/app/`: rota e layout globais
+- `frontend/features/carreira/`: contrato, API, formatacao e UI da feature
+- `frontend/features/carreira/components/`: formulario, resultados e container da feature
+- `frontend/app/globals.css`: tema visual e responsividade
+
 ## Como rodar
 
 1. Entre na pasta:
@@ -24,8 +31,10 @@ npm install
 
 3. Configure a URL do backend:
 
+Crie `frontend/.env.local` com:
+
 ```powershell
-Copy-Item .env.example .env.local
+NEXT_PUBLIC_API_URL=http://localhost:8000
 ```
 
 4. Rode o front:
