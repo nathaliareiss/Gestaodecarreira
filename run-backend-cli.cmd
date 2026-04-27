@@ -2,4 +2,6 @@
 setlocal
 
 set "ROOT=%~dp0"
-"%ROOT%venv\Scripts\gestao-carreira.exe"
+pushd "%ROOT%"
+py -m backend.controllers
+popd
