@@ -13,6 +13,10 @@ A ideia e simples: o backend guarda as regras de carreira, e o front serve para 
 - `frontend/`: aplicacao Next.js isolada para deploy separado, organizada em MVC
 - `backend/README.md`: guia do backend
 - `frontend/README.md`: guia do front
+- `backend/.env.example`: variaveis do backend
+- `frontend/.env.local.example`: variaveis do frontend
+- o arquivo real do backend fica em `backend/.env`
+- o arquivo real do front fica em `frontend/.env.local`
 
 ## Como o front e o back se ligam
 
@@ -40,6 +44,10 @@ API:
 ```powershell
 python -m backend.api
 ```
+
+Se quiser usar arquivo de ambiente no backend, copie `backend/.env.example` para
+`backend/.env`. No front, copie `frontend/.env.local.example` para
+`frontend/.env.local`.
 
 ## Rodar o frontend
 

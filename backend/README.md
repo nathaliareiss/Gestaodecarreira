@@ -17,7 +17,13 @@ Agora ele tambem expoe uma API FastAPI para o front em Next.
 .\venv\Scripts\Activate.ps1
 ```
 
-2. Rode o terminal interativo:
+2. Se quiser usar um arquivo de ambiente, copie o exemplo:
+
+```powershell
+Copy-Item backend\.env.example backend\.env
+```
+
+3. Rode o terminal interativo:
 
 ```powershell
 python -m backend.main
@@ -39,6 +45,8 @@ Ou, se preferir chamar o servidor direto:
 ```powershell
 python -m uvicorn backend.api:app --reload --port 8000
 ```
+
+O backend le `backend/.env` automaticamente.
 
 ## Endpoints
 

@@ -38,7 +38,14 @@ npm install
 
 3. Configure a URL do backend:
 
-Crie `frontend/.env.local` com:
+Copie o exemplo:
+
+```powershell
+Copy-Item frontend\.env.local.example frontend\.env.local
+```
+
+Esse e o arquivo real que o Next le no front. Se preferir criar do zero, use
+`frontend/.env.local` com:
 
 ```powershell
 NEXT_PUBLIC_API_URL=http://localhost:8000
