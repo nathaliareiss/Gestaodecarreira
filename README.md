@@ -33,21 +33,13 @@ A ideia e simples: o backend guarda as regras de carreira, e o front serve para 
 Servidor HTTP:
 
 ```powershell
-.\venv\Scripts\Activate.ps1
-python -m backend.main
+.\run-backend.cmd
 ```
 
 Terminal interativo:
 
 ```powershell
-.\venv\Scripts\Activate.ps1
-gestao-carreira
-```
-
-Se o PowerShell disser que o termo nao e reconhecido, use o executavel direto:
-
-```powershell
-.\venv\Scripts\gestao-carreira.exe
+.\run-backend-cli.cmd
 ```
 
 O `backend/app.py` define a aplicacao FastAPI e registra as rotas de
@@ -71,9 +63,7 @@ Se quiser, edite esses arquivos diretamente. Os examples ficam como referencia.
 ## Rodar o frontend
 
 ```powershell
-cd frontend
-npm install
-npm run dev
+.\run-frontend.cmd
 ```
 
 Se quiser mudar a URL da API, crie `frontend/.env.local` com `NEXT_PUBLIC_API_URL=http://localhost:8000`.
