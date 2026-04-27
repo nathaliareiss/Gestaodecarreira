@@ -10,7 +10,7 @@ A ideia e simples: o backend guarda as regras de carreira, e o front serve para 
 ## Estrutura
 
 - `backend/`: codigo Python, API FastAPI, CLI e testes
-- `frontend/`: aplicacao Next.js isolada para deploy separado
+- `frontend/`: aplicacao Next.js isolada para deploy separado, organizada em MVC
 - `backend/README.md`: guia do backend
 - `frontend/README.md`: guia do front
 
