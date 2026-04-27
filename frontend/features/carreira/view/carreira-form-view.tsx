@@ -2,7 +2,7 @@
 
 import type { FormEvent } from "react"
 
-import type { CadastroCarreira } from "../model/carreira.model"
+import type { CadastroCarreira } from "../../../model/carreira.model"
 
 type CarreiraFormViewProps = {
   cadastro: CadastroCarreira

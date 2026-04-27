@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from backend.routes import carreira_router
+from backend.routes import router as api_router
 
 load_dotenv(Path(__file__).resolve().parent / ".env")
 
@@ -31,7 +31,7 @@ def criar_app() -> FastAPI:
         allow_headers=["*"],
     )
 
-    app.include_router(carreira_router)
+    app.include_router(api_router)
 
     return app
 

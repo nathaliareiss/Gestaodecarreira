@@ -1,6 +1,6 @@
 import { CarreiraFormView } from "./carreira-form-view"
 import { CarreiraResultsView } from "./carreira-results-view"
-import type { CadastroCarreira, ResumoCarreira } from "../model/carreira.model"
+import type { CadastroCarreira, ResumoCarreira } from "../../../model/carreira.model"
 import type { FormEvent } from "react"
 
 type CarreiraPageViewProps = {

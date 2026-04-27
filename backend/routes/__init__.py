@@ -1,3 +1,10 @@
-from backend.routes.carreira_routes import router as carreira_router
+from fastapi import APIRouter
 
-__all__ = ["carreira_router"]
+from backend.routes.carreira_routes import router as carreira_router
+from backend.routes.health_routes import router as health_router
+
+router = APIRouter(prefix="/api")
+router.include_router(health_router)
+router.include_router(carreira_router)
+
+__all__ = ["router"]

@@ -11,15 +11,10 @@ from backend.schemas.carreira_api_schema import (
 )
 from backend.services.carreira_service import montar_resumo_funcional
 
-router = APIRouter()
+router = APIRouter(prefix="/carreira", tags=["carreira"])
 
 
-@router.get("/api/health")
-def health() -> dict[str, str]:
-    return {"status": "ok"}
-
-
-@router.post("/api/carreira/resumo", response_model=ResumoCarreiraResponse)
+@router.post("/resumo", response_model=ResumoCarreiraResponse)
 def criar_resumo(cadastro: CadastroCarreiraRequest) -> ResumoCarreiraResponse:
     servidora = Servidora(
         nome=cadastro.nome,

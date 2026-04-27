@@ -1,7 +1,7 @@
 "use client"
 
 import { useCarreiraController } from "./use-carreira-controller"
-import { CarreiraPageView } from "../view/carreira-page-view"
+import { CarreiraPageView } from "../features/carreira/view/carreira-page-view"
 
 export function CarreiraController() {
   const {

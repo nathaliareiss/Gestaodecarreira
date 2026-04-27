@@ -1,4 +1,4 @@
-import type { ResumoCarreira } from "../model/carreira.model"
+import type { ResumoCarreira } from "../../../model/carreira.model"
 import { formatarDataISO, formatarSimNao } from "./carreira.formatters"
 
 type CarreiraResultsViewProps = {
