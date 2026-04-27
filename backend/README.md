@@ -13,7 +13,7 @@ Servidor HTTP:
 Se você ja estiver dentro da pasta `backend/`, pode usar:
 
 ```powershell
-py main.py
+..\venv\Scripts\python.exe main.py
 ```
 
 Terminal interativo:
@@ -25,11 +25,11 @@ Terminal interativo:
 Se você ja estiver dentro da pasta `backend/`, pode usar:
 
 ```powershell
-py controllers\carreira_controller.py
+..\venv\Scripts\python.exe controllers\carreira_controller.py
 ```
 
-Esses comandos usam o Python do sistema ou do atalho `.cmd`. Voce nao precisa
-ativar o ambiente manualmente toda vez.
+Esses comandos usam o Python do `venv`. Voce nao precisa ativar o ambiente
+manualmente toda vez.
 
 ## Estrutura
 

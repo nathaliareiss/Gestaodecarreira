@@ -16,7 +16,7 @@ Backend servidor:
 Se voce estiver dentro de `backend/`, o equivalente direto em Python e:
 
 ```powershell
-py main.py
+..\venv\Scripts\python.exe main.py
 ```
 
 Backend terminal:
@@ -28,7 +28,7 @@ Backend terminal:
 Se voce estiver dentro de `backend/`, o equivalente direto em Python e:
 
 ```powershell
-py controllers\carreira_controller.py
+..\venv\Scripts\python.exe controllers\carreira_controller.py
 ```
 
 Frontend:

@@ -3,5 +3,5 @@ setlocal
 
 set "ROOT=%~dp0"
 pushd "%ROOT%backend"
-py main.py
+"%ROOT%venv\Scripts\python.exe" main.py
 popd
