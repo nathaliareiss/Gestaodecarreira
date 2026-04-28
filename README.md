@@ -67,3 +67,6 @@ npm run dev
 
 Os comandos novos usam o Python do `venv` direto, entao voce nao precisa ativar
 o ambiente manualmente toda vez.
+
+As variaveis do backend ficam em `backend/.env` e sao lidas por
+`backend/config.py`. `main.py` e `app.py` so consomem essa configuracao.

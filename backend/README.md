@@ -48,9 +48,13 @@ manualmente toda vez.
 
 ## Variaveis de ambiente
 
-- `HOST`: host do servidor, padrao `0.0.0.0`
-- `PORT`: porta do servidor, padrao `8000`
-- `CORS_ORIGINS`: origens liberadas para o front, padrao `http://localhost:3000`
+- As variaveis ficam em `backend/.env`
+- `HOST`: host do servidor
+- `PORT`: porta do servidor
+- `CORS_ORIGINS`: origens liberadas para o front
+
+O codigo nao repete esses valores em `main.py` nem em `app.py`. Ele le tudo do
+arquivo `.env` centralizado em `backend/config.py`.
 
 ## Regra de integracao
 
