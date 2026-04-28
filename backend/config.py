@@ -29,6 +29,13 @@ def _resolver_caminho_env(nome_variavel: str, padrao: Path) -> Path:
 
     caminho = Path(valor).expanduser()
     if not caminho.is_absolute():
+        if caminho.exists():
+            return caminho.resolve()
+
+        candidato_raiz = (BASE_DIR.parent / caminho).resolve()
+        if candidato_raiz.exists():
+            return candidato_raiz
+
         caminho = (BASE_DIR / caminho).resolve()
     return caminho
 
