@@ -61,6 +61,8 @@ manualmente toda vez.
 - `FRONTEND_BASE_URL`: URL do frontend para montar o link de confirmacao
 - `GOOGLE_GMAIL_CLIENT_FILE`: caminho do JSON OAuth do Google Cloud
 - `GOOGLE_GMAIL_TOKEN_FILE`: arquivo gerado na primeira autorizacao do Gmail API
+- `GOOGLE_GMAIL_REDIRECT_HOST`: host usado no login local do Google
+- `GOOGLE_GMAIL_REDIRECT_PORT`: porta usada no login local do Google
 - `EMAIL_CONFIRMATION_SUBJECT`: assunto do email de confirmacao
 
 O codigo nao repete esses valores em `main.py` nem em `app.py`. Ele le tudo do
