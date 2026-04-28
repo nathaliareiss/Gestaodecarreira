@@ -35,7 +35,7 @@ export function UsuarioPageView({
       <div className="bg-orb bg-orb-a" />
       <div className="bg-orb bg-orb-b" />
       <UsuarioHeroSection />
-      <section className="workbench">
+      <section className="workbench workbench--single">
         <UsuarioFormView
           cadastro={cadastro}
           carregando={carregando}
@@ -48,20 +48,6 @@ export function UsuarioPageView({
           onSenhaChange={onSenhaChange}
           onUsarExemplo={onUsarExemplo}
         />
-
-        <aside className="note-card">
-          <p className="eyebrow">Como vai funcionar</p>
-          <h2>Confirmacao por email via API</h2>
-          <p>
-            O formulario envia os dados para o backend, e o link de confirmacao abre a
-            rota <code>/confirmar-email?token=...</code>.
-          </p>
-          <ol>
-            <li>O usuario cadastra nome, apelido, email, login e senha.</li>
-            <li>O app salva os dados no banco e redireciona para /usuario.</li>
-            <li>O email de confirmacao pode ser enviado por uma API externa gratuita.</li>
-          </ol>
-        </aside>
       </section>
     </main>
   )
