@@ -9,7 +9,7 @@ const destaques = [
   },
   {
     titulo: "Perfil salvo",
-    texto: "Os dados ficam no navegador e podem ser exibidos e confirmados na rota /usuario.",
+    texto: "Os dados ficam no banco e podem ser exibidos e confirmados na rota /usuario.",
   },
 ]
 
@@ -21,7 +21,7 @@ export function UsuarioHeroSection() {
         <h1>Cadastre a pessoa e leve os dados direto para a pagina do usuario.</h1>
         <p className="hero-text">
           O fluxo ficou mais limpo: a home recebe o cadastro, a rota /usuario mostra os
-          dados salvos e a confirmacao de email fica pronta para receber uma API de envio.
+          dados salvos no banco e a confirmacao de email usa o token do backend.
         </p>
       </div>
 

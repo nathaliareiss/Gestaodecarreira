@@ -7,9 +7,8 @@ import {
   USUARIO_CADASTRO_EXEMPLO,
   USUARIO_CADASTRO_INICIAL,
   type UsuarioCadastro,
-  type UsuarioConta,
 } from "../model/usuario.model"
-import { salvarUsuario } from "../model/usuario.storage"
+import { criarUsuario } from "../model/usuario.repository"
 
 export function useUsuarioController() {
   const router = useRouter()
@@ -66,20 +65,13 @@ export function useUsuarioController() {
     setErro(null)
 
     try {
-      const agora = new Date().toISOString()
-      const usuario: UsuarioConta = {
+      await criarUsuario({
         nome: cadastro.nome.trim(),
         apelido: cadastro.apelido.trim(),
         email: cadastro.email.trim(),
         login: cadastro.login.trim(),
         senha: cadastro.senha,
-        token_confirmacao_email: crypto.randomUUID(),
-        email_confirmado: false,
-        criado_em: agora,
-        confirmado_em: null,
-      }
-
-      salvarUsuario(usuario)
+      })
       router.push("/usuario")
     } catch (error) {
       setErro(error instanceof Error ? error.message : "Falha inesperada ao salvar")

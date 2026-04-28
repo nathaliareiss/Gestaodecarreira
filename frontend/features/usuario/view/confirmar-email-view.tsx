@@ -4,7 +4,7 @@ import Link from "next/link"
 import { useEffect, useState } from "react"
 
 import type { UsuarioConta } from "../model/usuario.model"
-import { confirmarUsuarioPorToken } from "../model/usuario.storage"
+import { confirmarUsuarioPorToken } from "../model/usuario.repository"
 
 type ConfirmarEmailViewProps = {
   token: string | null
@@ -13,25 +13,45 @@ type ConfirmarEmailViewProps = {
 export function ConfirmarEmailView({ token }: ConfirmarEmailViewProps) {
   const [usuario, setUsuario] = useState<UsuarioConta | null>(null)
   const [erro, setErro] = useState<string | null>(null)
+  const [carregando, setCarregando] = useState(true)
 
   useEffect(() => {
-    const timer = window.setTimeout(() => {
+    let ativo = true
+
+    async function confirmar() {
       if (!token) {
         setErro("Token de confirmacao ausente.")
+        setCarregando(false)
         return
       }
 
-      const confirmado = confirmarUsuarioPorToken(token)
-      if (!confirmado) {
-        setErro("Nao foi possivel confirmar este email.")
-        return
+      try {
+        const confirmado = await confirmarUsuarioPorToken(token)
+        if (!ativo) {
+          return
+        }
+
+        setUsuario(confirmado)
+        setErro(null)
+      } catch (error) {
+        if (!ativo) {
+          return
+        }
+
+        setUsuario(null)
+        setErro(error instanceof Error ? error.message : "Nao foi possivel confirmar este email.")
+      } finally {
+        if (ativo) {
+          setCarregando(false)
+        }
       }
+    }
 
-      setUsuario(confirmado)
-      setErro(null)
-    }, 0)
+    void confirmar()
 
-    return () => window.clearTimeout(timer)
+    return () => {
+      ativo = false
+    }
   }, [token])
 
   return (
@@ -44,14 +64,15 @@ export function ConfirmarEmailView({ token }: ConfirmarEmailViewProps) {
           <p className="eyebrow">Confirmacao de email</p>
           <h1>Valide o acesso com um clique no link do email.</h1>
           <p className="hero-text">
-            Esta rota e o destino do link de confirmacao que voce envia por email.
+            Esta rota recebe o token gerado na criacao do usuario e confirma o cadastro
+            no backend.
           </p>
         </div>
 
         <div className="hero-grid">
           <article className="mini-card">
             <h2>Status</h2>
-            <p>{usuario ? "Email confirmado" : erro ?? "Processando"}</p>
+            <p>{carregando ? "Processando" : usuario ? "Email confirmado" : erro ?? "Pendente"}</p>
           </article>
           <article className="mini-card">
             <h2>Proxima etapa</h2>
@@ -70,7 +91,11 @@ export function ConfirmarEmailView({ token }: ConfirmarEmailViewProps) {
             <span className="status-pill">{usuario ? "ok" : "pendente"}</span>
           </div>
 
-          {usuario ? (
+          {carregando ? (
+            <div className="empty-state">
+              <p>Confirmando usuario...</p>
+            </div>
+          ) : usuario ? (
             <div className="empty-state">
               <p>
                 O email de <strong>{usuario.email}</strong> foi confirmado com sucesso.
@@ -91,13 +116,13 @@ export function ConfirmarEmailView({ token }: ConfirmarEmailViewProps) {
 
         <aside className="note-card">
           <p className="eyebrow">Como usar</p>
-          <h2>Quando a API chegar, mande este link no email</h2>
+          <h2>O link agora fala com o backend</h2>
           <p>
             O template do email deve apontar para <code>/confirmar-email?token=...</code>.
           </p>
           <p>
-            Resend e Brevo sao as duas opcoes gratuitas mais praticas para esse tipo de
-            fluxo.
+            O backend recebe esse token, localiza o usuario e marca o email como
+            confirmado.
           </p>
         </aside>
       </section>

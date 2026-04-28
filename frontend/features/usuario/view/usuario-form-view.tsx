@@ -99,7 +99,7 @@ export function UsuarioFormView({
         </button>
         <p className="helper">
           Depois do cadastro, a pessoa vai para <code>/usuario</code> e o email de
-          confirmacao pode apontar para <code>/confirmar-email?token=...</code>.
+          confirmacao aponta para <code>/confirmar-email?token=...</code>.
         </p>
       </div>
 

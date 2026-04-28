@@ -1,6 +1,36 @@
-from database.database import engine, Base
-from database import models
+from sqlalchemy import text
 
-Base.metadata.create_all(bind=engine)
+from backend.database.database import Base, engine
+from backend.database import models as database_models  # noqa: F401
 
-print("Tabelas criadas com sucesso!")
+
+def sincronizar_usuario_table() -> None:
+    comandos = [
+        "ALTER TABLE IF EXISTS usuarios ADD COLUMN IF NOT EXISTS apelido VARCHAR",
+        "ALTER TABLE IF EXISTS usuarios ADD COLUMN IF NOT EXISTS login VARCHAR",
+        "ALTER TABLE IF EXISTS usuarios ADD COLUMN IF NOT EXISTS senha_hash VARCHAR",
+        "ALTER TABLE IF EXISTS usuarios ADD COLUMN IF NOT EXISTS token_confirmacao_email VARCHAR",
+        "ALTER TABLE IF EXISTS usuarios ADD COLUMN IF NOT EXISTS email_confirmado BOOLEAN NOT NULL DEFAULT FALSE",
+        "ALTER TABLE IF EXISTS usuarios ADD COLUMN IF NOT EXISTS criado_em TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()",
+        "ALTER TABLE IF EXISTS usuarios ADD COLUMN IF NOT EXISTS confirmado_em TIMESTAMP WITH TIME ZONE",
+        "UPDATE usuarios SET apelido = COALESCE(apelido, '') WHERE apelido IS NULL",
+        "UPDATE usuarios SET login = COALESCE(login, email) WHERE login IS NULL",
+        "UPDATE usuarios SET senha_hash = COALESCE(senha_hash, '') WHERE senha_hash IS NULL",
+        "UPDATE usuarios SET token_confirmacao_email = COALESCE(token_confirmacao_email, 'legacy-' || id::text) WHERE token_confirmacao_email IS NULL",
+        "UPDATE usuarios SET email_confirmado = COALESCE(email_confirmado, FALSE) WHERE email_confirmado IS NULL",
+        "UPDATE usuarios SET criado_em = COALESCE(criado_em, NOW()) WHERE criado_em IS NULL",
+    ]
+
+    with engine.begin() as conexao:
+        Base.metadata.create_all(bind=conexao)
+        for comando in comandos:
+            conexao.execute(text(comando))
+
+
+def criar_tabelas() -> None:
+    sincronizar_usuario_table()
+    print("Tabelas criadas com sucesso!")
+
+
+if __name__ == "__main__":
+    criar_tabelas()

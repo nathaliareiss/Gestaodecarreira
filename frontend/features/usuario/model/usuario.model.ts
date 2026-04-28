@@ -6,14 +6,18 @@ export type UsuarioCadastro = {
   senha: string
 }
 
-export type UsuarioConta = UsuarioCadastro & {
+export type UsuarioConta = {
+  id: number
+  nome: string
+  apelido: string | null
+  email: string
+  login: string
+  senha_cadastrada: boolean
   token_confirmacao_email: string
   email_confirmado: boolean
   criado_em: string
   confirmado_em: string | null
 }
-
-export const USUARIO_STORAGE_KEY = "gestao-carreira:usuario"
 
 export const USUARIO_CADASTRO_INICIAL: UsuarioCadastro = {
   nome: "",
@@ -29,4 +33,8 @@ export const USUARIO_CADASTRO_EXEMPLO: UsuarioCadastro = {
   email: "maria.silva@exemplo.com",
   login: "maria.silva",
   senha: "senha123",
+}
+
+export function gerarLinkConfirmacao(token: string) {
+  return `/confirmar-email?token=${encodeURIComponent(token)}`
 }

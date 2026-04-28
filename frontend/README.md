@@ -21,6 +21,8 @@ npm run dev
 - mostra um formulario para cadastro da servidora
 - envia um `POST /api/carreira/resumo` para o backend
 - exibe o resumo funcional em cards
+- mostra o fluxo de cadastro de usuario integrado ao banco via API
+- confirma email por token usando o backend
 
 ## Estrutura
 
@@ -29,6 +31,9 @@ npm run dev
 - `frontend/features/carreira/model/`: dados, contrato e acesso HTTP
 - `frontend/features/carreira/view/`: composicao visual da feature
 - `frontend/features/carreira/view/sections/`: secoes da pagina principal
+- `frontend/features/usuario/controller/`: controller da pagina de usuario
+- `frontend/features/usuario/model/`: tipos e acesso HTTP do fluxo de usuario
+- `frontend/features/usuario/view/`: telas do fluxo de cadastro e confirmacao
 - `frontend/shared/config/`: configuracoes compartilhadas, como URL da API
 - `frontend/app/globals.css`: tema visual e responsividade
 
@@ -46,6 +51,13 @@ npm run dev
 4. O repository chama o backend Python.
 5. A view recebe os dados e monta a tela.
 
+No fluxo de usuario:
+
+1. `app/usuario/page.tsx` busca o cadastro mais recente no backend.
+2. `features/usuario/controller/usuario-page-controller.tsx` renderiza a pagina.
+3. O formulario em `use-usuario-controller.ts` envia o cadastro para `POST /api/usuarios`.
+4. A confirmacao de email usa `POST /api/usuarios/confirmar`.
+
 ## Variavel de ambiente
 
 - `NEXT_PUBLIC_API_URL`: URL da API Python, por exemplo `http://localhost:8000`
@@ -54,6 +66,11 @@ npm run dev
 
 - `POST /api/carreira/resumo`
 - `GET /api/health`
+- `POST /api/usuarios`
+- `GET /api/usuarios`
+- `GET /api/usuarios/ultimo`
+- `POST /api/usuarios/confirmar`
+- `DELETE /api/usuarios/ultimo`
 
 ## Observacao importante
 

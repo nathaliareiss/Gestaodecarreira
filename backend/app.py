@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.config import CORS_ORIGINS
+from backend.database.create_tables import sincronizar_usuario_table
 from backend.routes import router as api_router
 
 
@@ -22,6 +23,10 @@ def criar_app() -> FastAPI:
     )
 
     app.include_router(api_router)
+
+    @app.on_event("startup")
+    def _criar_tabelas() -> None:
+        sincronizar_usuario_table()
 
     return app
 
