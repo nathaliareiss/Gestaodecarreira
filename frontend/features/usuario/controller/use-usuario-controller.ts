@@ -41,10 +41,6 @@ export function useUsuarioController() {
       return "Preencha nome, email, login e senha."
     }
 
-    if (!email.includes("@")) {
-      return "Informe um email valido."
-    }
-
     if (senha.length < 6) {
       return "A senha precisa ter pelo menos 6 caracteres."
     }

@@ -18,6 +18,7 @@ from backend.repositories.usuario_repository import (
     remover_usuario,
 )
 from backend.schemas.usuario_schema import UsuarioConfirmarRequest, UsuarioCreateRequest
+from backend.services.email_service import enviar_email_confirmacao
 
 
 def cadastrar_usuario(db: Session, cadastro: UsuarioCreateRequest) -> Usuario:
@@ -46,7 +47,23 @@ def cadastrar_usuario(db: Session, cadastro: UsuarioCreateRequest) -> Usuario:
         criado_em=datetime.now(timezone.utc),
         confirmado_em=None,
     )
-    return criar_usuario(db, usuario)
+    usuario = criar_usuario(db, usuario)
+
+    try:
+        enviar_email_confirmacao(
+            destinatario=usuario.email,
+            nome=usuario.nome,
+            token=usuario.token_confirmacao_email,
+        )
+        db.commit()
+        db.refresh(usuario)
+    except Exception as exc:
+        db.rollback()
+        raise RuntimeError(
+            "Nao foi possivel enviar o email de confirmacao agora. Tente novamente."
+        ) from exc
+
+    return usuario
 
 
 def consultar_usuarios(db: Session) -> list[Usuario]:

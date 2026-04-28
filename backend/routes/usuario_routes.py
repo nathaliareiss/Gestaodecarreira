@@ -29,6 +29,8 @@ def criar_usuario(
         usuario = cadastrar_usuario(db, cadastro)
     except ValueError as erro:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(erro)) from erro
+    except RuntimeError as erro:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(erro)) from erro
 
     return UsuarioResponse.model_validate(usuario)
 

@@ -8,7 +8,7 @@ from pydantic import BaseModel, ConfigDict, Field
 class UsuarioCreateRequest(BaseModel):
     nome: str = Field(min_length=1)
     apelido: str = Field(default="", max_length=120)
-    email: str = Field(min_length=5, pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+    email: str = Field(min_length=1, max_length=254)
     login: str = Field(min_length=1, max_length=80)
     senha: str = Field(min_length=6, max_length=128)
 
@@ -26,7 +26,6 @@ class UsuarioResponse(BaseModel):
     email: str
     login: str
     senha_cadastrada: bool
-    token_confirmacao_email: str
     email_confirmado: bool
     criado_em: datetime
     confirmado_em: datetime | None

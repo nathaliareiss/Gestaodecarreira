@@ -1,15 +1,15 @@
 const destaques = [
   {
-    titulo: "Cadastro separado",
-    texto: "A home agora so cadastra. Os dados vao para a pagina do usuario depois do envio.",
+    titulo: "Cadastro simples",
+    texto: "Preencha os dados e conclua sem etapas desnecessarias.",
   },
   {
-    titulo: "Confirmacao por email",
-    texto: "O fluxo ja prepara um link de confirmacao para usar em uma API de envio de emails.",
+    titulo: "Email automático",
+    texto: "O sistema envia um email de confirmação para o endereço informado.",
   },
   {
-    titulo: "Perfil salvo",
-    texto: "Os dados ficam no banco e podem ser exibidos e confirmados na rota /usuario.",
+    titulo: "Perfil organizado",
+    texto: "Depois do envio, a pessoa vê o cadastro salvo e o status da conta.",
   },
 ]
 
@@ -18,10 +18,10 @@ export function UsuarioHeroSection() {
     <section className="hero">
       <div className="hero-copy">
         <p className="eyebrow">Cadastro de usuario</p>
-        <h1>Cadastre a pessoa e leve os dados direto para a pagina do usuario.</h1>
+        <h1>Cadastre a pessoa de forma simples e confirme por email.</h1>
         <p className="hero-text">
-          O fluxo ficou mais limpo: a home recebe o cadastro, a rota /usuario mostra os
-          dados salvos no banco e a confirmacao de email usa o token do backend.
+          O fluxo foi pensado para ser direto: preencha, envie e confirme pelo email
+          recebido.
         </p>
       </div>
 

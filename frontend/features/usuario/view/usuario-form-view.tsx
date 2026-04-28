@@ -59,9 +59,9 @@ export function UsuarioFormView({
       </label>
 
       <label className="field">
-        <span>Email</span>
+        <span>Email para confirmação</span>
         <input
-          type="email"
+          type="text"
           value={cadastro.email}
           onChange={(evento) => onEmailChange(evento.target.value)}
           placeholder="maria@exemplo.com"
@@ -98,8 +98,8 @@ export function UsuarioFormView({
           {carregando ? "Salvando..." : "Cadastrar e ir para o usuario"}
         </button>
         <p className="helper">
-          Depois do cadastro, a pessoa vai para <code>/usuario</code> e o email de
-          confirmacao aponta para <code>/confirmar-email?token=...</code>.
+          Depois do cadastro, o sistema envia um email de confirmação para o endereço
+          informado.
         </p>
       </div>
 

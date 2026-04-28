@@ -3,10 +3,7 @@
 import Link from "next/link"
 import { useState } from "react"
 
-import {
-  gerarLinkConfirmacao,
-  type UsuarioConta,
-} from "@/features/usuario/model/usuario.model"
+import { type UsuarioConta } from "@/features/usuario/model/usuario.model"
 import {
   buscarUsuarioMaisRecente,
   removerUsuarioMaisRecente,
@@ -41,8 +38,6 @@ export function UsuarioPageController({
   const [erro, setErro] = useState<string | null>(erroInicial)
   const [carregando, setCarregando] = useState(false)
   const [removendo, setRemovendo] = useState(false)
-
-  const linkConfirmacao = usuario ? gerarLinkConfirmacao(usuario.token_confirmacao_email) : ""
 
   async function recarregarUsuario() {
     setCarregando(true)
@@ -190,9 +185,8 @@ export function UsuarioPageController({
 
                   <div className="actions">
                     <p className="helper">
-                      Link de confirmacao para este cadastro:
-                      <br />
-                      <code>{linkConfirmacao}</code>
+                      O email de confirmação foi enviado para{" "}
+                      <strong>{usuario.email}</strong>.
                     </p>
                     <button
                       className="ghost-button"

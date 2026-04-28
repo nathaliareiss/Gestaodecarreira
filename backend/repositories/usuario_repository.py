@@ -30,7 +30,7 @@ def obter_ultimo_usuario(db: Session) -> Usuario | None:
 
 def criar_usuario(db: Session, usuario: Usuario) -> Usuario:
     db.add(usuario)
-    db.commit()
+    db.flush()
     db.refresh(usuario)
     return usuario
 

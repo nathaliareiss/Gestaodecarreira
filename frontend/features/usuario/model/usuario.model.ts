@@ -13,7 +13,6 @@ export type UsuarioConta = {
   email: string
   login: string
   senha_cadastrada: boolean
-  token_confirmacao_email: string
   email_confirmado: boolean
   criado_em: string
   confirmado_em: string | null
@@ -33,8 +32,4 @@ export const USUARIO_CADASTRO_EXEMPLO: UsuarioCadastro = {
   email: "maria.silva@exemplo.com",
   login: "maria.silva",
   senha: "senha123",
-}
-
-export function gerarLinkConfirmacao(token: string) {
-  return `/confirmar-email?token=${encodeURIComponent(token)}`
 }
