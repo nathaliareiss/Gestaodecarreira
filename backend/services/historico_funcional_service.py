@@ -341,8 +341,11 @@ def analisar_historico_funcional(
     eventos = _gerar_eventos(blocos)
     ultimo_evento = eventos[-1]
     nomeacao = next((evento for evento in eventos if evento.tipo == "nomeacao"), None)
+    nomeacao_bloco = next((bloco for bloco in blocos if bloco.tipo == "nomeacao"), None)
     if nomeacao is None:
         raise ValueError("Nao foi possivel identificar a admissao inicial.")
+    if nomeacao_bloco is None:
+        raise ValueError("Nao foi possivel localizar os dados da admissao inicial.")
 
     (
         data_aposentadoria_por_carreira,
@@ -370,8 +373,8 @@ def analisar_historico_funcional(
         cpf=cpf,
         data_emissao=data_emissao,
         data_nascimento=data_nascimento,
-        data_posse=nomeacao.data_posse,
-        data_exercicio=nomeacao.data_exercicio,
+        data_posse=nomeacao_bloco.data_posse,
+        data_exercicio=nomeacao_bloco.data_exercicio,
         cargo_atual=ultimo_evento.cargo,
         simbolo_atual=ultimo_evento.simbolo,
         nivel_atual=ultimo_evento.nivel,

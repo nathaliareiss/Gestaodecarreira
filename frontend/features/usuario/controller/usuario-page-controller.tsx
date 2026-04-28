@@ -11,6 +11,8 @@ import {
   buscarUsuarioMaisRecente,
   removerUsuarioMaisRecente,
 } from "@/features/usuario/model/usuario.repository"
+import type { HistoricoFuncionalAnalise } from "@/features/historico-funcional/model/historico-funcional.model"
+import { HistoricoFuncionalView } from "@/features/historico-funcional/view/historico-funcional-view"
 
 function formatarData(valor: string | null) {
   if (!valor) {
@@ -25,14 +27,17 @@ function formatarData(valor: string | null) {
 
 type UsuarioPageControllerProps = {
   usuarioInicial: UsuarioConta | null
+  historicoInicial: HistoricoFuncionalAnalise | null
   erroInicial: string | null
 }
 
 export function UsuarioPageController({
   usuarioInicial,
+  historicoInicial,
   erroInicial,
 }: UsuarioPageControllerProps) {
   const [usuario, setUsuario] = useState<UsuarioConta | null>(usuarioInicial)
+  const [abaAtiva, setAbaAtiva] = useState<"perfil" | "historico">("perfil")
   const [erro, setErro] = useState<string | null>(erroInicial)
   const [carregando, setCarregando] = useState(false)
   const [removendo, setRemovendo] = useState(false)
@@ -100,106 +105,151 @@ export function UsuarioPageController({
 
       <section className="workbench">
         <section className="card results-card">
-          <div className="card-header">
-            <div>
-              <p className="eyebrow">Dados salvos</p>
-              <h2>Perfil do usuario</h2>
-            </div>
-            <span className="status-pill">
-              {usuario?.email_confirmado ? "confirmado" : "pendente"}
-            </span>
+          <div className="tab-bar">
+            <button
+              className={abaAtiva === "perfil" ? "tab-button tab-button--active" : "tab-button"}
+              type="button"
+              onClick={() => setAbaAtiva("perfil")}
+            >
+              Perfil
+            </button>
+            <button
+              className={
+                abaAtiva === "historico" ? "tab-button tab-button--active" : "tab-button"
+              }
+              type="button"
+              onClick={() => setAbaAtiva("historico")}
+            >
+              Historico funcional
+            </button>
           </div>
 
-          {carregando ? (
-            <div className="empty-state">
-              <p>Carregando dados do usuario...</p>
-            </div>
-          ) : erro ? (
-            <div className="empty-state">
-              <p>{erro}</p>
-              <button
-                className="primary-button"
-                type="button"
-                onClick={() => void recarregarUsuario()}
-              >
-                Tentar novamente
-              </button>
-            </div>
-          ) : usuario ? (
+          {abaAtiva === "perfil" ? (
             <>
-              <div className="results-grid">
-                <div className="result-block">
-                  <span className="label">Nome exibido</span>
-                  <strong>{usuario.apelido || usuario.nome}</strong>
+              <div className="card-header">
+                <div>
+                  <p className="eyebrow">Dados salvos</p>
+                  <h2>Perfil do usuario</h2>
                 </div>
-                <div className="result-block">
-                  <span className="label">Nome completo</span>
-                  <strong>{usuario.nome}</strong>
-                </div>
-                <div className="result-block">
-                  <span className="label">Apelido</span>
-                  <strong>{usuario.apelido || "Nao informado"}</strong>
-                </div>
-                <div className="result-block">
-                  <span className="label">Email</span>
-                  <strong>{usuario.email}</strong>
-                </div>
-                <div className="result-block">
-                  <span className="label">Login</span>
-                  <strong>{usuario.login}</strong>
-                </div>
-                <div className="result-block">
-                  <span className="label">Senha</span>
-                  <strong>{usuario.senha_cadastrada ? "Cadastrada" : "-"}</strong>
-                </div>
-                <div className="result-block">
-                  <span className="label">Criado em</span>
-                  <strong>{formatarData(usuario.criado_em)}</strong>
-                </div>
-                <div className="result-block">
-                  <span className="label">Confirmado em</span>
-                  <strong>{formatarData(usuario.confirmado_em)}</strong>
-                </div>
+                <span className="status-pill">
+                  {usuario?.email_confirmado ? "confirmado" : "pendente"}
+                </span>
               </div>
 
-              <div className="actions">
-                <p className="helper">
-                  Link de confirmacao para este cadastro:
-                  <br />
-                  <code>{linkConfirmacao}</code>
-                </p>
-                <button
-                  className="ghost-button"
-                  type="button"
-                  onClick={() => void excluirCadastro()}
-                  disabled={removendo}
-                >
-                  {removendo ? "Removendo..." : "Limpar cadastro salvo"}
-                </button>
-              </div>
+              {carregando ? (
+                <div className="empty-state">
+                  <p>Carregando dados do usuario...</p>
+                </div>
+              ) : erro ? (
+                <div className="empty-state">
+                  <p>{erro}</p>
+                  <button
+                    className="primary-button"
+                    type="button"
+                    onClick={() => void recarregarUsuario()}
+                  >
+                    Tentar novamente
+                  </button>
+                </div>
+              ) : usuario ? (
+                <>
+                  <div className="results-grid">
+                    <div className="result-block">
+                      <span className="label">Nome exibido</span>
+                      <strong>{usuario.apelido || usuario.nome}</strong>
+                    </div>
+                    <div className="result-block">
+                      <span className="label">Nome completo</span>
+                      <strong>{usuario.nome}</strong>
+                    </div>
+                    <div className="result-block">
+                      <span className="label">Apelido</span>
+                      <strong>{usuario.apelido || "Nao informado"}</strong>
+                    </div>
+                    <div className="result-block">
+                      <span className="label">Email</span>
+                      <strong>{usuario.email}</strong>
+                    </div>
+                    <div className="result-block">
+                      <span className="label">Login</span>
+                      <strong>{usuario.login}</strong>
+                    </div>
+                    <div className="result-block">
+                      <span className="label">Senha</span>
+                      <strong>{usuario.senha_cadastrada ? "Cadastrada" : "-"}</strong>
+                    </div>
+                    <div className="result-block">
+                      <span className="label">Criado em</span>
+                      <strong>{formatarData(usuario.criado_em)}</strong>
+                    </div>
+                    <div className="result-block">
+                      <span className="label">Confirmado em</span>
+                      <strong>{formatarData(usuario.confirmado_em)}</strong>
+                    </div>
+                  </div>
+
+                  <div className="actions">
+                    <p className="helper">
+                      Link de confirmacao para este cadastro:
+                      <br />
+                      <code>{linkConfirmacao}</code>
+                    </p>
+                    <button
+                      className="ghost-button"
+                      type="button"
+                      onClick={() => void excluirCadastro()}
+                      disabled={removendo}
+                    >
+                      {removendo ? "Removendo..." : "Limpar cadastro salvo"}
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div className="empty-state">
+                  <p>
+                    Ainda nao existe nenhum usuario salvo. Volte para o cadastro e crie uma
+                    conta para ver os dados aqui.
+                  </p>
+                  <Link className="primary-button" href="/">
+                    Ir para o cadastro
+                  </Link>
+                </div>
+              )}
             </>
           ) : (
-            <div className="empty-state">
-              <p>
-                Ainda nao existe nenhum usuario salvo. Volte para o cadastro e crie uma
-                conta para ver os dados aqui.
-              </p>
-              <Link className="primary-button" href="/">
-                Ir para o cadastro
-              </Link>
-            </div>
+            <HistoricoFuncionalView
+              usuarioId={usuario?.id ?? null}
+              historicoInicial={historicoInicial}
+            />
           )}
         </section>
 
         <aside className="note-card">
-          <p className="eyebrow">Sobre o email</p>
-          <h2>API para confirmacao</h2>
-          <p>O fluxo agora usa o backend para salvar e confirmar o usuario.</p>
-          <ul>
-            <li>O formulario envia os dados para `POST /api/usuarios`.</li>
-            <li>A pagina `/usuario` busca o cadastro mais recente em `GET /api/usuarios/ultimo`.</li>
-            <li>A confirmacao usa `POST /api/usuarios/confirmar` com o token do link.</li>
-          </ul>
+          <p className="eyebrow">Sobre o fluxo</p>
+          {abaAtiva === "perfil" ? (
+            <>
+              <h2>API para confirmacao</h2>
+              <p>O fluxo agora usa o backend para salvar e confirmar o usuario.</p>
+              <ul>
+                <li>O formulario envia os dados para `POST /api/usuarios`.</li>
+                <li>A pagina `/usuario` busca o cadastro mais recente em `GET /api/usuarios/ultimo`.</li>
+                <li>A confirmacao usa `POST /api/usuarios/confirmar` com o token do link.</li>
+              </ul>
+            </>
+          ) : (
+            <>
+              <h2>Leitura do PDF</h2>
+              <p>
+                O PDF do historico funcional vira registro no banco, e a tabela mostra
+                quando o estado deveria ter promovido ou progressado.
+              </p>
+              <ul>
+                <li>O upload aceita um PDF do historico funcional.</li>
+                <li>O backend extrai nome, MASP, datas e eventos da carreira.</li>
+                <li>Os graficos mostram tempo trabalhado, tempo restante e CLT usada.</li>
+              </ul>
+            </>
+          )}
         </aside>
       </section>
     </main>
