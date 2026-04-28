@@ -44,6 +44,9 @@ manualmente toda vez.
 ## Endpoints
 
 - `GET /api/health`
+- `POST /api/auth/login`
+- `GET /api/auth/me`
+- `POST /api/auth/logout`
 - `POST /api/carreira/resumo`
 - `POST /api/usuarios`
 - `GET /api/usuarios`
@@ -107,10 +110,12 @@ que as tabelas e colunas do usuario existam no banco.
 1. O formulario do front chama `POST /api/usuarios`.
 2. O backend salva nome, apelido, email, login, senha hash e token de confirmacao.
 3. Em seguida ele envia um email com o link de confirmacao pelo Gmail API.
-4. A pagina `/usuario` busca o cadastro mais recente em `GET /api/usuarios/ultimo`.
-5. O link de email usa `/confirmar-email?token=...`.
-6. A confirmacao chama `POST /api/usuarios/confirmar`.
-7. O botao de limpeza remove o cadastro mais recente com `DELETE /api/usuarios/ultimo`.
+4. O usuario entra na tela `/login` e o front chama `POST /api/auth/login`.
+5. O backend valida a senha, cria uma sessao e devolve um token.
+6. A pagina `/usuario` usa `GET /api/auth/me` para carregar a sessao logada.
+7. O link de email usa `/confirmar-email?token=...`.
+8. A confirmacao chama `POST /api/usuarios/confirmar`.
+9. O botao de limpeza remove o cadastro mais recente com `DELETE /api/usuarios/ultimo`.
 
 ## Regra de integracao
 

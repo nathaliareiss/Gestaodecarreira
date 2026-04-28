@@ -22,6 +22,7 @@ npm run dev
 - envia um `POST /api/carreira/resumo` para o backend
 - exibe o resumo funcional em cards
 - mostra o fluxo de cadastro de usuario integrado ao banco via API
+- mostra a tela de login com sessao protegida
 - envia email de confirmacao no cadastro e confirma a conta pelo backend
 
 ## Estrutura
@@ -53,11 +54,13 @@ npm run dev
 
 No fluxo de usuario:
 
-1. `app/usuario/page.tsx` busca o cadastro mais recente no backend.
-2. `features/usuario/controller/usuario-page-controller.tsx` renderiza a pagina.
-3. O formulario em `use-usuario-controller.ts` envia o cadastro para `POST /api/usuarios`.
-4. O backend envia o email de confirmacao com o link para `confirmar-email`.
-5. A confirmacao de email usa `POST /api/usuarios/confirmar`.
+1. `app/page.tsx` mostra o cadastro.
+2. `app/login/page.tsx` abre a tela de login.
+3. `app/usuario/page.tsx` exige sessao e carrega o usuario autenticado.
+4. `features/usuario/controller/usuario-page-controller.tsx` renderiza a pagina.
+5. O formulario em `use-usuario-controller.ts` envia o cadastro para `POST /api/usuarios`.
+6. O backend envia o email de confirmacao com o link para `confirmar-email`.
+7. A confirmacao de email usa `POST /api/usuarios/confirmar`.
 
 ## Variavel de ambiente
 
@@ -67,6 +70,9 @@ No fluxo de usuario:
 
 - `POST /api/carreira/resumo`
 - `GET /api/health`
+- `POST /api/auth/login`
+- `GET /api/auth/me`
+- `POST /api/auth/logout`
 - `POST /api/usuarios`
 - `GET /api/usuarios`
 - `GET /api/usuarios/ultimo`

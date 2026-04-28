@@ -1,15 +1,21 @@
 "use client"
 
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useState } from "react"
 
-import { type UsuarioConta } from "@/features/usuario/model/usuario.model"
-import {
-  buscarUsuarioMaisRecente,
-  removerUsuarioMaisRecente,
-} from "@/features/usuario/model/usuario.repository"
 import type { HistoricoFuncionalAnalise } from "@/features/historico-funcional/model/historico-funcional.model"
 import { HistoricoFuncionalView } from "@/features/historico-funcional/view/historico-funcional-view"
+import {
+  carregarUsuarioAutenticado,
+  encerrarSessao,
+} from "@/features/auth/model/auth.repository"
+import { type UsuarioConta } from "@/features/usuario/model/usuario.model"
+import { removerUsuarioMaisRecente } from "@/features/usuario/model/usuario.repository"
+import {
+  obterTokenAutenticacao,
+  removerTokenAutenticacao,
+} from "@/shared/auth/session"
 
 function formatarData(valor: string | null) {
   if (!valor) {
@@ -33,18 +39,26 @@ export function UsuarioPageController({
   historicoInicial,
   erroInicial,
 }: UsuarioPageControllerProps) {
+  const router = useRouter()
   const [usuario, setUsuario] = useState<UsuarioConta | null>(usuarioInicial)
   const [abaAtiva, setAbaAtiva] = useState<"perfil" | "historico">("perfil")
   const [erro, setErro] = useState<string | null>(erroInicial)
   const [carregando, setCarregando] = useState(false)
   const [removendo, setRemovendo] = useState(false)
+  const [saindo, setSaindo] = useState(false)
 
   async function recarregarUsuario() {
+    const token = obterTokenAutenticacao()
+    if (!token) {
+      router.push("/login")
+      return
+    }
+
     setCarregando(true)
     setErro(null)
 
     try {
-      const dados = await buscarUsuarioMaisRecente()
+      const dados = await carregarUsuarioAutenticado(token)
       setUsuario(dados)
     } catch (error) {
       setErro(error instanceof Error ? error.message : "Falha inesperada ao carregar")
@@ -67,6 +81,25 @@ export function UsuarioPageController({
     }
   }
 
+  async function sair() {
+    const token = obterTokenAutenticacao()
+
+    setSaindo(true)
+    setErro(null)
+
+    try {
+      if (token) {
+        await encerrarSessao(token)
+      }
+    } catch {
+      // Se a chamada remota falhar, a sessao local ainda pode ser encerrada.
+    } finally {
+      removerTokenAutenticacao()
+      setSaindo(false)
+      router.push("/login")
+    }
+  }
+
   return (
     <main className="page-shell">
       <div className="bg-orb bg-orb-a" />
@@ -75,21 +108,21 @@ export function UsuarioPageController({
       <section className="hero">
         <div className="hero-copy">
           <p className="eyebrow">Pagina do usuario</p>
-          <h1>Os dados agora vem da API, nao do navegador.</h1>
+          <h1>Os dados agora vem da sua sessao, nao do navegador.</h1>
           <p className="hero-text">
-            Esta pagina carrega o cadastro mais recente salvo no banco e acompanha o
-            estado de confirmacao do email.
+            Esta pagina abre apenas depois do login e acompanha o estado de confirmacao
+            do email e o historico funcional.
           </p>
         </div>
 
         <div className="hero-grid">
           <article className="mini-card">
             <h2>Status</h2>
-            <p>{usuario ? "Cadastro encontrado" : "Nenhum cadastro salvo"}</p>
+            <p>{usuario ? "Sessao ativa" : "Nenhum usuario autenticado"}</p>
           </article>
           <article className="mini-card">
             <h2>Email</h2>
-            <p>{usuario ? usuario.email : "Aguardando novo cadastro"}</p>
+            <p>{usuario ? usuario.email : "Aguardando login"}</p>
           </article>
           <article className="mini-card">
             <h2>Confirmacao</h2>
@@ -133,7 +166,7 @@ export function UsuarioPageController({
 
               {carregando ? (
                 <div className="empty-state">
-                  <p>Carregando dados do usuario...</p>
+                  <p>Carregando dados da sessao...</p>
                 </div>
               ) : erro ? (
                 <div className="empty-state">
@@ -185,27 +218,37 @@ export function UsuarioPageController({
 
                   <div className="actions">
                     <p className="helper">
-                      O email de confirmação foi enviado para{" "}
+                      O email de confirmacao foi enviado para{" "}
                       <strong>{usuario.email}</strong>.
                     </p>
-                    <button
-                      className="ghost-button"
-                      type="button"
-                      onClick={() => void excluirCadastro()}
-                      disabled={removendo}
-                    >
-                      {removendo ? "Removendo..." : "Limpar cadastro salvo"}
-                    </button>
+                    <div className="actions-row">
+                      <button
+                        className="ghost-button"
+                        type="button"
+                        onClick={() => void excluirCadastro()}
+                        disabled={removendo}
+                      >
+                        {removendo ? "Removendo..." : "Limpar ultimo cadastro"}
+                      </button>
+                      <button
+                        className="ghost-button"
+                        type="button"
+                        onClick={() => void sair()}
+                        disabled={saindo}
+                      >
+                        {saindo ? "Saindo..." : "Sair"}
+                      </button>
+                    </div>
                   </div>
                 </>
               ) : (
                 <div className="empty-state">
                   <p>
-                    Ainda nao existe nenhum usuario salvo. Volte para o cadastro e crie uma
-                    conta para ver os dados aqui.
+                    Nenhuma sessao ativa foi encontrada. Entre novamente para ver seus
+                    dados.
                   </p>
-                  <Link className="primary-button" href="/">
-                    Ir para o cadastro
+                  <Link className="primary-button" href="/login">
+                    Ir para o login
                   </Link>
                 </div>
               )}

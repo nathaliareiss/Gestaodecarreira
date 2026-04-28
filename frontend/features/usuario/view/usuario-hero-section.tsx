@@ -1,3 +1,5 @@
+import Link from "next/link"
+
 const destaques = [
   {
     titulo: "Cadastro simples",
@@ -23,6 +25,14 @@ export function UsuarioHeroSection() {
           O fluxo foi pensado para ser direto: preencha, envie e confirme pelo email
           recebido.
         </p>
+        <div className="hero-links">
+          <Link className="ghost-button" href="/login">
+            Ja tenho conta
+          </Link>
+          <Link className="ghost-button" href="/usuario">
+            Abrir perfil
+          </Link>
+        </div>
       </div>
 
       <div className="hero-grid">
