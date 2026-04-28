@@ -74,7 +74,7 @@ O envio usa a Gmail API com OAuth 2.0.
 2. Ative a Gmail API.
 3. Configure a tela de consentimento OAuth.
 4. Crie uma credencial OAuth Client ID.
-5. Baixe o JSON da credencial e deixe em `backend/`.
+5. Baixe o JSON da credencial e deixe em `backend/google_client_secret.json` ou em outro caminho ignorado pelo git.
 6. Rode uma vez:
 
 ```powershell
@@ -86,6 +86,9 @@ arquivo `backend/google_token.json` e gerado automaticamente.
 
 Se o Google reclamar do redirect, recrie a credencial como `Desktop app` ou adicione
 um redirect localhost valido no OAuth client.
+
+O arquivo `.env` fica fora do git, entao voce pode colocar ali o caminho local
+do JSON sem vazar a credencial no commit.
 
 ## Banco de dados e MVC
 
