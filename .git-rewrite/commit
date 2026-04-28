@@ -1,6 +1,8 @@
-tree a4ce1815382d1ffb95fcc30194864588aea712c9
-parent 4c2eb020dde90ef97759ac76ce9c9c0584be2efc
-author Nathalia <alencarnrr@gmail.com> 1777400528 -0300
-committer Nathalia <alencarnrr@gmail.com> 1777400528 -0300
+tree d7b0afc03c6f26aa366895c81125a75ccb031b91
+parent 7ebffa9e1760cbd7c101d4cdb9d543a2ffbcc662
+parent 94d59f6be5078d2bda39aca647912df6f66158a8
+parent 5c8cf36db51106af94f31aec670b3b7b67c2bcd0
+author Nathalia <alencarnrr@gmail.com> 1777405354 -0300
+committer Nathalia <alencarnrr@gmail.com> 1777405354 -0300
 
-feat: atualiza instruções para download do JSON de credenciais e sugere uso de caminho ignorado pelo git
+On main: wip-before-secret-history-rewrite
