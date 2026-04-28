@@ -1,72 +1,77 @@
 # Gestao de Carreira
 
-Projeto com dois blocos separados:
+Aplicacao completa para cadastro de usuarias, confirmacao por email, login com sessao
+e leitura de historico funcional para acompanhar carreira no servico publico.
 
-- backend em Python
-- frontend em Next.js + React
+## Visao Geral
 
-## Como rodar
+- `backend/`: API FastAPI em Python
+- `frontend/`: app Next.js para cadastro, login e visualizacao
+- `backend/database/`: models e configuracao do PostgreSQL
+- `backend/routes/`: controller HTTP da API
+- `backend/services/`: regras de negocio
+- `backend/repositories/`: acesso ao banco
 
-Backend servidor:
+## Principais Funcionalidades
+
+- cadastro de usuario com confirmacao por email
+- login com sessao autenticada
+- pagina protegida de usuario
+- upload e leitura de historico funcional em PDF
+- calculos de carreira com resumo visual no front
+
+## Stack
+
+- Python 3.11+
+- FastAPI
+- SQLAlchemy
+- PostgreSQL
+- Next.js
+- React
+- TypeScript
+
+## Como Rodar
+
+### Backend
 
 ```powershell
 .\run-backend.cmd
 ```
 
-Se voce estiver dentro de `backend/`, o equivalente direto em Python e:
-
-```powershell
-..\venv\Scripts\python.exe main.py
-```
-
-Backend terminal:
-
-```powershell
-.\run-backend-cli.cmd
-```
-
-Se voce estiver dentro de `backend/`, o equivalente direto em Python e:
-
-```powershell
-..\venv\Scripts\python.exe controllers\carreira_controller.py
-```
-
-Frontend:
+### Frontend
 
 ```powershell
 .\run-frontend.cmd
 ```
 
-Ou, dentro de `frontend/`:
+## Configuracao
 
-```powershell
-npm run dev
+- `backend/.env`: configuracao do backend
+- `frontend/.env.local`: URL da API do frontend
+- `backend/google_client_secret.json`: credencial OAuth do Gmail
+- `backend/google_token.json`: token gerado na primeira autorizacao
+
+## Fluxo da Aplicacao
+
+1. A pessoa cria a conta.
+2. O backend salva no banco e envia email de confirmacao.
+3. A pessoa confirma o email.
+4. A pessoa faz login.
+5. O front abre a pagina protegida de usuario.
+6. O historico funcional em PDF pode ser enviado e analisado.
+
+## Estrutura de Pastas
+
+```text
+backend/
+frontend/
+run-backend.cmd
+run-backend-cli.cmd
+run-frontend.cmd
 ```
-
-## Estrutura
-
-- `backend/`: codigo Python, API FastAPI, CLI e testes
-- `frontend/`: aplicacao Next.js separada para deploy isolado
-- `backend/routes/`: rotas HTTP da API
-- `backend/.env`: configuracao real do backend
-- `frontend/.env.local`: configuracao real do frontend
-- `run-backend.cmd`: atalho para subir a API
-- `run-backend-cli.cmd`: atalho para o terminal interativo
-- `run-frontend.cmd`: atalho para subir o Next
-
-## Como o front e o back se ligam
-
-1. O usuario preenche o formulario no Next.
-2. O front envia um `POST /api/carreira/resumo` em JSON.
-3. A API Python transforma a entrada em `Servidora`.
-4. O service calcula o resumo funcional.
-5. A API devolve o resultado em JSON.
-6. O front monta os cards para leitura visual.
 
 ## Observacao
 
-Os comandos novos usam o Python do `venv` direto, entao voce nao precisa ativar
-o ambiente manualmente toda vez.
+O projeto foi organizado para facilitar evolucao futura, com separacao entre
+rotas, servicos, repositorios e telas do front.
 
-As variaveis do backend ficam em `backend/.env` e sao lidas por
-`backend/config.py`. `main.py` e `app.py` so consomem essa configuracao.

@@ -5,8 +5,8 @@ import type { UsuarioConta } from "@/features/usuario/model/usuario.model"
 import { UsuarioPageController } from "@/features/usuario/controller/usuario-page-controller"
 import type { HistoricoFuncionalAnalise } from "@/features/historico-funcional/model/historico-funcional.model"
 import { AUTH_COOKIE_NAME } from "@/shared/auth/session"
+import { apiFetch, parseApiResponse } from "@/shared/api/client"
 import { carregarUsuarioAutenticado } from "@/features/auth/model/auth.repository"
-import { obterApiBaseUrl } from "@/shared/config/api"
 
 export const dynamic = "force-dynamic"
 
@@ -14,8 +14,8 @@ async function carregarHistoricoInicial(
   usuarioId: number,
 ): Promise<HistoricoFuncionalAnalise | null> {
   try {
-    const response = await fetch(
-      `${obterApiBaseUrl()}/api/historicos-funcionais/usuario/${usuarioId}/ultimo`,
+    const response = await apiFetch(
+      `/api/historicos-funcionais/usuario/${usuarioId}/ultimo`,
       {
         cache: "no-store",
       },
@@ -25,13 +25,10 @@ async function carregarHistoricoInicial(
       return null
     }
 
-    const dados = (await response.json()) as HistoricoFuncionalAnalise | { detail?: string }
-
-    if (!response.ok) {
-      return null
-    }
-
-    return dados as HistoricoFuncionalAnalise
+    return parseApiResponse<HistoricoFuncionalAnalise>(
+      response,
+      "Erro ao carregar o historico funcional",
+    )
   } catch {
     return null
   }

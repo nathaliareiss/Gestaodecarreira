@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from backend.database.database import get_db
 from backend.schemas.auth_schema import UsuarioAuthResponse, UsuarioLoginRequest
 from backend.schemas.usuario_schema import UsuarioResponse
-from backend.services.usuario_service import (
+from backend.services.auth_service import (
     autenticar_usuario,
     encerrar_sessao_usuario,
     obter_usuario_autenticado_por_token,

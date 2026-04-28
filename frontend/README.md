@@ -1,6 +1,14 @@
 # Frontend
 
-Aplicacao Next.js + React para visualizar e testar o backend Python de carreira.
+Aplicacao Next.js responsavel pela experiencia visual do sistema.
+
+## O que o frontend faz
+
+- mostra a tela de cadastro
+- mostra a tela de login
+- protege a pagina do usuario
+- envia historico funcional em PDF
+- exibe os calculos e os resumos vindos da API
 
 ## Como rodar
 
@@ -8,78 +16,31 @@ Aplicacao Next.js + React para visualizar e testar o backend Python de carreira.
 ..\run-frontend.cmd
 ```
 
-Se a URL da API precisar mudar, ajuste `frontend/.env.local`.
-
-Se você ja estiver dentro de `frontend/`, o comando direto e:
+Ou, dentro da pasta `frontend/`:
 
 ```powershell
 npm run dev
 ```
 
-## O que ela faz
+## Dependencias de ambiente
 
-- mostra um formulario para cadastro da servidora
-- envia um `POST /api/carreira/resumo` para o backend
-- exibe o resumo funcional em cards
-- mostra o fluxo de cadastro de usuario integrado ao banco via API
-- mostra a tela de login com sessao protegida
-- envia email de confirmacao no cadastro e confirma a conta pelo backend
+- `NEXT_PUBLIC_API_URL`: URL do backend, por exemplo `http://localhost:8000`
 
-## Estrutura
+## Estrutura Principal
 
-- `frontend/app/`: rota e layout globais do Next
-- `frontend/features/carreira/controller/`: estado, acoes e coordenacao da feature
-- `frontend/features/carreira/model/`: dados, contrato e acesso HTTP
-- `frontend/features/carreira/view/`: composicao visual da feature
-- `frontend/features/carreira/view/sections/`: secoes da pagina principal
-- `frontend/features/usuario/controller/`: controller da pagina de usuario
-- `frontend/features/usuario/model/`: tipos e acesso HTTP do fluxo de usuario
-- `frontend/features/usuario/view/`: telas do fluxo de cadastro e confirmacao
-- `frontend/shared/config/`: configuracoes compartilhadas, como URL da API
-- `frontend/app/globals.css`: tema visual e responsividade
+- `frontend/app/`: rotas do App Router
+- `frontend/features/`: features por dominio
+- `frontend/shared/`: utilitarios compartilhados
 
-## MVC no front
+## Fluxo
 
-- Model guarda os dados e conversa com a API
-- Controller controla o estado do formulario e do resultado
-- View renderiza a interface sem conhecer a regra de negocio
+1. `app/page.tsx` abre o cadastro.
+2. `app/login/page.tsx` abre o login.
+3. `app/usuario/page.tsx` carrega a sessao autenticada.
+4. O front conversa com a API por meio dos repositories.
 
-## Fluxo interno
+## Observacao
 
-1. `app/page.tsx` chama o controller da feature.
-2. O controller usa o hook `use-carreira-controller`.
-3. O hook conversa com o repository.
-4. O repository chama o backend Python.
-5. A view recebe os dados e monta a tela.
+O layout foi pensado para ser limpo e direto, sem excesso de blocos
+explicativos para o usuario final.
 
-No fluxo de usuario:
-
-1. `app/page.tsx` mostra o cadastro.
-2. `app/login/page.tsx` abre a tela de login.
-3. `app/usuario/page.tsx` exige sessao e carrega o usuario autenticado.
-4. `features/usuario/controller/usuario-page-controller.tsx` renderiza a pagina.
-5. O formulario em `use-usuario-controller.ts` envia o cadastro para `POST /api/usuarios`.
-6. O backend envia o email de confirmacao com o link para `confirmar-email`.
-7. A confirmacao de email usa `POST /api/usuarios/confirmar`.
-
-## Variavel de ambiente
-
-- `NEXT_PUBLIC_API_URL`: URL da API Python, por exemplo `http://localhost:8000`
-
-## O que o front usa do backend
-
-- `POST /api/carreira/resumo`
-- `GET /api/health`
-- `POST /api/auth/login`
-- `GET /api/auth/me`
-- `POST /api/auth/logout`
-- `POST /api/usuarios`
-- `GET /api/usuarios`
-- `GET /api/usuarios/ultimo`
-- `POST /api/usuarios/confirmar`
-- `DELETE /api/usuarios/ultimo`
-
-## Observacao importante
-
-O campo `tem_tempo_clt_averbado` ja vai no payload e na resposta, mas ainda nao
-altera as regras de calculo. Ele fica pronto para evoluirmos depois.

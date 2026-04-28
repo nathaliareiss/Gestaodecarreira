@@ -1,19 +1,14 @@
 # Backend Python
 
-Backend em Python com FastAPI, services e CLI.
+API FastAPI responsavel por cadastro, login, confirmacao de email e analise do
+historico funcional.
 
-## Como rodar
+## Como Rodar
 
 Servidor HTTP:
 
 ```powershell
 ..\run-backend.cmd
-```
-
-Se você ja estiver dentro da pasta `backend/`, pode usar:
-
-```powershell
-..\venv\Scripts\python.exe main.py
 ```
 
 Terminal interativo:
@@ -22,102 +17,56 @@ Terminal interativo:
 ..\run-backend-cli.cmd
 ```
 
-Se você ja estiver dentro da pasta `backend/`, pode usar:
+## Stack
 
-```powershell
-..\venv\Scripts\python.exe controllers\carreira_controller.py
-```
-
-Esses comandos usam o Python do `venv`. Voce nao precisa ativar o ambiente
-manualmente toda vez.
+- FastAPI
+- SQLAlchemy
+- PostgreSQL
+- Python 3.11+
 
 ## Estrutura
 
-- `backend/models/` para entidades
-- `backend/services/` para regras e calculos
-- `backend/schemas/` para entrada e saida
-- `backend/routes/` para rotas HTTP da API
-- `backend/controllers/` para o fluxo de terminal
-- `backend/app.py` para a aplicacao FastAPI
-- `backend/main.py` para iniciar o servidor
+- `backend/routes/`: controllers HTTP
+- `backend/services/`: regras de negocio
+- `backend/repositories/`: acesso ao banco
+- `backend/schemas/`: contratos de entrada e saida
+- `backend/database/`: models e conexao com o banco
 
-## Endpoints
+## Endpoints Principais
 
 - `GET /api/health`
 - `POST /api/auth/login`
 - `GET /api/auth/me`
 - `POST /api/auth/logout`
-- `POST /api/carreira/resumo`
 - `POST /api/usuarios`
-- `GET /api/usuarios`
-- `GET /api/usuarios/ultimo`
 - `POST /api/usuarios/confirmar`
+- `GET /api/usuarios/ultimo`
 - `DELETE /api/usuarios/ultimo`
+- `POST /api/carreira/resumo`
 
-## Variaveis de ambiente
+## Variaveis de Ambiente
 
-- As variaveis ficam em `backend/.env`
-- `HOST`: host do servidor
-- `PORT`: porta do servidor
-- `CORS_ORIGINS`: origens liberadas para o front
-- `DATABASE_URL`: string de conexao do banco PostgreSQL
-- `FRONTEND_BASE_URL`: URL do frontend para montar o link de confirmacao
-- `GOOGLE_GMAIL_CLIENT_FILE`: caminho do JSON OAuth do Google Cloud
-- `GOOGLE_GMAIL_TOKEN_FILE`: arquivo gerado na primeira autorizacao do Gmail API
-- `GOOGLE_GMAIL_REDIRECT_HOST`: host usado no login local do Google
-- `GOOGLE_GMAIL_REDIRECT_PORT`: porta usada no login local do Google
-- `EMAIL_CONFIRMATION_SUBJECT`: assunto do email de confirmacao
+- `HOST`
+- `PORT`
+- `CORS_ORIGINS`
+- `DATABASE_URL`
+- `FRONTEND_BASE_URL`
+- `GOOGLE_GMAIL_CLIENT_FILE`
+- `GOOGLE_GMAIL_TOKEN_FILE`
+- `GOOGLE_GMAIL_REDIRECT_HOST`
+- `GOOGLE_GMAIL_REDIRECT_PORT`
+- `EMAIL_CONFIRMATION_SUBJECT`
 
-O codigo nao repete esses valores em `main.py` nem em `app.py`. Ele le tudo do
-arquivo `.env` centralizado em `backend/config.py`.
+## Email de Confirmacao
 
-## Email de confirmacao
+O sistema usa Gmail API com OAuth 2.0. O arquivo OAuth fica localmente em
+`backend/google_client_secret.json` e o token e gerado na primeira autorizacao.
 
-O envio usa a Gmail API com OAuth 2.0.
+## Fluxo
 
-1. Crie ou escolha um projeto no Google Cloud Console.
-2. Ative a Gmail API.
-3. Configure a tela de consentimento OAuth.
-4. Crie uma credencial OAuth Client ID.
-5. Baixe o JSON da credencial e deixe em `backend/google_client_secret.json` ou em outro caminho ignorado pelo git.
-6. Rode uma vez:
+1. A API recebe o cadastro.
+2. Salva os dados no banco.
+3. Envia email de confirmacao.
+4. Permite login so depois da confirmacao.
+5. Mantem sessao autenticada para o front consultar a pagina do usuario.
 
-```powershell
-..\venv\Scripts\python.exe -m backend.scripts.google_gmail_auth
-```
-
-Esse comando abre o navegador, voce entra com a conta que vai enviar os emails e o
-arquivo `backend/google_token.json` e gerado automaticamente.
-
-Se o Google reclamar do redirect, recrie a credencial como `Desktop app` ou adicione
-um redirect localhost valido no OAuth client.
-
-O arquivo `.env` fica fora do git, entao voce pode colocar ali o caminho local
-do JSON sem vazar a credencial no commit.
-
-## Banco de dados e MVC
-
-- `backend/database/` guarda a conexao com o PostgreSQL e o model ORM
-- `backend/routes/` funciona como camada de controller da API
-- `backend/services/` concentra as regras de negocio
-- `backend/repositories/` faz o acesso direto ao banco
-
-Na subida da API, o `app.py` chama `sincronizar_usuario_table()` para garantir
-que as tabelas e colunas do usuario existam no banco.
-
-## Fluxo de usuario
-
-1. O formulario do front chama `POST /api/usuarios`.
-2. O backend salva nome, apelido, email, login, senha hash e token de confirmacao.
-3. Em seguida ele envia um email com o link de confirmacao pelo Gmail API.
-4. O usuario entra na tela `/login` e o front chama `POST /api/auth/login`.
-5. O backend valida a senha, cria uma sessao e devolve um token.
-6. A pagina `/usuario` usa `GET /api/auth/me` para carregar a sessao logada.
-7. O link de email usa `/confirmar-email?token=...`.
-8. A confirmacao chama `POST /api/usuarios/confirmar`.
-9. O botao de limpeza remove o cadastro mais recente com `DELETE /api/usuarios/ultimo`.
-
-## Regra de integracao
-
-O front envia JSON para a API. A API converte isso em `Servidora`, chama o
-service de calculo e devolve o resumo pronto para exibicao.

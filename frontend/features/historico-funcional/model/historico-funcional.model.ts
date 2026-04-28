@@ -50,18 +50,14 @@ export type HistoricoFuncionalAnalise = {
 }
 
 export function formatarTipoEvento(tipo: HistoricoFuncionalEvento["tipo"]) {
-  if (tipo === "nomeacao") {
-    return "Nomeação"
+  switch (tipo) {
+    case "nomeacao":
+      return "Nomeacao"
+    case "progressao":
+      return "Progressao"
+    case "promocao":
+      return "Promocao"
+    default:
+      return "Substituicao"
   }
-
-  if (tipo === "progressao") {
-    return "Progressão"
-  }
-
-  if (tipo === "promocao") {
-    return "Promoção"
-  }
-
-  return "Substituição"
 }
-
