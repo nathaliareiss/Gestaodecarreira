@@ -4,8 +4,8 @@ import type { ReactNode } from "react"
 import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "Gestao de Carreira",
-  description: "Front end em Next para testar o backend Python de carreira.",
+  title: "Gestao de Carreira | Cadastro de Usuario",
+  description: "Cadastro de usuario com pagina de perfil e confirmacao por email.",
 }
 
 export default function RootLayout({
@@ -15,7 +15,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR">
-      <body>{children}</body>
+      <body className="antialiased">{children}</body>
     </html>
   )
 }
