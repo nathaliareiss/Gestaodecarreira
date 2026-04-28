@@ -33,21 +33,6 @@ def _resolver_caminho_env(nome_variavel: str, padrao: Path) -> Path:
     return caminho
 
 
-def _localizar_arquivo_client_secret() -> Path:
-    valor_env = os.getenv("GOOGLE_GMAIL_CLIENT_FILE")
-    if valor_env:
-        caminho = Path(valor_env).expanduser()
-        if not caminho.is_absolute():
-            caminho = (BASE_DIR / caminho).resolve()
-        return caminho
-
-    candidatos = sorted(BASE_DIR.glob("client_secret_*.json"))
-    if candidatos:
-        return candidatos[0]
-
-    return BASE_DIR / "client_secret.json"
-
-
 HOST = os.environ["HOST"]
 PORT = int(os.environ["PORT"])
 CORS_ORIGINS = _ler_lista_csv("CORS_ORIGINS")
@@ -57,7 +42,10 @@ EMAIL_CONFIRMATION_SUBJECT = os.getenv(
     "Confirme seu cadastro",
 ).strip()
 GOOGLE_GMAIL_SCOPES = ("https://www.googleapis.com/auth/gmail.send",)
-GOOGLE_GMAIL_CLIENT_FILE = _localizar_arquivo_client_secret()
+GOOGLE_GMAIL_CLIENT_FILE = _resolver_caminho_env(
+    "GOOGLE_GMAIL_CLIENT_FILE",
+    BASE_DIR / "google_client_secret.json",
+)
 GOOGLE_GMAIL_TOKEN_FILE = _resolver_caminho_env(
     "GOOGLE_GMAIL_TOKEN_FILE",
     BASE_DIR / "google_token.json",
