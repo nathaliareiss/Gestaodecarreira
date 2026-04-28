@@ -103,7 +103,7 @@ export function UsuarioPageController({
         </div>
       </section>
 
-      <section className="workbench">
+      <section className="workbench workbench--single">
         <section className="card results-card">
           <div className="tab-bar">
             <button
@@ -223,34 +223,6 @@ export function UsuarioPageController({
             />
           )}
         </section>
-
-        <aside className="note-card">
-          <p className="eyebrow">Sobre o fluxo</p>
-          {abaAtiva === "perfil" ? (
-            <>
-              <h2>API para confirmacao</h2>
-              <p>O fluxo agora usa o backend para salvar e confirmar o usuario.</p>
-              <ul>
-                <li>O formulario envia os dados para `POST /api/usuarios`.</li>
-                <li>A pagina `/usuario` busca o cadastro mais recente em `GET /api/usuarios/ultimo`.</li>
-                <li>A confirmacao usa `POST /api/usuarios/confirmar` com o token do link.</li>
-              </ul>
-            </>
-          ) : (
-            <>
-              <h2>Leitura do PDF</h2>
-              <p>
-                O PDF do historico funcional vira registro no banco, e a tabela mostra
-                quando o estado deveria ter promovido ou progressado.
-              </p>
-              <ul>
-                <li>O upload aceita um PDF do historico funcional.</li>
-                <li>O backend extrai nome, MASP, datas e eventos da carreira.</li>
-                <li>Os graficos mostram tempo trabalhado, tempo restante e CLT usada.</li>
-              </ul>
-            </>
-          )}
-        </aside>
       </section>
     </main>
   )
