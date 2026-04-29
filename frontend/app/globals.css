@@ -124,6 +124,9 @@ code {
 
 .hero-copy--register {
   max-width: 100%;
+  min-height: 36rem;
+  display: flex;
+  flex-direction: column;
 }
 
 .hero-copy--login {
@@ -132,11 +135,21 @@ code {
 
 .hero-copy--centered {
   text-align: center;
-  justify-items: stretch;
+  justify-items: center;
 }
 
 .hero-topbar--register {
   width: 100%;
+}
+
+.hero-center-stack {
+  width: 100%;
+  flex: 1;
+  display: grid;
+  justify-items: center;
+  grid-template-rows: auto 1fr auto;
+  gap: 0.75rem;
+  padding-block: clamp(1.5rem, 4vw, 3.5rem) 0.75rem;
 }
 
 .hero-topbar {
@@ -159,6 +172,7 @@ code {
   color: var(--accent);
   letter-spacing: 0.04em;
   text-transform: uppercase;
+  margin-bottom: 0.25rem;
 }
 
 .hero-links--top {
@@ -245,6 +259,8 @@ code {
   max-width: none;
   margin-inline: auto;
   text-align: center;
+  align-self: center;
+  margin-block: 0;
 }
 
 .hero-text {
@@ -253,6 +269,14 @@ code {
   color: var(--muted);
   font-size: 1.05rem;
   line-height: 1.7;
+}
+
+.hero-text--centered {
+  margin-top: auto;
+  margin-inline: auto;
+  text-align: center;
+  max-width: 48ch;
+  padding-bottom: 0.5rem;
 }
 
 .hero-links {

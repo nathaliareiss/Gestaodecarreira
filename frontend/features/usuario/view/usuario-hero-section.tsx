@@ -10,15 +10,14 @@ export function UsuarioHeroSection() {
         </Link>
       </div>
 
-      <p className="hero-subtitle hero-subtitle--centered">
-         Career Manager
-      </p>
-      <h1 className="hero-title hero-title--centered">Gerenciador de carreira</h1>
-
-      <p className="hero-text">
-        Cadastre-se para assumir o controle da sua carreira de forma pratica. Fique
-        tranquilo: seus dados estarao seguros e ninguem tera acesso a eles.
-      </p>
+      <div className="hero-center-stack">
+        <p className="hero-subtitle hero-subtitle--centered">Career Manager</p>
+        <h1 className="hero-title hero-title--centered">Gerenciador de carreira</h1>
+        <p className="hero-text hero-text--centered">
+          Cadastre-se para assumir o controle da sua carreira de forma pratica. Fique
+          tranquilo: seus dados estarao seguros e ninguem tera acesso a eles.
+        </p>
+      </div>
     </div>
   )
 }
