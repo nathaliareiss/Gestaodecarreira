@@ -11,12 +11,10 @@ export function UsuarioHeroSection() {
       </div>
 
       <h1>Career Progression Analyzer</h1>
-      <p className="hero-subtitle">
-        Analise a progressao funcional em portugues, com cadastro rapido e perfil
-        organizado para acompanhar a evolucao da pessoa.
-      </p>
+    
       <p className="hero-text">
-       Cadastre
+       Cadastre-se para assumir o controle da sua carreira de forma prática. Fique tranquilo: seus dados estarão seguros e ninguém terá acesso a eles.
+       Register now to take practical control of your career. Rest assured: your data will remain secure and inaccessible to others.
       </p>
     </div>
   )
