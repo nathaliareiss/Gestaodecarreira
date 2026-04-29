@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import type { FormEvent } from "react"
 import { useState } from "react"
 
@@ -11,7 +12,9 @@ type RedefinirSenhaViewProps = {
 }
 
 export function RedefinirSenhaView({ token }: RedefinirSenhaViewProps) {
+  const router = useRouter()
   const [novaSenha, setNovaSenha] = useState("")
+  const [confirmarSenha, setConfirmarSenha] = useState("")
   const [carregando, setCarregando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
   const [sucesso, setSucesso] = useState<string | null>(null)
@@ -27,6 +30,10 @@ export function RedefinirSenhaView({ token }: RedefinirSenhaViewProps) {
         throw new Error("Token de redefinicao ausente.")
       }
 
+      if (novaSenha !== confirmarSenha) {
+        throw new Error("As senhas nao conferem.")
+      }
+
       const resposta = await redefinirSenhaUsuario({
         token,
         nova_senha: novaSenha,
@@ -34,6 +41,8 @@ export function RedefinirSenhaView({ token }: RedefinirSenhaViewProps) {
 
       setSucesso(resposta.message)
       setNovaSenha("")
+      setConfirmarSenha("")
+      router.push("/login")
     } catch (error) {
       setErro(error instanceof Error ? error.message : "Nao foi possivel redefinir a senha.")
     } finally {
@@ -70,6 +79,19 @@ export function RedefinirSenhaView({ token }: RedefinirSenhaViewProps) {
                 type="password"
                 value={novaSenha}
                 onChange={(evento) => setNovaSenha(evento.target.value)}
+                placeholder="********"
+                autoComplete="new-password"
+                minLength={6}
+                required
+              />
+            </label>
+
+            <label className="field">
+              <span>Confirmar senha</span>
+              <input
+                type="password"
+                value={confirmarSenha}
+                onChange={(evento) => setConfirmarSenha(evento.target.value)}
                 placeholder="********"
                 autoComplete="new-password"
                 minLength={6}
