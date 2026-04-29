@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+
 from fastapi import APIRouter, Depends, Header, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -20,6 +22,7 @@ from backend.services.auth_service import (
 )
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+logger = logging.getLogger(__name__)
 
 
 def _extrair_token_bearer(authorization: str | None) -> str:
@@ -80,7 +83,11 @@ def solicitar_recuperacao(
     try:
         solicitar_recuperacao_senha(db, dados)
     except RuntimeError as erro:
-        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(erro)) from erro
+        logger.exception("Falha ao solicitar recuperacao de senha.")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Nao foi possivel enviar o email de recuperacao agora. Tente novamente mais tarde.",
+        ) from erro
 
     return {
         "status": "ok",

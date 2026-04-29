@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -18,6 +20,7 @@ from backend.services.usuario_service import (
 )
 
 router = APIRouter(prefix="/usuarios", tags=["usuarios"])
+logger = logging.getLogger(__name__)
 
 
 @router.post("", response_model=UsuarioResponse, status_code=status.HTTP_201_CREATED)
@@ -30,7 +33,11 @@ def criar_usuario(
     except ValueError as erro:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(erro)) from erro
     except RuntimeError as erro:
-        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(erro)) from erro
+        logger.exception("Falha ao cadastrar usuario.")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Nao foi possivel concluir o cadastro agora. Tente novamente mais tarde.",
+        ) from erro
 
     return UsuarioResponse.model_validate(usuario)
 
