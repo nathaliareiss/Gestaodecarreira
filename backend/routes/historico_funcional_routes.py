@@ -14,6 +14,7 @@ from backend.repositories.historico_funcional_repository import (
 from backend.schemas.historico_funcional_schema import (
     HistoricoFuncionalResponse,
     HistoricoFuncionalUploadRequest,
+    HistoricoFuncionalResumoGraficoResponse,
 )
 from backend.services.historico_funcional_service import (
     analisar_historico_funcional,
@@ -21,6 +22,37 @@ from backend.services.historico_funcional_service import (
 )
 
 router = APIRouter(prefix="/historicos-funcionais", tags=["historicos-funcionais"])
+
+
+def _normalizar_dados_historico_salvo(dados: dict) -> dict:
+    if "resumo_grafico" in dados and isinstance(dados["resumo_grafico"], dict):
+        return dados
+
+    eventos = dados.get("eventos") or []
+    eventos_por_status: dict[str, int] = {}
+    eventos_por_tipo: dict[str, int] = {}
+
+    for evento in eventos:
+        status = str(evento.get("status", "nao_aplicavel"))
+        tipo = str(evento.get("tipo", "substituicao"))
+        eventos_por_status[status] = eventos_por_status.get(status, 0) + 1
+        eventos_por_tipo[tipo] = eventos_por_tipo.get(tipo, 0) + 1
+
+    dias_trabalhados = int(dados.get("dias_trabalhados") or 0)
+    dias_totais = int(dados.get("dias_totais_ate_aposentadoria") or 0)
+    percentual_trabalhado = float(dados.get("percentual_trabalhado") or 0)
+    percentual_restante = float(dados.get("percentual_restante") or 0)
+
+    dados["resumo_grafico"] = HistoricoFuncionalResumoGraficoResponse(
+        tempo_trabalhado_dias=dias_trabalhados,
+        tempo_restante_dias=max(dias_totais - dias_trabalhados, 0),
+        percentual_trabalhado=percentual_trabalhado,
+        percentual_restante=percentual_restante,
+        eventos_totais=len(eventos),
+        eventos_por_status=eventos_por_status,
+        eventos_por_tipo=eventos_por_tipo,
+    ).model_dump(mode="json")
+    return dados
 
 
 @router.post("/analisar", response_model=HistoricoFuncionalResponse, status_code=status.HTTP_201_CREATED)
@@ -87,6 +119,7 @@ def obter_ultimo_historico_do_usuario(
 
     try:
         dados = json.loads(historico.dados_json)
+        dados = _normalizar_dados_historico_salvo(dados)
         return HistoricoFuncionalResponse.model_validate(dados)
     except Exception as erro:
         raise HTTPException(
