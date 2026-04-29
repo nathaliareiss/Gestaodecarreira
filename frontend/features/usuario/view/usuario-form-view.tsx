@@ -114,7 +114,7 @@ export function UsuarioFormView({
           {carregando ? "Salvando..." : "Cadastrar e ir para o usuario"}
         </button>
         <p className="helper">
-          Depois do cadastro, o sistema enviara um email de confirmacao para o endereco
+          Depois do cadastro, o sistema enviara um email de confirmacao para o endereco de email
           informado.
         </p>
       </div>
