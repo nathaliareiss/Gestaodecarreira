@@ -5,9 +5,12 @@ export function UsuarioHeroSection() {
     <div className="hero-copy hero-copy--register hero-copy--centered">
       <div className="hero-topbar hero-topbar--register">
         <p className="eyebrow">Cadastre-se</p>
-        <Link className="ghost-button ghost-button--compact" href="/login">
-          Ja tenho conta
-        </Link>
+        <div className="hero-login-cta">
+          <p className="hero-login-note">Ja tem conta? Entre por aqui.</p>
+          <Link className="ghost-button ghost-button--compact hero-login-button" href="/login">
+            Logar
+          </Link>
+        </div>
       </div>
 
       <div className="hero-center-stack">

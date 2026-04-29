@@ -142,6 +142,24 @@ code {
   width: 100%;
 }
 
+.hero-login-cta {
+  display: grid;
+  justify-items: end;
+  gap: 0.45rem;
+  text-align: right;
+}
+
+.hero-login-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.hero-login-button {
+  min-width: 7.5rem;
+}
+
 .hero-center-stack {
   width: 100%;
   flex: 1;
