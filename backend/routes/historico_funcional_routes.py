@@ -62,12 +62,19 @@ def analisar_e_salvar_historico(
 ) -> HistoricoFuncionalResponse:
     try:
         conteudo_pdf = decodificar_arquivo_base64(dados.arquivo_base64)
+        conteudo_afastamentos_pdf = (
+            decodificar_arquivo_base64(dados.afastamentos_arquivo_base64)
+            if dados.afastamentos_arquivo_base64
+            else None
+        )
         resposta, texto_extraido = analisar_historico_funcional(
             conteudo_pdf=conteudo_pdf,
             arquivo_nome=dados.arquivo_nome,
             usuario_id=dados.usuario_id,
             data_nascimento=dados.data_nascimento,
             anos_clt_averbados=dados.anos_clt_averbados,
+            conteudo_afastamentos_pdf=conteudo_afastamentos_pdf,
+            arquivo_afastamentos_nome=dados.afastamentos_arquivo_nome,
         )
     except ValueError as erro:
         raise HTTPException(

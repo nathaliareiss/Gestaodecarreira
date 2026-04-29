@@ -289,10 +289,10 @@ def _parsear_afastamento_bloco(tipo: str, bloco: str) -> AfastamentoPeriodo:
     if resto:
         publicacao_match = re.search(r"\d{2}/\d{2}/\d{4}", resto)
         if publicacao_match:
-          legislacao_texto = resto[: publicacao_match.start()].strip()
-          if legislacao_texto:
-              legislacao = legislacao_texto
-          publicacao = _parsear_data(publicacao_match.group(0))
+            legislacao_texto = resto[: publicacao_match.start()].strip()
+            if legislacao_texto:
+                legislacao = legislacao_texto
+            publicacao = _parsear_data(publicacao_match.group(0))
         else:
             legislacao = resto or None
 
