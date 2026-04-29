@@ -44,6 +44,8 @@ export function useHistoricoFuncionalController({
 }: UseHistoricoFuncionalControllerParams) {
   const [arquivo, setArquivo] = useState<File | null>(null)
   const [arquivoDownloadUrl, setArquivoDownloadUrl] = useState<string | null>(null)
+  const [arquivoAfastamentos, setArquivoAfastamentos] = useState<File | null>(null)
+  const [arquivoAfastamentosDownloadUrl, setArquivoAfastamentosDownloadUrl] = useState<string | null>(null)
   const [dataNascimento, setDataNascimento] = useState(historicoInicial?.data_nascimento ?? "")
   const [anosCltAverbados, setAnosCltAverbados] = useState(
     historicoInicial?.tempo_clt_averbado_anos ?? 0,
@@ -67,9 +69,30 @@ export function useHistoricoFuncionalController({
     }
   }, [arquivo])
 
+  useEffect(() => {
+    if (!arquivoAfastamentos) {
+      setArquivoAfastamentosDownloadUrl(null)
+      return
+    }
+
+    const url = URL.createObjectURL(arquivoAfastamentos)
+    setArquivoAfastamentosDownloadUrl(url)
+
+    return () => {
+      URL.revokeObjectURL(url)
+    }
+  }, [arquivoAfastamentos])
+
   function selecionarArquivo(evento: ChangeEvent<HTMLInputElement>) {
     const selecionado = evento.target.files?.[0] ?? null
     setArquivo(selecionado)
+    setMostrarUpload(true)
+    setErro(null)
+  }
+
+  function selecionarArquivoAfastamentos(evento: ChangeEvent<HTMLInputElement>) {
+    const selecionado = evento.target.files?.[0] ?? null
+    setArquivoAfastamentos(selecionado)
     setMostrarUpload(true)
     setErro(null)
   }
@@ -123,12 +146,17 @@ export function useHistoricoFuncionalController({
 
     try {
       const arquivoBase64 = await lerArquivoComoBase64(arquivo)
+      const afastamentosArquivoBase64 = arquivoAfastamentos
+        ? await lerArquivoComoBase64(arquivoAfastamentos)
+        : null
       const payload: HistoricoFuncionalUpload = {
         usuario_id: usuarioId,
         arquivo_nome: arquivo.name,
         arquivo_base64: arquivoBase64,
         data_nascimento: dataNascimento,
         anos_clt_averbados: Math.min(Math.max(anosCltAverbados, 0), 10),
+        afastamentos_arquivo_nome: arquivoAfastamentos?.name ?? null,
+        afastamentos_arquivo_base64: afastamentosArquivoBase64,
       }
 
       const analisado = await analisarHistoricoFuncional(payload)
@@ -144,6 +172,8 @@ export function useHistoricoFuncionalController({
   return {
     arquivo,
     arquivoDownloadUrl,
+    arquivoAfastamentos,
+    arquivoAfastamentosDownloadUrl,
     anosCltAverbados,
     carregando,
     dataNascimento,
@@ -152,6 +182,7 @@ export function useHistoricoFuncionalController({
     mostrarUpload,
     recarregarHistorico,
     selecionarArquivo,
+    selecionarArquivoAfastamentos,
     setAnosCltAverbados,
     setDataNascimento,
     setMostrarUpload,

@@ -4,6 +4,24 @@ export type HistoricoFuncionalUpload = {
   arquivo_base64: string
   data_nascimento: string
   anos_clt_averbados: number
+  afastamentos_arquivo_nome?: string | null
+  afastamentos_arquivo_base64?: string | null
+}
+
+export type AfastamentoPeriodo = {
+  tipo: "aguardando_resultado_conclusivo_de_exame_pericial" | "licenca_para_tratamento_de_saude"
+  data_inicio: string
+  data_fim: string
+  total_dias: number
+  legislacao: string | null
+  publicacao: string | null
+}
+
+export type AfastamentoResumo = {
+  periodos_totais: number
+  dias_totais: number
+  dias_por_tipo: Record<string, number>
+  periodos_por_tipo: Record<string, number>
 }
 
 export type HistoricoFuncionalEvento = {
@@ -55,6 +73,9 @@ export type HistoricoFuncionalAnalise = {
     eventos_por_status: Record<string, number>
     eventos_por_tipo: Record<string, number>
   }
+  afastamentos_arquivo_nome: string | null
+  afastamentos_resumo: AfastamentoResumo | null
+  afastamentos: AfastamentoPeriodo[]
   eventos: HistoricoFuncionalEvento[]
 }
 
