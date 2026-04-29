@@ -121,9 +121,6 @@ export function UsuarioPageController({
           <p className="eyebrow">Página do usuário</p>
           <h1 className="hero-title--centered">Gerenciador de carreira</h1>
           <p className="hero-subtitle hero-subtitle--dashboard">Career manager</p>
-          <p className="hero-text hero-text--dashboard">
-            Acompanhe seus dados de perfil, a confirmação do e-mail e o histórico funcional em um só lugar.
-          </p>
         </div>
       </section>
 
@@ -179,10 +176,6 @@ export function UsuarioPageController({
                 <>
                   <div className="results-grid">
                     <div className="result-block">
-                      <span className="label">Nome exibido</span>
-                      <strong>{usuario.apelido || usuario.nome}</strong>
-                    </div>
-                    <div className="result-block">
                       <span className="label">Nome completo</span>
                       <strong>{usuario.nome}</strong>
                     </div>
@@ -201,10 +194,6 @@ export function UsuarioPageController({
                     <div className="result-block">
                       <span className="label">Login</span>
                       <strong>{usuario.login}</strong>
-                    </div>
-                    <div className="result-block">
-                      <span className="label">Senha</span>
-                      <strong>{usuario.senha_cadastrada ? "Cadastrada" : "-"}</strong>
                     </div>
                     <div className="result-block">
                       <span className="label">Criado em</span>

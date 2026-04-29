@@ -368,7 +368,7 @@ export function HistoricoFuncionalView({
       ) : (
         <div className="history-empty">
           <p>
-            Envie o PDF do histórico funcional para o sistema ler os dados, salvar no banco e montar os cálculos de carreira.
+            Envie o PDF do histórico funcional para analisar os dados e montar os cálculos de carreira.
           </p>
           <p>
             Aqui você vai ver o tempo de trabalho, a previsão de aposentadoria e a próxima progressão e promoção.
@@ -443,7 +443,7 @@ export function HistoricoFuncionalView({
             </div>
 
             <p className="helper">
-              O sistema limita a CLT em 10 anos. Se a pessoa tiver esse tempo, basta preencher `10` ou usar o atalho.
+              Você pode informar no máximo 10 anos de CLT. Se já tiver esse tempo, basta preencher `10` ou usar o atalho.
             </p>
 
             {arquivo ? <p className="helper">Arquivo selecionado: {arquivo.name}</p> : null}
