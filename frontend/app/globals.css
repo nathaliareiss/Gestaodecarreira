@@ -130,6 +130,11 @@ code {
   max-width: 100%;
 }
 
+.hero-copy--centered {
+  text-align: center;
+  justify-items: center;
+}
+
 .hero-topbar {
   display: flex;
   align-items: center;
@@ -143,6 +148,13 @@ code {
   color: var(--text);
   font-size: 1.18rem;
   line-height: 1.65;
+}
+
+.hero-subtitle--centered {
+  max-width: none;
+  color: var(--accent);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .hero-links--top {

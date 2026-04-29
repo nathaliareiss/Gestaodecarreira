@@ -2,19 +2,22 @@ import Link from "next/link"
 
 export function UsuarioHeroSection() {
   return (
-    <div className="hero-copy hero-copy--register">
-      <div className="hero-topbar">
-        <p className="eyebrow">Cadastro de usuario</p>
+    <div className="hero-copy hero-copy--register hero-copy--centered">
+      <div className="hero-topbar hero-topbar--register">
+        <p className="eyebrow">Cadastre-se</p>
         <Link className="ghost-button ghost-button--compact" href="/login">
           Ja tenho conta
         </Link>
       </div>
 
-      <h1>Career Progression Analyzer</h1>
-    
+      <p className="hero-subtitle hero-subtitle--centered">
+         Career Manager
+      </p>
+      <h1>Gerenciador de carreira</h1>
+
       <p className="hero-text">
-       Cadastre-se para assumir o controle da sua carreira de forma prática. Fique tranquilo: seus dados estarão seguros e ninguém terá acesso a eles.
-       Register now to take practical control of your career. Rest assured: your data will remain secure and inaccessible to others.
+        Cadastre-se para assumir o controle da sua carreira de forma pratica. Fique
+        tranquilo: seus dados estarao seguros e ninguem tera acesso a eles.
       </p>
     </div>
   )
