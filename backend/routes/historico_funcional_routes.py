@@ -38,7 +38,10 @@ def analisar_e_salvar_historico(
             anos_clt_averbados=dados.anos_clt_averbados,
         )
     except ValueError as erro:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(erro)) from erro
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Nao foi possivel analisar o arquivo enviado. Verifique o PDF e tente novamente.",
+        ) from erro
 
     historico = HistoricoFuncional(
         usuario_id=dados.usuario_id,

@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from backend.config import CORS_ORIGINS
 from backend.database.create_tables import sincronizar_usuario_table
+from backend.middleware.error_middleware import registrar_middleware_de_erros
 from backend.routes import router as api_router
 
 
@@ -22,6 +23,7 @@ def criar_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    registrar_middleware_de_erros(app)
     app.include_router(api_router)
 
     @app.on_event("startup")

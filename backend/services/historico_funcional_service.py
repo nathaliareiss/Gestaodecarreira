@@ -97,6 +97,65 @@ def _encontrar_datas(texto: str) -> list[date]:
     return datas
 
 
+def _escolher_token(tokens: list[str], padrao: str, inicio: int = 0) -> int | None:
+    for indice in range(inicio, len(tokens)):
+        if re.fullmatch(padrao, tokens[indice]):
+            return indice
+    return None
+
+
+def _limpar_rotulo_bloco(texto: str, descricao: str, tipo: str) -> tuple[str, str, str, str, str]:
+    texto = re.sub(r"\s+", " ", texto).strip()
+    primeira_data = re.search(r"\d{2}/\d{2}/\d{4}", texto)
+    if primeira_data is None:
+        raise ValueError(f"Nao foi possivel interpretar o bloco: {descricao}")
+
+    prefixo = texto[: primeira_data.start()].strip()
+    sufixo = texto[primeira_data.start() :].strip()
+    prefixo = re.sub(
+        r"\b(Cargo/Função|Cargo/Funcao|Símbolo|Simbolo|NívelGrau|Nível|Nivel|Grau|Órgão/Entidade|Orgão/Entidade|Publicação|Publicacao|Posse|Exercício|Exercicio|Legislação|Legislacao|Vigência|Vigencia)\b",
+        " ",
+        prefixo,
+        flags=re.IGNORECASE,
+    )
+    prefixo = re.sub(r"\s+", " ", prefixo).strip()
+    datas = _encontrar_datas(texto)
+    if len(datas) < 2:
+        raise ValueError(f"Nao foi possivel interpretar o bloco: {descricao}")
+
+    tokens = prefixo.split()
+    simbolo_idx = _escolher_token(tokens, r"[A-Z]{2,3}\d?")
+    if simbolo_idx is None:
+        raise ValueError(f"Nao foi possivel interpretar o bloco: {descricao}")
+
+    nivel_idx = _escolher_token(tokens, r"[IVX]+", simbolo_idx + 1)
+    if nivel_idx is None:
+        raise ValueError(f"Nao foi possivel interpretar o bloco: {descricao}")
+
+    grau_idx = _escolher_token(tokens, r"[A-Z]", nivel_idx + 1)
+    if grau_idx is None:
+        raise ValueError(f"Nao foi possivel interpretar o bloco: {descricao}")
+
+    cargo = " ".join(tokens[:simbolo_idx]).strip() or descricao
+    simbolo = tokens[simbolo_idx].strip()
+    nivel = tokens[nivel_idx].strip()
+    grau = tokens[grau_idx].strip()
+    orgao = " ".join(tokens[grau_idx + 1 :]).strip()
+
+    if tipo in {"nomeacao", "substituicao"}:
+        data_publicacao = datas[0]
+        data_posse = datas[1]
+        data_exercicio = datas[2] if len(datas) > 2 else datas[1]
+    else:
+        data_publicacao = datas[0]
+        data_posse = datas[1]
+        data_exercicio = datas[1]
+
+    # Usa o sufixo apenas como legislacao quando o padrao rigido falhar.
+    legislacao = sufixo
+    return cargo, simbolo, nivel, grau, orgao, data_publicacao, data_posse, data_exercicio, legislacao
+
+
 def _adicionar_anos(data_base: date, anos: int) -> date:
     try:
         return data_base.replace(year=data_base.year + anos)
@@ -140,13 +199,30 @@ def _parsear_bloco_secao(tipo: str, descricao: str, bloco: str) -> BlocoHistoric
             data_posse = _parsear_data(match.group("data2"))
             data_exercicio = _parsear_data(match.group("data3"))
         else:
-            datas = _encontrar_datas(bloco)
-            if len(datas) < 2:
-                raise ValueError(f"Nao foi possivel interpretar o bloco: {descricao}")
-
-            data_publicacao = datas[0]
-            data_posse = datas[1]
-            data_exercicio = datas[2] if len(datas) > 2 else datas[1]
+            (
+                cargo,
+                simbolo,
+                nivel,
+                grau,
+                orgao,
+                data_publicacao,
+                data_posse,
+                data_exercicio,
+                legislacao,
+            ) = _limpar_rotulo_bloco(bloco, descricao, tipo)
+            return BlocoHistorico(
+                tipo=tipo,
+                descricao=descricao,
+                cargo=cargo,
+                simbolo=simbolo,
+                nivel=nivel,
+                grau=grau,
+                orgao=orgao,
+                data_publicacao=data_publicacao,
+                data_posse=data_posse,
+                data_exercicio=data_exercicio,
+                legislacao=legislacao,
+            )
     else:
         padrao = re.compile(
             r"(?P<cargo>.+?)\s+(?P<simbolo>[A-Z]{2,3}\d?)\s+(?P<nivel>[IVX]+)\s+(?P<grau>[A-Z])\s+"
@@ -159,13 +235,30 @@ def _parsear_bloco_secao(tipo: str, descricao: str, bloco: str) -> BlocoHistoric
             data_posse = _parsear_data(match.group("data2"))
             data_exercicio = data_posse
         else:
-            datas = _encontrar_datas(bloco)
-            if len(datas) < 2:
-                raise ValueError(f"Nao foi possivel interpretar o bloco: {descricao}")
-
-            data_publicacao = datas[0]
-            data_posse = datas[1]
-            data_exercicio = datas[1]
+            (
+                cargo,
+                simbolo,
+                nivel,
+                grau,
+                orgao,
+                data_publicacao,
+                data_posse,
+                data_exercicio,
+                legislacao,
+            ) = _limpar_rotulo_bloco(bloco, descricao, tipo)
+            return BlocoHistorico(
+                tipo=tipo,
+                descricao=descricao,
+                cargo=cargo,
+                simbolo=simbolo,
+                nivel=nivel,
+                grau=grau,
+                orgao=orgao,
+                data_publicacao=data_publicacao,
+                data_posse=data_posse,
+                data_exercicio=data_exercicio,
+                legislacao=legislacao,
+            )
 
     if match:
         cargo = match.group("cargo").strip()
