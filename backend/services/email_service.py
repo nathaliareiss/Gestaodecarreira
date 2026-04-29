@@ -54,6 +54,10 @@ def _enviar_mensagem(mensagem: EmailMessage) -> None:
                 cliente.login(SMTP_USERNAME, SMTP_PASSWORD)
 
             cliente.send_message(mensagem)
+    except smtplib.SMTPAuthenticationError as erro:
+        raise RuntimeError(
+            "Credenciais SMTP recusadas. Verifique o SMTP_USERNAME e a App Password do Gmail."
+        ) from erro
     except OSError as erro:
         raise RuntimeError("Nao foi possivel conectar ao servidor de email SMTP.") from erro
     except smtplib.SMTPException as erro:
