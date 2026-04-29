@@ -44,9 +44,13 @@ export function LoginView({
           </div>
         </div>
 
-        <article className="mini-card">
-          <h2>Login rapido</h2>
-          <p>Sem passos extras. Se a conta estiver confirmada, voce entra na hora.</p>
+        <article className="mini-card login-summary-card">
+          <p className="eyebrow">Acesso</p>
+          <h2>Entrar no sistema</h2>
+          <p>
+            Use seu login ou email confirmado para acessar seu perfil e continuar o
+            acompanhamento.
+          </p>
         </article>
       </section>
 

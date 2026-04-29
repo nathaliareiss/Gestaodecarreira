@@ -168,6 +168,18 @@ code {
   animation: fadeInUp 0.7s ease both;
 }
 
+.login-summary-card {
+  display: grid;
+  align-content: start;
+  gap: 0.85rem;
+}
+
+.login-summary-card p:last-child {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.65;
+}
+
 .mini-card:nth-child(2) {
   animation-delay: 0.08s;
 }
