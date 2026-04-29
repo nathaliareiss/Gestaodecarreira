@@ -28,6 +28,16 @@ class HistoricoFuncionalEventoResponse(BaseModel):
     atraso_dias: int
 
 
+class HistoricoFuncionalResumoGraficoResponse(BaseModel):
+    tempo_trabalhado_dias: int
+    tempo_restante_dias: int
+    percentual_trabalhado: float
+    percentual_restante: float
+    eventos_totais: int
+    eventos_por_status: dict[str, int]
+    eventos_por_tipo: dict[str, int]
+
+
 class HistoricoFuncionalResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -56,4 +66,5 @@ class HistoricoFuncionalResponse(BaseModel):
     percentual_restante: float
     proxima_progressao_prevista: date
     proxima_promocao_prevista: date
+    resumo_grafico: HistoricoFuncionalResumoGraficoResponse
     eventos: list[HistoricoFuncionalEventoResponse]

@@ -7,11 +7,13 @@ from datetime import date, datetime
 from io import BytesIO
 from typing import Literal
 
+import pandas as pd
 from pypdf import PdfReader
 
 from backend.schemas.historico_funcional_schema import (
     HistoricoFuncionalEventoResponse,
     HistoricoFuncionalResponse,
+    HistoricoFuncionalResumoGraficoResponse,
 )
 
 SECAO_NOMEOACAO_PREFIXOS = ("Efetivo-Nomeado",)
@@ -455,6 +457,44 @@ def _cronometro_ate_aposentadoria(
     )
 
 
+def _montar_resumo_grafico(
+    eventos: list[EventoHistorico],
+    dias_trabalhados: int,
+    dias_totais: int,
+    percentual_trabalhado: float,
+    percentual_restante: float,
+) -> HistoricoFuncionalResumoGraficoResponse:
+    if eventos:
+        df = pd.DataFrame(
+            [
+                {
+                    "tipo": evento.tipo,
+                    "status": evento.status,
+                }
+                for evento in eventos
+            ]
+        )
+        eventos_por_status = {
+            str(chave): int(valor) for chave, valor in df.groupby("status").size().to_dict().items()
+        }
+        eventos_por_tipo = {
+            str(chave): int(valor) for chave, valor in df.groupby("tipo").size().to_dict().items()
+        }
+    else:
+        eventos_por_status = {}
+        eventos_por_tipo = {}
+
+    return HistoricoFuncionalResumoGraficoResponse(
+        tempo_trabalhado_dias=dias_trabalhados,
+        tempo_restante_dias=max(dias_totais - dias_trabalhados, 0),
+        percentual_trabalhado=percentual_trabalhado,
+        percentual_restante=percentual_restante,
+        eventos_totais=len(eventos),
+        eventos_por_status=eventos_por_status,
+        eventos_por_tipo=eventos_por_tipo,
+    )
+
+
 def _proximo_marco(eventos: list[EventoHistorico], tipo: str, base: date) -> date:
     data_referencia = base
     for evento in eventos:
@@ -505,6 +545,13 @@ def analisar_historico_funcional(
 
     proxima_progressao_prevista = _proximo_marco(eventos, "progressao", inicio_contagem_progressao)
     proxima_promocao_prevista = _proximo_marco(eventos, "promocao", inicio_contagem_progressao)
+    resumo_grafico = _montar_resumo_grafico(
+        eventos=eventos,
+        dias_trabalhados=dias_trabalhados,
+        dias_totais=dias_totais,
+        percentual_trabalhado=percentual_trabalhado,
+        percentual_restante=percentual_restante,
+    )
 
     resposta = HistoricoFuncionalResponse(
         historico_id=0,
@@ -532,6 +579,7 @@ def analisar_historico_funcional(
         percentual_restante=percentual_restante,
         proxima_progressao_prevista=proxima_progressao_prevista,
         proxima_promocao_prevista=proxima_promocao_prevista,
+        resumo_grafico=resumo_grafico,
         eventos=[
             HistoricoFuncionalEventoResponse(
                 tipo=evento.tipo,

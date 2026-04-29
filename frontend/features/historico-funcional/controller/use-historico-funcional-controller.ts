@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, type ChangeEvent, type FormEvent } from "react"
+import { useEffect, useState, type ChangeEvent, type FormEvent } from "react"
 
 import type {
   HistoricoFuncionalAnalise,
@@ -43,6 +43,7 @@ export function useHistoricoFuncionalController({
   historicoInicial,
 }: UseHistoricoFuncionalControllerParams) {
   const [arquivo, setArquivo] = useState<File | null>(null)
+  const [arquivoDownloadUrl, setArquivoDownloadUrl] = useState<string | null>(null)
   const [dataNascimento, setDataNascimento] = useState(historicoInicial?.data_nascimento ?? "")
   const [anosCltAverbados, setAnosCltAverbados] = useState(
     historicoInicial?.tempo_clt_averbado_anos ?? 0,
@@ -50,10 +51,26 @@ export function useHistoricoFuncionalController({
   const [historico, setHistorico] = useState<HistoricoFuncionalAnalise | null>(historicoInicial)
   const [carregando, setCarregando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
+  const [mostrarUpload, setMostrarUpload] = useState(historicoInicial === null)
+
+  useEffect(() => {
+    if (!arquivo) {
+      setArquivoDownloadUrl(null)
+      return
+    }
+
+    const url = URL.createObjectURL(arquivo)
+    setArquivoDownloadUrl(url)
+
+    return () => {
+      URL.revokeObjectURL(url)
+    }
+  }, [arquivo])
 
   function selecionarArquivo(evento: ChangeEvent<HTMLInputElement>) {
     const selecionado = evento.target.files?.[0] ?? null
     setArquivo(selecionado)
+    setMostrarUpload(true)
     setErro(null)
   }
 
@@ -73,6 +90,9 @@ export function useHistoricoFuncionalController({
     try {
       const recarregado = await buscarUltimoHistoricoFuncional(usuarioId)
       setHistorico(recarregado)
+      if (recarregado) {
+        setMostrarUpload(false)
+      }
     } catch (error) {
       setErro(error instanceof Error ? error.message : "Falha inesperada ao recarregar")
     } finally {
@@ -113,7 +133,7 @@ export function useHistoricoFuncionalController({
 
       const analisado = await analisarHistoricoFuncional(payload)
       setHistorico(analisado)
-      setArquivo(null)
+      setMostrarUpload(false)
     } catch (error) {
       setErro(error instanceof Error ? error.message : "Falha inesperada ao analisar.")
     } finally {
@@ -123,15 +143,18 @@ export function useHistoricoFuncionalController({
 
   return {
     arquivo,
+    arquivoDownloadUrl,
     anosCltAverbados,
     carregando,
     dataNascimento,
     erro,
     historico,
+    mostrarUpload,
     recarregarHistorico,
     selecionarArquivo,
     setAnosCltAverbados,
     setDataNascimento,
+    setMostrarUpload,
     usarCltMaximo,
     enviarFormulario,
   }

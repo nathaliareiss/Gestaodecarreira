@@ -46,6 +46,15 @@ export type HistoricoFuncionalAnalise = {
   percentual_restante: number
   proxima_progressao_prevista: string
   proxima_promocao_prevista: string
+  resumo_grafico: {
+    tempo_trabalhado_dias: number
+    tempo_restante_dias: number
+    percentual_trabalhado: number
+    percentual_restante: number
+    eventos_totais: number
+    eventos_por_status: Record<string, number>
+    eventos_por_tipo: Record<string, number>
+  }
   eventos: HistoricoFuncionalEvento[]
 }
 
