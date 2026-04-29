@@ -487,6 +487,13 @@ export function HistoricoFuncionalView({
           </div>
 
           <div className="upload-shell__actions">
+            <button
+              className="ghost-button ghost-button--compact"
+              type="button"
+              onClick={() => setMostrarUpload(true)}
+            >
+              Enviar afastamentos
+            </button>
             {arquivoDownloadUrl ? (
               <a
                 className="ghost-button ghost-button--compact"
