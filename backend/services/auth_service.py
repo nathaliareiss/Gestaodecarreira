@@ -7,10 +7,10 @@ from sqlalchemy.orm import Session
 from backend.database.models import Usuario
 from backend.repositories.usuario_repository import (
     atualizar_usuario,
-    obter_usuario_por_login_ou_email,
     obter_usuario_por_email,
     obter_usuario_por_redefinir_senha_token_hash,
     obter_usuario_por_sessao_token_hash,
+    obter_usuario_por_login,
 )
 from backend.schemas.auth_schema import (
     UsuarioLoginRequest,
@@ -29,13 +29,18 @@ def autenticar_usuario(db: Session, dados: UsuarioLoginRequest) -> tuple[Usuario
     identificador = dados.login.strip()
     senha = dados.senha
 
-    usuario = obter_usuario_por_login_ou_email(db, identificador)
-    if usuario is None:
-        raise ValueError("Login ou senha incorretos.")
+    if "@" in identificador:
+        usuario = obter_usuario_por_email(db, identificador.lower())
+        if usuario is None:
+            raise ValueError("Nao encontramos um usuario cadastrado com este email.")
+    else:
+        usuario = obter_usuario_por_login(db, identificador)
+        if usuario is None:
+            raise ValueError("Nao encontramos um usuario cadastrado com este login.")
 
     senha_hash = gerar_hash_sha256(senha)
     if usuario.senha_hash != senha_hash:
-        raise ValueError("Login ou senha incorretos.")
+        raise ValueError("Senha incorreta.")
 
     if not usuario.email_confirmado:
         raise ValueError("Confirme seu email antes de entrar.")
