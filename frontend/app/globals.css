@@ -241,6 +241,12 @@ code {
   max-width: 12ch;
 }
 
+.hero-title--centered {
+  max-width: none;
+  margin-inline: auto;
+  text-align: center;
+}
+
 .hero-text {
   margin: 1rem 0 0;
   max-width: 60ch;
