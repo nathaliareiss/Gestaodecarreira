@@ -32,5 +32,8 @@ export async function buscarUltimoHistoricoFuncional(
     return null
   }
 
-  return parseApiResponse<HistoricoFuncionalAnalise>(response, "Erro ao carregar o histórico funcional.")
+  return parseApiResponse<HistoricoFuncionalAnalise>(
+    response,
+    "Erro ao carregar o histórico funcional.",
+  )
 }

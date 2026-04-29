@@ -775,6 +775,38 @@ code {
   background: rgba(255, 255, 255, 0.03);
 }
 
+.timeline-marcos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.timeline-marco-card {
+  display: grid;
+  gap: 0.35rem;
+  padding: 1rem;
+  border-radius: 18px;
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  background: rgba(8, 16, 30, 0.45);
+}
+
+.timeline-marco-card span {
+  color: var(--muted);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.timeline-marco-card strong {
+  font-size: 1.05rem;
+}
+
+.timeline-marco-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
 .upload-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr);

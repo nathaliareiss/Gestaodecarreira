@@ -86,7 +86,7 @@ export function ConfirmarEmailView({ token }: ConfirmarEmailViewProps) {
           <div className="card-header">
             <div>
               <p className="eyebrow">Resultado</p>
-              <h2>Confirmacao finalizada</h2>
+              <h2>Confirmação finalizada</h2>
             </div>
             <span className="status-pill">{usuario ? "ok" : "pendente"}</span>
           </div>

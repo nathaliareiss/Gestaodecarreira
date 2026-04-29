@@ -1,7 +1,5 @@
 "use client"
 
-import { useState } from "react"
-
 import { useHistoricoFuncionalController } from "../controller/use-historico-funcional-controller"
 import { formatarTipoEvento, type HistoricoFuncionalAnalise } from "../model/historico-funcional.model"
 
@@ -353,7 +351,7 @@ export function HistoricoFuncionalView({
               type="button"
               onClick={() => setMostrarUpload((atual) => !atual)}
             >
-              {mostrarUpload ? "Ocultar envio" : "Adicionar arquivos"}
+              {mostrarUpload ? "Ocultar envio" : "Deseja adicionar mais arquivos?"}
             </button>
           </div>
         </div>
@@ -430,6 +428,19 @@ export function HistoricoFuncionalView({
               <h3>Leitura em gráfico</h3>
               <p className="analysis-header__subtitle">Status dos eventos ao longo da carreira</p>
             </div>
+          </div>
+
+          <div className="timeline-marcos">
+            <article className="timeline-marco-card">
+              <span>Próxima progressão</span>
+              <strong>{formatarData(painel.proxima_progressao_prevista)}</strong>
+              <p>Marco calculado a partir do fim do estágio probatório.</p>
+            </article>
+            <article className="timeline-marco-card">
+              <span>Próxima promoção</span>
+              <strong>{formatarData(painel.proxima_promocao_prevista)}</strong>
+              <p>Usa a mesma base inicial da contagem de carreira.</p>
+            </article>
           </div>
 
           <LinhaDoTempoGrafica eventos={painel.eventos} />

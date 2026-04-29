@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, type FormEvent } from "react"
 import { useRouter } from "next/navigation"
+import { useState, type FormEvent } from "react"
 
 import {
   USUARIO_CADASTRO_EXEMPLO,
