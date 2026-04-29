@@ -116,29 +116,14 @@ export function UsuarioPageController({
       <div className="bg-orb bg-orb-a" />
       <div className="bg-orb bg-orb-b" />
 
-      <section className="hero">
-        <div className="hero-copy">
+      <section className="hero hero--usuario-dashboard">
+        <div className="hero-copy hero-copy--dashboard hero-copy--centered">
           <p className="eyebrow">Página do usuário</p>
-          <h1>Os dados agora vêm da sua sessão, não do navegador.</h1>
-          <p className="hero-text">
-            Esta página abre apenas depois do login e acompanha o estado de confirmação
-            do e-mail e o histórico funcional.
+          <h1 className="hero-title--centered">Gerenciador de carreira</h1>
+          <p className="hero-subtitle hero-subtitle--dashboard">Career manager</p>
+          <p className="hero-text hero-text--dashboard">
+            Acompanhe seus dados de perfil, a confirmação do e-mail e o histórico funcional em um só lugar.
           </p>
-        </div>
-
-        <div className="hero-grid">
-          <article className="mini-card">
-            <h2>Status</h2>
-            <p>{usuario ? "Sessão ativa" : "Nenhum usuário autenticado"}</p>
-          </article>
-          <article className="mini-card">
-            <h2>Email</h2>
-            <p>{usuario ? usuario.email : "Aguardando login"}</p>
-          </article>
-          <article className="mini-card">
-            <h2>Confirmação</h2>
-            <p>{usuario?.email_confirmado ? "Confirmado" : "Pendente"}</p>
-          </article>
         </div>
       </section>
 
@@ -206,7 +191,7 @@ export function UsuarioPageController({
                       <strong>{usuario.apelido || "Não informado"}</strong>
                     </div>
                     <div className="result-block">
-                      <span className="label">Email</span>
+                      <span className="label">E-mail</span>
                       <strong>{usuario.email}</strong>
                     </div>
                     <div className="result-block">
@@ -233,8 +218,7 @@ export function UsuarioPageController({
 
                   <div className="actions">
                     <p className="helper">
-                      O e-mail de confirmação foi enviado para{" "}
-                      <strong>{usuario.email}</strong>.
+                      O e-mail de confirmação foi enviado para <strong>{usuario.email}</strong>.
                     </p>
                     <div className="actions-row">
                       <button
@@ -259,8 +243,7 @@ export function UsuarioPageController({
               ) : (
                 <div className="empty-state">
                   <p>
-                    Nenhuma sessão ativa foi encontrada. Entre novamente para ver seus
-                    dados.
+                    Nenhuma sessão ativa foi encontrada. Entre novamente para ver seus dados.
                   </p>
                   <Link className="primary-button" href="/login">
                     Ir para o login

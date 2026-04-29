@@ -104,6 +104,10 @@ code {
   margin-bottom: 1.25rem;
 }
 
+.hero--usuario-dashboard {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .hero-copy,
 .mini-card,
 .card,
@@ -120,6 +124,22 @@ code {
   display: grid;
   align-content: start;
   gap: 0.85rem;
+}
+
+.hero-copy--dashboard {
+  min-height: 14rem;
+  padding: 1.6rem 2rem;
+  justify-items: center;
+  align-content: center;
+  text-align: center;
+}
+
+.hero-copy--dashboard .eyebrow {
+  margin-bottom: 0.4rem;
+}
+
+.hero-copy--dashboard .hero-title--centered {
+  margin-block: 0;
 }
 
 .hero-copy--register {
@@ -191,6 +211,15 @@ code {
   letter-spacing: 0.04em;
   text-transform: uppercase;
   margin-bottom: 0.25rem;
+}
+
+.hero-subtitle--dashboard {
+  max-width: none;
+  margin-top: -0.2rem;
+  color: var(--muted);
+  font-size: 0.8rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
 }
 
 .hero-links--top {
@@ -295,6 +324,11 @@ code {
   text-align: center;
   max-width: 48ch;
   padding-bottom: 0.5rem;
+}
+
+.hero-text--dashboard {
+  max-width: 54ch;
+  margin-top: 0.35rem;
 }
 
 .hero-links {
@@ -976,6 +1010,14 @@ code {
   gap: 1rem;
 }
 
+.timeline-graph__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
 .timeline-graph__svg {
   width: 100%;
   height: auto;
@@ -1000,21 +1042,56 @@ code {
 }
 
 .timeline-graph__label {
-  fill: var(--foreground);
-  font-size: 0.78rem;
-  font-weight: 700;
+  fill: var(--text);
+  font-size: 0.8rem;
+  font-weight: 800;
+  paint-order: stroke fill;
+  stroke: rgba(5, 11, 20, 0.8);
+  stroke-width: 4px;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.32));
 }
 
 .timeline-graph__label--muted {
-  fill: var(--muted);
+  fill: #d8e6ff;
   font-size: 0.72rem;
   font-weight: 500;
+  opacity: 0.96;
 }
 
 .timeline-legend {
   display: flex;
   flex-wrap: wrap;
   gap: 0.65rem;
+}
+
+.timeline-legend__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  background: rgba(8, 16, 30, 0.5);
+  color: var(--text);
+  padding: 0.7rem 0.95rem;
+  transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.timeline-legend__chip:hover {
+  transform: translateY(-1px);
+  border-color: rgba(94, 234, 212, 0.35);
+}
+
+.timeline-legend__chip--active {
+  background: linear-gradient(135deg, rgba(94, 234, 212, 0.18), rgba(13, 23, 41, 0.92));
+  border-color: rgba(94, 234, 212, 0.42);
+}
+
+.timeline-legend__chip-dot {
+  width: 0.72rem;
+  height: 0.72rem;
+  border-radius: 999px;
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.04);
 }
 
 .result-block {

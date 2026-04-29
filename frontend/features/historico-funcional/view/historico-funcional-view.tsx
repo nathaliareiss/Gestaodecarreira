@@ -1,5 +1,7 @@
 "use client"
 
+import { useState } from "react"
+
 import { useHistoricoFuncionalController } from "../controller/use-historico-funcional-controller"
 import { formatarTipoEvento, type HistoricoFuncionalAnalise } from "../model/historico-funcional.model"
 
@@ -8,12 +10,14 @@ type HistoricoFuncionalViewProps = {
   historicoInicial: HistoricoFuncionalAnalise | null
 }
 
-const STATUS_ORDEM = [
+type StatusEvento = HistoricoFuncionalAnalise["eventos"][number]["status"]
+
+const STATUS_ORDEM: StatusEvento[] = [
   "cumprindo",
   "estagio_probatorio",
   "atrasado",
   "nao_aplicavel",
-] as const
+]
 
 function formatarData(valor: string | null) {
   if (!valor) {
@@ -33,7 +37,7 @@ function formatarPorcentagem(valor: number) {
   return `${valor.toFixed(1).replace(".", ",")}%`
 }
 
-function statusLabel(status: HistoricoFuncionalAnalise["eventos"][number]["status"]) {
+function statusLabel(status: StatusEvento) {
   if (status === "atrasado") {
     return "Atrasado"
   }
@@ -49,23 +53,7 @@ function statusLabel(status: HistoricoFuncionalAnalise["eventos"][number]["statu
   return "Não aplicável"
 }
 
-function statusClass(status: HistoricoFuncionalAnalise["eventos"][number]["status"]) {
-  if (status === "atrasado") {
-    return "timeline-badge timeline-badge--danger"
-  }
-
-  if (status === "cumprindo") {
-    return "timeline-badge timeline-badge--success"
-  }
-
-  if (status === "estagio_probatorio") {
-    return "timeline-badge timeline-badge--warning"
-  }
-
-  return "timeline-badge timeline-badge--neutral"
-}
-
-function corDoStatus(status: HistoricoFuncionalAnalise["eventos"][number]["status"]) {
+function corDoStatus(status: StatusEvento) {
   if (status === "atrasado") {
     return "#fb7185"
   }
@@ -126,8 +114,12 @@ function GraficoPizzaTempo({
 
 function LinhaDoTempoGrafica({
   eventos,
+  filtroStatus,
+  onFiltroStatusChange,
 }: {
   eventos: HistoricoFuncionalAnalise["eventos"]
+  filtroStatus: StatusEvento | null
+  onFiltroStatusChange: (status: StatusEvento | null) => void
 }) {
   if (eventos.length === 0) {
     return (
@@ -137,7 +129,24 @@ function LinhaDoTempoGrafica({
     )
   }
 
-  const ordenados = [...eventos].sort(
+  const eventosVisiveis = filtroStatus
+    ? eventos.filter((evento) => evento.status === filtroStatus)
+    : eventos
+  const totalEventos = eventos.length
+  const totalVisiveis = eventosVisiveis.length
+
+  if (eventosVisiveis.length === 0) {
+    return (
+      <div className="history-empty history-empty--compact">
+        <p>Não há eventos para esse filtro.</p>
+        <button className="ghost-button ghost-button--compact" type="button" onClick={() => onFiltroStatusChange(null)}>
+          Mostrar todos
+        </button>
+      </div>
+    )
+  }
+
+  const ordenados = [...eventosVisiveis].sort(
     (a, b) => new Date(`${a.data_efetiva}T00:00:00`).getTime() - new Date(`${b.data_efetiva}T00:00:00`).getTime(),
   )
   const tempos = ordenados.map((evento) => new Date(`${evento.data_efetiva}T00:00:00`).getTime())
@@ -160,6 +169,26 @@ function LinhaDoTempoGrafica({
 
   return (
     <div className="timeline-graph">
+      <div className="timeline-graph__toolbar">
+        <p className="helper">
+          Clique em um status para filtrar a linha do tempo e ver só os eventos daquela faixa.
+        </p>
+        {filtroStatus ? (
+          <button
+            className="ghost-button ghost-button--compact"
+            type="button"
+            onClick={() => onFiltroStatusChange(null)}
+          >
+            Mostrar todos
+          </button>
+        ) : null}
+      </div>
+      {filtroStatus ? (
+        <p className="helper">
+          Mostrando {totalVisiveis} de {totalEventos} eventos.
+        </p>
+      ) : null}
+
       <svg
         aria-label="Linha do tempo dos eventos funcionais"
         className="timeline-graph__svg"
@@ -213,17 +242,36 @@ function LinhaDoTempoGrafica({
         })}
       </svg>
 
-      <div className="timeline-legend">
+      <div className="timeline-legend" role="group" aria-label="Filtrar eventos da linha do tempo">
         {STATUS_ORDEM.map((status) => {
           const total = eventos.filter((evento) => evento.status === status).length
           if (total === 0) {
             return null
           }
 
+          const ativo = filtroStatus === status
+
           return (
-            <span key={status} className={statusClass(status)}>
-              {statusLabel(status)} · {total}
-            </span>
+            <button
+              key={status}
+              aria-pressed={ativo}
+              className={
+                ativo
+                  ? "timeline-legend__chip timeline-legend__chip--active"
+                  : "timeline-legend__chip"
+              }
+              type="button"
+              onClick={() => onFiltroStatusChange(ativo ? null : status)}
+            >
+              <span
+                aria-hidden="true"
+                className="timeline-legend__chip-dot"
+                style={{ background: corDoStatus(status) }}
+              />
+              <span>
+                {statusLabel(status)} · {total}
+              </span>
+            </button>
           )
         })}
       </div>
@@ -235,6 +283,7 @@ export function HistoricoFuncionalView({
   usuarioId,
   historicoInicial,
 }: HistoricoFuncionalViewProps) {
+  const [filtroStatus, setFiltroStatus] = useState<StatusEvento | null>(null)
   const {
     arquivo,
     arquivoDownloadUrl,
@@ -319,12 +368,10 @@ export function HistoricoFuncionalView({
       ) : (
         <div className="history-empty">
           <p>
-            Envie o PDF do histórico funcional para o sistema ler os dados, salvar no
-            banco e montar os cálculos de carreira.
+            Envie o PDF do histórico funcional para o sistema ler os dados, salvar no banco e montar os cálculos de carreira.
           </p>
           <p>
-            Aqui você vai ver o tempo de trabalho, a previsão de aposentadoria e a
-            próxima progressão e promoção.
+            Aqui você vai ver o tempo de trabalho, a previsão de aposentadoria e a próxima progressão e promoção.
           </p>
         </div>
       )}
@@ -396,8 +443,7 @@ export function HistoricoFuncionalView({
             </div>
 
             <p className="helper">
-              O sistema limita a CLT em 10 anos. Se a pessoa tiver esse tempo, basta
-              preencher `10` ou usar o atalho.
+              O sistema limita a CLT em 10 anos. Se a pessoa tiver esse tempo, basta preencher `10` ou usar o atalho.
             </p>
 
             {arquivo ? <p className="helper">Arquivo selecionado: {arquivo.name}</p> : null}
@@ -412,8 +458,7 @@ export function HistoricoFuncionalView({
         ) : (
           <div className="upload-shell__collapsed">
             <p className="helper">
-              O último PDF já foi lido. Se quiser, você pode abrir essa área para enviar
-              outro arquivo.
+              O último PDF já foi lido. Se quiser, você pode abrir essa área para enviar outro arquivo.
             </p>
             {erro ? <p className="error-box">{erro}</p> : null}
           </div>
@@ -443,7 +488,11 @@ export function HistoricoFuncionalView({
             </article>
           </div>
 
-          <LinhaDoTempoGrafica eventos={painel.eventos} />
+          <LinhaDoTempoGrafica
+            eventos={painel.eventos}
+            filtroStatus={filtroStatus}
+            onFiltroStatusChange={setFiltroStatus}
+          />
         </section>
       ) : null}
     </section>
