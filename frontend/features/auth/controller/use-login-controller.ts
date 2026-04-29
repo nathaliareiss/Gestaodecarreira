@@ -5,18 +5,24 @@ import { useRouter } from "next/navigation"
 
 import {
   USUARIO_LOGIN_INICIAL,
-  USUARIO_RECUPERACAO_SENHA_INICIAL,
+  USUARIO_SOLICITACAO_RECUPERACAO_SENHA_INICIAL,
   type UsuarioLogin,
-  type UsuarioRecuperacaoSenha,
+  type UsuarioSolicitacaoRecuperacaoSenha,
 } from "../model/auth.model"
-import { autenticarUsuario, redefinirSenhaUsuario } from "../model/auth.repository"
+import {
+  autenticarUsuario,
+  solicitarRecuperacaoSenha,
+} from "../model/auth.repository"
 import { salvarTokenAutenticacao } from "@/shared/auth/session"
+
+type ModoAutenticacao = "login" | "recuperacao"
 
 export function useLoginController() {
   const router = useRouter()
+  const [modo, setModo] = useState<ModoAutenticacao>("login")
   const [dados, setDados] = useState<UsuarioLogin>(USUARIO_LOGIN_INICIAL)
-  const [recuperacao, setRecuperacao] = useState<UsuarioRecuperacaoSenha>(
-    USUARIO_RECUPERACAO_SENHA_INICIAL,
+  const [recuperacao, setRecuperacao] = useState<UsuarioSolicitacaoRecuperacaoSenha>(
+    USUARIO_SOLICITACAO_RECUPERACAO_SENHA_INICIAL,
   )
   const [carregando, setCarregando] = useState(false)
   const [recuperando, setRecuperando] = useState(false)
@@ -34,14 +40,27 @@ export function useLoginController() {
     }))
   }
 
-  function atualizarCampoRecuperacao<Chave extends keyof UsuarioRecuperacaoSenha>(
+  function atualizarCampoRecuperacao<Chave extends keyof UsuarioSolicitacaoRecuperacaoSenha>(
     chave: Chave,
-    valor: UsuarioRecuperacaoSenha[Chave],
+    valor: UsuarioSolicitacaoRecuperacaoSenha[Chave],
   ) {
     setRecuperacao((atual) => ({
       ...atual,
       [chave]: valor,
     }))
+  }
+
+  function abrirRecuperacao() {
+    setModo("recuperacao")
+    setErro(null)
+    setErroRecuperacao(null)
+    setMensagemRecuperacao(null)
+  }
+
+  function voltarParaLogin() {
+    setModo("login")
+    setErroRecuperacao(null)
+    setMensagemRecuperacao(null)
   }
 
   async function enviarFormulario(evento: FormEvent<HTMLFormElement>) {
@@ -71,13 +90,12 @@ export function useLoginController() {
     setMensagemRecuperacao(null)
 
     try {
-      await redefinirSenhaUsuario({
-        identificador: recuperacao.identificador.trim(),
-        nova_senha: recuperacao.nova_senha,
+      const resposta = await solicitarRecuperacaoSenha({
+        email: recuperacao.email.trim(),
       })
 
-      setMensagemRecuperacao("Senha atualizada. Agora voce pode entrar com a nova senha.")
-      setRecuperacao(USUARIO_RECUPERACAO_SENHA_INICIAL)
+      setMensagemRecuperacao(resposta.message)
+      setRecuperacao(USUARIO_SOLICITACAO_RECUPERACAO_SENHA_INICIAL)
     } catch (error) {
       setErroRecuperacao(
         error instanceof Error ? error.message : "Falha inesperada ao recuperar a senha",
@@ -88,6 +106,7 @@ export function useLoginController() {
   }
 
   return {
+    modo,
     dados,
     recuperacao,
     carregando,
@@ -97,8 +116,9 @@ export function useLoginController() {
     mensagemRecuperacao,
     enviarFormulario,
     enviarRecuperacao,
+    abrirRecuperacao,
+    voltarParaLogin,
     atualizarCampo,
     atualizarCampoRecuperacao,
   }
 }
-

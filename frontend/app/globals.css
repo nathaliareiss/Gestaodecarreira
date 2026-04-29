@@ -381,10 +381,23 @@ code {
 
 .actions--login {
   margin-top: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.actions--login .helper,
+.actions--compact .helper {
+  flex-basis: 100%;
 }
 
 .actions--compact {
   margin-top: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 .actions-row {

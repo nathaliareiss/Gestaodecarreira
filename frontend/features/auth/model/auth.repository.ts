@@ -1,7 +1,8 @@
 import type {
   UsuarioAuthResponse,
   UsuarioLogin,
-  UsuarioRecuperacaoSenha,
+  UsuarioSolicitacaoRecuperacaoSenha,
+  UsuarioRedefinicaoSenha,
 } from "./auth.model"
 import type { UsuarioConta } from "@/features/usuario/model/usuario.model"
 import { apiFetch, parseApiResponse } from "@/shared/api/client"
@@ -43,10 +44,10 @@ export async function encerrarSessao(token: string): Promise<void> {
   await parseApiResponse<{ status: string }>(response, "Nao foi possivel sair")
 }
 
-export async function redefinirSenhaUsuario(
-  dados: UsuarioRecuperacaoSenha,
+export async function solicitarRecuperacaoSenha(
+  dados: UsuarioSolicitacaoRecuperacaoSenha,
 ): Promise<{ status: string; message: string }> {
-  const response = await apiFetch("/api/auth/recuperar-senha", {
+  const response = await apiFetch("/api/auth/solicitar-recuperacao-senha", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -56,7 +57,24 @@ export async function redefinirSenhaUsuario(
 
   return parseApiResponse<{ status: string; message: string }>(
     response,
-    "Nao foi possivel recuperar a senha",
+    "Nao foi possivel solicitar a recuperacao de senha",
+  )
+}
+
+export async function redefinirSenhaUsuario(
+  dados: UsuarioRedefinicaoSenha,
+): Promise<{ status: string; message: string }> {
+  const response = await apiFetch("/api/auth/redefinir-senha", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(dados),
+  })
+
+  return parseApiResponse<{ status: string; message: string }>(
+    response,
+    "Nao foi possivel redefinir a senha",
   )
 }
 

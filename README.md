@@ -48,8 +48,9 @@ e leitura de historico funcional para acompanhar carreira no servico publico.
 
 - `backend/.env`: configuracao do backend
 - `frontend/.env.local`: URL da API do frontend
-- `backend/google_client_secret.json`: credencial OAuth do Gmail
-- `backend/google_token.json`: token gerado na primeira autorizacao
+- `backend/.env.example`: exemplo com SMTP para envio de email
+
+O envio de emails usa SMTP configurado no `.env` do backend.
 
 ## Fluxo da Aplicacao
 
@@ -74,4 +75,3 @@ run-frontend.cmd
 
 O projeto foi organizado para facilitar evolucao futura, com separacao entre
 rotas, servicos, repositorios e telas do front.
-

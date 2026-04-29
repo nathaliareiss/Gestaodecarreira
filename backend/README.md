@@ -51,16 +51,27 @@ Terminal interativo:
 - `CORS_ORIGINS`
 - `DATABASE_URL`
 - `FRONTEND_BASE_URL`
-- `GOOGLE_GMAIL_CLIENT_FILE`
-- `GOOGLE_GMAIL_TOKEN_FILE`
-- `GOOGLE_GMAIL_REDIRECT_HOST`
-- `GOOGLE_GMAIL_REDIRECT_PORT`
 - `EMAIL_CONFIRMATION_SUBJECT`
+- `EMAIL_RECOVERY_SUBJECT`
+- `SMTP_HOST`
+- `SMTP_PORT`
+- `SMTP_USERNAME`
+- `SMTP_PASSWORD`
+- `SMTP_FROM_EMAIL`
+- `SMTP_FROM_NAME`
+- `SMTP_USE_TLS`
+- `SMTP_USE_SSL`
 
 ## Email de Confirmacao
 
-O sistema usa Gmail API com OAuth 2.0. O arquivo OAuth fica localmente em
-`backend/google_client_secret.json` e o token e gerado na primeira autorizacao.
+O sistema usa SMTP com a biblioteca nativa `smtplib` do Python. Configure um
+servidor SMTP valido nas variaveis de ambiente para que o backend consiga enviar
+o email de confirmacao e o link de redefinicao de senha.
+
+## Recuperacao de Senha
+
+- `POST /api/auth/solicitar-recuperacao-senha`
+- `POST /api/auth/redefinir-senha`
 
 ## Fluxo
 
@@ -69,4 +80,4 @@ O sistema usa Gmail API com OAuth 2.0. O arquivo OAuth fica localmente em
 3. Envia email de confirmacao.
 4. Permite login so depois da confirmacao.
 5. Mantem sessao autenticada para o front consultar a pagina do usuario.
-
+6. Permite solicitar recuperacao de senha por email.

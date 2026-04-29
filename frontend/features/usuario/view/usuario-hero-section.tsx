@@ -16,8 +16,7 @@ export function UsuarioHeroSection() {
         organizado para acompanhar a evolucao da pessoa.
       </p>
       <p className="hero-text">
-        A lateral de cadastro foi pensada para ser objetiva: preencha os dados
-        principais, inclua a data de exercicio e siga para o perfil sem ruido visual.
+       Cadastre
       </p>
     </div>
   )

@@ -29,32 +29,6 @@ def _ler_bool(nome_variavel: str, padrao: bool = False) -> bool:
     if valor is None:
         return padrao
     return valor.strip().lower() in {"1", "true", "yes", "on"}
-
-
-def _resolver_caminho_env(nome_variavel: str, padrao: Path) -> Path:
-    valor = os.getenv(nome_variavel)
-    if not valor:
-        return padrao
-
-    caminho = Path(valor).expanduser()
-    if not caminho.is_absolute():
-        if caminho.exists():
-            return caminho.resolve()
-
-        for base in (
-            BASE_DIR,
-            PROJECT_ROOT,
-            Path.cwd(),
-            Path.cwd() / "backend",
-        ):
-            candidato = (base / caminho).resolve()
-            if candidato.exists():
-                return candidato
-
-        caminho = (BASE_DIR / caminho).resolve()
-    return caminho
-
-
 HOST = os.getenv("HOST", "0.0.0.0")
 PORT = int(os.getenv("PORT", "8000"))
 CORS_ORIGINS = _ler_lista_csv("CORS_ORIGINS") or ["http://localhost:3000"]

@@ -1,11 +1,15 @@
 import Link from "next/link"
 import type { FormEvent } from "react"
 
-import type { UsuarioLogin, UsuarioRecuperacaoSenha } from "../model/auth.model"
+import type {
+  UsuarioLogin,
+  UsuarioSolicitacaoRecuperacaoSenha,
+} from "../model/auth.model"
 
 type LoginViewProps = {
+  modo: "login" | "recuperacao"
   dados: UsuarioLogin
-  recuperacao: UsuarioRecuperacaoSenha
+  recuperacao: UsuarioSolicitacaoRecuperacaoSenha
   carregando: boolean
   recuperando: boolean
   erro: string | null
@@ -13,13 +17,15 @@ type LoginViewProps = {
   mensagemRecuperacao: string | null
   onSubmit: (evento: FormEvent<HTMLFormElement>) => void
   onRecuperacaoSubmit: (evento: FormEvent<HTMLFormElement>) => void
+  onAbrirRecuperacao: () => void
+  onVoltarLogin: () => void
   onLoginChange: (valor: string) => void
   onSenhaChange: (valor: string) => void
-  onRecuperacaoIdentificadorChange: (valor: string) => void
-  onRecuperacaoSenhaChange: (valor: string) => void
+  onRecuperacaoEmailChange: (valor: string) => void
 }
 
 export function LoginView({
+  modo,
   dados,
   recuperacao,
   carregando,
@@ -29,10 +35,11 @@ export function LoginView({
   mensagemRecuperacao,
   onSubmit,
   onRecuperacaoSubmit,
+  onAbrirRecuperacao,
+  onVoltarLogin,
   onLoginChange,
   onSenhaChange,
-  onRecuperacaoIdentificadorChange,
-  onRecuperacaoSenhaChange,
+  onRecuperacaoEmailChange,
 }: LoginViewProps) {
   return (
     <main className="page-shell">
@@ -60,98 +67,108 @@ export function LoginView({
         </div>
 
         <div className="login-panel">
-          <form className="card form-card form-card--login" onSubmit={onSubmit}>
-            <div className="card-header card-header--tight">
-              <div>
-                <p className="eyebrow">Acesso</p>
-                <h2>Entrar no sistema</h2>
+          {modo === "login" ? (
+            <form className="card form-card form-card--login" onSubmit={onSubmit}>
+              <div className="card-header card-header--tight">
+                <div>
+                  <p className="eyebrow">Acesso</p>
+                  <h2>Entrar no sistema</h2>
+                </div>
               </div>
-            </div>
 
-            <label className="field">
-              <span>Login ou email</span>
-              <input
-                value={dados.login}
-                onChange={(evento) => onLoginChange(evento.target.value)}
-                placeholder="maria.silva"
-                autoComplete="username"
-                required
-              />
-            </label>
+              <label className="field">
+                <span>Login ou email</span>
+                <input
+                  value={dados.login}
+                  onChange={(evento) => onLoginChange(evento.target.value)}
+                  placeholder="maria.silva"
+                  autoComplete="username"
+                  required
+                />
+              </label>
 
-            <label className="field">
-              <span>Senha</span>
-              <input
-                type="password"
-                value={dados.senha}
-                onChange={(evento) => onSenhaChange(evento.target.value)}
-                placeholder="********"
-                autoComplete="current-password"
-                required
-              />
-            </label>
+              <label className="field">
+                <span>Senha</span>
+                <input
+                  type="password"
+                  value={dados.senha}
+                  onChange={(evento) => onSenhaChange(evento.target.value)}
+                  placeholder="********"
+                  autoComplete="current-password"
+                  required
+                />
+              </label>
 
-            <div className="actions actions--login">
-              <button className="primary-button button--large" type="submit" disabled={carregando}>
-                {carregando ? "Entrando..." : "Entrar"}
-              </button>
+              <div className="actions actions--login">
+                <button
+                  className="primary-button button--large"
+                  type="submit"
+                  disabled={carregando}
+                >
+                  {carregando ? "Entrando..." : "Entrar"}
+                </button>
+                <button
+                  className="ghost-button ghost-button--compact"
+                  type="button"
+                  onClick={onAbrirRecuperacao}
+                >
+                  Esqueci minha senha
+                </button>
+                <p className="helper">
+                  Depois do login, voce vai para a pagina do usuario com acesso aos dados
+                  e ao historico funcional.
+                </p>
+              </div>
+
+              {erro ? <p className="error-box">{erro}</p> : null}
+            </form>
+          ) : (
+            <form className="card form-card form-card--recovery" onSubmit={onRecuperacaoSubmit}>
+              <div className="card-header card-header--tight">
+                <div>
+                  <p className="eyebrow">Ajuda de acesso</p>
+                  <h2>Esqueci minha senha</h2>
+                </div>
+                <button
+                  className="ghost-button ghost-button--compact"
+                  type="button"
+                  onClick={onVoltarLogin}
+                >
+                  Voltar
+                </button>
+              </div>
+
               <p className="helper">
-                Depois do login, voce vai para a pagina do usuario com acesso aos dados e
-                ao historico funcional.
+                Informe apenas o seu email. Se ele estiver cadastrado, vamos enviar um
+                link de redefinicao.
               </p>
-            </div>
 
-            {erro ? <p className="error-box">{erro}</p> : null}
-          </form>
+              <label className="field">
+                <span>Email</span>
+                <input
+                  type="email"
+                  value={recuperacao.email}
+                  onChange={(evento) => onRecuperacaoEmailChange(evento.target.value)}
+                  placeholder="maria@exemplo.com"
+                  autoComplete="email"
+                  required
+                />
+              </label>
 
-          <form className="card form-card form-card--recovery" onSubmit={onRecuperacaoSubmit}>
-            <div className="card-header card-header--tight">
-              <div>
-                <p className="eyebrow">Ajuda de acesso</p>
-                <h2>Esqueci minha senha</h2>
+              <div className="actions actions--compact">
+                <button
+                  className="primary-button button--large"
+                  type="submit"
+                  disabled={recuperando}
+                >
+                  {recuperando ? "Enviando..." : "Enviar link de redefinicao"}
+                </button>
               </div>
-            </div>
 
-            <p className="helper">
-              Se voce esqueceu a senha, informe o login ou email e defina uma nova.
-            </p>
-
-            <label className="field">
-              <span>Login ou email</span>
-              <input
-                value={recuperacao.identificador}
-                onChange={(evento) => onRecuperacaoIdentificadorChange(evento.target.value)}
-                placeholder="maria.silva"
-                autoComplete="username"
-                required
-              />
-            </label>
-
-            <label className="field">
-              <span>Nova senha</span>
-              <input
-                type="password"
-                value={recuperacao.nova_senha}
-                onChange={(evento) => onRecuperacaoSenhaChange(evento.target.value)}
-                placeholder="********"
-                autoComplete="new-password"
-                required
-              />
-            </label>
-
-            <div className="actions actions--compact">
-              <button
-                className="ghost-button button--large"
-                type="submit"
-                disabled={recuperando}
-              >
-                {recuperando ? "Atualizando..." : "Redefinir senha"}
-              </button>
-            </div>
-
-            {mensagemRecuperacao ? <p className="success-box">{mensagemRecuperacao}</p> : null}
-            {erroRecuperacao ? <p className="error-box">{erroRecuperacao}</p> : null}
-          </form>
+              {mensagemRecuperacao ? <p className="success-box">{mensagemRecuperacao}</p> : null}
+              {erroRecuperacao ? <p className="error-box">{erroRecuperacao}</p> : null}
+            </form>
+          )}
         </div>
       </section>
     </main>

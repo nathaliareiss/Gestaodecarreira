@@ -5,8 +5,12 @@ export type UsuarioLogin = {
   senha: string
 }
 
-export type UsuarioRecuperacaoSenha = {
-  identificador: string
+export type UsuarioSolicitacaoRecuperacaoSenha = {
+  email: string
+}
+
+export type UsuarioRedefinicaoSenha = {
+  token: string
   nova_senha: string
 }
 
@@ -21,8 +25,13 @@ export const USUARIO_LOGIN_INICIAL: UsuarioLogin = {
   senha: "",
 }
 
-export const USUARIO_RECUPERACAO_SENHA_INICIAL: UsuarioRecuperacaoSenha = {
-  identificador: "",
+export const USUARIO_SOLICITACAO_RECUPERACAO_SENHA_INICIAL: UsuarioSolicitacaoRecuperacaoSenha =
+  {
+    email: "",
+  }
+
+export const USUARIO_REDEFINICAO_SENHA_INICIAL: UsuarioRedefinicaoSenha = {
+  token: "",
   nova_senha: "",
 }
 

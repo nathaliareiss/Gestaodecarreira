@@ -8,6 +8,7 @@ from backend.database.models import Usuario
 from backend.repositories.usuario_repository import (
     atualizar_usuario,
     obter_usuario_por_login_ou_email,
+    obter_usuario_por_email,
     obter_usuario_por_redefinir_senha_token_hash,
     obter_usuario_por_sessao_token_hash,
 )
@@ -16,10 +17,7 @@ from backend.schemas.auth_schema import (
     UsuarioRedefinirSenhaRequest,
     UsuarioSolicitarRecuperacaoSenhaRequest,
 )
-from backend.services.email_service import (
-    enviar_email_confirmacao,
-    enviar_email_recuperacao_senha,
-)
+from backend.services.email_service import enviar_email_recuperacao_senha
 from backend.services.security_service import gerar_hash_sha256, gerar_token_seguro
 
 
@@ -72,20 +70,27 @@ def solicitar_recuperacao_senha(
     dados: UsuarioSolicitarRecuperacaoSenhaRequest,
 ) -> bool:
     email = dados.email.strip().lower()
-    usuario = obter_usuario_por_login_ou_email(db, email)
+    usuario = obter_usuario_por_email(db, email)
     if usuario is None:
         return False
 
     token = gerar_token_seguro()
     usuario.redefinir_senha_token_hash = _hash_token(token)
     usuario.redefinir_senha_expira_em = datetime.now(timezone.utc) + timedelta(minutes=30)
-    atualizar_usuario(db, usuario)
+    db.add(usuario)
+    db.flush()
 
-    enviar_email_recuperacao_senha(
-        destinatario=usuario.email,
-        nome=usuario.nome,
-        token=token,
-    )
+    try:
+        enviar_email_recuperacao_senha(
+            destinatario=usuario.email,
+            nome=usuario.nome,
+            token=token,
+        )
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+
     return True
 
 
@@ -104,13 +109,3 @@ def redefinir_senha_usuario(
     usuario.sessao_expira_em = None
     atualizar_usuario(db, usuario)
     return usuario
-
-
-def enviar_confirmacao_email(db: Session, usuario: Usuario) -> None:
-    token = usuario.token_confirmacao_email
-    enviar_email_confirmacao(
-        destinatario=usuario.email,
-        nome=usuario.nome,
-        token=token,
-    )
-

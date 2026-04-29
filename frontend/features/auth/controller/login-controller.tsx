@@ -5,6 +5,7 @@ import { useLoginController } from "./use-login-controller"
 
 export function LoginController() {
   const {
+    modo,
     dados,
     recuperacao,
     carregando,
@@ -14,12 +15,15 @@ export function LoginController() {
     mensagemRecuperacao,
     enviarFormulario,
     enviarRecuperacao,
+    abrirRecuperacao,
+    voltarParaLogin,
     atualizarCampo,
     atualizarCampoRecuperacao,
   } = useLoginController()
 
   return (
     <LoginView
+      modo={modo}
       dados={dados}
       recuperacao={recuperacao}
       carregando={carregando}
@@ -29,15 +33,11 @@ export function LoginController() {
       mensagemRecuperacao={mensagemRecuperacao}
       onSubmit={enviarFormulario}
       onRecuperacaoSubmit={enviarRecuperacao}
+      onAbrirRecuperacao={abrirRecuperacao}
+      onVoltarLogin={voltarParaLogin}
       onLoginChange={(valor) => atualizarCampo("login", valor)}
       onSenhaChange={(valor) => atualizarCampo("senha", valor)}
-      onRecuperacaoIdentificadorChange={(valor) =>
-        atualizarCampoRecuperacao("identificador", valor)
-      }
-      onRecuperacaoSenhaChange={(valor) =>
-        atualizarCampoRecuperacao("nova_senha", valor)
-      }
+      onRecuperacaoEmailChange={(valor) => atualizarCampoRecuperacao("email", valor)}
     />
   )
 }
-
