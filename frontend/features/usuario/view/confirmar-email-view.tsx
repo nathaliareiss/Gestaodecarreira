@@ -20,7 +20,7 @@ export function ConfirmarEmailView({ token }: ConfirmarEmailViewProps) {
 
     async function confirmar() {
       if (!token) {
-        setErro("Token de confirmação ausente.")
+        setErro("Token ausente.")
         setCarregando(false)
         return
       }
@@ -62,8 +62,7 @@ export function ConfirmarEmailView({ token }: ConfirmarEmailViewProps) {
       <section className="hero">
         <div className="hero-copy">
           <p className="eyebrow">Confirmação de e-mail</p>
-          <h1>Valide o acesso com um clique no link do email.</h1>
-         
+          <h1>Valide o acesso com um clique no link do e-mail.</h1>
         </div>
 
         <div className="hero-grid">
@@ -110,8 +109,6 @@ export function ConfirmarEmailView({ token }: ConfirmarEmailViewProps) {
             </div>
           )}
         </section>
-
-      
       </section>
     </main>
   )
