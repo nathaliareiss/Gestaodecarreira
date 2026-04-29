@@ -332,7 +332,7 @@ def extrair_afastamentos_pdf(conteudo_pdf: bytes) -> list[AfastamentoPeriodo]:
             proximo_tipo = _tipo_afastamento_linha(linhas[i])
             if proximo_tipo is not None:
                 break
-            if linhas[i] != "Período Total de dias Legislação Publicação":
+            if not _eh_linha_cabecalho_afastamento(linhas[i]):
                 bloco_linhas.append(linhas[i])
             i += 1
 
