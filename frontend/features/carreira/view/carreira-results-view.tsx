@@ -70,12 +70,8 @@ export function CarreiraResultsView({ resumo }: CarreiraResultsViewProps) {
       ) : (
         <div className="empty-state">
           <p>
-            Preencha o formulário e clique em <strong>Calcular resumo</strong> para
-            enviar os dados ao backend Python.
-          </p>
-          <p>
-            A resposta volta em JSON e o front organiza os cálculos em cartões para
-            visualização.
+            Preencha o formulário e clique em <strong>Calcular resumo</strong> para ver
+            os resultados.
           </p>
         </div>
       )}

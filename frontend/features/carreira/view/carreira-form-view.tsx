@@ -1,5 +1,3 @@
-"use client"
-
 import type { FormEvent } from "react"
 
 import type { CadastroCarreira } from "../model/carreira.model"
@@ -29,7 +27,7 @@ export function CarreiraFormView({
 }: CarreiraFormViewProps) {
   return (
     <form className="card form-card" onSubmit={onSubmit}>
-      <div className="card-header">
+      <div className="card-header card-header--tight">
         <div>
           <p className="eyebrow">Cadastro</p>
           <h2>Entrada de dados</h2>
@@ -81,12 +79,9 @@ export function CarreiraFormView({
       </label>
 
       <div className="actions">
-        <button className="primary-button" type="submit" disabled={carregando}>
+        <button className="primary-button button--large" type="submit" disabled={carregando}>
           {carregando ? "Calculando..." : "Calcular resumo"}
         </button>
-        <p className="helper">
-          Front: <code>{process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}</code>
-        </p>
       </div>
 
       {erro ? <p className="error-box">{erro}</p> : null}

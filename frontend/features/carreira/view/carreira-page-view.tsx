@@ -1,7 +1,6 @@
 import type { CadastroCarreira, ResumoCarreira } from "../model/carreira.model"
 import type { FormEvent } from "react"
 
-import { CarreiraArchitectureSection } from "./sections/carreira-architecture-section"
 import { CarreiraHeroSection } from "./sections/carreira-hero-section"
 import { CarreiraWorkbenchView } from "./carreira-workbench-view"
 
@@ -35,7 +34,6 @@ export function CarreiraPageView({
       <div className="bg-orb bg-orb-a" />
       <div className="bg-orb bg-orb-b" />
       <CarreiraHeroSection />
-      <CarreiraArchitectureSection />
       <CarreiraWorkbenchView
         cadastro={cadastro}
         resumo={resumo}

@@ -61,8 +61,7 @@ export function LoginView({
           </div>
 
           <p className="hero-text">
-            Entre com seu login ou e-mail e a senha cadastrada para abrir sua página de
-            usuário.
+            Entre com seu login ou e-mail e sua senha para abrir sua página.
           </p>
         </div>
 
@@ -72,7 +71,7 @@ export function LoginView({
               <div className="card-header card-header--tight">
                 <div>
                   <p className="eyebrow">Acesso</p>
-                  <h2>Entrar no sistema</h2>
+                  <h2>Entrar</h2>
                 </div>
               </div>
 
@@ -114,10 +113,7 @@ export function LoginView({
                 >
                   Esqueci minha senha
                 </button>
-                <p className="helper">
-                  Depois do login, você vai para a página do usuário com acesso aos dados
-                  e ao histórico funcional.
-                </p>
+                <p className="helper">Depois de entrar, você vai para sua página.</p>
               </div>
 
               {erro ? <p className="error-box">{erro}</p> : null}
@@ -139,12 +135,12 @@ export function LoginView({
               </div>
 
               <p className="helper">
-                Informe apenas o seu e-mail. Se ele estiver cadastrado, vamos enviar um
-                link de redefinição.
+                Informe apenas o seu e-mail. Se ele estiver cadastrado, você receberá um
+                link para criar uma nova senha.
               </p>
 
               <label className="field">
-                <span>Email</span>
+                <span>E-mail</span>
                 <input
                   type="email"
                   value={recuperacao.email}
@@ -161,7 +157,7 @@ export function LoginView({
                   type="submit"
                   disabled={recuperando}
                 >
-                  {recuperando ? "Enviando..." : "Enviar link de redefinição"}
+                  {recuperando ? "Enviando..." : "Enviar link"}
                 </button>
               </div>
 

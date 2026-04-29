@@ -63,10 +63,7 @@ export function ConfirmarEmailView({ token }: ConfirmarEmailViewProps) {
         <div className="hero-copy">
           <p className="eyebrow">Confirmação de e-mail</p>
           <h1>Valide o acesso com um clique no link do email.</h1>
-          <p className="hero-text">
-            Esta rota recebe o token gerado na criação do usuário e confirma o cadastro
-            no backend.
-          </p>
+         
         </div>
 
         <div className="hero-grid">
@@ -114,17 +111,7 @@ export function ConfirmarEmailView({ token }: ConfirmarEmailViewProps) {
           )}
         </section>
 
-        <aside className="note-card">
-          <p className="eyebrow">Como usar</p>
-          <h2>O link agora fala com o backend</h2>
-          <p>
-            O template do email deve apontar para <code>/confirmar-email?token=...</code>.
-          </p>
-          <p>
-            O backend recebe esse token, localiza o usuário e marca o e-mail como
-            confirmado.
-          </p>
-        </aside>
+      
       </section>
     </main>
   )
