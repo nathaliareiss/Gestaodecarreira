@@ -132,7 +132,11 @@ code {
 
 .hero-copy--centered {
   text-align: center;
-  justify-items: center;
+  justify-items: stretch;
+}
+
+.hero-topbar--register {
+  width: 100%;
 }
 
 .hero-topbar {
