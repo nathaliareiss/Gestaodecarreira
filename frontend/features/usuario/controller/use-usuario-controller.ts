@@ -39,7 +39,7 @@ export function useUsuarioController() {
     const senha = cadastro.senha
 
     if (!nome || !email || !dataExercicio || !login || !senha) {
-      return "Preencha nome, email, data de exercicio, login e senha."
+      return "Preencha nome, e-mail, data de exercício, login e senha."
     }
 
     if (senha.length < 6) {
@@ -72,7 +72,7 @@ export function useUsuarioController() {
       })
       router.push("/usuario")
     } catch (error) {
-      setErro(error instanceof Error ? error.message : "Falha inesperada ao salvar")
+      setErro(error instanceof Error ? error.message : "Falha inesperada ao salvar.")
     } finally {
       setCarregando(false)
     }

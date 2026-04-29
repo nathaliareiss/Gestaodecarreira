@@ -77,7 +77,7 @@ export function useLoginController() {
       salvarTokenAutenticacao(resposta.access_token)
       router.push("/usuario")
     } catch (error) {
-      setErro(error instanceof Error ? error.message : "Falha inesperada ao entrar")
+      setErro(error instanceof Error ? error.message : "Falha inesperada ao entrar.")
     } finally {
       setCarregando(false)
     }
@@ -98,7 +98,7 @@ export function useLoginController() {
       setRecuperacao(USUARIO_SOLICITACAO_RECUPERACAO_SENHA_INICIAL)
     } catch (error) {
       setErroRecuperacao(
-        error instanceof Error ? error.message : "Falha inesperada ao recuperar a senha",
+        error instanceof Error ? error.message : "Falha inesperada ao recuperar a senha.",
       )
     } finally {
       setRecuperando(false)
