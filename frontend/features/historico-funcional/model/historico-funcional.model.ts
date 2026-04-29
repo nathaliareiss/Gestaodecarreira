@@ -8,6 +8,11 @@ export type HistoricoFuncionalUpload = {
   afastamentos_arquivo_base64?: string | null
 }
 
+export type AfastamentosUpload = {
+  arquivo_nome: string
+  arquivo_base64: string
+}
+
 export type AfastamentoPeriodo = {
   tipo: "aguardando_resultado_conclusivo_de_exame_pericial" | "licenca_para_tratamento_de_saude"
   data_inicio: string

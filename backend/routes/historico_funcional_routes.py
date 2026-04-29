@@ -12,12 +12,14 @@ from backend.repositories.historico_funcional_repository import (
     obter_ultimo_historico_por_usuario,
 )
 from backend.schemas.historico_funcional_schema import (
+    AfastamentosUploadRequest,
     HistoricoFuncionalResponse,
     HistoricoFuncionalUploadRequest,
     HistoricoFuncionalResumoGraficoResponse,
 )
 from backend.services.historico_funcional_service import (
     analisar_historico_funcional,
+    analisar_afastamentos_pdf,
     decodificar_arquivo_base64,
 )
 
@@ -104,6 +106,56 @@ def analisar_e_salvar_historico(
     historico = criar_historico(db, historico)
 
     resposta = resposta.model_copy(update={"historico_id": historico.id})
+    historico.dados_json = json.dumps(resposta.model_dump(mode="json"), ensure_ascii=False)
+    db.add(historico)
+    db.commit()
+    db.refresh(historico)
+
+    return resposta
+
+
+@router.post("/usuario/{usuario_id}/afastamentos", response_model=HistoricoFuncionalResponse)
+def anexar_afastamentos_historico(
+    usuario_id: int,
+    dados: AfastamentosUploadRequest,
+    db: Session = Depends(get_db),
+) -> HistoricoFuncionalResponse:
+    historico = obter_ultimo_historico_por_usuario(db, usuario_id)
+    if historico is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Nenhum historico funcional encontrado para este usuario.",
+        )
+
+    try:
+        dados_historico = json.loads(historico.dados_json)
+        dados_historico = _normalizar_dados_historico_salvo(dados_historico)
+        conteudo_afastamentos_pdf = decodificar_arquivo_base64(dados.arquivo_base64)
+        afastamentos, resumo_afastamentos = analisar_afastamentos_pdf(conteudo_afastamentos_pdf)
+    except ValueError as erro:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Nao foi possivel analisar o arquivo de afastamentos. Verifique o PDF e tente novamente.",
+        ) from erro
+
+    resposta = HistoricoFuncionalResponse.model_validate(dados_historico).model_copy(
+        update={
+            "afastamentos_arquivo_nome": dados.arquivo_nome,
+            "afastamentos_resumo": resumo_afastamentos,
+            "afastamentos": [
+                {
+                    "tipo": afastamento.tipo,
+                    "data_inicio": afastamento.data_inicio,
+                    "data_fim": afastamento.data_fim,
+                    "total_dias": afastamento.total_dias,
+                    "legislacao": afastamento.legislacao,
+                    "publicacao": afastamento.publicacao,
+                }
+                for afastamento in afastamentos
+            ],
+        }
+    )
+
     historico.dados_json = json.dumps(resposta.model_dump(mode="json"), ensure_ascii=False)
     db.add(historico)
     db.commit()

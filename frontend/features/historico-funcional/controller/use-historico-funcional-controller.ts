@@ -7,6 +7,7 @@ import type {
   HistoricoFuncionalUpload,
 } from "../model/historico-funcional.model"
 import {
+  anexarAfastamentosAoHistorico,
   analisarHistoricoFuncional,
   buscarUltimoHistoricoFuncional,
 } from "../model/historico-funcional.repository"
@@ -45,7 +46,9 @@ export function useHistoricoFuncionalController({
   const [arquivo, setArquivo] = useState<File | null>(null)
   const [arquivoDownloadUrl, setArquivoDownloadUrl] = useState<string | null>(null)
   const [arquivoAfastamentos, setArquivoAfastamentos] = useState<File | null>(null)
-  const [arquivoAfastamentosDownloadUrl, setArquivoAfastamentosDownloadUrl] = useState<string | null>(null)
+  const [arquivoAfastamentosDownloadUrl, setArquivoAfastamentosDownloadUrl] = useState<string | null>(
+    null,
+  )
   const [dataNascimento, setDataNascimento] = useState(historicoInicial?.data_nascimento ?? "")
   const [anosCltAverbados, setAnosCltAverbados] = useState(
     historicoInicial?.tempo_clt_averbado_anos ?? 0,
@@ -54,6 +57,8 @@ export function useHistoricoFuncionalController({
   const [carregando, setCarregando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
   const [mostrarUpload, setMostrarUpload] = useState(historicoInicial === null)
+  const [modoAtualizacaoHistorico, setModoAtualizacaoHistorico] = useState(historicoInicial === null)
+  const [modoAnexoAfastamentos, setModoAnexoAfastamentos] = useState(historicoInicial !== null)
   const assinaturaEnvioAutomatico = useRef<string | null>(null)
 
   useEffect(() => {
@@ -87,6 +92,8 @@ export function useHistoricoFuncionalController({
   function selecionarArquivo(evento: ChangeEvent<HTMLInputElement>) {
     const selecionado = evento.target.files?.[0] ?? null
     setArquivo(selecionado)
+    setModoAtualizacaoHistorico(true)
+    setModoAnexoAfastamentos(false)
     setMostrarUpload(true)
     setErro(null)
   }
@@ -94,6 +101,21 @@ export function useHistoricoFuncionalController({
   function selecionarArquivoAfastamentos(evento: ChangeEvent<HTMLInputElement>) {
     const selecionado = evento.target.files?.[0] ?? null
     setArquivoAfastamentos(selecionado)
+    setModoAnexoAfastamentos(true)
+    setMostrarUpload(true)
+    setErro(null)
+  }
+
+  function iniciarAnexoAfastamentos() {
+    setModoAnexoAfastamentos(true)
+    setModoAtualizacaoHistorico(false)
+    setMostrarUpload(true)
+    setErro(null)
+  }
+
+  function iniciarAtualizacaoHistorico() {
+    setModoAtualizacaoHistorico(true)
+    setModoAnexoAfastamentos(false)
     setMostrarUpload(true)
     setErro(null)
   }
@@ -103,16 +125,23 @@ export function useHistoricoFuncionalController({
     setErro(null)
   }
 
-  function criarAssinaturaEnvio() {
+  function criarAssinaturaHistorico() {
     return [
       arquivo?.name ?? "",
       arquivo?.size ?? 0,
       arquivo?.lastModified ?? 0,
+      dataNascimento,
+      anosCltAverbados,
+      usuarioId ?? "",
+    ].join("|")
+  }
+
+  function criarAssinaturaAfastamentos() {
+    return [
       arquivoAfastamentos?.name ?? "",
       arquivoAfastamentos?.size ?? 0,
       arquivoAfastamentos?.lastModified ?? 0,
-      dataNascimento,
-      anosCltAverbados,
+      historico?.historico_id ?? "",
       usuarioId ?? "",
     ].join("|")
   }
@@ -130,6 +159,8 @@ export function useHistoricoFuncionalController({
       setHistorico(recarregado)
       if (recarregado) {
         setMostrarUpload(false)
+        setModoAtualizacaoHistorico(false)
+        setModoAnexoAfastamentos(true)
       }
     } catch (error) {
       setErro(error instanceof Error ? error.message : "Falha inesperada ao recarregar.")
@@ -178,6 +209,8 @@ export function useHistoricoFuncionalController({
 
       const analisado = await analisarHistoricoFuncional(payload)
       setHistorico(analisado)
+      setModoAtualizacaoHistorico(false)
+      setModoAnexoAfastamentos(true)
       setMostrarUpload(false)
     } catch (error) {
       if (assinatura) {
@@ -189,23 +222,80 @@ export function useHistoricoFuncionalController({
     }
   }
 
+  async function submeterAfastamentos(assinatura?: string) {
+    if (!usuarioId) {
+      setErro("Cadastre um usuário antes de enviar os afastamentos.")
+      return
+    }
+
+    if (!historico) {
+      setErro("Envie primeiro o histórico funcional.")
+      return
+    }
+
+    if (!arquivoAfastamentos) {
+      setErro("Escolha um PDF de afastamentos.")
+      return
+    }
+
+    setCarregando(true)
+    setErro(null)
+
+    if (assinatura) {
+      assinaturaEnvioAutomatico.current = assinatura
+    }
+
+    try {
+      const arquivoBase64 = await lerArquivoComoBase64(arquivoAfastamentos)
+      const analisado = await anexarAfastamentosAoHistorico(usuarioId, {
+        arquivo_nome: arquivoAfastamentos.name,
+        arquivo_base64: arquivoBase64,
+      })
+
+      setHistorico(analisado)
+      setArquivoAfastamentos(null)
+      setModoAnexoAfastamentos(true)
+      setMostrarUpload(false)
+    } catch (error) {
+      if (assinatura) {
+        assinaturaEnvioAutomatico.current = null
+      }
+      setErro(error instanceof Error ? error.message : "Falha inesperada ao analisar os afastamentos.")
+    } finally {
+      setCarregando(false)
+    }
+  }
+
   async function enviarFormulario(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault()
     await submeterAnalise()
   }
 
   useEffect(() => {
-    if (!arquivo || !dataNascimento || carregando) {
+    if (!modoAtualizacaoHistorico || !arquivo || !dataNascimento || carregando) {
       return
     }
 
-    const assinatura = criarAssinaturaEnvio()
+    const assinatura = criarAssinaturaHistorico()
     if (assinaturaEnvioAutomatico.current === assinatura) {
       return
     }
 
     void submeterAnalise(assinatura)
-  }, [arquivo, arquivoAfastamentos, dataNascimento, anosCltAverbados, carregando, usuarioId])
+  }, [arquivo, dataNascimento, anosCltAverbados, carregando, usuarioId, modoAtualizacaoHistorico])
+
+  useEffect(() => {
+    if (!modoAnexoAfastamentos || !historico || !arquivoAfastamentos || carregando) {
+      return
+    }
+
+    const assinatura = criarAssinaturaAfastamentos()
+    if (assinaturaEnvioAutomatico.current === assinatura) {
+      return
+    }
+
+    void submeterAfastamentos(assinatura)
+  }, [arquivoAfastamentos, carregando, usuarioId, historico, modoAnexoAfastamentos])
 
   return {
     arquivo,
@@ -218,6 +308,10 @@ export function useHistoricoFuncionalController({
     erro,
     historico,
     mostrarUpload,
+    modoAtualizacaoHistorico,
+    modoAnexoAfastamentos,
+    iniciarAnexoAfastamentos,
+    iniciarAtualizacaoHistorico,
     recarregarHistorico,
     selecionarArquivo,
     selecionarArquivoAfastamentos,

@@ -16,6 +16,11 @@ class HistoricoFuncionalUploadRequest(BaseModel):
     afastamentos_arquivo_base64: str | None = None
 
 
+class AfastamentosUploadRequest(BaseModel):
+    arquivo_nome: str = Field(min_length=1)
+    arquivo_base64: str = Field(min_length=1)
+
+
 class HistoricoFuncionalEventoResponse(BaseModel):
     tipo: Literal["nomeacao", "progressao", "promocao", "substituicao"]
     descricao: str

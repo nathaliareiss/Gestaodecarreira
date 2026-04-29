@@ -366,7 +366,10 @@ export function HistoricoFuncionalView({
     dataNascimento,
     erro,
     historico,
-    mostrarUpload,
+    modoAtualizacaoHistorico,
+    modoAnexoAfastamentos,
+    iniciarAnexoAfastamentos,
+    iniciarAtualizacaoHistorico,
     recarregarHistorico,
     selecionarArquivo,
     selecionarArquivoAfastamentos,
@@ -483,17 +486,28 @@ export function HistoricoFuncionalView({
         <div className="upload-shell__header">
           <div>
             <p className="eyebrow">Arquivos</p>
-            <h3>Enviar documentos</h3>
+            <h3>{painel ? "Adicionar arquivos" : "Enviar documentos"}</h3>
           </div>
 
           <div className="upload-shell__actions">
-            <button
-              className="ghost-button ghost-button--compact"
-              type="button"
-              onClick={() => setMostrarUpload(true)}
-            >
-              Enviar afastamentos
-            </button>
+            {painel ? (
+              <button
+                className="ghost-button ghost-button--compact"
+                type="button"
+                onClick={iniciarAnexoAfastamentos}
+              >
+                Anexar afastamentos
+              </button>
+            ) : null}
+            {painel ? (
+              <button
+                className="ghost-button ghost-button--compact"
+                type="button"
+                onClick={iniciarAtualizacaoHistorico}
+              >
+                Atualizar histórico funcional
+              </button>
+            ) : null}
             {arquivoDownloadUrl ? (
               <a
                 className="ghost-button ghost-button--compact"
@@ -503,31 +517,15 @@ export function HistoricoFuncionalView({
                 Baixar PDF
               </a>
             ) : null}
-            <button
-              className="primary-button button--large"
-              type="button"
-              onClick={() => setMostrarUpload((atual) => !atual)}
-            >
-              {mostrarUpload ? "Ocultar envio" : "Deseja adicionar mais arquivos?"}
-            </button>
           </div>
         </div>
 
-        {mostrarUpload || !painel ? (
+        {!painel || modoAtualizacaoHistorico ? (
           <form className="upload-form" onSubmit={enviarFormulario}>
             <label className="field">
               <span>PDF do histórico funcional</span>
               <input type="file" accept="application/pdf" onChange={selecionarArquivo} />
             </label>
-
-            <label className="field">
-              <span>PDF dos afastamentos</span>
-              <input type="file" accept="application/pdf" onChange={selecionarArquivoAfastamentos} />
-            </label>
-
-            {arquivoAfastamentos ? (
-              <p className="helper">Arquivo de afastamentos selecionado: {arquivoAfastamentos.name}</p>
-            ) : null}
 
             <div className="field-grid">
               <label className="field">
@@ -552,6 +550,15 @@ export function HistoricoFuncionalView({
               </label>
             </div>
 
+            <label className="field">
+              <span>PDF dos afastamentos</span>
+              <input type="file" accept="application/pdf" onChange={selecionarArquivoAfastamentos} />
+            </label>
+
+            {arquivoAfastamentos ? (
+              <p className="helper">Arquivo de afastamentos selecionado: {arquivoAfastamentos.name}</p>
+            ) : null}
+
             <div className="upload-actions">
               <button className="ghost-button" type="button" onClick={usarCltMaximo}>
                 Preencher 10 anos de CLT
@@ -571,6 +578,21 @@ export function HistoricoFuncionalView({
 
             {erro ? <p className="error-box">{erro}</p> : null}
           </form>
+        ) : painel && modoAnexoAfastamentos ? (
+          <div className="upload-shell__collapsed upload-shell__collapsed--compact">
+            <label className="field">
+              <span>PDF dos afastamentos</span>
+              <input type="file" accept="application/pdf" onChange={selecionarArquivoAfastamentos} />
+            </label>
+
+            {arquivoAfastamentos ? (
+              <p className="helper">Arquivo de afastamentos selecionado: {arquivoAfastamentos.name}</p>
+            ) : (
+              <p className="helper">Selecione o PDF para anexar aos dados já salvos.</p>
+            )}
+
+            {erro ? <p className="error-box">{erro}</p> : null}
+          </div>
         ) : (
           <div className="upload-shell__collapsed">
             <p className="helper">

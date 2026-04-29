@@ -343,6 +343,14 @@ def extrair_afastamentos_pdf(conteudo_pdf: bytes) -> list[AfastamentoPeriodo]:
     return afastamentos
 
 
+def analisar_afastamentos_pdf(
+    conteudo_pdf: bytes,
+) -> tuple[list[AfastamentoPeriodo], AfastamentoResumoResponse]:
+    afastamentos = extrair_afastamentos_pdf(conteudo_pdf)
+    resumo_afastamentos = _montar_resumo_afastamentos(afastamentos)
+    return afastamentos, resumo_afastamentos
+
+
 def _montar_resumo_afastamentos(afastamentos: list[AfastamentoPeriodo]) -> AfastamentoResumoResponse:
     if not afastamentos:
         return AfastamentoResumoResponse(
