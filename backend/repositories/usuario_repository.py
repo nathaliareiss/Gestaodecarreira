@@ -50,6 +50,19 @@ def obter_usuario_por_sessao_token_hash(
     )
 
 
+def obter_usuario_por_redefinir_senha_token_hash(
+    db: Session,
+    token_hash: str,
+) -> Usuario | None:
+    return db.scalar(
+        select(Usuario).where(
+            Usuario.redefinir_senha_token_hash == token_hash,
+            Usuario.redefinir_senha_expira_em.is_not(None),
+            Usuario.redefinir_senha_expira_em > datetime.now(timezone.utc),
+        )
+    )
+
+
 def obter_ultimo_usuario(db: Session) -> Usuario | None:
     return db.scalar(select(Usuario).order_by(Usuario.id.desc()))
 

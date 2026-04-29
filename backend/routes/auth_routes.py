@@ -8,6 +8,7 @@ from backend.schemas.auth_schema import (
     UsuarioAuthResponse,
     UsuarioLoginRequest,
     UsuarioRedefinirSenhaRequest,
+    UsuarioSolicitarRecuperacaoSenhaRequest,
 )
 from backend.schemas.usuario_schema import UsuarioResponse
 from backend.services.auth_service import (
@@ -15,6 +16,7 @@ from backend.services.auth_service import (
     encerrar_sessao_usuario,
     obter_usuario_autenticado_por_token,
     redefinir_senha_usuario,
+    solicitar_recuperacao_senha,
 )
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -70,8 +72,24 @@ def logout(
     return {"status": "ok"}
 
 
-@router.post("/recuperar-senha")
-def recuperar_senha(
+@router.post("/solicitar-recuperacao-senha")
+def solicitar_recuperacao(
+    dados: UsuarioSolicitarRecuperacaoSenhaRequest,
+    db: Session = Depends(get_db),
+) -> dict[str, str]:
+    try:
+        solicitar_recuperacao_senha(db, dados)
+    except RuntimeError as erro:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(erro)) from erro
+
+    return {
+        "status": "ok",
+        "message": "Se o email estiver cadastrado, voce vai receber o link de redefinicao.",
+    }
+
+
+@router.post("/redefinir-senha")
+def redefinir_senha(
     dados: UsuarioRedefinirSenhaRequest,
     db: Session = Depends(get_db),
 ) -> dict[str, str]:
@@ -81,4 +99,3 @@ def recuperar_senha(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(erro)) from erro
 
     return {"status": "ok", "message": "Senha atualizada com sucesso."}
-

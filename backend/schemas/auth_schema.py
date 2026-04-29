@@ -10,8 +10,12 @@ class UsuarioLoginRequest(BaseModel):
     senha: str = Field(min_length=1, max_length=128)
 
 
+class UsuarioSolicitarRecuperacaoSenhaRequest(BaseModel):
+    email: str = Field(min_length=1, max_length=254)
+
+
 class UsuarioRedefinirSenhaRequest(BaseModel):
-    identificador: str = Field(min_length=1, max_length=254)
+    token: str = Field(min_length=1)
     nova_senha: str = Field(min_length=6, max_length=128)
 
 
