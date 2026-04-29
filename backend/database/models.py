@@ -18,6 +18,8 @@ class Usuario(Base):
     data_exercicio = Column(Date, nullable=True)
     sessao_token_hash = Column(String, nullable=True)
     sessao_expira_em = Column(DateTime(timezone=True), nullable=True)
+    redefinir_senha_token_hash = Column(String, nullable=True, unique=True)
+    redefinir_senha_expira_em = Column(DateTime(timezone=True), nullable=True)
     criado_em = Column(
         DateTime(timezone=True),
         nullable=False,
