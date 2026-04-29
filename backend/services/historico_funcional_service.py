@@ -87,6 +87,16 @@ def _parsear_data(texto: str) -> date:
     return date(ano, mes, dia)
 
 
+def _encontrar_datas(texto: str) -> list[date]:
+    datas: list[date] = []
+    for valor in re.findall(r"\d{2}/\d{2}/\d{4}", texto):
+        try:
+            datas.append(_parsear_data(valor))
+        except ValueError:
+            continue
+    return datas
+
+
 def _adicionar_anos(data_base: date, anos: int) -> date:
     try:
         return data_base.replace(year=data_base.year + anos)
@@ -125,12 +135,18 @@ def _parsear_bloco_secao(tipo: str, descricao: str, bloco: str) -> BlocoHistoric
             r"(?P<data3>\d{2}/\d{2}/\d{4})\s+(?P<legislacao>.+)$"
         )
         match = padrao.search(bloco)
-        if not match:
-            raise ValueError(f"Nao foi possivel interpretar o bloco: {descricao}")
+        if match:
+            data_publicacao = _parsear_data(match.group("data1"))
+            data_posse = _parsear_data(match.group("data2"))
+            data_exercicio = _parsear_data(match.group("data3"))
+        else:
+            datas = _encontrar_datas(bloco)
+            if len(datas) < 2:
+                raise ValueError(f"Nao foi possivel interpretar o bloco: {descricao}")
 
-        data_publicacao = _parsear_data(match.group("data1"))
-        data_posse = _parsear_data(match.group("data2"))
-        data_exercicio = _parsear_data(match.group("data3"))
+            data_publicacao = datas[0]
+            data_posse = datas[1]
+            data_exercicio = datas[2] if len(datas) > 2 else datas[1]
     else:
         padrao = re.compile(
             r"(?P<cargo>.+?)\s+(?P<simbolo>[A-Z]{2,3}\d?)\s+(?P<nivel>[IVX]+)\s+(?P<grau>[A-Z])\s+"
@@ -138,19 +154,34 @@ def _parsear_bloco_secao(tipo: str, descricao: str, bloco: str) -> BlocoHistoric
             r"(?P<legislacao>.+)$"
         )
         match = padrao.search(bloco)
-        if not match:
-            raise ValueError(f"Nao foi possivel interpretar o bloco: {descricao}")
+        if match:
+            data_publicacao = _parsear_data(match.group("data1"))
+            data_posse = _parsear_data(match.group("data2"))
+            data_exercicio = data_posse
+        else:
+            datas = _encontrar_datas(bloco)
+            if len(datas) < 2:
+                raise ValueError(f"Nao foi possivel interpretar o bloco: {descricao}")
 
-        data_publicacao = _parsear_data(match.group("data1"))
-        data_posse = _parsear_data(match.group("data2"))
-        data_exercicio = data_posse
+            data_publicacao = datas[0]
+            data_posse = datas[1]
+            data_exercicio = datas[1]
 
-    cargo = match.group("cargo").strip()
-    simbolo = match.group("simbolo").strip()
-    nivel = match.group("nivel").strip()
-    grau = match.group("grau").strip()
-    orgao = match.group("orgao").strip()
-    legislacao = match.group("legislacao").strip()
+    if match:
+        cargo = match.group("cargo").strip()
+        simbolo = match.group("simbolo").strip()
+        nivel = match.group("nivel").strip()
+        grau = match.group("grau").strip()
+        orgao = match.group("orgao").strip()
+        legislacao = match.group("legislacao").strip()
+    else:
+        partes = bloco.split(" ")
+        cargo = descricao
+        simbolo = next((parte for parte in partes if re.fullmatch(r"[A-Z]{2,3}\d?", parte)), "")
+        nivel = next((parte for parte in partes if re.fullmatch(r"[IVX]+", parte)), "")
+        grau = next((parte for parte in partes if re.fullmatch(r"[A-Z]", parte)), "")
+        orgao = ""
+        legislacao = bloco
 
     return BlocoHistorico(
         tipo=tipo,
