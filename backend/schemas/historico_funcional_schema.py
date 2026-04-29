@@ -12,6 +12,8 @@ class HistoricoFuncionalUploadRequest(BaseModel):
     arquivo_base64: str = Field(min_length=1)
     data_nascimento: date
     anos_clt_averbados: int = Field(default=0, ge=0, le=10)
+    afastamentos_arquivo_nome: str | None = None
+    afastamentos_arquivo_base64: str | None = None
 
 
 class HistoricoFuncionalEventoResponse(BaseModel):
@@ -36,6 +38,25 @@ class HistoricoFuncionalResumoGraficoResponse(BaseModel):
     eventos_totais: int
     eventos_por_status: dict[str, int]
     eventos_por_tipo: dict[str, int]
+
+
+class AfastamentoPeriodoResponse(BaseModel):
+    tipo: Literal[
+        "aguardando_resultado_conclusivo_de_exame_pericial",
+        "licenca_para_tratamento_de_saude",
+    ]
+    data_inicio: date
+    data_fim: date
+    total_dias: int
+    legislacao: str | None = None
+    publicacao: date | None = None
+
+
+class AfastamentoResumoResponse(BaseModel):
+    periodos_totais: int
+    dias_totais: int
+    dias_por_tipo: dict[str, int]
+    periodos_por_tipo: dict[str, int]
 
 
 class HistoricoFuncionalResponse(BaseModel):
@@ -67,4 +88,7 @@ class HistoricoFuncionalResponse(BaseModel):
     proxima_progressao_prevista: date
     proxima_promocao_prevista: date
     resumo_grafico: HistoricoFuncionalResumoGraficoResponse
+    afastamentos_arquivo_nome: str | None = None
+    afastamentos_resumo: AfastamentoResumoResponse | None = None
+    afastamentos: list[AfastamentoPeriodoResponse] = Field(default_factory=list)
     eventos: list[HistoricoFuncionalEventoResponse]

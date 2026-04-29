@@ -11,6 +11,8 @@ import pandas as pd
 from pypdf import PdfReader
 
 from backend.schemas.historico_funcional_schema import (
+    AfastamentoPeriodoResponse,
+    AfastamentoResumoResponse,
     HistoricoFuncionalEventoResponse,
     HistoricoFuncionalResponse,
     HistoricoFuncionalResumoGraficoResponse,
@@ -63,6 +65,19 @@ class BlocoHistorico:
     data_posse: date
     data_exercicio: date
     legislacao: str
+
+
+@dataclass(frozen=True, slots=True)
+class AfastamentoPeriodo:
+    tipo: Literal[
+        "aguardando_resultado_conclusivo_de_exame_pericial",
+        "licenca_para_tratamento_de_saude",
+    ]
+    data_inicio: date
+    data_fim: date
+    total_dias: int
+    legislacao: str | None
+    publicacao: date | None
 
 
 def decodificar_arquivo_base64(conteudo_base64: str) -> bytes:
@@ -188,6 +203,163 @@ def _tipo_secao(linha: str) -> Literal["nomeacao", "progressao", "promocao", "su
     if linha.startswith(SECAO_SUBSTITUICAO_PREFIXOS):
         return "substituicao"
     return "progressao"
+
+
+TIPOS_AFASTAMENTO = {
+    "Aguardando Resultado Conclusivo de Exame Pericial": "aguardando_resultado_conclusivo_de_exame_pericial",
+    "Licença para Tratamento de Saúde": "licenca_para_tratamento_de_saude",
+}
+
+TIPOS_AFASTAMENTO_NORMALIZADOS = {
+    re.sub(r"\s+", " ", tipo).strip().lower(): valor for tipo, valor in TIPOS_AFASTAMENTO.items()
+}
+
+
+def _normalizar_sem_acentos(texto: str) -> str:
+    import unicodedata
+
+    return "".join(
+        caractere
+        for caractere in unicodedata.normalize("NFKD", texto)
+        if not unicodedata.combining(caractere)
+    ).lower()
+
+
+def _tipo_afastamento_linha(linha: str) -> Literal[
+    "aguardando_resultado_conclusivo_de_exame_pericial",
+    "licenca_para_tratamento_de_saude",
+] | None:
+    normalizada = re.sub(r"\s+", " ", linha).strip().lower()
+    if normalizada in TIPOS_AFASTAMENTO_NORMALIZADOS:
+        return TIPOS_AFASTAMENTO_NORMALIZADOS[normalizada]  # type: ignore[return-value]
+
+    sem_acentos = re.sub(r"\s+", " ", _normalizar_sem_acentos(linha)).strip()
+    return TIPOS_AFASTAMENTO_NORMALIZADOS.get(sem_acentos)  # type: ignore[return-value]
+
+
+def _titulo_afastamento(tipo: str) -> str:
+    if tipo == "aguardando_resultado_conclusivo_de_exame_pericial":
+        return "Aguardando Resultado Conclusivo de Exame Pericial"
+    return "Licença para Tratamento de Saúde"
+
+
+def _eh_linha_auxiliar_afastamento(linha: str) -> bool:
+    return any(
+        trecho in linha
+        for trecho in (
+            "Portal do Servidor",
+            "afastamentos--consultar",
+            "Cidade Administrativa",
+            "Termos de uso",
+            "Política de privacidade",
+            "Menu > Meu espaço",
+        )
+    ) or bool(re.fullmatch(r"\d{2}/\d{2}/\d{4},\s*\d{2}:\d{2}\s+Portal do Servidor", linha))
+
+
+def _limpar_linhas_afastamentos(texto: str) -> list[str]:
+    linhas = []
+    for linha in texto.splitlines():
+        limpa = re.sub(r"\s+", " ", linha).strip()
+        if limpa and not _eh_linha_auxiliar_afastamento(limpa):
+            linhas.append(limpa)
+    return linhas
+
+
+def _parsear_afastamento_bloco(tipo: str, bloco: str) -> AfastamentoPeriodo:
+    bloco = re.sub(r"\s+", " ", bloco).strip()
+    datas = re.findall(r"\d{2}/\d{2}/\d{4}", bloco)
+    if len(datas) < 2:
+        raise ValueError(f"Nao foi possivel interpretar o bloco de afastamento: {_titulo_afastamento(tipo)}")
+
+    data_inicio = _parsear_data(datas[0])
+    data_fim = _parsear_data(datas[1])
+
+    pos_segunda_data = bloco.find(datas[1]) + len(datas[1])
+    resto = bloco[pos_segunda_data:].strip()
+    total_match = re.search(r"\b(\d+)\b", resto)
+    if total_match is None:
+        raise ValueError(f"Nao foi possivel interpretar o bloco de afastamento: {_titulo_afastamento(tipo)}")
+
+    total_dias = int(total_match.group(1))
+    resto = resto[total_match.end() :].strip()
+
+    publicacao: date | None = None
+    legislacao: str | None = None
+    if resto:
+        publicacao_match = re.search(r"\d{2}/\d{2}/\d{4}", resto)
+        if publicacao_match:
+          legislacao_texto = resto[: publicacao_match.start()].strip()
+          if legislacao_texto:
+              legislacao = legislacao_texto
+          publicacao = _parsear_data(publicacao_match.group(0))
+        else:
+            legislacao = resto or None
+
+    return AfastamentoPeriodo(
+        tipo=tipo,
+        data_inicio=data_inicio,
+        data_fim=data_fim,
+        total_dias=total_dias,
+        legislacao=legislacao,
+        publicacao=publicacao,
+    )
+
+
+def extrair_afastamentos_pdf(conteudo_pdf: bytes) -> list[AfastamentoPeriodo]:
+    texto = extrair_texto_pdf(conteudo_pdf)
+    linhas = _limpar_linhas_afastamentos(texto)
+    afastamentos: list[AfastamentoPeriodo] = []
+    i = 0
+
+    while i < len(linhas):
+        tipo = _tipo_afastamento_linha(linhas[i])
+        if tipo is None:
+            i += 1
+            continue
+
+        i += 1
+        bloco_linhas: list[str] = []
+        while i < len(linhas):
+            proximo_tipo = _tipo_afastamento_linha(linhas[i])
+            if proximo_tipo is not None:
+                break
+            if linhas[i] != "Período Total de dias Legislação Publicação":
+                bloco_linhas.append(linhas[i])
+            i += 1
+
+        bloco_texto = " ".join(bloco_linhas)
+        if bloco_texto:
+            afastamentos.append(_parsear_afastamento_bloco(tipo, bloco_texto))
+
+    return afastamentos
+
+
+def _montar_resumo_afastamentos(afastamentos: list[AfastamentoPeriodo]) -> AfastamentoResumoResponse:
+    if not afastamentos:
+        return AfastamentoResumoResponse(
+            periodos_totais=0,
+            dias_totais=0,
+            dias_por_tipo={},
+            periodos_por_tipo={},
+        )
+
+    df = pd.DataFrame(
+        [
+            {
+                "tipo": afastamento.tipo,
+                "total_dias": afastamento.total_dias,
+            }
+            for afastamento in afastamentos
+        ]
+    )
+
+    return AfastamentoResumoResponse(
+        periodos_totais=len(afastamentos),
+        dias_totais=int(df["total_dias"].sum()),
+        dias_por_tipo={str(chave): int(valor) for chave, valor in df.groupby("tipo")["total_dias"].sum().to_dict().items()},
+        periodos_por_tipo={str(chave): int(valor) for chave, valor in df.groupby("tipo").size().to_dict().items()},
+    )
 
 
 def _parsear_bloco_secao(tipo: str, descricao: str, bloco: str) -> BlocoHistorico:
@@ -511,6 +683,8 @@ def analisar_historico_funcional(
     usuario_id: int | None,
     data_nascimento: date,
     anos_clt_averbados: int,
+    conteudo_afastamentos_pdf: bytes | None = None,
+    arquivo_afastamentos_nome: str | None = None,
 ) -> tuple[HistoricoFuncionalResponse, str]:
     texto = extrair_texto_pdf(conteudo_pdf)
     nome, masp, cpf, data_emissao = _extrair_cabecalho(texto)
@@ -553,6 +727,12 @@ def analisar_historico_funcional(
         percentual_restante=percentual_restante,
     )
 
+    afastamentos: list[AfastamentoPeriodo] = []
+    resumo_afastamentos: AfastamentoResumoResponse | None = None
+    if conteudo_afastamentos_pdf is not None:
+        afastamentos = extrair_afastamentos_pdf(conteudo_afastamentos_pdf)
+        resumo_afastamentos = _montar_resumo_afastamentos(afastamentos)
+
     resposta = HistoricoFuncionalResponse(
         historico_id=0,
         usuario_id=usuario_id,
@@ -580,6 +760,19 @@ def analisar_historico_funcional(
         proxima_progressao_prevista=proxima_progressao_prevista,
         proxima_promocao_prevista=proxima_promocao_prevista,
         resumo_grafico=resumo_grafico,
+        afastamentos_arquivo_nome=arquivo_afastamentos_nome,
+        afastamentos_resumo=resumo_afastamentos,
+        afastamentos=[
+            AfastamentoPeriodoResponse(
+                tipo=afastamento.tipo,
+                data_inicio=afastamento.data_inicio,
+                data_fim=afastamento.data_fim,
+                total_dias=afastamento.total_dias,
+                legislacao=afastamento.legislacao,
+                publicacao=afastamento.publicacao,
+            )
+            for afastamento in afastamentos
+        ],
         eventos=[
             HistoricoFuncionalEventoResponse(
                 tipo=evento.tipo,
