@@ -484,9 +484,6 @@ export function HistoricoFuncionalView({
           <div>
             <p className="eyebrow">Arquivos</p>
             <h3>Enviar documentos</h3>
-            <p className="analysis-header__subtitle">
-              O PDF do histórico funcional é obrigatório. O PDF dos afastamentos é opcional.
-            </p>
           </div>
 
           <div className="upload-shell__actions">
@@ -499,13 +496,6 @@ export function HistoricoFuncionalView({
                 Baixar PDF
               </a>
             ) : null}
-            <button
-              className="ghost-button ghost-button--compact"
-              type="button"
-              onClick={() => setMostrarUpload(true)}
-            >
-              Enviar afastamentos
-            </button>
             <button
               className="primary-button button--large"
               type="button"
@@ -523,24 +513,10 @@ export function HistoricoFuncionalView({
               <input type="file" accept="application/pdf" onChange={selecionarArquivo} />
             </label>
 
-            <div className="upload-hint">
-              <div>
-                <p className="eyebrow">Afastamentos</p>
-                <strong>Enviar PDF dos afastamentos</strong>
-                <p className="helper">
-                  Opcional. Se você tiver esse PDF, a leitura separa licença para tratamento de saúde e
-                  aguardando resultado conclusivo de exame pericial.
-                </p>
-              </div>
-              <label className="ghost-button ghost-button--compact upload-hint__button">
-                {arquivoAfastamentos ? "Trocar arquivo" : "Selecionar PDF"}
-                <input
-                  type="file"
-                  accept="application/pdf"
-                  onChange={selecionarArquivoAfastamentos}
-                />
-              </label>
-            </div>
+            <label className="field">
+              <span>PDF dos afastamentos</span>
+              <input type="file" accept="application/pdf" onChange={selecionarArquivoAfastamentos} />
+            </label>
 
             {arquivoAfastamentos ? (
               <p className="helper">Arquivo de afastamentos selecionado: {arquivoAfastamentos.name}</p>
@@ -572,9 +548,6 @@ export function HistoricoFuncionalView({
             <div className="upload-actions">
               <button className="ghost-button" type="button" onClick={usarCltMaximo}>
                 Preencher 10 anos de CLT
-              </button>
-              <button className="primary-button" type="submit" disabled={carregando}>
-                {carregando ? "Analisando..." : "Analisar e salvar PDF"}
               </button>
             </div>
 

@@ -960,39 +960,6 @@ html[data-theme="light"] .result-block {
   gap: 1rem;
 }
 
-.upload-hint {
-  display: grid;
-  gap: 0.85rem;
-  padding: 1rem;
-  border-radius: 18px;
-  border: 1px solid rgba(148, 163, 184, 0.12);
-  background: rgba(8, 16, 30, 0.44);
-}
-
-html[data-theme="light"] .upload-hint {
-  background: rgba(255, 255, 255, 0.8);
-  border-color: rgba(15, 23, 42, 0.08);
-}
-
-.upload-hint strong {
-  display: block;
-  margin-top: 0.1rem;
-  margin-bottom: 0.3rem;
-}
-
-.upload-hint__button {
-  justify-self: start;
-  position: relative;
-  overflow: hidden;
-}
-
-.upload-hint__button input {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  cursor: pointer;
-}
-
 .summary-panel {
   display: grid;
   gap: 1rem;

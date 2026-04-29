@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, type ChangeEvent, type FormEvent } from "react"
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react"
 
 import type {
   HistoricoFuncionalAnalise,
@@ -54,6 +54,7 @@ export function useHistoricoFuncionalController({
   const [carregando, setCarregando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
   const [mostrarUpload, setMostrarUpload] = useState(historicoInicial === null)
+  const assinaturaEnvioAutomatico = useRef<string | null>(null)
 
   useEffect(() => {
     if (!arquivo) {
@@ -102,6 +103,20 @@ export function useHistoricoFuncionalController({
     setErro(null)
   }
 
+  function criarAssinaturaEnvio() {
+    return [
+      arquivo?.name ?? "",
+      arquivo?.size ?? 0,
+      arquivo?.lastModified ?? 0,
+      arquivoAfastamentos?.name ?? "",
+      arquivoAfastamentos?.size ?? 0,
+      arquivoAfastamentos?.lastModified ?? 0,
+      dataNascimento,
+      anosCltAverbados,
+      usuarioId ?? "",
+    ].join("|")
+  }
+
   async function recarregarHistorico() {
     if (!usuarioId) {
       return
@@ -123,9 +138,7 @@ export function useHistoricoFuncionalController({
     }
   }
 
-  async function enviarFormulario(evento: FormEvent<HTMLFormElement>) {
-    evento.preventDefault()
-
+  async function submeterAnalise(assinatura?: string) {
     if (!usuarioId) {
       setErro("Cadastre um usuário antes de enviar o histórico funcional.")
       return
@@ -143,6 +156,10 @@ export function useHistoricoFuncionalController({
 
     setCarregando(true)
     setErro(null)
+
+    if (assinatura) {
+      assinaturaEnvioAutomatico.current = assinatura
+    }
 
     try {
       const arquivoBase64 = await lerArquivoComoBase64(arquivo)
@@ -163,11 +180,32 @@ export function useHistoricoFuncionalController({
       setHistorico(analisado)
       setMostrarUpload(false)
     } catch (error) {
+      if (assinatura) {
+        assinaturaEnvioAutomatico.current = null
+      }
       setErro(error instanceof Error ? error.message : "Falha inesperada ao analisar.")
     } finally {
       setCarregando(false)
     }
   }
+
+  async function enviarFormulario(evento: FormEvent<HTMLFormElement>) {
+    evento.preventDefault()
+    await submeterAnalise()
+  }
+
+  useEffect(() => {
+    if (!arquivo || !dataNascimento || carregando) {
+      return
+    }
+
+    const assinatura = criarAssinaturaEnvio()
+    if (assinaturaEnvioAutomatico.current === assinatura) {
+      return
+    }
+
+    void submeterAnalise(assinatura)
+  }, [arquivo, arquivoAfastamentos, dataNascimento, anosCltAverbados, carregando, usuarioId])
 
   return {
     arquivo,
