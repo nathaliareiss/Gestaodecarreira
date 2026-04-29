@@ -13,7 +13,7 @@ from backend.config import (
     SMTP_HOST,
     SMTP_PASSWORD,
     SMTP_PORT,
-    SMTP_USERNAME,
+    SMTP_USER,
     SMTP_USE_SSL,
     SMTP_USE_TLS,
 )
@@ -28,7 +28,7 @@ def _validar_configuracao_smtp() -> None:
 
 def _montar_envio_email(destinatario: str, assunto: str, texto: str, html: str) -> EmailMessage:
     mensagem = EmailMessage()
-    remetente_email = SMTP_FROM_EMAIL or SMTP_USERNAME or "no-reply@localhost"
+    remetente_email = SMTP_FROM_EMAIL or SMTP_USER or "no-reply@localhost"
     remetente_nome = SMTP_FROM_NAME or "Gestao de Carreira"
 
     mensagem["Subject"] = assunto
@@ -50,13 +50,13 @@ def _enviar_mensagem(mensagem: EmailMessage) -> None:
                 cliente.starttls()
                 cliente.ehlo()
 
-            if SMTP_USERNAME:
-                cliente.login(SMTP_USERNAME, SMTP_PASSWORD)
+            if SMTP_USER:
+                cliente.login(SMTP_USER, SMTP_PASSWORD)
 
             cliente.send_message(mensagem)
     except smtplib.SMTPAuthenticationError as erro:
         raise RuntimeError(
-            "Credenciais SMTP recusadas. Verifique o SMTP_USERNAME e a App Password do Gmail."
+            "Credenciais SMTP recusadas. Verifique o SMTP_USER e a App Password do Gmail."
         ) from erro
     except OSError as erro:
         raise RuntimeError("Nao foi possivel conectar ao servidor de email SMTP.") from erro
