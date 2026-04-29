@@ -20,7 +20,7 @@ export function ConfirmarEmailView({ token }: ConfirmarEmailViewProps) {
 
     async function confirmar() {
       if (!token) {
-        setErro("Token de confirmacao ausente.")
+        setErro("Token de confirmação ausente.")
         setCarregando(false)
         return
       }
@@ -39,7 +39,7 @@ export function ConfirmarEmailView({ token }: ConfirmarEmailViewProps) {
         }
 
         setUsuario(null)
-        setErro(error instanceof Error ? error.message : "Nao foi possivel confirmar este email.")
+        setErro(error instanceof Error ? error.message : "Não foi possível confirmar este e-mail.")
       } finally {
         if (ativo) {
           setCarregando(false)
@@ -61,10 +61,10 @@ export function ConfirmarEmailView({ token }: ConfirmarEmailViewProps) {
 
       <section className="hero">
         <div className="hero-copy">
-          <p className="eyebrow">Confirmacao de email</p>
+          <p className="eyebrow">Confirmação de e-mail</p>
           <h1>Valide o acesso com um clique no link do email.</h1>
           <p className="hero-text">
-            Esta rota recebe o token gerado na criacao do usuario e confirma o cadastro
+            Esta rota recebe o token gerado na criação do usuário e confirma o cadastro
             no backend.
           </p>
         </div>
@@ -72,11 +72,11 @@ export function ConfirmarEmailView({ token }: ConfirmarEmailViewProps) {
         <div className="hero-grid">
           <article className="mini-card">
             <h2>Status</h2>
-            <p>{carregando ? "Processando" : usuario ? "Email confirmado" : erro ?? "Pendente"}</p>
+            <p>{carregando ? "Processando" : usuario ? "E-mail confirmado" : erro ?? "Pendente"}</p>
           </article>
           <article className="mini-card">
-            <h2>Proxima etapa</h2>
-            <p>Voltar para a pagina do usuario e conferir os dados salvos.</p>
+            <h2>Próxima etapa</h2>
+            <p>Voltar para a página do usuário e conferir os dados salvos.</p>
           </article>
         </div>
       </section>
@@ -93,22 +93,22 @@ export function ConfirmarEmailView({ token }: ConfirmarEmailViewProps) {
 
           {carregando ? (
             <div className="empty-state">
-              <p>Confirmando usuario...</p>
+              <p>Confirmando usuário...</p>
             </div>
           ) : usuario ? (
             <div className="empty-state">
               <p>
-                O email de <strong>{usuario.email}</strong> foi confirmado com sucesso.
+                O e-mail de <strong>{usuario.email}</strong> foi confirmado com sucesso.
               </p>
               <Link className="primary-button" href="/usuario">
-                Ir para a pagina do usuario
+                Ir para a página do usuário
               </Link>
             </div>
           ) : (
             <div className="empty-state">
-              <p>{erro ?? "Aguardando confirmacao..."}</p>
+              <p>{erro ?? "Aguardando confirmação..."}</p>
               <Link className="primary-button" href="/usuario">
-                Voltar para o usuario
+                Voltar para o usuário
               </Link>
             </div>
           )}
@@ -121,7 +121,7 @@ export function ConfirmarEmailView({ token }: ConfirmarEmailViewProps) {
             O template do email deve apontar para <code>/confirmar-email?token=...</code>.
           </p>
           <p>
-            O backend recebe esse token, localiza o usuario e marca o email como
+            O backend recebe esse token, localiza o usuário e marca o e-mail como
             confirmado.
           </p>
         </aside>

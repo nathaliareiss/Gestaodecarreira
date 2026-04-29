@@ -17,8 +17,8 @@ export function UsuarioHeroSection() {
         <p className="hero-subtitle hero-subtitle--centered">Career Manager</p>
         <h1 className="hero-title hero-title--centered">Gerenciador de carreira</h1>
         <p className="hero-text hero-text--centered">
-          Cadastre-se para assumir o controle da sua carreira de forma pratica. Fique
-          tranquilo: seus dados estarao seguros e ninguem tera acesso a eles.
+          Cadastre-se para assumir o controle da sua carreira de forma prática. Fique
+          tranquilo: seus dados estarão seguros e ninguém terá acesso a eles.
         </p>
       </div>
     </div>

@@ -18,7 +18,7 @@ export async function autenticarUsuario(
     body: JSON.stringify(dadosLogin),
   })
 
-  return parseApiResponse<UsuarioAuthResponse>(response, "Nao foi possivel entrar")
+  return parseApiResponse<UsuarioAuthResponse>(response, "Não foi possível entrar.")
 }
 
 export async function carregarUsuarioAutenticado(token: string): Promise<UsuarioConta> {
@@ -30,7 +30,7 @@ export async function carregarUsuarioAutenticado(token: string): Promise<Usuario
     cache: "no-store",
   })
 
-  return parseApiResponse<UsuarioConta>(response, "Nao foi possivel carregar a sessao")
+  return parseApiResponse<UsuarioConta>(response, "Não foi possível carregar a sessão.")
 }
 
 export async function encerrarSessao(token: string): Promise<void> {
@@ -41,7 +41,7 @@ export async function encerrarSessao(token: string): Promise<void> {
     },
   })
 
-  await parseApiResponse<{ status: string }>(response, "Nao foi possivel sair")
+  await parseApiResponse<{ status: string }>(response, "Não foi possível sair.")
 }
 
 export async function solicitarRecuperacaoSenha(
@@ -57,7 +57,7 @@ export async function solicitarRecuperacaoSenha(
 
   return parseApiResponse<{ status: string; message: string }>(
     response,
-    "Nao foi possivel solicitar a recuperacao de senha",
+    "Não foi possível solicitar a recuperação de senha.",
   )
 }
 
@@ -74,7 +74,7 @@ export async function redefinirSenhaUsuario(
 
   return parseApiResponse<{ status: string; message: string }>(
     response,
-    "Nao foi possivel redefinir a senha",
+    "Não foi possível redefinir a senha.",
   )
 }
 

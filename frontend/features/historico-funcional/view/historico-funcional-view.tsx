@@ -35,7 +35,11 @@ function statusLabel(status: HistoricoFuncionalAnalise["eventos"][number]["statu
     return "Cumprindo"
   }
 
-  return "Nao aplicavel"
+  if (status === "estagio_probatorio") {
+    return "Em estágio probatório"
+  }
+
+  return "Não aplicável"
 }
 
 function statusClass(status: HistoricoFuncionalAnalise["eventos"][number]["status"]) {
@@ -45,6 +49,10 @@ function statusClass(status: HistoricoFuncionalAnalise["eventos"][number]["statu
 
   if (status === "cumprindo") {
     return "timeline-badge timeline-badge--success"
+  }
+
+  if (status === "estagio_probatorio") {
+    return "timeline-badge timeline-badge--warning"
   }
 
   return "timeline-badge timeline-badge--neutral"
@@ -78,16 +86,16 @@ export function HistoricoFuncionalView({
     <section className="analysis-card card">
       <div className="card-header">
         <div>
-          <p className="eyebrow">Historico funcional</p>
-          <h2>Calculos de carreira e leitura do PDF</h2>
+          <p className="eyebrow">Histórico funcional</p>
+          <h2>Cálculos de carreira e leitura do PDF</h2>
         </div>
-        <span className="status-pill">{painel ? "salvo" : "aguardando pdf"}</span>
+        <span className="status-pill">{painel ? "salvo" : "aguardando PDF"}</span>
       </div>
 
       <div className="upload-grid">
         <form className="upload-form" onSubmit={enviarFormulario}>
           <label className="field">
-            <span>PDF do historico funcional</span>
+            <span>PDF do histórico funcional</span>
             <input type="file" accept="application/pdf" onChange={selecionarArquivo} />
           </label>
 
@@ -131,7 +139,7 @@ export function HistoricoFuncionalView({
           {arquivo ? <p className="helper">Arquivo selecionado: {arquivo.name}</p> : null}
           {usuarioId ? (
             <button className="ghost-button" type="button" onClick={() => void recarregarHistorico()}>
-              Recarregar ultimo salvo
+              Recarregar último salvo
             </button>
           ) : null}
 
@@ -139,14 +147,14 @@ export function HistoricoFuncionalView({
         </form>
 
         <div className="summary-panel">
-          <p className="eyebrow">Cenarios calculados</p>
+          <p className="eyebrow">Cenários calculados</p>
           {painel ? (
             <>
               <div className="summary-grid">
                 <article className="metric-card">
                   <span className="label">Tempo trabalhado</span>
                   <strong>{formatarDuracaoEmAnos(painel.dias_trabalhados)}</strong>
-                  <p>{formatarPorcentagem(painel.percentual_trabalhado)} concluido</p>
+                  <p>{formatarPorcentagem(painel.percentual_trabalhado)} concluído</p>
                 </article>
                 <article className="metric-card">
                   <span className="label">Tempo restante</span>
@@ -156,7 +164,7 @@ export function HistoricoFuncionalView({
                 <article className="metric-card">
                   <span className="label">Aposentadoria prevista</span>
                   <strong>{formatarData(painel.data_aposentadoria_prevista)}</strong>
-                  <p>Carreira ou idade, o que vier por ultimo.</p>
+                  <p>Carreira ou idade, o que vier por último.</p>
                 </article>
                 <article className="metric-card">
                   <span className="label">CLT averbada</span>
@@ -168,7 +176,7 @@ export function HistoricoFuncionalView({
               <div className="progress-list">
                 <div className="progress-row">
                   <div className="progress-row-header">
-                    <span>Tempo de servico ate aposentar</span>
+                    <span>Tempo de serviço até aposentar</span>
                     <strong>{formatarPorcentagem(painel.percentual_trabalhado)}</strong>
                   </div>
                   <div className="progress-track">
@@ -188,11 +196,11 @@ export function HistoricoFuncionalView({
 
               <div className="summary-grid summary-grid--dense">
                 <article className="metric-card">
-                  <span className="label">Proxima progressao</span>
+                  <span className="label">Próxima progressão</span>
                   <strong>{formatarData(painel.proxima_progressao_prevista)}</strong>
                 </article>
                 <article className="metric-card">
-                  <span className="label">Proxima promocao</span>
+                  <span className="label">Próxima promoção</span>
                   <strong>{formatarData(painel.proxima_promocao_prevista)}</strong>
                 </article>
                 <article className="metric-card">
@@ -200,7 +208,7 @@ export function HistoricoFuncionalView({
                   <strong>{painel.cargo_atual}</strong>
                 </article>
                 <article className="metric-card">
-                  <span className="label">Simbolo atual</span>
+                  <span className="label">Símbolo atual</span>
                   <strong>
                     {painel.simbolo_atual} {painel.nivel_atual} {painel.grau_atual}
                   </strong>
@@ -210,12 +218,12 @@ export function HistoricoFuncionalView({
           ) : (
             <div className="history-empty">
               <p>
-                Envie o PDF do historico funcional para o sistema ler os dados, salvar
-                no banco e montar os calculos de carreira.
+                Envie o PDF do histórico funcional para o sistema ler os dados, salvar
+                no banco e montar os cálculos de carreira.
               </p>
               <p>
-                Aqui voce vai ver o tempo de trabalho, a previsao de aposentadoria e a
-                proxima progressao e promocao.
+                Aqui você vai ver o tempo de trabalho, a previsão de aposentadoria e a
+                próxima progressão e promoção.
               </p>
             </div>
           )}
@@ -265,4 +273,3 @@ export function HistoricoFuncionalView({
     </section>
   )
 }
-

@@ -21,13 +21,13 @@ function lerArquivoComoBase64(arquivo: File) {
     const leitor = new FileReader()
 
     leitor.onerror = () => {
-      reject(new Error("Nao foi possivel ler o PDF selecionado."))
+      reject(new Error("Não foi possível ler o PDF selecionado."))
     }
 
     leitor.onload = () => {
       const resultado = leitor.result
       if (typeof resultado !== "string") {
-        reject(new Error("Nao foi possivel converter o PDF para base64."))
+        reject(new Error("Não foi possível converter o PDF para base64."))
         return
       }
 
@@ -84,12 +84,12 @@ export function useHistoricoFuncionalController({
     evento.preventDefault()
 
     if (!usuarioId) {
-      setErro("Cadastre um usuario antes de enviar o historico funcional.")
+      setErro("Cadastre um usuário antes de enviar o histórico funcional.")
       return
     }
 
     if (!arquivo) {
-      setErro("Escolha um PDF do historico funcional.")
+      setErro("Escolha um PDF do histórico funcional.")
       return
     }
 
@@ -115,7 +115,7 @@ export function useHistoricoFuncionalController({
       setHistorico(analisado)
       setArquivo(null)
     } catch (error) {
-      setErro(error instanceof Error ? error.message : "Falha inesperada ao analisar")
+      setErro(error instanceof Error ? error.message : "Falha inesperada ao analisar.")
     } finally {
       setCarregando(false)
     }
@@ -136,4 +136,3 @@ export function useHistoricoFuncionalController({
     enviarFormulario,
   }
 }
-

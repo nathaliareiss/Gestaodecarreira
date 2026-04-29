@@ -24,7 +24,7 @@ class HistoricoFuncionalEventoResponse(BaseModel):
     data_publicacao: date
     data_efetiva: date
     data_prevista: date | None
-    status: Literal["cumprindo", "atrasado", "nao_aplicavel"]
+    status: Literal["cumprindo", "atrasado", "nao_aplicavel", "estagio_probatorio"]
     atraso_dias: int
 
 

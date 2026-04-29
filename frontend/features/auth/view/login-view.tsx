@@ -49,7 +49,7 @@ export function LoginView({
       <section className="hero hero--login">
         <div className="hero-copy hero-copy--login">
           <p className="eyebrow">Entrar</p>
-          <h1>Acesse seu perfil e acompanhe seu historico.</h1>
+          <h1>Acesse seu perfil e acompanhe seu histórico.</h1>
 
           <div className="hero-links hero-links--top">
             <Link className="primary-button button--large" href="/">
@@ -61,8 +61,8 @@ export function LoginView({
           </div>
 
           <p className="hero-text">
-            Entre com seu login ou email e a senha cadastrada para abrir sua pagina do
-            usuario.
+            Entre com seu login ou e-mail e a senha cadastrada para abrir sua página de
+            usuário.
           </p>
         </div>
 
@@ -77,7 +77,7 @@ export function LoginView({
               </div>
 
               <label className="field">
-                <span>Login ou email</span>
+                <span>Login ou e-mail</span>
                 <input
                   value={dados.login}
                   onChange={(evento) => onLoginChange(evento.target.value)}
@@ -115,8 +115,8 @@ export function LoginView({
                   Esqueci minha senha
                 </button>
                 <p className="helper">
-                  Depois do login, voce vai para a pagina do usuario com acesso aos dados
-                  e ao historico funcional.
+                  Depois do login, você vai para a página do usuário com acesso aos dados
+                  e ao histórico funcional.
                 </p>
               </div>
 
@@ -139,8 +139,8 @@ export function LoginView({
               </div>
 
               <p className="helper">
-                Informe apenas o seu email. Se ele estiver cadastrado, vamos enviar um
-                link de redefinicao.
+                Informe apenas o seu e-mail. Se ele estiver cadastrado, vamos enviar um
+                link de redefinição.
               </p>
 
               <label className="field">
@@ -161,7 +161,7 @@ export function LoginView({
                   type="submit"
                   disabled={recuperando}
                 >
-                  {recuperando ? "Enviando..." : "Enviar link de redefinicao"}
+                  {recuperando ? "Enviando..." : "Enviar link de redefinição"}
                 </button>
               </div>
 

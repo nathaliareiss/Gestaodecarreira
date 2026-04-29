@@ -43,7 +43,7 @@ export function CarreiraResultsView({ resumo }: CarreiraResultsViewProps) {
             <strong>{resumo.idade_na_data_25_anos_carreira} anos</strong>
           </div>
           <div className="result-block">
-            <span className="label">Idade minima</span>
+            <span className="label">Idade mínima</span>
             <strong>{formatarDataISO(resumo.data_idade_minima_aposentadoria)}</strong>
           </div>
           <div className="result-block">
@@ -51,31 +51,31 @@ export function CarreiraResultsView({ resumo }: CarreiraResultsViewProps) {
             <strong>{formatarSimNao(resumo.possui_idade_minima_na_data_25_anos_carreira)}</strong>
           </div>
           <div className="result-block">
-            <span className="label">Aposentadoria provavel</span>
+            <span className="label">Aposentadoria provável</span>
             <strong>{formatarDataISO(resumo.data_prevista_aposentadoria)}</strong>
           </div>
           <div className="result-block">
             <span className="label">Grau aos 45</span>
             <strong>
-              {resumo.grau_aos_45_anos} / Nivel {resumo.nivel_aos_45_anos}
+              {resumo.grau_aos_45_anos} / Nível {resumo.nivel_aos_45_anos}
             </strong>
           </div>
           <div className="result-block">
             <span className="label">Grau na aposentadoria</span>
             <strong>
-              {resumo.grau_na_aposentadoria} / Nivel {resumo.nivel_na_aposentadoria}
+              {resumo.grau_na_aposentadoria} / Nível {resumo.nivel_na_aposentadoria}
             </strong>
           </div>
         </div>
       ) : (
         <div className="empty-state">
           <p>
-            Preencha o formulario e clique em <strong>Calcular resumo</strong> para
+            Preencha o formulário e clique em <strong>Calcular resumo</strong> para
             enviar os dados ao backend Python.
           </p>
           <p>
-            A resposta volta em JSON e o front organiza os calculos em cartoes para
-            visualizacao.
+            A resposta volta em JSON e o front organiza os cálculos em cartões para
+            visualização.
           </p>
         </div>
       )}

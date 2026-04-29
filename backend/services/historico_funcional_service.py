@@ -44,7 +44,7 @@ class EventoHistorico:
     data_publicacao: date
     data_efetiva: date
     data_prevista: date | None
-    status: Literal["cumprindo", "atrasado", "nao_aplicavel"]
+    status: Literal["cumprindo", "atrasado", "nao_aplicavel", "estagio_probatorio"]
     atraso_dias: int
 
 
@@ -161,6 +161,10 @@ def _adicionar_anos(data_base: date, anos: int) -> date:
         return data_base.replace(year=data_base.year + anos)
     except ValueError:
         return data_base.replace(year=data_base.year + anos, day=28)
+
+
+def _fim_estagio_probatorio(data_exercicio: date) -> date:
+    return _adicionar_anos(data_exercicio, 3)
 
 
 def _e_linha_de_secao(linha: str) -> bool:
@@ -352,11 +356,13 @@ def _gerar_eventos(blocos: list[BlocoHistorico]) -> list[EventoHistorico]:
     eventos: list[EventoHistorico] = []
     referencia_progressao: date | None = None
     referencia_promocao: date | None = None
+    fim_estagio_probatorio: date | None = None
 
     for bloco in blocos:
         if bloco.tipo == "nomeacao":
-            referencia_progressao = bloco.data_exercicio
-            referencia_promocao = bloco.data_exercicio
+            fim_estagio_probatorio = _fim_estagio_probatorio(bloco.data_exercicio)
+            referencia_progressao = fim_estagio_probatorio
+            referencia_promocao = fim_estagio_probatorio
             eventos.append(
                 EventoHistorico(
                     tipo="nomeacao",
@@ -376,14 +382,24 @@ def _gerar_eventos(blocos: list[BlocoHistorico]) -> list[EventoHistorico]:
 
         if bloco.tipo == "progressao":
             data_prevista = _adicionar_anos(referencia_progressao or bloco.data_exercicio, 2)
-            atraso = max((bloco.data_exercicio - data_prevista).days, 0)
-            status = "atrasado" if atraso > 0 else "cumprindo"
-            referencia_progressao = bloco.data_exercicio
+            if fim_estagio_probatorio is not None and bloco.data_exercicio <= fim_estagio_probatorio:
+                data_prevista = fim_estagio_probatorio
+                atraso = 0
+                status = "estagio_probatorio"
+            else:
+                atraso = max((bloco.data_exercicio - data_prevista).days, 0)
+                status = "atrasado" if atraso > 0 else "cumprindo"
+                referencia_progressao = bloco.data_exercicio
         elif bloco.tipo == "promocao":
             data_prevista = _adicionar_anos(referencia_promocao or bloco.data_exercicio, 5)
-            atraso = max((bloco.data_exercicio - data_prevista).days, 0)
-            status = "atrasado" if atraso > 0 else "cumprindo"
-            referencia_promocao = bloco.data_exercicio
+            if fim_estagio_probatorio is not None and bloco.data_exercicio <= fim_estagio_probatorio:
+                data_prevista = fim_estagio_probatorio
+                atraso = 0
+                status = "estagio_probatorio"
+            else:
+                atraso = max((bloco.data_exercicio - data_prevista).days, 0)
+                status = "atrasado" if atraso > 0 else "cumprindo"
+                referencia_promocao = bloco.data_exercicio
         else:
             data_prevista = None
             atraso = 0
@@ -471,6 +487,8 @@ def analisar_historico_funcional(
     if nomeacao_bloco is None:
         raise ValueError("Nao foi possivel localizar os dados da admissao inicial.")
 
+    inicio_contagem_progressao = _fim_estagio_probatorio(nomeacao.data_efetiva)
+
     (
         data_aposentadoria_por_carreira,
         data_aposentadoria_por_idade,
@@ -485,8 +503,8 @@ def analisar_historico_funcional(
         anos_clt_averbados=anos_clt_averbados,
     )
 
-    proxima_progressao_prevista = _proximo_marco(eventos, "progressao", nomeacao.data_efetiva)
-    proxima_promocao_prevista = _proximo_marco(eventos, "promocao", nomeacao.data_efetiva)
+    proxima_progressao_prevista = _proximo_marco(eventos, "progressao", inicio_contagem_progressao)
+    proxima_promocao_prevista = _proximo_marco(eventos, "promocao", inicio_contagem_progressao)
 
     resposta = HistoricoFuncionalResponse(
         historico_id=0,

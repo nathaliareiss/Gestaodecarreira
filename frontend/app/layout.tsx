@@ -5,7 +5,7 @@ import "./globals.css"
 
 export const metadata: Metadata = {
   title: "Career Progression Analyzer",
-  description: "Cadastro, login, recuperacao de senha e perfil funcional.",
+  description: "Cadastro, login, recuperação de senha e perfil funcional.",
 }
 
 export default function RootLayout({

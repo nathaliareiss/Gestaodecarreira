@@ -33,7 +33,7 @@ export function UsuarioFormView({
     <form className="card form-card form-card--register" onSubmit={onSubmit}>
       <div className="card-header card-header--tight">
         <div>
-          <p className="eyebrow">Novo usuario</p>
+          <p className="eyebrow">Novo usuário</p>
           <h2>Dados de acesso</h2>
         </div>
         <button
@@ -65,7 +65,7 @@ export function UsuarioFormView({
       </label>
 
       <label className="field">
-        <span>Email para confirmacao</span>
+        <span>E-mail para confirmação</span>
         <input
           type="email"
           value={cadastro.email}
@@ -76,7 +76,7 @@ export function UsuarioFormView({
       </label>
 
       <label className="field">
-        <span>Data de exercicio</span>
+        <span>Data de exercício</span>
         <input
           type="date"
           value={cadastro.data_exercicio}
@@ -111,11 +111,11 @@ export function UsuarioFormView({
 
       <div className="actions">
         <button className="primary-button button--large" type="submit" disabled={carregando}>
-          {carregando ? "Salvando..." : "Cadastrar e ir para o usuario"}
+          {carregando ? "Salvando..." : "Cadastrar e ir para o usuário"}
         </button>
         <p className="helper">
-          Depois do cadastro, o sistema enviara um email de confirmacao para o endereco de email
-          informado.
+          Depois do cadastro, o sistema enviará um e-mail de confirmação para o endereço de
+          e-mail informado.
         </p>
       </div>
 

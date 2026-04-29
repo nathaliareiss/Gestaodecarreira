@@ -16,7 +16,7 @@ export type HistoricoFuncionalEvento = {
   data_publicacao: string
   data_efetiva: string
   data_prevista: string | null
-  status: "cumprindo" | "atrasado" | "nao_aplicavel"
+  status: "cumprindo" | "atrasado" | "nao_aplicavel" | "estagio_probatorio"
   atraso_dias: number
 }
 
@@ -52,12 +52,12 @@ export type HistoricoFuncionalAnalise = {
 export function formatarTipoEvento(tipo: HistoricoFuncionalEvento["tipo"]) {
   switch (tipo) {
     case "nomeacao":
-      return "Nomeacao"
+      return "Nomeação"
     case "progressao":
-      return "Progressao"
+      return "Progressão"
     case "promocao":
-      return "Promocao"
+      return "Promoção"
     default:
-      return "Substituicao"
+      return "Substituição"
   }
 }

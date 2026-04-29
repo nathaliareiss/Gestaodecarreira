@@ -707,6 +707,11 @@ code {
   background: rgba(251, 113, 133, 0.12);
 }
 
+.timeline-badge--warning {
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.14);
+}
+
 .timeline-badge--neutral {
   color: var(--muted);
   background: rgba(148, 163, 184, 0.12);

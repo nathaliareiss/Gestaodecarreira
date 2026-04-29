@@ -27,7 +27,7 @@ async function carregarHistoricoInicial(
 
     return parseApiResponse<HistoricoFuncionalAnalise>(
       response,
-      "Erro ao carregar o historico funcional",
+      "Erro ao carregar o histórico funcional.",
     )
   } catch {
     return null

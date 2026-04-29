@@ -72,7 +72,7 @@ export function UsuarioPageController({
       const dados = await carregarUsuarioAutenticado(token)
       setUsuario(dados)
     } catch (error) {
-      setErro(error instanceof Error ? error.message : "Falha inesperada ao carregar")
+      setErro(error instanceof Error ? error.message : "Falha inesperada ao carregar.")
     } finally {
       setCarregando(false)
     }
@@ -86,7 +86,7 @@ export function UsuarioPageController({
       await removerUsuarioMaisRecente()
       setUsuario(null)
     } catch (error) {
-      setErro(error instanceof Error ? error.message : "Falha inesperada ao remover")
+      setErro(error instanceof Error ? error.message : "Falha inesperada ao remover.")
     } finally {
       setRemovendo(false)
     }
@@ -118,25 +118,25 @@ export function UsuarioPageController({
 
       <section className="hero">
         <div className="hero-copy">
-          <p className="eyebrow">Pagina do usuario</p>
-          <h1>Os dados agora vem da sua sessao, nao do navegador.</h1>
+          <p className="eyebrow">Página do usuário</p>
+          <h1>Os dados agora vêm da sua sessão, não do navegador.</h1>
           <p className="hero-text">
-            Esta pagina abre apenas depois do login e acompanha o estado de confirmacao
-            do email e o historico funcional.
+            Esta página abre apenas depois do login e acompanha o estado de confirmação
+            do e-mail e o histórico funcional.
           </p>
         </div>
 
         <div className="hero-grid">
           <article className="mini-card">
             <h2>Status</h2>
-            <p>{usuario ? "Sessao ativa" : "Nenhum usuario autenticado"}</p>
+            <p>{usuario ? "Sessão ativa" : "Nenhum usuário autenticado"}</p>
           </article>
           <article className="mini-card">
             <h2>Email</h2>
             <p>{usuario ? usuario.email : "Aguardando login"}</p>
           </article>
           <article className="mini-card">
-            <h2>Confirmacao</h2>
+            <h2>Confirmação</h2>
             <p>{usuario?.email_confirmado ? "Confirmado" : "Pendente"}</p>
           </article>
         </div>
@@ -159,7 +159,7 @@ export function UsuarioPageController({
               type="button"
               onClick={() => setAbaAtiva("historico")}
             >
-              Historico funcional
+              Histórico funcional
             </button>
           </div>
 
@@ -168,7 +168,7 @@ export function UsuarioPageController({
               <div className="card-header">
                 <div>
                   <p className="eyebrow">Dados salvos</p>
-                  <h2>Perfil do usuario</h2>
+                  <h2>Perfil do usuário</h2>
                 </div>
                 <span className="status-pill">
                   {usuario?.email_confirmado ? "confirmado" : "pendente"}
@@ -177,7 +177,7 @@ export function UsuarioPageController({
 
               {carregando ? (
                 <div className="empty-state">
-                  <p>Carregando dados da sessao...</p>
+                  <p>Carregando dados da sessão...</p>
                 </div>
               ) : erro ? (
                 <div className="empty-state">
@@ -203,14 +203,14 @@ export function UsuarioPageController({
                     </div>
                     <div className="result-block">
                       <span className="label">Apelido</span>
-                      <strong>{usuario.apelido || "Nao informado"}</strong>
+                      <strong>{usuario.apelido || "Não informado"}</strong>
                     </div>
                     <div className="result-block">
                       <span className="label">Email</span>
                       <strong>{usuario.email}</strong>
                     </div>
                     <div className="result-block">
-                      <span className="label">Data de exercicio</span>
+                      <span className="label">Data de exercício</span>
                       <strong>{formatarDataCurta(usuario.data_exercicio)}</strong>
                     </div>
                     <div className="result-block">
@@ -233,7 +233,7 @@ export function UsuarioPageController({
 
                   <div className="actions">
                     <p className="helper">
-                      O email de confirmacao foi enviado para{" "}
+                      O e-mail de confirmação foi enviado para{" "}
                       <strong>{usuario.email}</strong>.
                     </p>
                     <div className="actions-row">
@@ -243,7 +243,7 @@ export function UsuarioPageController({
                         onClick={() => void excluirCadastro()}
                         disabled={removendo}
                       >
-                        {removendo ? "Removendo..." : "Limpar ultimo cadastro"}
+                        {removendo ? "Removendo..." : "Limpar último cadastro"}
                       </button>
                       <button
                         className="ghost-button"
@@ -259,7 +259,7 @@ export function UsuarioPageController({
               ) : (
                 <div className="empty-state">
                   <p>
-                    Nenhuma sessao ativa foi encontrada. Entre novamente para ver seus
+                    Nenhuma sessão ativa foi encontrada. Entre novamente para ver seus
                     dados.
                   </p>
                   <Link className="primary-button" href="/login">

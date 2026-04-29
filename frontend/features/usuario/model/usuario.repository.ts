@@ -12,7 +12,7 @@ export async function criarUsuario(
     body: JSON.stringify(cadastro),
   })
 
-  return parseApiResponse<UsuarioConta>(response, "Erro ao cadastrar usuario")
+  return parseApiResponse<UsuarioConta>(response, "Erro ao cadastrar usuário.")
 }
 
 export async function listarUsuarios(): Promise<UsuarioConta[]> {
@@ -20,7 +20,7 @@ export async function listarUsuarios(): Promise<UsuarioConta[]> {
     method: "GET",
   })
 
-  return parseApiResponse<UsuarioConta[]>(response, "Erro ao carregar usuarios")
+  return parseApiResponse<UsuarioConta[]>(response, "Erro ao carregar usuários.")
 }
 
 export async function buscarUsuarioMaisRecente(): Promise<UsuarioConta | null> {
@@ -32,7 +32,7 @@ export async function buscarUsuarioMaisRecente(): Promise<UsuarioConta | null> {
     return null
   }
 
-  return parseApiResponse<UsuarioConta>(response, "Erro ao carregar usuario")
+  return parseApiResponse<UsuarioConta>(response, "Erro ao carregar usuário.")
 }
 
 export async function confirmarUsuarioPorToken(
@@ -46,7 +46,7 @@ export async function confirmarUsuarioPorToken(
     body: JSON.stringify({ token }),
   })
 
-  return parseApiResponse<UsuarioConta>(response, "Nao foi possivel confirmar o email")
+  return parseApiResponse<UsuarioConta>(response, "Não foi possível confirmar o e-mail.")
 }
 
 export async function removerUsuarioMaisRecente(): Promise<void> {
@@ -54,5 +54,5 @@ export async function removerUsuarioMaisRecente(): Promise<void> {
     method: "DELETE",
   })
 
-  await parseApiResponse<{ status: string }>(response, "Nao foi possivel remover o usuario")
+  await parseApiResponse<{ status: string }>(response, "Não foi possível remover o usuário.")
 }
