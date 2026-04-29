@@ -94,7 +94,7 @@ export function useHistoricoFuncionalController({
         setMostrarUpload(false)
       }
     } catch (error) {
-      setErro(error instanceof Error ? error.message : "Falha inesperada ao recarregar")
+      setErro(error instanceof Error ? error.message : "Falha inesperada ao recarregar.")
     } finally {
       setCarregando(false)
     }
