@@ -12,6 +12,7 @@ type HistoricoFuncionalViewProps = {
 
 type StatusEvento = HistoricoFuncionalAnalise["eventos"][number]["status"]
 type ResumoAfastamentos = NonNullable<HistoricoFuncionalAnalise["afastamentos_resumo"]>
+type PeriodoAfastamento = HistoricoFuncionalAnalise["afastamentos"][number]
 
 const STATUS_ORDEM: StatusEvento[] = [
   "cumprindo",
@@ -31,6 +32,17 @@ function formatarData(valor: string | null) {
   }
 
   return new Intl.DateTimeFormat("pt-BR", { dateStyle: "medium" }).format(new Date(`${valor}T00:00:00`))
+}
+
+function formatarMesAno(valor: string | null) {
+  if (!valor) {
+    return "-"
+  }
+
+  return new Intl.DateTimeFormat("pt-BR", {
+    month: "2-digit",
+    year: "numeric",
+  }).format(new Date(`${valor}T00:00:00`))
 }
 
 function formatarDuracaoEmAnos(dias: number) {
@@ -90,9 +102,11 @@ function corTipoAfastamento(tipo: keyof typeof TIPOS_AFASTAMENTO) {
 function GraficoPizzaTempo({
   percentualTrabalhado,
   percentualRestante,
+  resumoAfastamentos,
 }: {
   percentualTrabalhado: number
   percentualRestante: number
+  resumoAfastamentos?: ResumoAfastamentos | null
 }) {
   const percentualFormatado = Math.max(0, Math.min(percentualTrabalhado, 100))
 
@@ -125,6 +139,17 @@ function GraficoPizzaTempo({
             <p>Ainda falta trabalhar</p>
           </div>
         </div>
+        {resumoAfastamentos ? (
+          <div className="pie-legend__item pie-legend__item--danger">
+            <span className="pie-legend__dot pie-legend__dot--danger" />
+            <div>
+              <strong>Afastamentos</strong>
+              <p>
+                {resumoAfastamentos.dias_totais} dia(s) • {resumoAfastamentos.periodos_totais} período(s)
+              </p>
+            </div>
+          </div>
+        ) : null}
       </div>
     </div>
   )
@@ -180,6 +205,40 @@ function GraficoPizzaAfastamentos({ resumo }: { resumo: ResumoAfastamentos }) {
             )
           })}
       </div>
+    </div>
+  )
+}
+
+function ListaAfastamentos({
+  afastamentos,
+}: {
+  afastamentos: PeriodoAfastamento[]
+}) {
+  if (afastamentos.length === 0) {
+    return null
+  }
+
+  return (
+    <div className="afastamentos-periods">
+      {afastamentos.map((afastamento, indice) => (
+        <article
+          className="afastamentos-periods__item"
+          key={`${afastamento.tipo}-${afastamento.data_inicio}-${indice}`}
+        >
+          <div className="afastamentos-periods__topline">
+            <strong>{tipoAfastamentoLabel(afastamento.tipo)}</strong>
+            <span>{formatarMesAno(afastamento.data_inicio)}</span>
+          </div>
+          <p className="afastamentos-periods__detail">
+            {afastamento.dias_restantes_ate_pericia > 0
+              ? `Faltam ${afastamento.dias_restantes_ate_pericia} dia(s) para a perícia`
+              : "Perícia concluída"}
+          </p>
+          <p className="afastamentos-periods__detail">
+            Período: {formatarData(afastamento.data_inicio)} até {formatarData(afastamento.data_fim)}
+          </p>
+        </article>
+      ))}
     </div>
   )
 }
@@ -404,7 +463,12 @@ export function HistoricoFuncionalView({
             <GraficoPizzaTempo
               percentualRestante={resumo.percentual_restante}
               percentualTrabalhado={resumo.percentual_trabalhado}
+              resumoAfastamentos={resumoAfastamentos}
             />
+            {resumoAfastamentos ? <GraficoPizzaAfastamentos resumo={resumoAfastamentos} /> : null}
+            {painel.afastamentos.length > 0 ? (
+              <ListaAfastamentos afastamentos={painel.afastamentos} />
+            ) : null}
           </div>
 
           <div className="overview-panel__content">
@@ -421,6 +485,12 @@ export function HistoricoFuncionalView({
                 <span>Eventos lidos</span>
                 <strong>{resumo.eventos_totais}</strong>
               </div>
+              {resumoAfastamentos ? (
+                <div className="metric-line metric-line--danger">
+                  <span>Afastamentos</span>
+                  <strong>{resumoAfastamentos.dias_totais}</strong>
+                </div>
+              ) : null}
               <div className="metric-line">
                 <span>Próxima progressão</span>
                 <strong>{formatarData(painel.proxima_progressao_prevista)}</strong>
@@ -443,32 +513,6 @@ export function HistoricoFuncionalView({
               })}
             </div>
 
-            {resumoAfastamentos ? (
-              <article className="afastamentos-panel">
-                <div className="afastamentos-panel__header">
-                  <div className="analysis-header__title analysis-header__title--compact">
-                    <p className="eyebrow">Afastamentos</p>
-                    <h3>Leitura por tipo</h3>
-                    <p className="analysis-header__subtitle">
-                      Separação entre exame pericial e tratamento de saúde
-                    </p>
-                  </div>
-                </div>
-
-                <GraficoPizzaAfastamentos resumo={resumoAfastamentos} />
-
-                <div className="afastamentos-panel__metrics">
-                  <div className="metric-line">
-                    <span>Períodos lidos</span>
-                    <strong>{resumoAfastamentos.periodos_totais}</strong>
-                  </div>
-                  <div className="metric-line">
-                    <span>Dias afastado</span>
-                    <strong>{resumoAfastamentos.dias_totais}</strong>
-                  </div>
-                </div>
-              </article>
-            ) : null}
           </div>
         </section>
       ) : (
@@ -636,3 +680,4 @@ export function HistoricoFuncionalView({
     </section>
   )
 }
+
