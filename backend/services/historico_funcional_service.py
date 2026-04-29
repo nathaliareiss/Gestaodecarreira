@@ -210,10 +210,6 @@ TIPOS_AFASTAMENTO = {
     "Licença para Tratamento de Saúde": "licenca_para_tratamento_de_saude",
 }
 
-TIPOS_AFASTAMENTO_NORMALIZADOS = {
-    re.sub(r"\s+", " ", tipo).strip().lower(): valor for tipo, valor in TIPOS_AFASTAMENTO.items()
-}
-
 
 def _normalizar_sem_acentos(texto: str) -> str:
     import unicodedata
@@ -223,6 +219,13 @@ def _normalizar_sem_acentos(texto: str) -> str:
         for caractere in unicodedata.normalize("NFKD", texto)
         if not unicodedata.combining(caractere)
     ).lower()
+
+
+TIPOS_AFASTAMENTO_NORMALIZADOS: dict[str, str] = {}
+for _titulo_afastamento_original, _tipo_afastamento in TIPOS_AFASTAMENTO.items():
+    _chave_normalizada = re.sub(r"\s+", " ", _titulo_afastamento_original).strip().lower()
+    TIPOS_AFASTAMENTO_NORMALIZADOS[_chave_normalizada] = _tipo_afastamento
+    TIPOS_AFASTAMENTO_NORMALIZADOS[_normalizar_sem_acentos(_chave_normalizada)] = _tipo_afastamento
 
 
 def _tipo_afastamento_linha(linha: str) -> Literal[
@@ -244,17 +247,22 @@ def _titulo_afastamento(tipo: str) -> str:
 
 
 def _eh_linha_auxiliar_afastamento(linha: str) -> bool:
+    linha_normalizada = _normalizar_sem_acentos(re.sub(r"\s+", " ", linha).strip())
     return any(
-        trecho in linha
+        trecho in linha_normalizada
         for trecho in (
-            "Portal do Servidor",
+            "portal do servidor",
             "afastamentos--consultar",
-            "Cidade Administrativa",
-            "Termos de uso",
-            "Política de privacidade",
-            "Menu > Meu espaço",
+            "cidade administrativa",
+            "termos de uso",
+            "politica de privacidade",
+            "menu > meu espaco",
         )
-    ) or bool(re.fullmatch(r"\d{2}/\d{2}/\d{4},\s*\d{2}:\d{2}\s+Portal do Servidor", linha))
+    ) or bool(re.fullmatch(r"\d{2}/\d{2}/\d{4},\s*\d{2}:\d{2}\s+portal do servidor", linha_normalizada))
+
+
+def _eh_linha_cabecalho_afastamento(linha: str) -> bool:
+    return _normalizar_sem_acentos(re.sub(r"\s+", " ", linha).strip()) == "periodo total de dias legislacao publicacao"
 
 
 def _limpar_linhas_afastamentos(texto: str) -> list[str]:

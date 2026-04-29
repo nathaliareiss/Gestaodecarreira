@@ -669,6 +669,11 @@ html[data-theme="light"] .results-card {
   font-size: 0.95rem;
 }
 
+.analysis-header__title--compact {
+  margin-inline: 0;
+  text-align: left;
+}
+
 .overview-panel {
   display: grid;
   grid-template-columns: minmax(240px, 300px) minmax(0, 1fr);
@@ -697,6 +702,26 @@ html[data-theme="light"] .summary-panel {
 .overview-panel__content {
   display: grid;
   gap: 1rem;
+}
+
+.afastamentos-panel {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+  border-radius: 20px;
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  background: rgba(8, 16, 30, 0.42);
+}
+
+html[data-theme="light"] .afastamentos-panel {
+  background: rgba(255, 255, 255, 0.78);
+  border-color: rgba(15, 23, 42, 0.08);
+}
+
+.afastamentos-panel__metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
 }
 
 .pie-visual {
@@ -1124,14 +1149,19 @@ html[data-theme="light"] .timeline-graph__node {
 }
 
 .timeline-graph__label {
-  fill: var(--text);
+  fill: #f8fafc;
   font-size: 0.8rem;
   font-weight: 800;
   paint-order: stroke fill;
-  stroke: rgba(5, 11, 20, 0.8);
+  stroke: rgba(5, 11, 20, 0.9);
   stroke-width: 4px;
   stroke-linejoin: round;
   filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.32));
+}
+
+html[data-theme="light"] .timeline-graph__label {
+  fill: #0f172a;
+  stroke: rgba(255, 255, 255, 0.95);
 }
 
 .timeline-graph__label--muted {
@@ -1139,6 +1169,10 @@ html[data-theme="light"] .timeline-graph__node {
   font-size: 0.72rem;
   font-weight: 500;
   opacity: 0.96;
+}
+
+html[data-theme="light"] .timeline-graph__label--muted {
+  fill: #334155;
 }
 
 .timeline-legend {

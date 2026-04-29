@@ -11,6 +11,7 @@ type HistoricoFuncionalViewProps = {
 }
 
 type StatusEvento = HistoricoFuncionalAnalise["eventos"][number]["status"]
+type ResumoAfastamentos = NonNullable<HistoricoFuncionalAnalise["afastamentos_resumo"]>
 
 const STATUS_ORDEM: StatusEvento[] = [
   "cumprindo",
@@ -18,6 +19,11 @@ const STATUS_ORDEM: StatusEvento[] = [
   "atrasado",
   "nao_aplicavel",
 ]
+
+const TIPOS_AFASTAMENTO = {
+  aguardando_resultado_conclusivo_de_exame_pericial: "Aguardando exame pericial",
+  licenca_para_tratamento_de_saude: "Licença para tratamento de saúde",
+} as const
 
 function formatarData(valor: string | null) {
   if (!valor) {
@@ -69,6 +75,18 @@ function corDoStatus(status: StatusEvento) {
   return "#94a3b8"
 }
 
+function tipoAfastamentoLabel(tipo: keyof typeof TIPOS_AFASTAMENTO) {
+  return TIPOS_AFASTAMENTO[tipo]
+}
+
+function corTipoAfastamento(tipo: keyof typeof TIPOS_AFASTAMENTO) {
+  if (tipo === "aguardando_resultado_conclusivo_de_exame_pericial") {
+    return "#f59e0b"
+  }
+
+  return "#5eead4"
+}
+
 function GraficoPizzaTempo({
   percentualTrabalhado,
   percentualRestante,
@@ -107,6 +125,60 @@ function GraficoPizzaTempo({
             <p>Ainda falta trabalhar</p>
           </div>
         </div>
+      </div>
+    </div>
+  )
+}
+
+function GraficoPizzaAfastamentos({ resumo }: { resumo: ResumoAfastamentos }) {
+  const total = Math.max(resumo.dias_totais, 1)
+  const tipos = Object.entries(resumo.dias_por_tipo)
+    .filter(([, dias]) => dias > 0)
+    .sort((a, b) => b[1] - a[1]) as Array<[keyof typeof TIPOS_AFASTAMENTO, number]>
+
+  let acumulado = 0
+  const fatias = tipos.map(([tipo, dias]) => {
+    const inicio = (acumulado / total) * 100
+    acumulado += dias
+    const fim = (acumulado / total) * 100
+    return `${corTipoAfastamento(tipo)} ${inicio}% ${fim}%`
+  })
+
+  const background =
+    fatias.length > 0
+      ? `conic-gradient(${fatias.join(", ")})`
+      : "conic-gradient(rgba(148, 163, 184, 0.18) 0 100%)"
+
+  return (
+    <div className="pie-visual pie-visual--afastamentos">
+      <div className="pie-visual__ring" style={{ background }}>
+        <div className="pie-visual__center">
+          <strong>{resumo.dias_totais}</strong>
+          <span>dias afastado</span>
+        </div>
+      </div>
+
+      <div className="pie-legend">
+        {Object.entries(resumo.dias_por_tipo)
+          .filter(([, dias]) => dias > 0)
+          .sort((a, b) => b[1] - a[1])
+          .map(([tipo, dias]) => {
+            const key = tipo as keyof typeof TIPOS_AFASTAMENTO
+            return (
+              <div className="pie-legend__item" key={tipo}>
+                <span
+                  className="pie-legend__dot"
+                  style={{ background: corTipoAfastamento(key) }}
+                />
+                <div>
+                  <strong>{tipoAfastamentoLabel(key)}</strong>
+                  <p>
+                    {dias} dia(s) • {resumo.periodos_por_tipo[tipo] ?? 0} período(s)
+                  </p>
+                </div>
+              </div>
+            )
+          })}
       </div>
     </div>
   )
@@ -287,6 +359,8 @@ export function HistoricoFuncionalView({
   const {
     arquivo,
     arquivoDownloadUrl,
+    arquivoAfastamentos,
+    arquivoAfastamentosDownloadUrl,
     anosCltAverbados,
     carregando,
     dataNascimento,
@@ -295,6 +369,7 @@ export function HistoricoFuncionalView({
     mostrarUpload,
     recarregarHistorico,
     selecionarArquivo,
+    selecionarArquivoAfastamentos,
     setAnosCltAverbados,
     setDataNascimento,
     setMostrarUpload,
@@ -307,6 +382,7 @@ export function HistoricoFuncionalView({
 
   const painel = historico ?? historicoInicial
   const resumo = painel?.resumo_grafico
+  const resumoAfastamentos = painel?.afastamentos_resumo
 
   return (
     <section className="analysis-card card">
@@ -363,6 +439,33 @@ export function HistoricoFuncionalView({
                 )
               })}
             </div>
+
+            {resumoAfastamentos ? (
+              <article className="afastamentos-panel">
+                <div className="afastamentos-panel__header">
+                  <div className="analysis-header__title analysis-header__title--compact">
+                    <p className="eyebrow">Afastamentos</p>
+                    <h3>Leitura por tipo</h3>
+                    <p className="analysis-header__subtitle">
+                      Separação entre exame pericial e tratamento de saúde
+                    </p>
+                  </div>
+                </div>
+
+                <GraficoPizzaAfastamentos resumo={resumoAfastamentos} />
+
+                <div className="afastamentos-panel__metrics">
+                  <div className="metric-line">
+                    <span>Períodos lidos</span>
+                    <strong>{resumoAfastamentos.periodos_totais}</strong>
+                  </div>
+                  <div className="metric-line">
+                    <span>Dias afastado</span>
+                    <strong>{resumoAfastamentos.dias_totais}</strong>
+                  </div>
+                </div>
+              </article>
+            ) : null}
           </div>
         </section>
       ) : (
@@ -409,6 +512,15 @@ export function HistoricoFuncionalView({
               <span>PDF do histórico funcional</span>
               <input type="file" accept="application/pdf" onChange={selecionarArquivo} />
             </label>
+
+            <label className="field">
+              <span>PDF dos afastamentos (opcional)</span>
+              <input type="file" accept="application/pdf" onChange={selecionarArquivoAfastamentos} />
+            </label>
+
+            {arquivoAfastamentos ? (
+              <p className="helper">Arquivo de afastamentos selecionado: {arquivoAfastamentos.name}</p>
+            ) : null}
 
             <div className="field-grid">
               <label className="field">
