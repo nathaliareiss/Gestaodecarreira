@@ -150,6 +150,8 @@ def anexar_afastamentos_historico(
                     "total_dias": afastamento.total_dias,
                     "legislacao": afastamento.legislacao,
                     "publicacao": afastamento.publicacao,
+                    "mes_ano_afastamento": afastamento.mes_ano_afastamento,
+                    "dias_restantes_ate_pericia": afastamento.dias_restantes_ate_pericia,
                 }
                 for afastamento in afastamentos
             ],
