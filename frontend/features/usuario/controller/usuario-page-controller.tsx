@@ -192,10 +192,6 @@ export function UsuarioPageController({
                       <strong>{formatarDataCurta(usuario.data_exercicio)}</strong>
                     </div>
                     <div className="result-block">
-                      <span className="label">Login</span>
-                      <strong>{usuario.login}</strong>
-                    </div>
-                    <div className="result-block">
                       <span className="label">Criado em</span>
                       <strong>{formatarData(usuario.criado_em)}</strong>
                     </div>

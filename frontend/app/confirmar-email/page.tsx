@@ -1,12 +1,11 @@
-"use client"
+import { Suspense } from "react"
 
-import { useSearchParams } from "next/navigation"
-
-import { ConfirmarEmailView } from "@/features/usuario/view/confirmar-email-view"
+import { ConfirmarEmailPageClient } from "./confirmar-email-page-client"
 
 export default function ConfirmarEmailPage() {
-  const searchParams = useSearchParams()
-  const token = searchParams.get("token")
-
-  return <ConfirmarEmailView token={token} />
+  return (
+    <Suspense fallback={<div />}>
+      <ConfirmarEmailPageClient />
+    </Suspense>
+  )
 }

@@ -1,12 +1,11 @@
-"use client"
+import { Suspense } from "react"
 
-import { useSearchParams } from "next/navigation"
-
-import { RedefinirSenhaView } from "@/features/auth/view/redefinir-senha-view"
+import { RedefinirSenhaPageClient } from "./redefinir-senha-page-client"
 
 export default function RedefinirSenhaPage() {
-  const searchParams = useSearchParams()
-  const token = searchParams.get("token")
-
-  return <RedefinirSenhaView token={token} />
+  return (
+    <Suspense fallback={<div />}>
+      <RedefinirSenhaPageClient />
+    </Suspense>
+  )
 }
