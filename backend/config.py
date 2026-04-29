@@ -6,12 +6,21 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent
+PROJECT_ROOT = BASE_DIR.parent
 
-load_dotenv(BASE_DIR / ".env")
+for candidato in (
+    BASE_DIR / ".env",
+    PROJECT_ROOT / ".env",
+    Path.cwd() / ".env",
+    Path.cwd() / "backend" / ".env",
+):
+    if candidato.is_file():
+        load_dotenv(candidato, override=False)
+        break
 
 
 def _ler_lista_csv(nome_variavel: str) -> list[str]:
-    valor = os.environ[nome_variavel]
+    valor = os.getenv(nome_variavel, "")
     return [item.strip() for item in valor.split(",") if item.strip()]
 
 
@@ -32,17 +41,23 @@ def _resolver_caminho_env(nome_variavel: str, padrao: Path) -> Path:
         if caminho.exists():
             return caminho.resolve()
 
-        candidato_raiz = (BASE_DIR.parent / caminho).resolve()
-        if candidato_raiz.exists():
-            return candidato_raiz
+        for base in (
+            BASE_DIR,
+            PROJECT_ROOT,
+            Path.cwd(),
+            Path.cwd() / "backend",
+        ):
+            candidato = (base / caminho).resolve()
+            if candidato.exists():
+                return candidato
 
         caminho = (BASE_DIR / caminho).resolve()
     return caminho
 
 
-HOST = os.environ["HOST"]
-PORT = int(os.environ["PORT"])
-CORS_ORIGINS = _ler_lista_csv("CORS_ORIGINS")
+HOST = os.getenv("HOST", "0.0.0.0")
+PORT = int(os.getenv("PORT", "8000"))
+CORS_ORIGINS = _ler_lista_csv("CORS_ORIGINS") or ["http://localhost:3000"]
 FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL", "http://localhost:3000").rstrip("/")
 EMAIL_CONFIRMATION_SUBJECT = os.getenv(
     "EMAIL_CONFIRMATION_SUBJECT",
