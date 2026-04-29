@@ -10,6 +10,11 @@ class UsuarioLoginRequest(BaseModel):
     senha: str = Field(min_length=1, max_length=128)
 
 
+class UsuarioRedefinirSenhaRequest(BaseModel):
+    identificador: str = Field(min_length=1, max_length=254)
+    nova_senha: str = Field(min_length=6, max_length=128)
+
+
 class UsuarioAuthResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"

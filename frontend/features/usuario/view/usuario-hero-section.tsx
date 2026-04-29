@@ -1,48 +1,24 @@
 import Link from "next/link"
 
-const destaques = [
-  {
-    titulo: "Cadastro simples",
-    texto: "Preencha os dados e conclua sem etapas desnecessarias.",
-  },
-  {
-    titulo: "Email automático",
-    texto: "O sistema envia um email de confirmação para o endereço informado.",
-  },
-  {
-    titulo: "Perfil organizado",
-    texto: "Depois do envio, a pessoa vê o cadastro salvo e o status da conta.",
-  },
-]
-
 export function UsuarioHeroSection() {
   return (
-    <section className="hero">
-      <div className="hero-copy">
+    <div className="hero-copy hero-copy--register">
+      <div className="hero-topbar">
         <p className="eyebrow">Cadastro de usuario</p>
-        <h1>Cadastre a pessoa de forma simples e confirme por email.</h1>
-        <p className="hero-text">
-          O fluxo foi pensado para ser direto: preencha, envie e confirme pelo email
-          recebido.
-        </p>
-        <div className="hero-links">
-          <Link className="ghost-button" href="/login">
-            Ja tenho conta
-          </Link>
-          <Link className="ghost-button" href="/usuario">
-            Abrir perfil
-          </Link>
-        </div>
+        <Link className="ghost-button ghost-button--compact" href="/login">
+          Ja tenho conta
+        </Link>
       </div>
 
-      <div className="hero-grid">
-        {destaques.map((destaque) => (
-          <article className="mini-card" key={destaque.titulo}>
-            <h2>{destaque.titulo}</h2>
-            <p>{destaque.texto}</p>
-          </article>
-        ))}
-      </div>
-    </section>
+      <h1>Career Progression Analyzer</h1>
+      <p className="hero-subtitle">
+        Analise a progressao funcional em portugues, com cadastro rapido e perfil
+        organizado para acompanhar a evolucao da pessoa.
+      </p>
+      <p className="hero-text">
+        A lateral de cadastro foi pensada para ser objetiva: preencha os dados
+        principais, inclua a data de exercicio e siga para o perfil sem ruido visual.
+      </p>
+    </div>
   )
 }

@@ -39,6 +39,7 @@ def cadastrar_usuario(db: Session, cadastro: UsuarioCreateRequest) -> Usuario:
         nome=nome,
         apelido=apelido,
         email=email,
+        data_exercicio=cadastro.data_exercicio,
         login=login,
         senha_hash=gerar_hash_sha256(senha),
         token_confirmacao_email=gerar_token_seguro(),

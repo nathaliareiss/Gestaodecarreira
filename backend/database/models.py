@@ -15,6 +15,7 @@ class Usuario(Base):
     senha_hash = Column(String, nullable=False)
     token_confirmacao_email = Column(String, unique=True, nullable=False)
     email_confirmado = Column(Boolean, nullable=False, default=False)
+    data_exercicio = Column(Date, nullable=True)
     sessao_token_hash = Column(String, nullable=True)
     sessao_expira_em = Column(DateTime(timezone=True), nullable=True)
     criado_em = Column(

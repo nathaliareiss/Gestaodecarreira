@@ -28,6 +28,17 @@ function formatarData(valor: string | null) {
   }).format(new Date(valor))
 }
 
+function formatarDataCurta(valor: string | null) {
+  if (!valor) {
+    return "-"
+  }
+
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "medium",
+    timeZone: "UTC",
+  }).format(new Date(valor))
+}
+
 type UsuarioPageControllerProps = {
   usuarioInicial: UsuarioConta | null
   historicoInicial: HistoricoFuncionalAnalise | null
@@ -197,6 +208,10 @@ export function UsuarioPageController({
                     <div className="result-block">
                       <span className="label">Email</span>
                       <strong>{usuario.email}</strong>
+                    </div>
+                    <div className="result-block">
+                      <span className="label">Data de exercicio</span>
+                      <strong>{formatarDataCurta(usuario.data_exercicio)}</strong>
                     </div>
                     <div className="result-block">
                       <span className="label">Login</span>

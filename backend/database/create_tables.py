@@ -11,6 +11,7 @@ def sincronizar_usuario_table() -> None:
         "ALTER TABLE IF EXISTS usuarios ADD COLUMN IF NOT EXISTS senha_hash VARCHAR",
         "ALTER TABLE IF EXISTS usuarios ADD COLUMN IF NOT EXISTS token_confirmacao_email VARCHAR",
         "ALTER TABLE IF EXISTS usuarios ADD COLUMN IF NOT EXISTS email_confirmado BOOLEAN NOT NULL DEFAULT FALSE",
+        "ALTER TABLE IF EXISTS usuarios ADD COLUMN IF NOT EXISTS data_exercicio DATE",
         "ALTER TABLE IF EXISTS usuarios ADD COLUMN IF NOT EXISTS sessao_token_hash VARCHAR",
         "ALTER TABLE IF EXISTS usuarios ADD COLUMN IF NOT EXISTS sessao_expira_em TIMESTAMP WITH TIME ZONE",
         "ALTER TABLE IF EXISTS usuarios ADD COLUMN IF NOT EXISTS criado_em TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()",

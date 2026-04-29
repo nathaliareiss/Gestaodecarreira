@@ -22,6 +22,7 @@ export function UsuarioController() {
       onNomeChange={(valor) => atualizarCampo("nome", valor)}
       onApelidoChange={(valor) => atualizarCampo("apelido", valor)}
       onEmailChange={(valor) => atualizarCampo("email", valor)}
+      onDataExercicioChange={(valor) => atualizarCampo("data_exercicio", valor)}
       onLoginChange={(valor) => atualizarCampo("login", valor)}
       onSenhaChange={(valor) => atualizarCampo("senha", valor)}
       onUsarExemplo={usarExemplo}

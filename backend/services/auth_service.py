@@ -10,7 +10,7 @@ from backend.repositories.usuario_repository import (
     obter_usuario_por_login_ou_email,
     obter_usuario_por_sessao_token_hash,
 )
-from backend.schemas.auth_schema import UsuarioLoginRequest
+from backend.schemas.auth_schema import UsuarioLoginRequest, UsuarioRedefinirSenhaRequest
 from backend.services.security_service import gerar_hash_sha256, gerar_token_seguro
 
 
@@ -53,6 +53,21 @@ def encerrar_sessao_usuario(db: Session, token: str) -> None:
     if usuario is None:
         return
 
+    usuario.sessao_token_hash = None
+    usuario.sessao_expira_em = None
+    atualizar_usuario(db, usuario)
+
+
+def redefinir_senha_usuario(
+    db: Session,
+    dados: UsuarioRedefinirSenhaRequest,
+) -> None:
+    identificador = dados.identificador.strip()
+    usuario = obter_usuario_por_login_ou_email(db, identificador)
+    if usuario is None:
+        raise ValueError("Nao encontramos um usuario com esse login ou email.")
+
+    usuario.senha_hash = gerar_hash_sha256(dados.nova_senha)
     usuario.sessao_token_hash = None
     usuario.sessao_expira_em = None
     atualizar_usuario(db, usuario)

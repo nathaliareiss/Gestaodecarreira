@@ -4,12 +4,17 @@ from fastapi import APIRouter, Depends, Header, HTTPException, status
 from sqlalchemy.orm import Session
 
 from backend.database.database import get_db
-from backend.schemas.auth_schema import UsuarioAuthResponse, UsuarioLoginRequest
+from backend.schemas.auth_schema import (
+    UsuarioAuthResponse,
+    UsuarioLoginRequest,
+    UsuarioRedefinirSenhaRequest,
+)
 from backend.schemas.usuario_schema import UsuarioResponse
 from backend.services.auth_service import (
     autenticar_usuario,
     encerrar_sessao_usuario,
     obter_usuario_autenticado_por_token,
+    redefinir_senha_usuario,
 )
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -63,4 +68,17 @@ def logout(
     token = _extrair_token_bearer(authorization)
     encerrar_sessao_usuario(db, token)
     return {"status": "ok"}
+
+
+@router.post("/recuperar-senha")
+def recuperar_senha(
+    dados: UsuarioRedefinirSenhaRequest,
+    db: Session = Depends(get_db),
+) -> dict[str, str]:
+    try:
+        redefinir_senha_usuario(db, dados)
+    except ValueError as erro:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(erro)) from erro
+
+    return {"status": "ok", "message": "Senha atualizada com sucesso."}
 

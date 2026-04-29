@@ -10,6 +10,7 @@ type UsuarioFormViewProps = {
   onNomeChange: (valor: string) => void
   onApelidoChange: (valor: string) => void
   onEmailChange: (valor: string) => void
+  onDataExercicioChange: (valor: string) => void
   onLoginChange: (valor: string) => void
   onSenhaChange: (valor: string) => void
   onUsarExemplo: () => void
@@ -23,18 +24,23 @@ export function UsuarioFormView({
   onNomeChange,
   onApelidoChange,
   onEmailChange,
+  onDataExercicioChange,
   onLoginChange,
   onSenhaChange,
   onUsarExemplo,
 }: UsuarioFormViewProps) {
   return (
-    <form className="card form-card" onSubmit={onSubmit}>
-      <div className="card-header">
+    <form className="card form-card form-card--register" onSubmit={onSubmit}>
+      <div className="card-header card-header--tight">
         <div>
           <p className="eyebrow">Novo usuario</p>
           <h2>Dados de acesso</h2>
         </div>
-        <button className="ghost-button" type="button" onClick={onUsarExemplo}>
+        <button
+          className="ghost-button ghost-button--compact"
+          type="button"
+          onClick={onUsarExemplo}
+        >
           Usar exemplo
         </button>
       </div>
@@ -59,12 +65,22 @@ export function UsuarioFormView({
       </label>
 
       <label className="field">
-        <span>Email para confirmação</span>
+        <span>Email para confirmacao</span>
         <input
-          type="text"
+          type="email"
           value={cadastro.email}
           onChange={(evento) => onEmailChange(evento.target.value)}
           placeholder="maria@exemplo.com"
+          required
+        />
+      </label>
+
+      <label className="field">
+        <span>Data de exercicio</span>
+        <input
+          type="date"
+          value={cadastro.data_exercicio}
+          onChange={(evento) => onDataExercicioChange(evento.target.value)}
           required
         />
       </label>
@@ -94,11 +110,11 @@ export function UsuarioFormView({
       </div>
 
       <div className="actions">
-        <button className="primary-button" type="submit" disabled={carregando}>
+        <button className="primary-button button--large" type="submit" disabled={carregando}>
           {carregando ? "Salvando..." : "Cadastrar e ir para o usuario"}
         </button>
         <p className="helper">
-          Depois do cadastro, o sistema envia um email de confirmação para o endereço
+          Depois do cadastro, o sistema envia um email de confirmacao para o endereco
           informado.
         </p>
       </div>

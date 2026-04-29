@@ -34,11 +34,12 @@ export function useUsuarioController() {
   function validarCadastro() {
     const nome = cadastro.nome.trim()
     const email = cadastro.email.trim()
+    const dataExercicio = cadastro.data_exercicio
     const login = cadastro.login.trim()
     const senha = cadastro.senha
 
-    if (!nome || !email || !login || !senha) {
-      return "Preencha nome, email, login e senha."
+    if (!nome || !email || !dataExercicio || !login || !senha) {
+      return "Preencha nome, email, data de exercicio, login e senha."
     }
 
     if (senha.length < 6) {
@@ -65,6 +66,7 @@ export function useUsuarioController() {
         nome: cadastro.nome.trim(),
         apelido: cadastro.apelido.trim(),
         email: cadastro.email.trim(),
+        data_exercicio: cadastro.data_exercicio,
         login: cadastro.login.trim(),
         senha: cadastro.senha,
       })

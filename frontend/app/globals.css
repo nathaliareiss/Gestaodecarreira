@@ -117,6 +117,90 @@ code {
 .hero-copy {
   padding: 2rem;
   border-radius: 28px;
+  display: grid;
+  align-content: start;
+  gap: 0.85rem;
+}
+
+.hero-copy--register {
+  max-width: 100%;
+}
+
+.hero-copy--login {
+  max-width: 100%;
+}
+
+.hero-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.hero-subtitle {
+  margin: 0;
+  max-width: 54ch;
+  color: var(--text);
+  font-size: 1.18rem;
+  line-height: 1.65;
+}
+
+.hero-links--top {
+  margin-top: 0.25rem;
+}
+
+.hero-links--top .button--large {
+  min-height: 3rem;
+}
+
+.side-panel,
+.login-panel {
+  display: grid;
+  gap: 1rem;
+  align-content: start;
+}
+
+.side-panel--register {
+  justify-self: end;
+  width: min(100%, 520px);
+}
+
+.login-panel {
+  width: min(100%, 520px);
+  justify-self: end;
+}
+
+.form-card--register,
+.form-card--login,
+.form-card--recovery {
+  width: 100%;
+}
+
+.form-card--recovery {
+  background: linear-gradient(180deg, rgba(13, 23, 41, 0.88), rgba(7, 14, 24, 0.9));
+}
+
+.card-header--tight {
+  margin-bottom: 0.75rem;
+}
+
+.ghost-button,
+.primary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  line-height: 1;
+}
+
+.ghost-button--compact {
+  padding: 0.68rem 0.92rem;
+  font-size: 0.88rem;
+}
+
+.button--large {
+  padding: 1rem 1.25rem;
+  font-size: 1rem;
 }
 
 .eyebrow {
@@ -154,6 +238,11 @@ code {
   flex-wrap: wrap;
   gap: 0.75rem;
   margin-top: 1.25rem;
+}
+
+.hero-links .ghost-button,
+.hero-links .primary-button {
+  min-width: 10rem;
 }
 
 .hero-grid {
@@ -290,6 +379,14 @@ code {
   margin-top: 1.3rem;
 }
 
+.actions--login {
+  margin-top: 1rem;
+}
+
+.actions--compact {
+  margin-top: 1rem;
+}
+
 .actions-row {
   display: flex;
   flex-wrap: wrap;
@@ -349,6 +446,15 @@ code {
   border: 1px solid rgba(251, 113, 133, 0.3);
   background: rgba(251, 113, 133, 0.12);
   color: #fecdd3;
+}
+
+.success-box {
+  margin: 1rem 0 0;
+  padding: 0.9rem 1rem;
+  border-radius: 16px;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  background: rgba(16, 185, 129, 0.12);
+  color: #bbf7d0;
 }
 
 .results-card {
@@ -604,6 +710,12 @@ code {
   .hero h1 {
     max-width: none;
   }
+
+  .side-panel--register,
+  .login-panel {
+    width: 100%;
+    justify-self: stretch;
+  }
 }
 
 @media (max-width: 720px) {
@@ -630,6 +742,16 @@ code {
   }
 
   .tab-bar {
+    width: 100%;
+  }
+
+  .hero-topbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .hero-links .ghost-button,
+  .hero-links .primary-button {
     width: 100%;
   }
 }

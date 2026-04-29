@@ -13,6 +13,7 @@ type UsuarioPageViewProps = {
   onNomeChange: (valor: string) => void
   onApelidoChange: (valor: string) => void
   onEmailChange: (valor: string) => void
+  onDataExercicioChange: (valor: string) => void
   onLoginChange: (valor: string) => void
   onSenhaChange: (valor: string) => void
   onUsarExemplo: () => void
@@ -26,6 +27,7 @@ export function UsuarioPageView({
   onNomeChange,
   onApelidoChange,
   onEmailChange,
+  onDataExercicioChange,
   onLoginChange,
   onSenhaChange,
   onUsarExemplo,
@@ -34,20 +36,25 @@ export function UsuarioPageView({
     <main className="page-shell">
       <div className="bg-orb bg-orb-a" />
       <div className="bg-orb bg-orb-b" />
-      <UsuarioHeroSection />
-      <section className="workbench workbench--single">
-        <UsuarioFormView
-          cadastro={cadastro}
-          carregando={carregando}
-          erro={erro}
-          onSubmit={onSubmit}
-          onNomeChange={onNomeChange}
-          onApelidoChange={onApelidoChange}
-          onEmailChange={onEmailChange}
-          onLoginChange={onLoginChange}
-          onSenhaChange={onSenhaChange}
-          onUsarExemplo={onUsarExemplo}
-        />
+
+      <section className="hero hero--register">
+        <UsuarioHeroSection />
+
+        <div className="side-panel side-panel--register">
+          <UsuarioFormView
+            cadastro={cadastro}
+            carregando={carregando}
+            erro={erro}
+            onSubmit={onSubmit}
+            onNomeChange={onNomeChange}
+            onApelidoChange={onApelidoChange}
+            onEmailChange={onEmailChange}
+            onDataExercicioChange={onDataExercicioChange}
+            onLoginChange={onLoginChange}
+            onSenhaChange={onSenhaChange}
+            onUsarExemplo={onUsarExemplo}
+          />
+        </div>
       </section>
     </main>
   )

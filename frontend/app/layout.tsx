@@ -4,8 +4,8 @@ import type { ReactNode } from "react"
 import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "Gestao de Carreira",
-  description: "Cadastro, login, confirmacao por email e perfil funcional.",
+  title: "Career Progression Analyzer",
+  description: "Cadastro, login, recuperacao de senha e perfil funcional.",
 }
 
 export default function RootLayout({
