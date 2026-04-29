@@ -78,6 +78,8 @@ class AfastamentoPeriodo:
     total_dias: int
     legislacao: str | None
     publicacao: date | None
+    mes_ano_afastamento: str
+    dias_restantes_ate_pericia: int
 
 
 def decodificar_arquivo_base64(conteudo_base64: str) -> bytes:
@@ -112,6 +114,15 @@ def _encontrar_datas(texto: str) -> list[date]:
         except ValueError:
             continue
     return datas
+
+
+def _formatar_mes_ano(data_base: date) -> str:
+    return f"{data_base.month:02d}/{data_base.year}"
+
+
+def _dias_restantes_ate_pericia(data_fim: date) -> int:
+    hoje = date.today()
+    return max((data_fim - hoje).days, 0)
 
 
 def _escolher_token(tokens: list[str], padrao: str, inicio: int = 0) -> int | None:
@@ -311,6 +322,8 @@ def _parsear_afastamento_bloco(tipo: str, bloco: str) -> AfastamentoPeriodo:
         total_dias=total_dias,
         legislacao=legislacao,
         publicacao=publicacao,
+        mes_ano_afastamento=_formatar_mes_ano(data_inicio),
+        dias_restantes_ate_pericia=_dias_restantes_ate_pericia(data_fim),
     )
 
 
@@ -786,6 +799,8 @@ def analisar_historico_funcional(
                 total_dias=afastamento.total_dias,
                 legislacao=afastamento.legislacao,
                 publicacao=afastamento.publicacao,
+                mes_ano_afastamento=afastamento.mes_ano_afastamento,
+                dias_restantes_ate_pericia=afastamento.dias_restantes_ate_pericia,
             )
             for afastamento in afastamentos
         ],

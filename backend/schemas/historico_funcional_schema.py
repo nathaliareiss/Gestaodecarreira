@@ -55,6 +55,8 @@ class AfastamentoPeriodoResponse(BaseModel):
     total_dias: int
     legislacao: str | None = None
     publicacao: date | None = None
+    mes_ano_afastamento: str = ""
+    dias_restantes_ate_pericia: int = 0
 
 
 class AfastamentoResumoResponse(BaseModel):

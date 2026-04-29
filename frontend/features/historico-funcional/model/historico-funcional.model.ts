@@ -20,6 +20,8 @@ export type AfastamentoPeriodo = {
   total_dias: number
   legislacao: string | null
   publicacao: string | null
+  mes_ano_afastamento: string
+  dias_restantes_ate_pericia: number
 }
 
 export type AfastamentoResumo = {
