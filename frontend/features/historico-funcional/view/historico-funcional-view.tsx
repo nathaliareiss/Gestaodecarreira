@@ -529,11 +529,8 @@ export function HistoricoFuncionalView({
 
       {painel && resumo ? (
         <section className="timeline-panel">
-          <div className="card-header card-header--tight">
-            <div className="analysis-header__title">
-              <p className="eyebrow">Linha do tempo</p>
-              <h3>Linha do tempo: progressões e promoções</h3>
-            </div>
+          <div className="career-bars__title" style={{ marginBottom: "1.5rem" }}>
+            <p className="eyebrow">Linha do tempo: progressões e promoções</p>
           </div>
 
           <LinhaDoTempoGrafica eventos={painel.eventos} />
