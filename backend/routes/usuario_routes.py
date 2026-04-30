@@ -5,6 +5,12 @@ from sqlalchemy.orm import Session
 
 from backend.database.database import get_db
 from backend.logger import logger
+from backend.cache.redis_cache import (
+    CACHE_TTL_USUARIO_ULTIMO_SEGUNDOS,
+    chave_usuario_ultimo,
+    definir_json_cache,
+    obter_json_cache,
+)
 from backend.schemas.usuario_schema import (
     UsuarioConfirmarRequest,
     UsuarioCreateRequest,
@@ -64,6 +70,11 @@ def listar_todos_os_usuarios(db: Session = Depends(get_db)) -> list[UsuarioRespo
 
 @router.get("/ultimo", response_model=UsuarioResponse)
 def obter_ultimo_usuario(db: Session = Depends(get_db)) -> UsuarioResponse:
+    cache = obter_json_cache(chave_usuario_ultimo())
+    if cache is not None:
+        logger.debug("Ultimo usuario carregado do cache")
+        return UsuarioResponse.model_validate(cache)
+
     usuario = obter_usuario_mais_recente(db)
     if usuario is None:
         raise HTTPException(
@@ -72,7 +83,9 @@ def obter_ultimo_usuario(db: Session = Depends(get_db)) -> UsuarioResponse:
         )
 
     logger.debug("Ultimo usuario consultado", extra={"usuario_id": usuario.id, "email": usuario.email})
-    return UsuarioResponse.model_validate(usuario)
+    resposta = UsuarioResponse.model_validate(usuario)
+    definir_json_cache(chave_usuario_ultimo(), resposta.model_dump(mode="json"), CACHE_TTL_USUARIO_ULTIMO_SEGUNDOS)
+    return resposta
 
 
 @router.post("/confirmar", response_model=UsuarioResponse)

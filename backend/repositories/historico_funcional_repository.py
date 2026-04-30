@@ -3,6 +3,10 @@ from __future__ import annotations
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from backend.cache.redis_cache import (
+    chave_historico_ultimo_usuario,
+    invalidar_cache,
+)
 from backend.database.models import HistoricoFuncional
 
 
@@ -10,6 +14,8 @@ def criar_historico(db: Session, historico: HistoricoFuncional) -> HistoricoFunc
     db.add(historico)
     db.commit()
     db.refresh(historico)
+    if historico.usuario_id is not None:
+        invalidar_cache(chave_historico_ultimo_usuario(historico.usuario_id))
     return historico
 
 

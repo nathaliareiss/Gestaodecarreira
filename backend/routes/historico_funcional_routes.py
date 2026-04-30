@@ -8,6 +8,12 @@ from sqlalchemy.orm import Session
 
 from backend.database.database import get_db
 from backend.logger import logger
+from backend.cache.redis_cache import (
+    CACHE_TTL_HISTORICO_ULTIMO_SEGUNDOS,
+    chave_historico_ultimo_usuario,
+    definir_json_cache,
+    obter_json_cache,
+)
 from backend.repositories.historico_funcional_repository import obter_ultimo_historico_por_usuario
 from backend.queue.queue_config import obter_fila_historicos, obter_job
 from backend.queue.tasks.historico_tasks import (
@@ -365,6 +371,11 @@ def obter_ultimo_historico_do_usuario(
 ) -> HistoricoFuncionalResponse:
     logger.debug("Carregando ultimo historico funcional", extra={"user_id": usuario_id})
 
+    cache = obter_json_cache(chave_historico_ultimo_usuario(usuario_id))
+    if cache is not None:
+        logger.debug("Ultimo historico funcional carregado do cache", extra={"user_id": usuario_id})
+        return HistoricoFuncionalResponse.model_validate(cache)
+
     historico = obter_ultimo_historico_por_usuario(db, usuario_id)
     if historico is None:
         raise HTTPException(
@@ -375,7 +386,13 @@ def obter_ultimo_historico_do_usuario(
     try:
         dados = json.loads(historico.dados_json)
         dados = normalizar_dados_historico_salvo(dados, historico.id, usuario_id)
-        return HistoricoFuncionalResponse.model_validate(dados)
+        resposta = HistoricoFuncionalResponse.model_validate(dados)
+        definir_json_cache(
+            chave_historico_ultimo_usuario(usuario_id),
+            resposta.model_dump(mode="json"),
+            CACHE_TTL_HISTORICO_ULTIMO_SEGUNDOS,
+        )
+        return resposta
     except Exception as erro:
         logger.exception(
             "Falha ao carregar historico funcional salvo",

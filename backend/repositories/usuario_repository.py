@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from backend.cache.redis_cache import invalidar_cache, chave_usuario_ultimo
 from backend.database.models import Usuario
 
 
@@ -72,6 +73,7 @@ def criar_usuario(db: Session, usuario: Usuario) -> Usuario:
     db.add(usuario)
     db.flush()
     db.refresh(usuario)
+    invalidar_cache(chave_usuario_ultimo())
     return usuario
 
 
@@ -79,9 +81,11 @@ def atualizar_usuario(db: Session, usuario: Usuario) -> Usuario:
     db.add(usuario)
     db.commit()
     db.refresh(usuario)
+    invalidar_cache(chave_usuario_ultimo())
     return usuario
 
 
 def remover_usuario(db: Session, usuario: Usuario) -> None:
     db.delete(usuario)
     db.commit()
+    invalidar_cache(chave_usuario_ultimo())

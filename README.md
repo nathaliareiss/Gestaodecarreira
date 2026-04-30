@@ -100,6 +100,16 @@ O banco foi ajustado para responder melhor nas consultas mais comuns:
 
 Na prática, isso deixa login e abertura da tela principal mais rápidos conforme os dados crescem.
 
+## Cache
+
+O backend também usa Redis como cache de leitura para reduzir consultas repetidas:
+
+- último usuário
+- último histórico funcional do usuário
+
+As chaves têm TTL curto e são invalidadas automaticamente quando o banco é alterado, para evitar
+respostas desatualizadas.
+
 ## Fluxo principal
 
 1. A pessoa cria a conta.

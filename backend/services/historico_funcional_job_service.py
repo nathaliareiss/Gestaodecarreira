@@ -6,6 +6,11 @@ from sqlalchemy.orm import Session
 
 from backend.database.models import HistoricoFuncional
 from backend.logger import logger
+from backend.cache.redis_cache import (
+    CACHE_TTL_HISTORICO_ULTIMO_SEGUNDOS,
+    chave_historico_ultimo_usuario,
+    definir_json_cache,
+)
 from backend.repositories.historico_funcional_repository import (
     criar_historico,
     obter_ultimo_historico_por_usuario,
@@ -126,6 +131,12 @@ def _persistir_historico_analisado(
     db.add(historico)
     db.commit()
     db.refresh(historico)
+    if usuario_id is not None:
+        definir_json_cache(
+            chave_historico_ultimo_usuario(usuario_id),
+            resposta.model_dump(mode="json"),
+            CACHE_TTL_HISTORICO_ULTIMO_SEGUNDOS,
+        )
     logger.info(
         "Historico funcional salvo",
         extra={
@@ -219,6 +230,11 @@ def processar_afastamentos_db(
     db.add(historico)
     db.commit()
     db.refresh(historico)
+    definir_json_cache(
+        chave_historico_ultimo_usuario(usuario_id),
+        resposta.model_dump(mode="json"),
+        CACHE_TTL_HISTORICO_ULTIMO_SEGUNDOS,
+    )
     logger.info(
         "Afastamentos anexados ao historico",
         extra={

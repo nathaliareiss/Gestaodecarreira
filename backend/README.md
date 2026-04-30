@@ -147,6 +147,23 @@ As consultas mais frequentes receberam cuidado extra:
 
 Isso reduz varredura de tabela e acelera autenticação e carregamento do painel do histórico.
 
+## Cache Redis
+
+O backend agora usa Redis também como cache de leitura, com regras mais conservadoras:
+
+- chaves versionadas em `cache:v1`
+- TTL curto com pequeno jitter para evitar expiração em massa
+- cache só para leituras idempotentes
+- invalidação automática quando há escrita no banco
+
+Hoje o cache acelera:
+
+- `GET /api/usuarios/ultimo`
+- `GET /api/historicos-funcionais/usuario/{usuario_id}/ultimo`
+
+Quando um usuário ou histórico é criado/atualizado/removido, o cache relacionado é invalidado
+ou refeito automaticamente.
+
 ## Fluxo
 
 1. A API recebe o cadastro.
