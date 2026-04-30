@@ -86,6 +86,8 @@ export type HistoricoFuncionalAnalise = {
   afastamentos_resumo: AfastamentoResumo | null
   afastamentos: AfastamentoPeriodo[]
   eventos: HistoricoFuncionalEvento[]
+  armazenamento_origem: "supabase" | "local"
+  processamento_origem: "fila" | "direto"
 }
 
 export function formatarTipoEvento(tipo: HistoricoFuncionalEvento["tipo"]) {

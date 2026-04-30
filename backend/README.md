@@ -119,6 +119,9 @@ Quando `REDIS_URL` estiver configurado, a API agenda a tarefa e o frontend consu
 `GET /api/historicos-funcionais/jobs/{job_id}`. Se a fila não estiver disponível, o backend faz
 o processamento de forma direta para manter o ambiente local funcionando.
 
+Se o Redis cair durante o envio, a API tenta seguir no modo direto em vez de parar na etapa de
+agendamento. A resposta passa a indicar `processamento_origem: "direto"` quando isso acontece.
+
 ## Storage de PDFs
 
 Os PDFs ficam no Supabase Storage:
@@ -129,6 +132,9 @@ Os PDFs ficam no Supabase Storage:
 
 O backend recebe os arquivos via `multipart/form-data`, envia para o Storage e salva no banco
 somente o caminho do objeto.
+
+Se o Supabase Storage não estiver acessível, o backend salva o PDF em um diretório local de
+fallback (`backend/storage_data`) e marca a resposta com `armazenamento_origem: "local"`.
 
 ## Fluxo
 

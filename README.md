@@ -84,6 +84,12 @@ Os PDFs agora sÃ£o enviados para o Supabase Storage:
 
 O banco guarda apenas o caminho do arquivo e os metadados da anÃ¡lise.
 
+Se o Supabase Storage não estiver acessível, o backend salva o PDF em um diretório local de
+fallback (`backend/storage_data`) e marca a resposta com `armazenamento_origem: "local"`.
+
+Se a fila do Redis cair, a API tenta processar direto no backend e marca a resposta com
+`processamento_origem: "direto"`.
+
 ## Fluxo principal
 
 1. A pessoa cria a conta.

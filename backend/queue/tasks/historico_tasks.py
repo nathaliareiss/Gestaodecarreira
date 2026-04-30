@@ -25,7 +25,7 @@ def processar_historico_funcional_job(dados: dict) -> dict:
     )
     try:
         with SessionLocal() as db:
-            resposta = processar_historico_funcional_db(db, payload)
+            resposta = processar_historico_funcional_db(db, payload, processamento_origem="fila")
             return resposta.model_dump(mode="json")
     except Exception:
         status = "failed"
@@ -48,7 +48,7 @@ def processar_afastamentos_job(usuario_id: int, dados: dict) -> dict:
     )
     try:
         with SessionLocal() as db:
-            resposta = processar_afastamentos_db(db, usuario_id, payload)
+            resposta = processar_afastamentos_db(db, usuario_id, payload, processamento_origem="fila")
             return resposta.model_dump(mode="json")
     except Exception:
         status = "failed"

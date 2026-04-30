@@ -10,15 +10,18 @@ class HistoricoFuncionalUploadRequest(BaseModel):
     usuario_id: int | None = None
     arquivo_nome: str = Field(min_length=1)
     arquivo_storage_path: str = Field(min_length=1)
+    armazenamento_origem: Literal["supabase", "local"] = "supabase"
     data_nascimento: date
     anos_clt_averbados: int = Field(default=0, ge=0, le=10)
     afastamentos_arquivo_nome: str | None = None
     afastamentos_storage_path: str | None = None
+    afastamentos_armazenamento_origem: Literal["supabase", "local"] | None = None
 
 
 class AfastamentosUploadRequest(BaseModel):
     arquivo_nome: str = Field(min_length=1)
     arquivo_storage_path: str = Field(min_length=1)
+    armazenamento_origem: Literal["supabase", "local"] = "supabase"
 
 
 class HistoricoFuncionalEventoResponse(BaseModel):

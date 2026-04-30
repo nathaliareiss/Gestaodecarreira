@@ -20,6 +20,7 @@ backend/google_client_secret.json
 backend/google_token.json
 backend/clientsecret.json
 backend/client_secret*.json
+backend/storage_data/
 
 frontend/.env.local
 frontend/*.log

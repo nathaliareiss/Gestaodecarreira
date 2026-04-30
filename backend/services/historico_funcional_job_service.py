@@ -17,7 +17,7 @@ from backend.schemas.historico_funcional_schema import (
     HistoricoFuncionalUploadRequest,
     HistoricoFuncionalResumoGraficoResponse,
 )
-from backend.storage.supabase_storage import baixar_pdf_storage
+from backend.storage.supabase_storage import baixar_pdf_storage, obter_origem_storage
 from backend.services.historico_funcional_service import (
     analisar_afastamentos_pdf,
     analisar_historico_funcional,
@@ -79,6 +79,8 @@ def _persistir_historico_analisado(
     usuario_id: int | None,
     arquivo_storage_path: str,
     afastamentos_storage_path: str | None,
+    armazenamento_origem: str,
+    processamento_origem: str,
 ) -> HistoricoFuncionalResponse:
     historico = HistoricoFuncional(
         usuario_id=usuario_id,
@@ -114,6 +116,12 @@ def _persistir_historico_analisado(
             )
 
     resposta = resposta.model_copy(update={"historico_id": historico.id})
+    resposta = resposta.model_copy(
+        update={
+            "armazenamento_origem": armazenamento_origem,
+            "processamento_origem": processamento_origem,
+        }
+    )
     historico.dados_json = json.dumps(resposta.model_dump(mode="json"), ensure_ascii=False)
     db.add(historico)
     db.commit()
@@ -132,6 +140,7 @@ def _persistir_historico_analisado(
 def processar_historico_funcional_db(
     db: Session,
     dados: HistoricoFuncionalUploadRequest,
+    processamento_origem: str = "direto",
 ) -> HistoricoFuncionalResponse:
     conteudo_pdf = baixar_pdf_storage(dados.arquivo_storage_path)
     conteudo_afastamentos_pdf = (
@@ -156,6 +165,13 @@ def processar_historico_funcional_db(
         usuario_id=dados.usuario_id,
         arquivo_storage_path=dados.arquivo_storage_path,
         afastamentos_storage_path=dados.afastamentos_storage_path,
+        armazenamento_origem=(
+            "local"
+            if dados.armazenamento_origem == "local"
+            or dados.afastamentos_armazenamento_origem == "local"
+            else obter_origem_storage(dados.arquivo_storage_path)
+        ),
+        processamento_origem=processamento_origem,
     )
 
 
@@ -163,6 +179,7 @@ def processar_afastamentos_db(
     db: Session,
     usuario_id: int,
     dados: AfastamentosUploadRequest,
+    processamento_origem: str = "direto",
 ) -> HistoricoFuncionalResponse:
     historico = obter_ultimo_historico_por_usuario(db, usuario_id)
     if historico is None:
@@ -190,6 +207,10 @@ def processar_afastamentos_db(
                 }
                 for afastamento in afastamentos
             ],
+            "armazenamento_origem": dados.armazenamento_origem
+            if dados.armazenamento_origem in {"supabase", "local"}
+            else obter_origem_storage(dados.arquivo_storage_path),
+            "processamento_origem": processamento_origem,
         }
     )
 

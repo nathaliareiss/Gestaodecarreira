@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import os
 import re
+from dataclasses import dataclass
 from pathlib import PurePosixPath
 from pathlib import Path
 from uuid import uuid4
+from typing import Literal
 
 import requests
 
@@ -22,6 +24,12 @@ LOCAL_STORAGE_ROOT = Path(os.getenv("STORAGE_LOCAL_DIR", str(Path(__file__).reso
 
 class StorageError(RuntimeError):
     pass
+
+
+@dataclass(frozen=True, slots=True)
+class ResultadoUploadStorage:
+    caminho_storage: str
+    origem: Literal["supabase", "local"]
 
 
 def _validar_configuracao() -> None:
@@ -95,7 +103,7 @@ def enviar_pdf_para_storage(
     conteudo_pdf: bytes,
     caminho_storage: str,
     content_type: str = "application/pdf",
-) -> str:
+) -> ResultadoUploadStorage:
     if SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY:
         assert SUPABASE_URL
         url = f"{SUPABASE_URL.rstrip('/')}/storage/v1/object/{SUPABASE_STORAGE_BUCKET}/{caminho_storage}"
@@ -109,7 +117,7 @@ def enviar_pdf_para_storage(
         try:
             resposta = requests.post(url, headers=headers, data=conteudo_pdf, timeout=60)
             if resposta.ok:
-                return caminho_storage
+                return ResultadoUploadStorage(caminho_storage, "supabase")
 
             logger.warning(
                 "Supabase Storage recusou o upload, usando fallback local",
@@ -121,7 +129,7 @@ def enviar_pdf_para_storage(
                 extra={"storage_path": caminho_storage, "erro": str(erro)},
             )
 
-    return _salvar_localmente(conteudo_pdf, caminho_storage)
+    return ResultadoUploadStorage(_salvar_localmente(conteudo_pdf, caminho_storage), "local")
 
 
 def baixar_pdf_storage(caminho_storage: str) -> bytes:

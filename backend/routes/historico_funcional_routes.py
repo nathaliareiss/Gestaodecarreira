@@ -46,7 +46,7 @@ def _ler_nome_arquivo(upload: UploadFile, fallback: str) -> str:
 async def _armazenar_arquivo_pdf(
     upload: UploadFile,
     caminho_storage: str,
-) -> None:
+) -> tuple[str, str]:
     conteudo = await upload.read()
     if not isinstance(conteudo, bytes) or not conteudo:
         raise HTTPException(
@@ -55,7 +55,8 @@ async def _armazenar_arquivo_pdf(
         )
 
     try:
-        enviar_pdf_para_storage(conteudo, caminho_storage)
+        resultado = enviar_pdf_para_storage(conteudo, caminho_storage)
+        return resultado.caminho_storage, resultado.origem
     except StorageError as erro:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -111,26 +112,41 @@ async def analisar_e_salvar_historico(
 ) -> HistoricoFuncionalResponse | JobAgendadoResponse:
     arquivo_nome = _ler_nome_arquivo(arquivo, "historico-funcional.pdf")
     arquivo_storage_path = gerar_caminho_storage_historico(arquivo_nome, usuario_id)
-    await _armazenar_arquivo_pdf(arquivo, arquivo_storage_path)
+    arquivo_storage_path, arquivo_armazenamento_origem = await _armazenar_arquivo_pdf(
+        arquivo,
+        arquivo_storage_path,
+    )
 
     afastamentos_arquivo_nome = None
     afastamentos_storage_path = None
+    afastamentos_armazenamento_origem = None
     if afastamentos_arquivo is not None:
         afastamentos_arquivo_nome = _ler_nome_arquivo(afastamentos_arquivo, "afastamentos.pdf")
         afastamentos_storage_path = gerar_caminho_storage_afastamentos(
             afastamentos_arquivo_nome,
             usuario_id,
         )
-        await _armazenar_arquivo_pdf(afastamentos_arquivo, afastamentos_storage_path)
+        afastamentos_storage_path, afastamentos_armazenamento_origem = await _armazenar_arquivo_pdf(
+            afastamentos_arquivo,
+            afastamentos_storage_path,
+        )
+
+    armazenamento_origem = (
+        "local"
+        if arquivo_armazenamento_origem == "local" or afastamentos_armazenamento_origem == "local"
+        else "supabase"
+    )
 
     dados = HistoricoFuncionalUploadRequest(
         usuario_id=usuario_id,
         arquivo_nome=arquivo_nome,
         arquivo_storage_path=arquivo_storage_path,
+        armazenamento_origem=armazenamento_origem,
         data_nascimento=data_nascimento,
         anos_clt_averbados=anos_clt_averbados,
         afastamentos_arquivo_nome=afastamentos_arquivo_nome,
         afastamentos_storage_path=afastamentos_storage_path,
+        afastamentos_armazenamento_origem=afastamentos_armazenamento_origem,
     )
     logger.info(
         "Recebido historico funcional para analise",
@@ -161,18 +177,39 @@ async def analisar_e_salvar_historico(
                 job.id,
                 "Seu PDF foi recebido e esta sendo processado em segundo plano.",
             )
-        except Exception as erro:
-            logger.exception(
-                "Falha ao agendar historico funcional",
+        except Exception:
+            logger.warning(
+                "Fila indisponivel, processando historico funcional diretamente",
                 extra={"usuario_id": dados.usuario_id, "arquivo_nome": dados.arquivo_nome},
             )
-            raise HTTPException(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="Nao foi possivel agendar o processamento do PDF agora. Tente novamente.",
-            ) from erro
+            try:
+                return processar_historico_funcional_db(db, dados, processamento_origem="direto")
+            except StorageError as erro_storage:
+                raise HTTPException(
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    detail="Nao foi possivel acessar o storage para processar o PDF.",
+                ) from erro_storage
+            except ValueError as erro_valor:
+                logger.warning(
+                    "Falha ao analisar historico funcional",
+                    extra={"usuario_id": dados.usuario_id, "arquivo_nome": dados.arquivo_nome},
+                )
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Nao foi possivel analisar o arquivo enviado. Verifique o PDF e tente novamente.",
+                ) from erro_valor
+            except Exception as erro_direto:
+                logger.exception(
+                    "Falha inesperada ao analisar historico funcional sem fila",
+                    extra={"usuario_id": dados.usuario_id, "arquivo_nome": dados.arquivo_nome},
+                )
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Nao foi possivel analisar o arquivo enviado no momento.",
+                ) from erro_direto
 
     try:
-        return processar_historico_funcional_db(db, dados)
+        return processar_historico_funcional_db(db, dados, processamento_origem="direto")
     except StorageError as erro:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -209,11 +246,15 @@ async def anexar_afastamentos_historico(
 ) -> HistoricoFuncionalResponse | JobAgendadoResponse:
     arquivo_nome = _ler_nome_arquivo(arquivo, "afastamentos.pdf")
     arquivo_storage_path = gerar_caminho_storage_afastamentos(arquivo_nome, usuario_id)
-    await _armazenar_arquivo_pdf(arquivo, arquivo_storage_path)
+    arquivo_storage_path, arquivo_armazenamento_origem = await _armazenar_arquivo_pdf(
+        arquivo,
+        arquivo_storage_path,
+    )
 
     dados = AfastamentosUploadRequest(
         arquivo_nome=arquivo_nome,
         arquivo_storage_path=arquivo_storage_path,
+        armazenamento_origem=arquivo_armazenamento_origem,
     )
     logger.info(
         "Recebido arquivo de afastamentos",
@@ -241,18 +282,45 @@ async def anexar_afastamentos_historico(
                 job.id,
                 "Seu PDF de afastamentos foi recebido e esta sendo processado em segundo plano.",
             )
-        except Exception as erro:
-            logger.exception(
-                "Falha ao agendar afastamentos",
+        except Exception:
+            logger.warning(
+                "Fila indisponivel, processando afastamentos diretamente",
                 extra={"user_id": usuario_id, "arquivo_nome": dados.arquivo_nome},
             )
-            raise HTTPException(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="Nao foi possivel agendar o processamento dos afastamentos agora. Tente novamente.",
-            ) from erro
+            try:
+                return processar_afastamentos_db(db, usuario_id, dados, processamento_origem="direto")
+            except StorageError as erro_storage:
+                raise HTTPException(
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    detail="Nao foi possivel acessar o storage para processar o PDF.",
+                ) from erro_storage
+            except ValueError as erro_valor:
+                mensagem = str(erro_valor)
+                logger.warning(
+                    "Falha ao analisar afastamentos",
+                    extra={"user_id": usuario_id, "arquivo_nome": dados.arquivo_nome},
+                )
+                if "Nenhum historico funcional encontrado" in mensagem:
+                    raise HTTPException(
+                        status_code=status.HTTP_404_NOT_FOUND,
+                        detail="Nenhum historico funcional encontrado para este usuario.",
+                    ) from erro_valor
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Nao foi possivel analisar o arquivo de afastamentos. Verifique o PDF e tente novamente.",
+                ) from erro_valor
+            except Exception as erro_direto:
+                logger.exception(
+                    "Falha inesperada ao analisar afastamentos sem fila",
+                    extra={"user_id": usuario_id, "arquivo_nome": dados.arquivo_nome},
+                )
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Nao foi possivel analisar o arquivo de afastamentos no momento.",
+                ) from erro_direto
 
     try:
-        return processar_afastamentos_db(db, usuario_id, dados)
+        return processar_afastamentos_db(db, usuario_id, dados, processamento_origem="direto")
     except StorageError as erro:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,

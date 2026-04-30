@@ -491,6 +491,14 @@ function GraficoComparativoTempo({
   )
 }
 
+function rotuloArmazenamento(origem: HistoricoFuncionalAnalise["armazenamento_origem"]) {
+  return origem === "local" ? "storage local de fallback" : "Supabase Storage"
+}
+
+function rotuloProcessamento(origem: HistoricoFuncionalAnalise["processamento_origem"]) {
+  return origem === "fila" ? "fila em segundo plano" : "processamento direto no backend"
+}
+
 export function HistoricoFuncionalView({
   usuarioId,
   historicoInicial,
@@ -546,6 +554,12 @@ export function HistoricoFuncionalView({
           </div>
 
           <div className="overview-panel__content">
+            <p className="helper">
+              Armazenamento do PDF: {rotuloArmazenamento(painel.armazenamento_origem)}.
+            </p>
+            <p className="helper">
+              Processamento: {rotuloProcessamento(painel.processamento_origem)}.
+            </p>
             <div className="metric-strip">
               <div className="metric-line">
                 <span>Tempo trabalhado</span>
