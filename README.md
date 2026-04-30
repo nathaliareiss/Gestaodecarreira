@@ -117,7 +117,9 @@ As imagens do projeto ficaram separadas por serviço:
 - backend: [Dockerfile](Dockerfile)
 - frontend: [frontend/Dockerfile](frontend/Dockerfile)
 
-O `Dockerfile` empacota só a aplicação. Banco e Redis ficam como serviços externos.
+Essas imagens são para deploy da aplicação. O `Dockerfile` empacota só o app; banco e Redis ficam
+como serviços externos ou gerenciados pela plataforma.
+
 Para desenvolvimento local, o `docker-compose.yml` junta tudo na mesma rede:
 
 - backend
@@ -171,7 +173,7 @@ docker build -t gestao-carreira-frontend --build-arg NEXT_PUBLIC_API_URL=https:/
 Run:
 
 ```powershell
-docker run --rm -p 3000:3000 gestao-carreira-frontend
+docker run --rm -p 3000:3000 -e PORT=3000 gestao-carreira-frontend
 ```
 
 ### O que foi feito no Dockerfile
@@ -182,6 +184,7 @@ docker run --rm -p 3000:3000 gestao-carreira-frontend
 - `RUN`: instala dependências e faz build
 - `EXPOSE`: documenta a porta usada pela aplicação
 - `CMD`: define o comando final de inicialização
+- `PORT`: a aplicação respeita a porta que a plataforma injetar no deploy
 
 ### Observação
 
