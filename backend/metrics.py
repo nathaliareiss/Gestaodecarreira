@@ -217,14 +217,14 @@ def registrar_request_em_andamento(
     metodo: str,
     rota: str,
 ) -> None:
-    metrics.increment_gauge("http_requests_in_flight", labels={"method": metodo, "route": rota})
+    metrics.increment_gauge("http_requests_in_flight")
 
 
 def liberar_request_em_andamento(
     metodo: str,
     rota: str,
 ) -> None:
-    metrics.decrement_gauge("http_requests_in_flight", labels={"method": metodo, "route": rota})
+    metrics.decrement_gauge("http_requests_in_flight")
 
 
 def registrar_job_execucao(

@@ -18,6 +18,7 @@ from backend.services.historico_funcional_job_service import (
 def processar_historico_funcional_job(dados: dict) -> dict:
     inicio = perf_counter()
     payload = HistoricoFuncionalUploadRequest.model_validate(dados)
+    status = "finished"
     logger.info(
         "Worker processando historico funcional",
         extra={"usuario_id": payload.usuario_id, "arquivo_nome": payload.arquivo_nome},
@@ -26,10 +27,13 @@ def processar_historico_funcional_job(dados: dict) -> dict:
         with SessionLocal() as db:
             resposta = processar_historico_funcional_db(db, payload)
             return resposta.model_dump(mode="json")
+    except Exception:
+        status = "failed"
+        raise
     finally:
         registrar_job_execucao(
             "historico_funcional",
-            "finished",
+            status,
             perf_counter() - inicio,
         )
 
@@ -37,6 +41,7 @@ def processar_historico_funcional_job(dados: dict) -> dict:
 def processar_afastamentos_job(usuario_id: int, dados: dict) -> dict:
     inicio = perf_counter()
     payload = AfastamentosUploadRequest.model_validate(dados)
+    status = "finished"
     logger.info(
         "Worker processando afastamentos",
         extra={"usuario_id": usuario_id, "arquivo_nome": payload.arquivo_nome},
@@ -45,9 +50,12 @@ def processar_afastamentos_job(usuario_id: int, dados: dict) -> dict:
         with SessionLocal() as db:
             resposta = processar_afastamentos_db(db, usuario_id, payload)
             return resposta.model_dump(mode="json")
+    except Exception:
+        status = "failed"
+        raise
     finally:
         registrar_job_execucao(
             "afastamentos",
-            "finished",
+            status,
             perf_counter() - inicio,
         )

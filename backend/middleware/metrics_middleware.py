@@ -14,11 +14,8 @@ from backend.metrics import (
 def registrar_middleware_de_metricas(app) -> None:
     @app.middleware("http")
     async def medir_requisicoes(request: Request, call_next):
-        rota = getattr(getattr(request.scope.get("route"), "path", None), "strip", None)
-        route = request.scope.get("route")
-        nome_rota = getattr(route, "path", None) or request.url.path
         metodo = request.method
-        registrar_request_em_andamento(metodo, nome_rota)
+        registrar_request_em_andamento(metodo, "__all__")
         inicio = perf_counter()
         status_code = 500
         try:
@@ -26,6 +23,8 @@ def registrar_middleware_de_metricas(app) -> None:
             status_code = response.status_code
             return response
         finally:
+            route = request.scope.get("route")
+            nome_rota = getattr(route, "path", None) or request.url.path
             duracao = perf_counter() - inicio
             registro_http_request(metodo, nome_rota, status_code, duracao)
-            liberar_request_em_andamento(metodo, nome_rota)
+            liberar_request_em_andamento(metodo, "__all__")

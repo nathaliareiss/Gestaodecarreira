@@ -12,23 +12,31 @@ from backend.services.email_service import (
 
 def enviar_email_confirmacao_job(destinatario: str, nome: str, token: str) -> None:
     inicio = perf_counter()
+    status = "sent"
     logger.info(
         "Worker enviando email de confirmacao",
         extra={"destinatario": destinatario, "tipo": "confirmacao"},
     )
     try:
         enviar_email_confirmacao(destinatario=destinatario, nome=nome, token=token)
+    except Exception:
+        status = "failed"
+        raise
     finally:
-        registrar_envio_email("confirmacao", "sent", perf_counter() - inicio)
+        registrar_envio_email("confirmacao", status, perf_counter() - inicio)
 
 
 def enviar_email_recuperacao_senha_job(destinatario: str, nome: str, token: str) -> None:
     inicio = perf_counter()
+    status = "sent"
     logger.info(
         "Worker enviando email de recuperacao de senha",
         extra={"destinatario": destinatario, "tipo": "recuperacao_senha"},
     )
     try:
         enviar_email_recuperacao_senha(destinatario=destinatario, nome=nome, token=token)
+    except Exception:
+        status = "failed"
+        raise
     finally:
-        registrar_envio_email("recuperacao_senha", "sent", perf_counter() - inicio)
+        registrar_envio_email("recuperacao_senha", status, perf_counter() - inicio)
