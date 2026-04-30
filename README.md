@@ -64,6 +64,7 @@ e processamento em fila para as tarefas mais pesadas.
 - `SMTP_FROM_NAME`
 - `SMTP_USE_TLS`
 - `SMTP_USE_SSL`
+- `AUTO_SYNC_DB_SCHEMA`
 - `NEXT_PUBLIC_API_URL`
 
 ## Deploy
@@ -73,6 +74,7 @@ e processamento em fila para as tarefas mais pesadas.
 - frontend: configure `NEXT_PUBLIC_API_URL` com a URL pública da API
 - o link dos e-mails precisa usar a URL pública do frontend em `FRONTEND_BASE_URL`
 - a fila precisa de `REDIS_URL`
+- em produção, deixe `AUTO_SYNC_DB_SCHEMA=false` para o backend subir mais rápido
 
 ## Storage
 

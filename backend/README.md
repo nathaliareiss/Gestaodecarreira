@@ -100,12 +100,21 @@ backend.app:app
 - `SMTP_FROM_NAME`
 - `SMTP_USE_TLS`
 - `SMTP_USE_SSL`
+- `AUTO_SYNC_DB_SCHEMA`
 
 ## E-mail
 
 O sistema usa SMTP com a biblioteca nativa `smtplib` do Python.
 Configure um servidor SMTP válido nas variáveis de ambiente para permitir o envio
 de confirmação de cadastro e recuperação de senha.
+
+## Sincronização do schema
+
+Por padrão, o backend não sincroniza tabelas automaticamente no startup em ambientes de deploy.
+Se você estiver em desenvolvimento local e quiser que ele aplique `create_all` e os ajustes de
+schema ao iniciar, ative:
+
+- `AUTO_SYNC_DB_SCHEMA=true`
 
 ## Fila de processamento
 
