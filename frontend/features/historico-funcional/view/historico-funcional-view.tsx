@@ -99,17 +99,25 @@ function GraficoPizzaAfastamentos({ resumo }: { resumo: ResumoAfastamentos }) {
     .filter(([, dias]) => dias > 0)
     .sort((a, b) => b[1] - a[1]) as Array<[keyof typeof CORES_AFASTAMENTO, number]>
 
-  let acumulado = 0
-  const fatias = tipos.map(([tipo, dias]) => {
-    const inicio = (acumulado / total) * 100
-    acumulado += dias
-    const fim = (acumulado / total) * 100
-    return `${corTipoAfastamento(tipo)} ${inicio}% ${fim}%`
-  })
+  const fatias = tipos.reduce<Array<{ cor: string; inicio: number; fim: number }>>(
+    (acumuladas, [tipo, dias]) => {
+      const inicioAnterior = acumuladas.length > 0 ? acumuladas[acumuladas.length - 1].fim : 0
+      const proporcao = (dias / total) * 100
+
+      acumuladas.push({
+        cor: corTipoAfastamento(tipo),
+        inicio: inicioAnterior,
+        fim: inicioAnterior + proporcao,
+      })
+
+      return acumuladas
+    },
+    [],
+  )
 
   const background =
     fatias.length > 0
-      ? `conic-gradient(${fatias.join(", ")})`
+      ? `conic-gradient(${fatias.map((fatia) => `${fatia.cor} ${fatia.inicio}% ${fatia.fim}%`).join(", ")})`
       : "conic-gradient(rgba(148, 163, 184, 0.18) 0 100%)"
 
   return (

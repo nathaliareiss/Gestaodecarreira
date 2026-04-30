@@ -28,9 +28,6 @@ router = APIRouter(prefix="/historicos-funcionais", tags=["historicos-funcionais
 
 
 def _normalizar_dados_historico_salvo(dados: dict) -> dict:
-    if "resumo_grafico" in dados and isinstance(dados["resumo_grafico"], dict):
-        return dados
-
     eventos = dados.get("eventos") or []
     eventos_por_status: dict[str, int] = {}
     eventos_por_tipo: dict[str, int] = {}
@@ -55,6 +52,14 @@ def _normalizar_dados_historico_salvo(dados: dict) -> dict:
         eventos_por_status=eventos_por_status,
         eventos_por_tipo=eventos_por_tipo,
     ).model_dump(mode="json")
+
+    if "afastamentos" not in dados or not isinstance(dados.get("afastamentos"), list):
+        dados["afastamentos"] = []
+
+    if "afastamentos_resumo" in dados and dados["afastamentos_resumo"] is not None:
+        if not isinstance(dados["afastamentos_resumo"], dict):
+            dados["afastamentos_resumo"] = None
+
     return dados
 
 
