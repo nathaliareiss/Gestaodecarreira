@@ -1,7 +1,7 @@
 # Backend FastAPI
 
 API responsável por cadastro, login, confirmação de e-mail, recuperação de senha,
-perfil do usuário e análise do histórico funcional.
+perfil do usuário, histórico funcional e afastamentos.
 
 ## Como rodar
 
@@ -17,9 +17,15 @@ Terminal interativo:
 ..\run-backend-cli.cmd
 ```
 
+Worker das filas:
+
+```powershell
+.\venv\Scripts\python.exe -m backend.worker.worker
+```
+
 ## Entrada de deploy
 
-Para deploy, use o aplicativo FastAPI em:
+Para deploy, use a aplicação FastAPI em:
 
 ```bash
 backend.app:app
@@ -30,6 +36,7 @@ backend.app:app
 - FastAPI
 - SQLAlchemy
 - PostgreSQL
+- Redis + RQ para filas
 - Python 3.11+
 
 ## Estrutura
@@ -39,6 +46,7 @@ backend.app:app
 - `backend/repositories/`: acesso ao banco
 - `backend/schemas/`: contratos de entrada e saída
 - `backend/database/`: models e conexão com o banco
+- `backend/queue/`: filas, jobs e worker
 
 ## Endpoints principais
 
@@ -60,6 +68,7 @@ backend.app:app
 ### Histórico funcional
 
 - `POST /api/historicos-funcionais/analisar`
+- `GET /api/historicos-funcionais/jobs/{job_id}`
 - `GET /api/historicos-funcionais/usuario/{usuario_id}/ultimo`
 - `POST /api/historicos-funcionais/usuario/{usuario_id}/afastamentos`
 
@@ -71,6 +80,7 @@ backend.app:app
 
 - `HOST`
 - `PORT`
+- `REDIS_URL`
 - `CORS_ORIGINS`
 - `DATABASE_URL`
 - `FRONTEND_BASE_URL`
@@ -91,13 +101,25 @@ O sistema usa SMTP com a biblioteca nativa `smtplib` do Python.
 Configure um servidor SMTP válido nas variáveis de ambiente para permitir o envio
 de confirmação de cadastro e recuperação de senha.
 
+## Fila de processamento
+
+As tarefas mais pesadas usam Redis + RQ:
+
+- leitura do PDF do histórico funcional
+- leitura dos afastamentos
+- envio de e-mails de confirmação e recuperação
+
+Quando `REDIS_URL` estiver configurado, a API agenda a tarefa e o frontend consulta o status em
+`GET /api/historicos-funcionais/jobs/{job_id}`. Se a fila não estiver disponível, o backend faz
+o processamento de forma direta para manter o ambiente local funcionando.
+
 ## Fluxo
 
 1. A API recebe o cadastro.
 2. Salva os dados no banco.
-3. Envia o e-mail de confirmação.
+3. Agenda ou envia o e-mail de confirmação.
 4. Libera o login depois da confirmação.
 5. Recebe o PDF do histórico funcional.
-6. Permite anexar afastamentos ao histórico salvo.
-7. Retorna os cálculos e resumos para o frontend.
-
+6. Agenda o processamento na fila quando Redis estiver disponível.
+7. Permite anexar afastamentos ao histórico salvo.
+8. Retorna os cálculos e resumos para o frontend.

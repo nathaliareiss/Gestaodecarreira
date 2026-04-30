@@ -7,68 +7,73 @@ from sqlalchemy.orm import Session
 
 from backend.database.database import get_db
 from backend.logger import logger
-from backend.database.models import HistoricoFuncional
-from backend.repositories.historico_funcional_repository import (
-    criar_historico,
-    obter_ultimo_historico_por_usuario,
+from backend.repositories.historico_funcional_repository import obter_ultimo_historico_por_usuario
+from backend.queue.queue_config import obter_fila_historicos, obter_job
+from backend.queue.tasks.historico_tasks import (
+    processar_afastamentos_job,
+    processar_historico_funcional_job,
 )
-from backend.repositories.usuario_repository import obter_usuario_por_id, atualizar_usuario
 from backend.schemas.historico_funcional_schema import (
     AfastamentosUploadRequest,
     HistoricoFuncionalResponse,
     HistoricoFuncionalUploadRequest,
-    HistoricoFuncionalResumoGraficoResponse,
 )
-from backend.services.historico_funcional_service import (
-    analisar_historico_funcional,
-    analisar_afastamentos_pdf,
-    decodificar_arquivo_base64,
+from backend.schemas.queue_schema import JobAgendadoResponse, JobStatusResponse
+from backend.services.historico_funcional_job_service import (
+    normalizar_dados_historico_salvo,
+    processar_afastamentos_db,
+    processar_historico_funcional_db,
 )
 
 router = APIRouter(prefix="/historicos-funcionais", tags=["historicos-funcionais"])
 
 
-def _normalizar_dados_historico_salvo(dados: dict) -> dict:
-    eventos = dados.get("eventos") or []
-    eventos_por_status: dict[str, int] = {}
-    eventos_por_tipo: dict[str, int] = {}
-
-    for evento in eventos:
-        status = str(evento.get("status", "nao_aplicavel"))
-        tipo = str(evento.get("tipo", "substituicao"))
-        eventos_por_status[status] = eventos_por_status.get(status, 0) + 1
-        eventos_por_tipo[tipo] = eventos_por_tipo.get(tipo, 0) + 1
-
-    dias_trabalhados = int(dados.get("dias_trabalhados") or 0)
-    dias_totais = int(dados.get("dias_totais_ate_aposentadoria") or 0)
-    percentual_trabalhado = float(dados.get("percentual_trabalhado") or 0)
-    percentual_restante = float(dados.get("percentual_restante") or 0)
-
-    dados["resumo_grafico"] = HistoricoFuncionalResumoGraficoResponse(
-        tempo_trabalhado_dias=dias_trabalhados,
-        tempo_restante_dias=max(dias_totais - dias_trabalhados, 0),
-        percentual_trabalhado=percentual_trabalhado,
-        percentual_restante=percentual_restante,
-        eventos_totais=len(eventos),
-        eventos_por_status=eventos_por_status,
-        eventos_por_tipo=eventos_por_tipo,
-    ).model_dump(mode="json")
-
-    if "afastamentos" not in dados or not isinstance(dados.get("afastamentos"), list):
-        dados["afastamentos"] = []
-
-    if "afastamentos_resumo" in dados and dados["afastamentos_resumo"] is not None:
-        if not isinstance(dados["afastamentos_resumo"], dict):
-            dados["afastamentos_resumo"] = None
-
-    return dados
+def _responder_job_agendado(job_id: str, detalhe: str) -> JobAgendadoResponse:
+    return JobAgendadoResponse(job_id=job_id, status="queued", detail=detalhe)
 
 
-@router.post("/analisar", response_model=HistoricoFuncionalResponse, status_code=status.HTTP_201_CREATED)
+def _responder_status_job(job_id: str) -> JobStatusResponse:
+    job = obter_job(job_id)
+    if job is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="A fila de processamento nao esta disponivel no momento.",
+        )
+
+    status_job = job.get_status(refresh=True)
+    if status_job == "finished":
+        return JobStatusResponse(
+            job_id=job_id,
+            status="finished",
+            result=job.result if isinstance(job.result, dict) else None,
+        )
+
+    if status_job == "failed":
+        logger.error(
+            "Job da fila falhou",
+            extra={"job_id": job_id, "funcao": getattr(job, "func_name", None)},
+        )
+        return JobStatusResponse(
+            job_id=job_id,
+            status="failed",
+            detail="Nao foi possivel concluir o processamento em segundo plano.",
+        )
+
+    return JobStatusResponse(
+        job_id=job_id,
+        status="started" if status_job in {"started", "deferred"} else "queued",
+    )
+
+
+@router.post(
+    "/analisar",
+    response_model=HistoricoFuncionalResponse | JobAgendadoResponse,
+    status_code=status.HTTP_201_CREATED,
+)
 def analisar_e_salvar_historico(
     dados: HistoricoFuncionalUploadRequest,
     db: Session = Depends(get_db),
-) -> HistoricoFuncionalResponse:
+) -> HistoricoFuncionalResponse | JobAgendadoResponse:
     logger.info(
         "Recebido historico funcional para analise",
         extra={
@@ -77,22 +82,39 @@ def analisar_e_salvar_historico(
             "tem_afastamentos": bool(dados.afastamentos_arquivo_base64),
         },
     )
+
+    fila = obter_fila_historicos()
+    if fila is not None:
+        try:
+            job = fila.enqueue(
+                processar_historico_funcional_job,
+                dados.model_dump(mode="json"),
+                job_timeout=900,
+            )
+            logger.info(
+                "Historico funcional agendado na fila",
+                extra={
+                    "job_id": job.id,
+                    "usuario_id": dados.usuario_id,
+                    "arquivo_nome": dados.arquivo_nome,
+                },
+            )
+            return _responder_job_agendado(
+                job.id,
+                "Seu PDF foi recebido e esta sendo processado em segundo plano.",
+            )
+        except Exception as erro:
+            logger.exception(
+                "Falha ao agendar historico funcional",
+                extra={"usuario_id": dados.usuario_id, "arquivo_nome": dados.arquivo_nome},
+            )
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Nao foi possivel agendar o processamento do PDF agora. Tente novamente.",
+            ) from erro
+
     try:
-        conteudo_pdf = decodificar_arquivo_base64(dados.arquivo_base64)
-        conteudo_afastamentos_pdf = (
-            decodificar_arquivo_base64(dados.afastamentos_arquivo_base64)
-            if dados.afastamentos_arquivo_base64
-            else None
-        )
-        resposta, texto_extraido = analisar_historico_funcional(
-            conteudo_pdf=conteudo_pdf,
-            arquivo_nome=dados.arquivo_nome,
-            usuario_id=dados.usuario_id,
-            data_nascimento=dados.data_nascimento,
-            anos_clt_averbados=dados.anos_clt_averbados,
-            conteudo_afastamentos_pdf=conteudo_afastamentos_pdf,
-            arquivo_afastamentos_nome=dados.afastamentos_arquivo_nome,
-        )
+        return processar_historico_funcional_db(db, dados)
     except ValueError as erro:
         logger.warning(
             "Falha ao analisar historico funcional",
@@ -102,121 +124,94 @@ def analisar_e_salvar_historico(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Nao foi possivel analisar o arquivo enviado. Verifique o PDF e tente novamente.",
         ) from erro
-
-    historico = HistoricoFuncional(
-        usuario_id=dados.usuario_id,
-        arquivo_nome=resposta.arquivo_nome,
-        nome=resposta.nome,
-        masp=resposta.masp,
-        cpf=resposta.cpf,
-        data_emissao=resposta.data_emissao,
-        data_nascimento=resposta.data_nascimento,
-        data_posse=resposta.data_posse,
-        data_exercicio=resposta.data_exercicio,
-        cargo_atual=resposta.cargo_atual,
-        simbolo_atual=resposta.simbolo_atual,
-        nivel_atual=resposta.nivel_atual,
-        grau_atual=resposta.grau_atual,
-        tempo_clt_averbado_anos=resposta.tempo_clt_averbado_anos,
-        tempo_clt_creditado_anos=resposta.tempo_clt_creditado_anos,
-        texto_extraido=texto_extraido,
-        dados_json="{}",
-    )
-    historico = criar_historico(db, historico)
-
-    if dados.usuario_id is not None:
-        usuario = obter_usuario_por_id(db, dados.usuario_id)
-        if usuario is not None and usuario.data_exercicio is None:
-            usuario.data_exercicio = resposta.data_exercicio
-            atualizar_usuario(db, usuario)
-            logger.info(
-                "Data de exercicio atualizada a partir do historico",
-                extra={"usuario_id": usuario.id, "historico_id": historico.id},
-            )
-
-    resposta = resposta.model_copy(update={"historico_id": historico.id})
-    historico.dados_json = json.dumps(resposta.model_dump(mode="json"), ensure_ascii=False)
-    db.add(historico)
-    db.commit()
-    db.refresh(historico)
-    logger.info(
-        "Historico funcional salvo",
-        extra={
-            "historico_id": historico.id,
-            "user_id": dados.usuario_id,
-            "arquivo_nome": dados.arquivo_nome,
-        },
-    )
-
-    return resposta
+    except Exception as erro:
+        logger.exception(
+            "Falha inesperada ao analisar historico funcional",
+            extra={"usuario_id": dados.usuario_id, "arquivo_nome": dados.arquivo_nome},
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Nao foi possivel analisar o arquivo enviado no momento.",
+        ) from erro
 
 
-@router.post("/usuario/{usuario_id}/afastamentos", response_model=HistoricoFuncionalResponse)
+@router.post(
+    "/usuario/{usuario_id}/afastamentos",
+    response_model=HistoricoFuncionalResponse | JobAgendadoResponse,
+)
 def anexar_afastamentos_historico(
     usuario_id: int,
     dados: AfastamentosUploadRequest,
     db: Session = Depends(get_db),
-) -> HistoricoFuncionalResponse:
+) -> HistoricoFuncionalResponse | JobAgendadoResponse:
     logger.info(
         "Recebido arquivo de afastamentos",
         extra={"user_id": usuario_id, "arquivo_nome": dados.arquivo_nome},
     )
-    historico = obter_ultimo_historico_por_usuario(db, usuario_id)
-    if historico is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Nenhum historico funcional encontrado para este usuario.",
-        )
+
+    fila = obter_fila_historicos()
+    if fila is not None:
+        try:
+            job = fila.enqueue(
+                processar_afastamentos_job,
+                usuario_id,
+                dados.model_dump(mode="json"),
+                job_timeout=900,
+            )
+            logger.info(
+                "Afastamentos agendados na fila",
+                extra={
+                    "job_id": job.id,
+                    "user_id": usuario_id,
+                    "arquivo_nome": dados.arquivo_nome,
+                },
+            )
+            return _responder_job_agendado(
+                job.id,
+                "Seu PDF de afastamentos foi recebido e esta sendo processado em segundo plano.",
+            )
+        except Exception as erro:
+            logger.exception(
+                "Falha ao agendar afastamentos",
+                extra={"user_id": usuario_id, "arquivo_nome": dados.arquivo_nome},
+            )
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Nao foi possivel agendar o processamento dos afastamentos agora. Tente novamente.",
+            ) from erro
 
     try:
-        dados_historico = json.loads(historico.dados_json)
-        dados_historico = _normalizar_dados_historico_salvo(dados_historico)
-        conteudo_afastamentos_pdf = decodificar_arquivo_base64(dados.arquivo_base64)
-        afastamentos, resumo_afastamentos = analisar_afastamentos_pdf(conteudo_afastamentos_pdf)
+        return processar_afastamentos_db(db, usuario_id, dados)
     except ValueError as erro:
+        mensagem = str(erro)
         logger.warning(
             "Falha ao analisar afastamentos",
             extra={"user_id": usuario_id, "arquivo_nome": dados.arquivo_nome},
         )
+        if "Nenhum historico funcional encontrado" in mensagem:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Nenhum historico funcional encontrado para este usuario.",
+            ) from erro
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Nao foi possivel analisar o arquivo de afastamentos. Verifique o PDF e tente novamente.",
         ) from erro
+    except Exception as erro:
+        logger.exception(
+            "Falha inesperada ao analisar afastamentos",
+            extra={"user_id": usuario_id, "arquivo_nome": dados.arquivo_nome},
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Nao foi possivel analisar o arquivo de afastamentos no momento.",
+        ) from erro
 
-    resposta = HistoricoFuncionalResponse.model_validate(dados_historico).model_copy(
-        update={
-            "afastamentos_arquivo_nome": dados.arquivo_nome,
-            "afastamentos_resumo": resumo_afastamentos,
-            "afastamentos": [
-                {
-                    "tipo": afastamento.tipo,
-                    "data_inicio": afastamento.data_inicio,
-                    "data_fim": afastamento.data_fim,
-                    "total_dias": afastamento.total_dias,
-                    "legislacao": afastamento.legislacao,
-                    "publicacao": afastamento.publicacao,
-                    "mes_ano_afastamento": afastamento.mes_ano_afastamento,
-                    "dias_restantes_ate_pericia": afastamento.dias_restantes_ate_pericia,
-                }
-                for afastamento in afastamentos
-            ],
-        }
-    )
 
-    historico.dados_json = json.dumps(resposta.model_dump(mode="json"), ensure_ascii=False)
-    db.add(historico)
-    db.commit()
-    db.refresh(historico)
-    logger.info(
-        "Afastamentos anexados ao historico",
-        extra={
-            "historico_id": historico.id,
-            "user_id": usuario_id,
-            "arquivo_nome": dados.arquivo_nome,
-        },
-    )
-
-    return resposta
+@router.get("/jobs/{job_id}", response_model=JobStatusResponse)
+def obter_status_job(job_id: str) -> JobStatusResponse:
+    logger.debug("Consultando status do job", extra={"job_id": job_id})
+    return _responder_status_job(job_id)
 
 
 @router.get("/usuario/{usuario_id}/ultimo", response_model=HistoricoFuncionalResponse)
@@ -225,6 +220,7 @@ def obter_ultimo_historico_do_usuario(
     db: Session = Depends(get_db),
 ) -> HistoricoFuncionalResponse:
     logger.debug("Carregando ultimo historico funcional", extra={"user_id": usuario_id})
+
     historico = obter_ultimo_historico_por_usuario(db, usuario_id)
     if historico is None:
         raise HTTPException(
@@ -234,7 +230,7 @@ def obter_ultimo_historico_do_usuario(
 
     try:
         dados = json.loads(historico.dados_json)
-        dados = _normalizar_dados_historico_salvo(dados)
+        dados = normalizar_dados_historico_salvo(dados, historico.id, usuario_id)
         return HistoricoFuncionalResponse.model_validate(dados)
     except Exception as erro:
         logger.exception(

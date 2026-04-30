@@ -31,6 +31,7 @@ def _ler_bool(nome_variavel: str, padrao: bool = False) -> bool:
     return valor.strip().lower() in {"1", "true", "yes", "on"}
 HOST = os.getenv("HOST", "0.0.0.0")
 PORT = int(os.getenv("PORT", "8000"))
+REDIS_URL = os.getenv("REDIS_URL", "").strip()
 CORS_ORIGINS = _ler_lista_csv("CORS_ORIGINS") or ["http://localhost:3000"]
 FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL", "http://localhost:3000").rstrip("/")
 EMAIL_CONFIRMATION_SUBJECT = os.getenv(

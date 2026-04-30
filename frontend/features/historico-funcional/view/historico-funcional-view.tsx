@@ -1,6 +1,7 @@
 ﻿"use client"
 
 
+import { useState } from "react"
 import { useHistoricoFuncionalController } from "../controller/use-historico-funcional-controller"
 import { formatarTipoEvento, type HistoricoFuncionalAnalise } from "../model/historico-funcional.model"
 
@@ -11,6 +12,13 @@ type HistoricoFuncionalViewProps = {
 
 type StatusEvento = HistoricoFuncionalAnalise["eventos"][number]["status"]
 type ResumoAfastamentos = NonNullable<HistoricoFuncionalAnalise["afastamentos_resumo"]>
+type TooltipGrafico = {
+  x: number
+  y: number
+  alinhamento: "above" | "below"
+  titulo: string
+  linhas: string[]
+}
 
 const CORES_AFASTAMENTO = {
   aguardando_resultado_conclusivo_de_exame_pericial: "#fb7185",
@@ -36,6 +44,37 @@ function formatarDuracaoEmAnos(dias: number) {
   return `${anos}a ${meses}m`
 }
 
+function formatarAtraso(dataPrevista: string | null, dataEfetiva: string | null) {
+  if (!dataPrevista || !dataEfetiva) {
+    return null
+  }
+
+  const inicio = new Date(`${dataPrevista}T00:00:00`)
+  const fim = new Date(`${dataEfetiva}T00:00:00`)
+  const diferencaDias = Math.max(Math.floor((fim.getTime() - inicio.getTime()) / 86400000), 0)
+
+  if (diferencaDias <= 0) {
+    return null
+  }
+
+  const anos = Math.floor(diferencaDias / 365)
+  const meses = Math.floor((diferencaDias % 365) / 30)
+  const dias = diferencaDias % 30
+
+  const partes: string[] = []
+  if (anos > 0) {
+    partes.push(`${anos} ano${anos > 1 ? "s" : ""}`)
+  }
+  if (meses > 0) {
+    partes.push(`${meses} mes${meses > 1 ? "es" : ""}`)
+  }
+  if (partes.length === 0 && dias > 0) {
+    partes.push(`${dias} dia${dias > 1 ? "s" : ""}`)
+  }
+
+  return partes.join(" e ")
+}
+
 function formatarPorcentagem(valor: number) {
   return `${valor.toFixed(1).replace(".", ",")}%`
 }
@@ -56,12 +95,49 @@ function corDoStatus(status: StatusEvento) {
   return "#94a3b8"
 }
 
+function rotuloStatus(status: StatusEvento) {
+  if (status === "atrasado") {
+    return "Atrasado"
+  }
+
+  if (status === "estagio_probatorio") {
+    return "Em estágio probatório"
+  }
+
+  if (status === "cumprindo") {
+    return "Cumprindo"
+  }
+
+  return "Não aplicável"
+}
+
 function corTipoAfastamento(tipo: keyof typeof CORES_AFASTAMENTO) {
   return CORES_AFASTAMENTO[tipo]
 }
 
 function rotuloAfastamento(tipo: keyof typeof ROTULOS_AFASTAMENTO) {
   return ROTULOS_AFASTAMENTO[tipo]
+}
+
+function ExibirTooltip({ tooltip }: { tooltip: TooltipGrafico | null }) {
+  if (!tooltip) {
+    return null
+  }
+
+  return (
+    <div
+      className={`timeline-tooltip timeline-tooltip--${tooltip.alinhamento}`}
+      style={{
+        left: `${tooltip.x}%`,
+        top: `${tooltip.y}%`,
+      }}
+    >
+      <strong>{tooltip.titulo}</strong>
+      {tooltip.linhas.map((linha) => (
+        <span key={linha}>{linha}</span>
+      ))}
+    </div>
+  )
 }
 
 function GraficoPizzaTempo({
@@ -153,6 +229,8 @@ function GraficoPizzaAfastamentos({ resumo }: { resumo: ResumoAfastamentos }) {
 }
 
 function LinhaDoTempoGrafica({ eventos }: { eventos: HistoricoFuncionalAnalise["eventos"] }) {
+  const [tooltip, setTooltip] = useState<TooltipGrafico | null>(null)
+
   if (eventos.length === 0) {
     return (
       <div className="history-empty history-empty--compact">
@@ -182,8 +260,28 @@ function LinhaDoTempoGrafica({ eventos }: { eventos: HistoricoFuncionalAnalise["
     return margemX + ((valor - minimo) / alcance) * (largura - margemX * 2)
   }
 
+  function mostrarTooltip(evento: HistoricoFuncionalAnalise["eventos"][number], x: number, y: number, alinhamento: "above" | "below") {
+    const atrasoFormatado = formatarAtraso(evento.data_prevista ?? null, evento.data_efetiva)
+    setTooltip({
+      x: (x / largura) * 100,
+      y: (y / altura) * 100,
+      alinhamento,
+      titulo: formatarTipoEvento(evento.tipo),
+      linhas: [
+        `Data: ${formatarData(evento.data_efetiva)}`,
+        `Status: ${
+          evento.status === "atrasado" && atrasoFormatado
+            ? `Atrasado - ${atrasoFormatado}`
+            : rotuloStatus(evento.status)
+        }`,
+        evento.descricao,
+      ],
+    })
+  }
+
   return (
-    <div className="timeline-graph">
+    <div className="timeline-graph timeline-graph--interactive">
+      <ExibirTooltip tooltip={tooltip} />
       <svg
         aria-label="Linha do tempo de progressões e promoções"
         className="timeline-graph__svg"
@@ -200,14 +298,11 @@ function LinhaDoTempoGrafica({ eventos }: { eventos: HistoricoFuncionalAnalise["
           const cor = corDoStatus(evento.status)
 
           return (
-            <g key={`${evento.tipo}-${evento.data_efetiva}-${evento.descricao}`}>
-              <title>
-                {[
-                  formatarTipoEvento(evento.tipo),
-                  formatarData(evento.data_efetiva),
-                  evento.descricao,
-                ].join(" · ")}
-              </title>
+            <g
+              key={`${evento.tipo}-${evento.data_efetiva}-${evento.descricao}`}
+              onMouseEnter={() => mostrarTooltip(evento, x, y, isAbove ? "above" : "below")}
+              onMouseLeave={() => setTooltip(null)}
+            >
               <line
                 className="timeline-graph__spoke"
                 x1={x}
@@ -252,6 +347,7 @@ function GraficoComparativoTempo({
 }: {
   painel: HistoricoFuncionalAnalise
 }) {
+  const [tooltip, setTooltip] = useState<TooltipGrafico | null>(null)
   const afastamentos = painel.afastamentos || []
 
   if (afastamentos.length === 0) {
@@ -295,6 +391,29 @@ function GraficoComparativoTempo({
     new Date(`${a.data_inicio}T00:00:00`).getTime() - new Date(`${b.data_inicio}T00:00:00`).getTime()
   )
 
+  function mostrarTooltip(
+    afastamento: HistoricoFuncionalAnalise["afastamentos"][number],
+    x: number,
+    y: number,
+    alinhamento: "above" | "below",
+  ) {
+    setTooltip({
+      x: (x / largura) * 100,
+      y: (y / altura) * 100,
+      alinhamento,
+      titulo: rotuloAfastamento(afastamento.tipo),
+      linhas: [
+        `Início: ${formatarData(afastamento.data_inicio)}`,
+        `Fim: ${formatarData(afastamento.data_fim)}`,
+        `Mês/ano: ${afastamento.mes_ano_afastamento}`,
+        `${afastamento.total_dias} dia(s)`,
+        afastamento.dias_restantes_ate_pericia > 0
+          ? `${afastamento.dias_restantes_ate_pericia} dia(s) até a perícia`
+          : "Perícia concluída",
+      ],
+    })
+  }
+
   return (
     <div className="career-bars">
       <div className="career-bars__title">
@@ -302,7 +421,8 @@ function GraficoComparativoTempo({
         <h3>Tempo trabalhado e afastamentos</h3>
       </div>
 
-      <div className="timeline-graph">
+      <div className="timeline-graph timeline-graph--interactive">
+        <ExibirTooltip tooltip={tooltip} />
         <svg
           aria-label="Linha do tempo de afastamentos e carreira"
           className="timeline-graph__svg"
@@ -326,18 +446,11 @@ function GraficoComparativoTempo({
             const cor = corTipoAfastamento(afastamento.tipo)
 
             return (
-              <g key={`${afastamento.tipo}-${afastamento.data_inicio}-${indice}`}>
-                <title>
-                  {[
-                    rotuloAfastamento(afastamento.tipo),
-                    `Início ${formatarData(afastamento.data_inicio)}`,
-                    `Fim ${formatarData(afastamento.data_fim)}`,
-                    `${afastamento.total_dias} dia(s)`,
-                    afastamento.dias_restantes_ate_pericia > 0
-                      ? `${afastamento.dias_restantes_ate_pericia} dia(s) até a perícia`
-                      : "Perícia concluída",
-                  ].join(" · ")}
-                </title>
+              <g
+                key={`${afastamento.tipo}-${afastamento.data_inicio}-${indice}`}
+                onMouseEnter={() => mostrarTooltip(afastamento, x, y, isAbove ? "above" : "below")}
+                onMouseLeave={() => setTooltip(null)}
+              >
                 <line
                   className="timeline-graph__spoke"
                   x1={x}
@@ -390,6 +503,7 @@ export function HistoricoFuncionalView({
     carregando,
     dataNascimento,
     erro,
+    mensagemProcessamento,
     historico,
     modoAtualizacaoHistorico,
     modoAnexoAfastamentos,
@@ -571,6 +685,7 @@ export function HistoricoFuncionalView({
               </button>
             ) : null}
 
+            {mensagemProcessamento ? <p className="helper">{mensagemProcessamento}</p> : null}
             {erro ? <p className="error-box">{erro}</p> : null}
           </form>
         ) : painel && modoAnexoAfastamentos ? (
@@ -586,6 +701,7 @@ export function HistoricoFuncionalView({
               <p className="helper">Selecione o PDF para anexar aos dados já salvos.</p>
             )}
 
+            {mensagemProcessamento ? <p className="helper">{mensagemProcessamento}</p> : null}
             {erro ? <p className="error-box">{erro}</p> : null}
           </div>
         ) : (

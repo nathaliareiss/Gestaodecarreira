@@ -13,6 +13,19 @@ export type AfastamentosUpload = {
   arquivo_base64: string
 }
 
+export type JobAgendadoResponse = {
+  job_id: string
+  status: "queued"
+  detail: string | null
+}
+
+export type JobStatusResponse<T> = {
+  job_id: string
+  status: "queued" | "started" | "finished" | "failed"
+  result: T | null
+  detail: string | null
+}
+
 export type AfastamentoPeriodo = {
   tipo: "aguardando_resultado_conclusivo_de_exame_pericial" | "licenca_para_tratamento_de_saude"
   data_inicio: string

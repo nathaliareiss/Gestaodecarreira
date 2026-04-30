@@ -1,13 +1,15 @@
-﻿import type {
+import type {
   AfastamentosUpload,
   HistoricoFuncionalAnalise,
   HistoricoFuncionalUpload,
+  JobAgendadoResponse,
+  JobStatusResponse,
 } from "./historico-funcional.model"
 import { apiFetch, parseApiResponse } from "@/shared/api/client"
 
 export async function analisarHistoricoFuncional(
   payload: HistoricoFuncionalUpload,
-): Promise<HistoricoFuncionalAnalise> {
+): Promise<HistoricoFuncionalAnalise | JobAgendadoResponse> {
   const response = await apiFetch("/api/historicos-funcionais/analisar", {
     method: "POST",
     headers: {
@@ -16,7 +18,7 @@ export async function analisarHistoricoFuncional(
     body: JSON.stringify(payload),
   })
 
-  return parseApiResponse<HistoricoFuncionalAnalise>(
+  return parseApiResponse<HistoricoFuncionalAnalise | JobAgendadoResponse>(
     response,
     "Erro ao analisar o histórico funcional.",
   )
@@ -42,7 +44,7 @@ export async function buscarUltimoHistoricoFuncional(
 export async function anexarAfastamentosAoHistorico(
   usuarioId: number,
   payload: AfastamentosUpload,
-): Promise<HistoricoFuncionalAnalise> {
+): Promise<HistoricoFuncionalAnalise | JobAgendadoResponse> {
   const response = await apiFetch(`/api/historicos-funcionais/usuario/${usuarioId}/afastamentos`, {
     method: "POST",
     headers: {
@@ -51,9 +53,21 @@ export async function anexarAfastamentosAoHistorico(
     body: JSON.stringify(payload),
   })
 
-  return parseApiResponse<HistoricoFuncionalAnalise>(
+  return parseApiResponse<HistoricoFuncionalAnalise | JobAgendadoResponse>(
     response,
     "Erro ao analisar o arquivo de afastamentos.",
   )
 }
 
+export async function consultarStatusJobHistorico(
+  jobId: string,
+): Promise<JobStatusResponse<HistoricoFuncionalAnalise>> {
+  const response = await apiFetch(`/api/historicos-funcionais/jobs/${jobId}`, {
+    method: "GET",
+  })
+
+  return parseApiResponse<JobStatusResponse<HistoricoFuncionalAnalise>>(
+    response,
+    "Erro ao consultar o processamento.",
+  )
+}

@@ -18,7 +18,7 @@ from backend.schemas.auth_schema import (
     UsuarioRedefinirSenhaRequest,
     UsuarioSolicitarRecuperacaoSenhaRequest,
 )
-from backend.services.email_service import enviar_email_recuperacao_senha
+from backend.queue.email_dispatcher import agendar_email_recuperacao_senha
 from backend.services.security_service import gerar_hash_sha256, gerar_token_seguro
 
 
@@ -99,7 +99,7 @@ def solicitar_recuperacao_senha(
     db.flush()
 
     try:
-        enviar_email_recuperacao_senha(
+        agendar_email_recuperacao_senha(
             destinatario=usuario.email,
             nome=usuario.nome,
             token=token,

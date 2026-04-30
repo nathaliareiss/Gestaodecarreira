@@ -4,11 +4,13 @@ import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "r
 
 import type {
   HistoricoFuncionalAnalise,
+  JobAgendadoResponse,
   HistoricoFuncionalUpload,
 } from "../model/historico-funcional.model"
 import {
   anexarAfastamentosAoHistorico,
   analisarHistoricoFuncional,
+  consultarStatusJobHistorico,
   buscarUltimoHistoricoFuncional,
 } from "../model/historico-funcional.repository"
 
@@ -39,6 +41,12 @@ function lerArquivoComoBase64(arquivo: File) {
   })
 }
 
+function respostaEhJob(
+  resposta: HistoricoFuncionalAnalise | JobAgendadoResponse,
+): resposta is JobAgendadoResponse {
+  return "job_id" in resposta
+}
+
 export function useHistoricoFuncionalController({
   usuarioId,
   historicoInicial,
@@ -53,9 +61,34 @@ export function useHistoricoFuncionalController({
   const [historico, setHistorico] = useState<HistoricoFuncionalAnalise | null>(historicoInicial)
   const [carregando, setCarregando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
+  const [mensagemProcessamento, setMensagemProcessamento] = useState<string | null>(null)
   const [modoAtualizacaoHistorico, setModoAtualizacaoHistorico] = useState(historicoInicial === null)
   const [modoAnexoAfastamentos, setModoAnexoAfastamentos] = useState(historicoInicial !== null)
   const assinaturaEnvioAutomatico = useRef<string | null>(null)
+
+  async function aguardarResultadoJob(jobId: string) {
+    for (let tentativas = 0; tentativas < 60; tentativas += 1) {
+      const status = await consultarStatusJobHistorico(jobId)
+
+      if (status.status === "finished") {
+        if (!status.result) {
+          throw new Error("O processamento terminou sem retornar resultado.")
+        }
+
+        return status.result
+      }
+
+      if (status.status === "failed") {
+        throw new Error(status.detail ?? "O processamento em segundo plano falhou.")
+      }
+
+      await new Promise((resolve) => {
+        window.setTimeout(resolve, 1500)
+      })
+    }
+
+    throw new Error("O processamento demorou mais do que o esperado.")
+  }
 
   useEffect(() => {
     if (!arquivo) {
@@ -164,6 +197,7 @@ export function useHistoricoFuncionalController({
 
     setCarregando(true)
     setErro(null)
+    setMensagemProcessamento("Processando o PDF do histórico funcional em segundo plano...")
 
     if (assinatura) {
       assinaturaEnvioAutomatico.current = assinatura
@@ -184,7 +218,11 @@ export function useHistoricoFuncionalController({
         afastamentos_arquivo_base64: afastamentosArquivoBase64,
       }
 
-      const analisado = await analisarHistoricoFuncional(payload)
+      const resposta = await analisarHistoricoFuncional(payload)
+      const analisado = respostaEhJob(resposta)
+        ? await aguardarResultadoJob(resposta.job_id)
+        : resposta
+
       setHistorico(analisado)
       setModoAtualizacaoHistorico(false)
       setModoAnexoAfastamentos(true)
@@ -194,6 +232,7 @@ export function useHistoricoFuncionalController({
       }
       setErro(error instanceof Error ? error.message : "Falha inesperada ao analisar.")
     } finally {
+      setMensagemProcessamento(null)
       setCarregando(false)
     }
   }
@@ -216,6 +255,7 @@ export function useHistoricoFuncionalController({
 
     setCarregando(true)
     setErro(null)
+    setMensagemProcessamento("Processando o PDF dos afastamentos em segundo plano...")
 
     if (assinatura) {
       assinaturaEnvioAutomatico.current = assinatura
@@ -223,10 +263,14 @@ export function useHistoricoFuncionalController({
 
     try {
       const arquivoBase64 = await lerArquivoComoBase64(arquivoAfastamentos)
-      const analisado = await anexarAfastamentosAoHistorico(usuarioId, {
+      const resposta = await anexarAfastamentosAoHistorico(usuarioId, {
         arquivo_nome: arquivoAfastamentos.name,
         arquivo_base64: arquivoBase64,
       })
+
+      const analisado = respostaEhJob(resposta)
+        ? await aguardarResultadoJob(resposta.job_id)
+        : resposta
 
       setHistorico(analisado)
       setArquivoAfastamentos(null)
@@ -237,6 +281,7 @@ export function useHistoricoFuncionalController({
       }
       setErro(error instanceof Error ? error.message : "Falha inesperada ao analisar os afastamentos.")
     } finally {
+      setMensagemProcessamento(null)
       setCarregando(false)
     }
   }
@@ -280,6 +325,7 @@ export function useHistoricoFuncionalController({
     carregando,
     dataNascimento,
     erro,
+    mensagemProcessamento,
     historico,
     modoAtualizacaoHistorico,
     modoAnexoAfastamentos,

@@ -17,7 +17,7 @@ from backend.repositories.usuario_repository import (
     remover_usuario,
 )
 from backend.schemas.usuario_schema import UsuarioConfirmarRequest, UsuarioCreateRequest
-from backend.services.email_service import enviar_email_confirmacao
+from backend.queue.email_dispatcher import agendar_email_confirmacao
 from backend.services.security_service import gerar_hash_sha256, gerar_token_seguro
 
 
@@ -55,7 +55,7 @@ def cadastrar_usuario(db: Session, cadastro: UsuarioCreateRequest) -> Usuario:
     usuario = criar_usuario(db, usuario)
 
     try:
-        enviar_email_confirmacao(
+        agendar_email_confirmacao(
             destinatario=usuario.email,
             nome=usuario.nome,
             token=usuario.token_confirmacao_email,

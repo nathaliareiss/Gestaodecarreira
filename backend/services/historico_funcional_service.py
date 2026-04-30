@@ -217,6 +217,16 @@ def _tipo_secao(linha: str) -> Literal["nomeacao", "progressao", "promocao", "su
     return "progressao"
 
 
+def _ordem_tipo_bloco(tipo: Literal["nomeacao", "progressao", "promocao", "substituicao"]) -> int:
+    if tipo == "nomeacao":
+        return 0
+    if tipo == "progressao":
+        return 1
+    if tipo == "promocao":
+        return 2
+    return 3
+
+
 TIPOS_AFASTAMENTO = {
     "Aguardando Resultado Conclusivo de Exame Pericial": "aguardando_resultado_conclusivo_de_exame_pericial",
     "Licença para Tratamento de Saúde": "licenca_para_tratamento_de_saude",
@@ -566,7 +576,15 @@ def _gerar_eventos(blocos: list[BlocoHistorico]) -> list[EventoHistorico]:
     referencia_promocao: date | None = None
     fim_estagio_probatorio: date | None = None
 
-    for bloco in blocos:
+    blocos_ordenados = sorted(
+        blocos,
+        key=lambda bloco: (
+            bloco.data_exercicio,
+            _ordem_tipo_bloco(bloco.tipo),
+        ),
+    )
+
+    for bloco in blocos_ordenados:
         if bloco.tipo == "nomeacao":
             fim_estagio_probatorio = _fim_estagio_probatorio(bloco.data_exercicio)
             referencia_progressao = fim_estagio_probatorio

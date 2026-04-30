@@ -1271,6 +1271,7 @@ html[data-theme="light"] .upload-shell__collapsed--compact {
 }
 
 .timeline-graph {
+  position: relative;
   display: grid;
   gap: 1rem;
 }
@@ -1339,6 +1340,49 @@ html[data-theme="light"] .timeline-graph__label {
 
 html[data-theme="light"] .timeline-graph__label--muted {
   fill: #334155;
+}
+
+.timeline-tooltip {
+  position: absolute;
+  z-index: 4;
+  min-width: 12rem;
+  max-width: 18rem;
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.8rem 0.9rem;
+  border-radius: 16px;
+  border: 1px solid rgba(94, 234, 212, 0.25);
+  background: rgba(5, 11, 20, 0.96);
+  color: #f8fafc;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.32);
+  pointer-events: none;
+  transform: translate(-50%, -115%);
+}
+
+.timeline-tooltip--below {
+  transform: translate(-50%, 12px);
+}
+
+.timeline-tooltip strong {
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+}
+
+.timeline-tooltip span {
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: rgba(248, 250, 252, 0.9);
+}
+
+html[data-theme="light"] .timeline-tooltip {
+  background: rgba(255, 255, 255, 0.98);
+  color: #0f172a;
+  border-color: rgba(15, 23, 42, 0.12);
+}
+
+html[data-theme="light"] .timeline-tooltip span {
+  color: rgba(15, 23, 42, 0.9);
 }
 
 .timeline-legend {
