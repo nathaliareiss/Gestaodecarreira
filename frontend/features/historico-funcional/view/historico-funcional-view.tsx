@@ -201,6 +201,13 @@ function LinhaDoTempoGrafica({ eventos }: { eventos: HistoricoFuncionalAnalise["
 
           return (
             <g key={`${evento.tipo}-${evento.data_efetiva}-${evento.descricao}`}>
+              <title>
+                {[
+                  formatarTipoEvento(evento.tipo),
+                  formatarData(evento.data_efetiva),
+                  evento.descricao,
+                ].join(" · ")}
+              </title>
               <line
                 className="timeline-graph__spoke"
                 x1={x}
@@ -320,6 +327,17 @@ function GraficoComparativoTempo({
 
             return (
               <g key={`${afastamento.tipo}-${afastamento.data_inicio}-${indice}`}>
+                <title>
+                  {[
+                    rotuloAfastamento(afastamento.tipo),
+                    `Início ${formatarData(afastamento.data_inicio)}`,
+                    `Fim ${formatarData(afastamento.data_fim)}`,
+                    `${afastamento.total_dias} dia(s)`,
+                    afastamento.dias_restantes_ate_pericia > 0
+                      ? `${afastamento.dias_restantes_ate_pericia} dia(s) até a perícia`
+                      : "Perícia concluída",
+                  ].join(" · ")}
+                </title>
                 <line
                   className="timeline-graph__spoke"
                   x1={x}
