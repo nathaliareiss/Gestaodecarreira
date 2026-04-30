@@ -25,7 +25,7 @@ def ler_data(mensagem: str) -> date:
         try:
             return parsear_data(texto)
         except ValueError as erro:
-            logger.warning("%s", erro)
+            logger.warning("Data invalida informada", extra={"valor": texto, "motivo": str(erro)})
 
 
 def ler_texto_nao_vazio(mensagem: str) -> str:
@@ -38,7 +38,7 @@ def ler_texto_nao_vazio(mensagem: str) -> str:
             ) from exc
         if texto:
             return texto
-        logger.warning("Este campo nao pode ficar vazio.")
+        logger.warning("Campo obrigatorio vazio")
 
 
 def ler_sim_nao(mensagem: str) -> bool:
@@ -53,12 +53,12 @@ def ler_sim_nao(mensagem: str) -> bool:
             return True
         if resposta in {"n", "nao"}:
             return False
-        logger.warning("Responda com s ou n.")
+        logger.warning("Resposta invalida", extra={"resposta": resposta})
 
 
 def executar() -> None:
-    logger.info("Gestao de Carreira")
-    logger.info("Vamos cadastrar seus dados iniciais.")
+    logger.info("Iniciando fluxo de carreira")
+    logger.info("Coletando dados iniciais")
 
     nome = ler_texto_nao_vazio("Nome: ")
     data_nascimento = ler_data("Data de nascimento (dd/mm/aaaa): ")
@@ -82,49 +82,47 @@ def executar() -> None:
     resumo = montar_resumo_funcional(servidora)
 
     logger.info("Cadastro realizado")
-    logger.info("Nome: %s", servidora.nome)
+    logger.info("Nome informado", extra={"nome": servidora.nome})
     logger.info(
-        "Nascimento: %s",
-        servidora.data_nascimento.strftime("%d/%m/%Y"),
+        "Data de nascimento informada",
+        extra={"data_nascimento": servidora.data_nascimento.strftime("%d/%m/%Y")},
     )
     logger.info(
-        "Ingresso: %s",
-        servidora.data_ingresso.strftime("%d/%m/%Y"),
+        "Data de ingresso informada",
+        extra={"data_ingresso": servidora.data_ingresso.strftime("%d/%m/%Y")},
     )
     logger.info(
-        "Tempo CLT averbado: %s",
-        "sim" if servidora.tem_tempo_clt_averbado else "nao",
+        "Tempo CLT averbado",
+        extra={"tem_tempo_clt_averbado": servidora.tem_tempo_clt_averbado},
     )
     logger.info("Resumo funcional")
     logger.info(
-        "25 anos de carreira: %s",
-        resumo.data_25_anos_carreira.strftime("%d/%m/%Y"),
+        "Marco de 25 anos de carreira",
+        extra={"data": resumo.data_25_anos_carreira.strftime("%d/%m/%Y")},
     )
     logger.info(
-        "Data de idade minima para aposentadoria: %s",
-        resumo.data_idade_minima_aposentadoria.strftime("%d/%m/%Y"),
+        "Marco de idade minima para aposentadoria",
+        extra={"data": resumo.data_idade_minima_aposentadoria.strftime("%d/%m/%Y")},
     )
     logger.info(
-        "Idade nessa data: %s anos",
-        resumo.idade_na_data_25_anos_carreira,
+        "Idade no marco de 25 anos",
+        extra={"idade": resumo.idade_na_data_25_anos_carreira},
     )
     logger.info(
-        "Tem idade minima nessa data: %s",
-        "sim" if resumo.possui_idade_minima_na_data_25_anos_carreira else "nao",
+        "Possui idade minima no marco",
+        extra={"resultado": resumo.possui_idade_minima_na_data_25_anos_carreira},
     )
     logger.info(
-        "Aposentadoria provavel: %s",
-        resumo.data_prevista_aposentadoria.strftime("%d/%m/%Y"),
+        "Aposentadoria provavel",
+        extra={"data": resumo.data_prevista_aposentadoria.strftime("%d/%m/%Y")},
     )
     logger.info(
-        "Grau aos 45 anos: %s | Nivel aos 45 anos: %s",
-        resumo.grau_aos_45_anos,
-        resumo.nivel_aos_45_anos,
+        "Conferencia de grau e nivel aos 45 anos",
+        extra={"grau": resumo.grau_aos_45_anos, "nivel": resumo.nivel_aos_45_anos},
     )
     logger.info(
-        "Grau na aposentadoria: %s | Nivel na aposentadoria: %s",
-        resumo.grau_na_aposentadoria,
-        resumo.nivel_na_aposentadoria,
+        "Conferencia de grau e nivel na aposentadoria",
+        extra={"grau": resumo.grau_na_aposentadoria, "nivel": resumo.nivel_na_aposentadoria},
     )
 
 

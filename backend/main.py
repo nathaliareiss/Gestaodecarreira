@@ -14,7 +14,7 @@ def run_server() -> None:
     import uvicorn
     from backend.app import app
 
-    logger.info("Iniciando servidor em %s:%s", HOST, PORT)
+    logger.info("Iniciando servidor local", extra={"host": HOST, "port": PORT})
     uvicorn.run(app, host=HOST, port=PORT)
 
 

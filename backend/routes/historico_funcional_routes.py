@@ -63,6 +63,14 @@ def analisar_e_salvar_historico(
     dados: HistoricoFuncionalUploadRequest,
     db: Session = Depends(get_db),
 ) -> HistoricoFuncionalResponse:
+    logger.info(
+        "Recebido historico funcional para analise",
+        extra={
+            "usuario_id": dados.usuario_id,
+            "arquivo_nome": dados.arquivo_nome,
+            "tem_afastamentos": bool(dados.afastamentos_arquivo_base64),
+        },
+    )
     try:
         conteudo_pdf = decodificar_arquivo_base64(dados.arquivo_base64)
         conteudo_afastamentos_pdf = (
@@ -80,6 +88,10 @@ def analisar_e_salvar_historico(
             arquivo_afastamentos_nome=dados.afastamentos_arquivo_nome,
         )
     except ValueError as erro:
+        logger.warning(
+            "Falha ao analisar historico funcional",
+            extra={"usuario_id": dados.usuario_id, "arquivo_nome": dados.arquivo_nome},
+        )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Nao foi possivel analisar o arquivo enviado. Verifique o PDF e tente novamente.",
@@ -111,12 +123,24 @@ def analisar_e_salvar_historico(
         if usuario is not None and usuario.data_exercicio is None:
             usuario.data_exercicio = resposta.data_exercicio
             atualizar_usuario(db, usuario)
+            logger.info(
+                "Data de exercicio atualizada a partir do historico",
+                extra={"usuario_id": usuario.id, "historico_id": historico.id},
+            )
 
     resposta = resposta.model_copy(update={"historico_id": historico.id})
     historico.dados_json = json.dumps(resposta.model_dump(mode="json"), ensure_ascii=False)
     db.add(historico)
     db.commit()
     db.refresh(historico)
+    logger.info(
+        "Historico funcional salvo",
+        extra={
+            "historico_id": historico.id,
+            "user_id": dados.usuario_id,
+            "arquivo_nome": dados.arquivo_nome,
+        },
+    )
 
     return resposta
 
@@ -127,6 +151,10 @@ def anexar_afastamentos_historico(
     dados: AfastamentosUploadRequest,
     db: Session = Depends(get_db),
 ) -> HistoricoFuncionalResponse:
+    logger.info(
+        "Recebido arquivo de afastamentos",
+        extra={"user_id": usuario_id, "arquivo_nome": dados.arquivo_nome},
+    )
     historico = obter_ultimo_historico_por_usuario(db, usuario_id)
     if historico is None:
         raise HTTPException(
@@ -140,6 +168,10 @@ def anexar_afastamentos_historico(
         conteudo_afastamentos_pdf = decodificar_arquivo_base64(dados.arquivo_base64)
         afastamentos, resumo_afastamentos = analisar_afastamentos_pdf(conteudo_afastamentos_pdf)
     except ValueError as erro:
+        logger.warning(
+            "Falha ao analisar afastamentos",
+            extra={"user_id": usuario_id, "arquivo_nome": dados.arquivo_nome},
+        )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Nao foi possivel analisar o arquivo de afastamentos. Verifique o PDF e tente novamente.",
@@ -169,6 +201,14 @@ def anexar_afastamentos_historico(
     db.add(historico)
     db.commit()
     db.refresh(historico)
+    logger.info(
+        "Afastamentos anexados ao historico",
+        extra={
+            "historico_id": historico.id,
+            "user_id": usuario_id,
+            "arquivo_nome": dados.arquivo_nome,
+        },
+    )
 
     return resposta
 
@@ -178,6 +218,7 @@ def obter_ultimo_historico_do_usuario(
     usuario_id: int,
     db: Session = Depends(get_db),
 ) -> HistoricoFuncionalResponse:
+    logger.debug("Carregando ultimo historico funcional", extra={"user_id": usuario_id})
     historico = obter_ultimo_historico_por_usuario(db, usuario_id)
     if historico is None:
         raise HTTPException(
@@ -190,6 +231,10 @@ def obter_ultimo_historico_do_usuario(
         dados = _normalizar_dados_historico_salvo(dados)
         return HistoricoFuncionalResponse.model_validate(dados)
     except Exception as erro:
+        logger.exception(
+            "Falha ao carregar historico funcional salvo",
+            extra={"user_id": usuario_id},
+        )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Nao foi possivel carregar o historico funcional salvo.",

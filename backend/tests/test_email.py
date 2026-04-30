@@ -15,11 +15,13 @@ msg["Subject"] = "Teste SMTP"
 msg["From"] = SMTP_USER
 msg["To"] = SMTP_USER
 
-logger.info("SMTP_USER: %s", SMTP_USER)
-logger.info("SMTP_PASSWORD existe? %s", bool(SMTP_PASSWORD))
 logger.info(
-    "Tamanho da senha: %s",
-    len(SMTP_PASSWORD) if SMTP_PASSWORD else None,
+    "Configuracao SMTP carregada",
+    extra={
+        "smtp_user": SMTP_USER,
+        "tem_senha": bool(SMTP_PASSWORD),
+        "tamanho_senha": len(SMTP_PASSWORD) if SMTP_PASSWORD else None,
+    },
 )
 
 try:
@@ -28,7 +30,7 @@ try:
         server.login(SMTP_USER, SMTP_PASSWORD)
         server.send_message(msg)
 
-    logger.info("Email enviado com sucesso!")
+    logger.info("Email enviado com sucesso", extra={"destinatario": SMTP_USER})
 
 except Exception as e:
     logger.exception("Erro ao enviar email")

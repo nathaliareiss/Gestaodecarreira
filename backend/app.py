@@ -30,7 +30,10 @@ def criar_app() -> FastAPI:
     @app.on_event("startup")
     def _criar_tabelas() -> None:
         sincronizar_usuario_table()
-        logger.info("Aplicacao FastAPI iniciada com sucesso")
+        logger.info(
+            "Aplicacao FastAPI iniciada com sucesso",
+            extra={"titulo": "Gestao de Carreira API", "origens_cors": CORS_ORIGINS},
+        )
 
     return app
 
