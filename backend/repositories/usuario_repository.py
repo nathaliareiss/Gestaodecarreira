@@ -2,14 +2,14 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from sqlalchemy import or_, select
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from backend.database.models import Usuario
 
 
 def listar_usuarios(db: Session) -> list[Usuario]:
-    return list(db.scalars(select(Usuario).order_by(Usuario.id)))
+    return db.scalars(select(Usuario).order_by(Usuario.id)).all()
 
 
 def obter_usuario_por_email(db: Session, email: str) -> Usuario | None:
@@ -25,14 +25,11 @@ def obter_usuario_por_login(db: Session, login: str) -> Usuario | None:
 
 
 def obter_usuario_por_login_ou_email(db: Session, identificador: str) -> Usuario | None:
-    return db.scalar(
-        select(Usuario).where(
-            or_(
-                Usuario.login == identificador,
-                Usuario.email == identificador,
-            )
-        )
-    )
+    usuario = obter_usuario_por_login(db, identificador)
+    if usuario is not None:
+        return usuario
+
+    return obter_usuario_por_email(db, identificador)
 
 
 def obter_usuario_por_token(db: Session, token: str) -> Usuario | None:
@@ -68,7 +65,7 @@ def obter_usuario_por_redefinir_senha_token_hash(
 
 
 def obter_ultimo_usuario(db: Session) -> Usuario | None:
-    return db.scalar(select(Usuario).order_by(Usuario.id.desc()))
+    return db.scalar(select(Usuario).order_by(Usuario.id.desc()).limit(1))
 
 
 def criar_usuario(db: Session, usuario: Usuario) -> Usuario:

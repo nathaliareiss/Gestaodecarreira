@@ -136,6 +136,17 @@ somente o caminho do objeto.
 Se o Supabase Storage não estiver acessível, o backend salva o PDF em um diretório local de
 fallback (`backend/storage_data`) e marca a resposta com `armazenamento_origem: "local"`.
 
+## Otimizações de banco
+
+As consultas mais frequentes receberam cuidado extra:
+
+- busca de usuário por `login` e `email`
+- recuperação de sessão por `sessao_token_hash`
+- recuperação de redefinição de senha por `redefinir_senha_token_hash`
+- busca do último histórico por usuário com índice composto em `usuario_id`, `criado_em` e `id`
+
+Isso reduz varredura de tabela e acelera autenticação e carregamento do painel do histórico.
+
 ## Fluxo
 
 1. A API recebe o cadastro.

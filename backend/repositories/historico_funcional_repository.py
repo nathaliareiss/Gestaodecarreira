@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from sqlalchemy import desc
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from backend.database.models import HistoricoFuncional
@@ -17,10 +17,10 @@ def obter_ultimo_historico_por_usuario(
     db: Session,
     usuario_id: int,
 ) -> HistoricoFuncional | None:
-    return (
-        db.query(HistoricoFuncional)
-        .filter(HistoricoFuncional.usuario_id == usuario_id)
-        .order_by(desc(HistoricoFuncional.criado_em), desc(HistoricoFuncional.id))
-        .first()
+    stmt = (
+        select(HistoricoFuncional)
+        .where(HistoricoFuncional.usuario_id == usuario_id)
+        .order_by(HistoricoFuncional.criado_em.desc(), HistoricoFuncional.id.desc())
+        .limit(1)
     )
-
+    return db.scalar(stmt)

@@ -1,11 +1,15 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, Column, Date, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, Column, Date, DateTime, ForeignKey, Index, Integer, String, Text
 
 from backend.database.database import Base
 
 class Usuario(Base):
     __tablename__ = "usuarios"
+    __table_args__ = (
+        Index("ix_usuarios_sessao_token_hash", "sessao_token_hash"),
+        Index("ix_usuarios_redefinir_senha_token_hash", "redefinir_senha_token_hash"),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     nome = Column(String, nullable=False)
@@ -34,6 +38,9 @@ class Usuario(Base):
 
 class HistoricoFuncional(Base):
     __tablename__ = "historicos_funcionais"
+    __table_args__ = (
+        Index("ix_historicos_funcionais_usuario_criado_em_id", "usuario_id", criado_em.desc(), id.desc()),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=True, index=True)

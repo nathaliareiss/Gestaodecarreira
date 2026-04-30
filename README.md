@@ -90,6 +90,16 @@ fallback (`backend/storage_data`) e marca a resposta com `armazenamento_origem: 
 Se a fila do Redis cair, a API tenta processar direto no backend e marca a resposta com
 `processamento_origem: "direto"`.
 
+## Banco
+
+O banco foi ajustado para responder melhor nas consultas mais comuns:
+
+- autenticação por login, e-mail e token
+- busca do último histórico funcional do usuário
+- carregamento do painel sem depender de varredura completa de tabela
+
+Na prática, isso deixa login e abertura da tela principal mais rápidos conforme os dados crescem.
+
 ## Fluxo principal
 
 1. A pessoa cria a conta.
