@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useLayoutEffect, useState } from "react"
 
 type ThemeMode = "dark" | "light"
 
@@ -28,7 +28,7 @@ export function ThemeToggle() {
   const [tema, setTema] = useState<ThemeMode>("dark")
   const [pronto, setPronto] = useState(false)
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const inicial = temaInicial()
     setTema(inicial)
     aplicarTema(inicial)
