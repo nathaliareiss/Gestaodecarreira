@@ -4,6 +4,7 @@ import smtplib
 from email.message import EmailMessage
 from email.utils import formataddr
 
+from backend.logger import logger
 from backend.config import (
     EMAIL_CONFIRMATION_SUBJECT,
     EMAIL_RECOVERY_SUBJECT,
@@ -44,6 +45,7 @@ def _enviar_mensagem(mensagem: EmailMessage) -> None:
 
     cliente_cls = smtplib.SMTP_SSL if SMTP_USE_SSL else smtplib.SMTP
     try:
+        logger.info("Conectando ao SMTP para enviar email a %s", mensagem["To"])
         with cliente_cls(SMTP_HOST, SMTP_PORT, timeout=30) as cliente:
             cliente.ehlo()
             if SMTP_USE_TLS and not SMTP_USE_SSL:
@@ -54,6 +56,7 @@ def _enviar_mensagem(mensagem: EmailMessage) -> None:
                 cliente.login(SMTP_USER, SMTP_PASSWORD)
 
             cliente.send_message(mensagem)
+        logger.info("Email enviado com sucesso para %s", mensagem["To"])
     except smtplib.SMTPAuthenticationError as erro:
         raise RuntimeError(
             "Credenciais SMTP recusadas. Verifique o SMTP_USER e a App Password do Gmail."
@@ -74,6 +77,7 @@ def _montar_link_redefinicao(token: str) -> str:
 
 def enviar_email_confirmacao(destinatario: str, nome: str, token: str) -> None:
     link = _montar_link_confirmacao(token)
+    logger.info("Preparando email de confirmacao para %s", destinatario)
     texto = "\n".join(
         [
             f"Ola, {nome}.",
@@ -105,6 +109,7 @@ def enviar_email_confirmacao(destinatario: str, nome: str, token: str) -> None:
 
 def enviar_email_recuperacao_senha(destinatario: str, nome: str, token: str) -> None:
     link = _montar_link_redefinicao(token)
+    logger.info("Preparando email de recuperacao de senha para %s", destinatario)
     texto = "\n".join(
         [
             f"Ola, {nome}.",

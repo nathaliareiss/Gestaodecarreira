@@ -4,6 +4,7 @@ from datetime import datetime, timedelta, timezone
 
 from sqlalchemy.orm import Session
 
+from backend.logger import logger
 from backend.database.models import Usuario
 from backend.repositories.usuario_repository import (
     atualizar_usuario,
@@ -28,6 +29,7 @@ def _hash_token(valor: str) -> str:
 def autenticar_usuario(db: Session, dados: UsuarioLoginRequest) -> tuple[Usuario, str]:
     identificador = dados.login.strip()
     senha = dados.senha
+    logger.info("Tentativa de login para %s", identificador)
 
     if "@" in identificador:
         usuario = obter_usuario_por_email(db, identificador.lower())
@@ -49,6 +51,7 @@ def autenticar_usuario(db: Session, dados: UsuarioLoginRequest) -> tuple[Usuario
     usuario.sessao_token_hash = _hash_token(token_sessao)
     usuario.sessao_expira_em = datetime.now(timezone.utc) + timedelta(days=7)
     atualizar_usuario(db, usuario)
+    logger.info("Login concluido para %s", usuario.email)
 
     return usuario, token_sessao
 
@@ -68,6 +71,7 @@ def encerrar_sessao_usuario(db: Session, token: str) -> None:
     usuario.sessao_token_hash = None
     usuario.sessao_expira_em = None
     atualizar_usuario(db, usuario)
+    logger.info("Sessao encerrada para %s", usuario.email)
 
 
 def solicitar_recuperacao_senha(
@@ -75,6 +79,7 @@ def solicitar_recuperacao_senha(
     dados: UsuarioSolicitarRecuperacaoSenhaRequest,
 ) -> bool:
     email = dados.email.strip().lower()
+    logger.info("Solicitacao de recuperacao de senha para %s", email)
     usuario = obter_usuario_por_email(db, email)
     if usuario is None:
         return False
@@ -92,6 +97,7 @@ def solicitar_recuperacao_senha(
             token=token,
         )
         db.commit()
+        logger.info("Email de recuperacao enviado para %s", usuario.email)
     except Exception:
         db.rollback()
         raise
@@ -113,4 +119,5 @@ def redefinir_senha_usuario(
     usuario.sessao_token_hash = None
     usuario.sessao_expira_em = None
     atualizar_usuario(db, usuario)
+    logger.info("Senha redefinida com sucesso para %s", usuario.email)
     return usuario

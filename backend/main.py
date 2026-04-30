@@ -8,11 +8,13 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from backend.config import HOST, PORT
+from backend.logger import logger
 
 def run_server() -> None:
     import uvicorn
     from backend.app import app
 
+    logger.info("Iniciando servidor em %s:%s", HOST, PORT)
     uvicorn.run(app, host=HOST, port=PORT)
 
 

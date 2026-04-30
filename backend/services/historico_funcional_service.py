@@ -10,6 +10,7 @@ from typing import Literal
 import pandas as pd
 from pypdf import PdfReader
 
+from backend.logger import logger
 from backend.schemas.historico_funcional_schema import (
     AfastamentoPeriodoResponse,
     AfastamentoResumoResponse,
@@ -361,6 +362,7 @@ def analisar_afastamentos_pdf(
 ) -> tuple[list[AfastamentoPeriodo], AfastamentoResumoResponse]:
     afastamentos = extrair_afastamentos_pdf(conteudo_pdf)
     resumo_afastamentos = _montar_resumo_afastamentos(afastamentos)
+    logger.info("Afastamentos analisados: %s periodo(s)", len(afastamentos))
     return afastamentos, resumo_afastamentos
 
 
@@ -715,6 +717,7 @@ def analisar_historico_funcional(
     conteudo_afastamentos_pdf: bytes | None = None,
     arquivo_afastamentos_nome: str | None = None,
 ) -> tuple[HistoricoFuncionalResponse, str]:
+    logger.info("Iniciando analise de historico funcional para o arquivo %s", arquivo_nome)
     texto = extrair_texto_pdf(conteudo_pdf)
     nome, masp, cpf, data_emissao = _extrair_cabecalho(texto)
     blocos = _extrair_blocos(texto)
@@ -761,6 +764,10 @@ def analisar_historico_funcional(
     if conteudo_afastamentos_pdf is not None:
         afastamentos = extrair_afastamentos_pdf(conteudo_afastamentos_pdf)
         resumo_afastamentos = _montar_resumo_afastamentos(afastamentos)
+        logger.info(
+            "Historico funcional com afastamentos anexados: %s periodo(s)",
+            len(afastamentos),
+        )
 
     resposta = HistoricoFuncionalResponse(
         historico_id=0,
@@ -822,4 +829,10 @@ def analisar_historico_funcional(
         ],
     )
 
+    logger.info(
+        "Analise concluida para %s com %s evento(s) e %s afastamento(s)",
+        arquivo_nome,
+        len(eventos),
+        len(afastamentos),
+    )
     return resposta, texto

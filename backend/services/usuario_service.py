@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 
 from sqlalchemy.orm import Session
 
+from backend.logger import logger
 from backend.database.models import Usuario
 from backend.repositories.usuario_repository import (
     criar_usuario,
@@ -26,6 +27,7 @@ def cadastrar_usuario(db: Session, cadastro: UsuarioCreateRequest) -> Usuario:
     email = cadastro.email.strip().lower()
     login = cadastro.login.strip()
     senha = cadastro.senha
+    logger.info("Iniciando cadastro para %s", email)
 
     email_existente = obter_usuario_por_email(db, email)
     if email_existente is not None:
@@ -57,6 +59,7 @@ def cadastrar_usuario(db: Session, cadastro: UsuarioCreateRequest) -> Usuario:
         )
         db.commit()
         db.refresh(usuario)
+        logger.info("Cadastro concluido para %s", usuario.email)
     except Exception as exc:
         db.rollback()
         raise RuntimeError(
@@ -81,6 +84,7 @@ def confirmar_usuario(db: Session, dados: UsuarioConfirmarRequest) -> Usuario:
 
     usuario.email_confirmado = True
     usuario.confirmado_em = datetime.now(timezone.utc)
+    logger.info("Confirmacao de email concluida para %s", usuario.email)
     return atualizar_usuario(db, usuario)
 
 
@@ -90,4 +94,5 @@ def excluir_usuario_mais_recente(db: Session) -> Usuario | None:
         return None
 
     remover_usuario(db, usuario)
+    logger.info("Usuario removido: %s", usuario.email)
     return usuario
