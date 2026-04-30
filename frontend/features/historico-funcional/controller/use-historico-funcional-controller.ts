@@ -1,6 +1,6 @@
 ﻿"use client"
 
-import { useCallback, useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from "react"
 
 import type {
   HistoricoFuncionalAnalise,
@@ -41,20 +41,12 @@ export function useHistoricoFuncionalController({
   const [modoAtualizacaoHistorico, setModoAtualizacaoHistorico] = useState(false)
   const [modoAnexoAfastamentos, setModoAnexoAfastamentos] = useState(false)
   const assinaturaEnvioAutomatico = useRef<string | null>(null)
-  const [arquivoDownloadUrl, setArquivoDownloadUrl] = useState<string | null>(null)
-
-  useEffect(() => {
+  const arquivoDownloadUrl = useMemo(() => {
     if (!arquivo) {
-      setArquivoDownloadUrl(null)
-      return
+      return null
     }
 
-    const url = URL.createObjectURL(arquivo)
-    setArquivoDownloadUrl(url)
-
-    return () => {
-      URL.revokeObjectURL(url)
-    }
+    return URL.createObjectURL(arquivo)
   }, [arquivo])
 
   async function aguardarResultadoJob(jobId: string) {
