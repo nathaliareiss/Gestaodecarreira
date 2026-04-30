@@ -101,6 +101,7 @@ function GraficoPizzaTempo({
   )
 }
 
+
 function GraficoPizzaAfastamentos({ resumo }: { resumo: ResumoAfastamentos }) {
   const total = Math.max(resumo.dias_totais, 1)
   const tipos = Object.entries(resumo.dias_por_tipo)
@@ -122,7 +123,12 @@ function GraficoPizzaAfastamentos({ resumo }: { resumo: ResumoAfastamentos }) {
 
   return (
     <div className="pie-visual pie-visual--afastamentos">
-      <div className="pie-visual__ring" style={{ background }} />
+      <div className="pie-visual__ring" style={{ background }}>
+        <div className="pie-visual__center">
+          <strong>{resumo.dias_totais}</strong>
+          <span>dias afastado</span>
+        </div>
+      </div>
       <div className="pie-visual__legend">
         {tipos.map(([tipo, dias]) => (
           <div className="pie-visual__legend-item" key={tipo}>
@@ -270,8 +276,8 @@ function GraficoComparativoTempo({
             <small>
               {painel.afastamentos.length > 0
                 ? `${formatarMesAno(painel.afastamentos[0]?.data_inicio ?? null)} · ${formatarMesAno(
-                    painel.afastamentos[painel.afastamentos.length - 1]?.data_fim ?? null,
-                  )}`
+                  painel.afastamentos[painel.afastamentos.length - 1]?.data_fim ?? null,
+                )}`
                 : "Sem afastamentos registrados"}
             </small>
           </div>

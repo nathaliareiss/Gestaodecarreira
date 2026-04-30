@@ -1,12 +1,10 @@
 from __future__ import annotations
 
-import logging
-
 from fastapi import HTTPException, Request
 from fastapi.responses import JSONResponse
 from starlette.status import HTTP_500_INTERNAL_SERVER_ERROR
 
-logger = logging.getLogger(__name__)
+from backend.logger import logger
 
 
 def registrar_middleware_de_erros(app) -> None:

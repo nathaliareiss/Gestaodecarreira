@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-import logging
-
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from backend.database.database import get_db
+from backend.logger import logger
 from backend.schemas.usuario_schema import (
     UsuarioConfirmarRequest,
     UsuarioCreateRequest,
@@ -20,7 +19,6 @@ from backend.services.usuario_service import (
 )
 
 router = APIRouter(prefix="/usuarios", tags=["usuarios"])
-logger = logging.getLogger(__name__)
 
 
 @router.post("", response_model=UsuarioResponse, status_code=status.HTTP_201_CREATED)

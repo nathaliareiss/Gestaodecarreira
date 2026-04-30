@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-import logging
-
 from fastapi import APIRouter, Depends, Header, HTTPException, status
 from sqlalchemy.orm import Session
 
 from backend.database.database import get_db
+from backend.logger import logger
 from backend.schemas.auth_schema import (
     UsuarioAuthResponse,
     UsuarioLoginRequest,
@@ -22,7 +21,6 @@ from backend.services.auth_service import (
 )
 
 router = APIRouter(prefix="/auth", tags=["auth"])
-logger = logging.getLogger(__name__)
 
 
 def _extrair_token_bearer(authorization: str | None) -> str:
