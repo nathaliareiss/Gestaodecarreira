@@ -110,6 +110,55 @@ O backend também usa Redis como cache de leitura para reduzir consultas repetid
 As chaves têm TTL curto e são invalidadas automaticamente quando o banco é alterado, para evitar
 respostas desatualizadas.
 
+## Docker
+
+As imagens do projeto ficaram separadas por serviço:
+
+- backend: [Dockerfile](Dockerfile)
+- frontend: [frontend/Dockerfile](frontend/Dockerfile)
+
+### Backend
+
+Build:
+
+```powershell
+docker build -t gestao-carreira-backend .
+```
+
+Run:
+
+```powershell
+docker run --rm -p 8000:8000 --env-file backend/.env gestao-carreira-backend
+```
+
+### Frontend
+
+Build:
+
+```powershell
+docker build -t gestao-carreira-frontend --build-arg NEXT_PUBLIC_API_URL=https://seu-backend.com -f frontend/Dockerfile frontend
+```
+
+Run:
+
+```powershell
+docker run --rm -p 3000:3000 gestao-carreira-frontend
+```
+
+### O que foi feito no Dockerfile
+
+- `FROM`: escolhe a imagem base
+- `WORKDIR`: define a pasta interna do container
+- `COPY`: leva só o necessário para dentro da imagem
+- `RUN`: instala dependências e faz build
+- `EXPOSE`: documenta a porta usada pela aplicação
+- `CMD`: define o comando final de inicialização
+
+### Observação
+
+Se o Docker Desktop não estiver rodando, o build falha com erro de conexão no daemon, como aconteceu
+aqui nesta sessão.
+
 ## Fluxo principal
 
 1. A pessoa cria a conta.

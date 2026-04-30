@@ -1,0 +1,15 @@
+.git
+.next
+frontend/.next
+node_modules
+frontend/node_modules
+venv
+.venv
+build
+dist
+*.log
+backend/storage_data
+backend/__pycache__
+frontend/__pycache__
+backend/.env
+frontend/.env.local
