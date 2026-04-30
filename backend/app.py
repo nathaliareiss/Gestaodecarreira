@@ -7,6 +7,7 @@ from backend.config import CORS_ORIGINS
 from backend.logger import logger
 from backend.database.create_tables import sincronizar_usuario_table
 from backend.middleware.error_middleware import registrar_middleware_de_erros
+from backend.middleware.metrics_middleware import registrar_middleware_de_metricas
 from backend.routes import router as api_router
 
 
@@ -25,6 +26,7 @@ def criar_app() -> FastAPI:
     )
 
     registrar_middleware_de_erros(app)
+    registrar_middleware_de_metricas(app)
     app.include_router(api_router)
 
     @app.on_event("startup")

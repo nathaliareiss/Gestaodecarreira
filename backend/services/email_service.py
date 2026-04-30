@@ -3,8 +3,10 @@ from __future__ import annotations
 import smtplib
 from email.message import EmailMessage
 from email.utils import formataddr
+from time import perf_counter
 
 from backend.logger import logger
+from backend.metrics import registrar_envio_email
 from backend.config import (
     EMAIL_CONFIRMATION_SUBJECT,
     EMAIL_RECOVERY_SUBJECT,
@@ -48,6 +50,7 @@ def _enviar_mensagem(mensagem: EmailMessage) -> None:
     _validar_configuracao_smtp()
 
     cliente_cls = smtplib.SMTP_SSL if SMTP_USE_SSL else smtplib.SMTP
+    inicio = perf_counter()
     try:
         logger.info(
             "Conectando ao SMTP",
@@ -70,10 +73,20 @@ def _enviar_mensagem(mensagem: EmailMessage) -> None:
 
             cliente.send_message(mensagem)
         logger.info("Email enviado com sucesso", extra={"destinatario": mensagem["To"]})
+        registrar_envio_email(
+            "smtp",
+            "sent",
+            perf_counter() - inicio,
+        )
     except smtplib.SMTPAuthenticationError as erro:
         logger.error(
             "Credenciais SMTP recusadas",
             extra={"destinatario": mensagem["To"], "host": SMTP_HOST},
+        )
+        registrar_envio_email(
+            "smtp",
+            "auth_error",
+            perf_counter() - inicio,
         )
         raise RuntimeError(
             "Credenciais SMTP recusadas. Verifique o SMTP_USER e a App Password do Gmail."
@@ -83,11 +96,21 @@ def _enviar_mensagem(mensagem: EmailMessage) -> None:
             "Falha ao conectar ao servidor SMTP",
             extra={"destinatario": mensagem["To"], "host": SMTP_HOST, "porta": SMTP_PORT},
         )
+        registrar_envio_email(
+            "smtp",
+            "connection_error",
+            perf_counter() - inicio,
+        )
         raise RuntimeError("Nao foi possivel conectar ao servidor de email SMTP.") from erro
     except smtplib.SMTPException as erro:
         logger.error(
             "Falha ao enviar email pelo SMTP",
             extra={"destinatario": mensagem["To"], "host": SMTP_HOST},
+        )
+        registrar_envio_email(
+            "smtp",
+            "smtp_error",
+            perf_counter() - inicio,
         )
         raise RuntimeError("Nao foi possivel enviar o email pelo servidor SMTP.") from erro
 

@@ -75,6 +75,7 @@ backend.app:app
 ### Outros
 
 - `GET /api/health`
+- `GET /api/metrics`  (formato Prometheus, para coleta por observabilidade)
 
 ## Variáveis de ambiente
 
