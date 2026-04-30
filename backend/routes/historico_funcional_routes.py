@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from backend.database.database import get_db
+from logger import logger
 from backend.database.models import HistoricoFuncional
 from backend.repositories.historico_funcional_repository import (
     criar_historico,
