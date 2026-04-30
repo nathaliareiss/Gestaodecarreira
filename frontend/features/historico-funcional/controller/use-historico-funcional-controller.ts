@@ -38,8 +38,8 @@ export function useHistoricoFuncionalController({
   const [carregando, setCarregando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
   const [mensagemProcessamento, setMensagemProcessamento] = useState<string | null>(null)
-  const [modoAtualizacaoHistorico, setModoAtualizacaoHistorico] = useState(historicoInicial === null)
-  const [modoAnexoAfastamentos, setModoAnexoAfastamentos] = useState(historicoInicial !== null)
+  const [modoAtualizacaoHistorico, setModoAtualizacaoHistorico] = useState(false)
+  const [modoAnexoAfastamentos, setModoAnexoAfastamentos] = useState(false)
   const assinaturaEnvioAutomatico = useRef<string | null>(null)
 
   const arquivoDownloadUrl = useMemo(() => {
@@ -150,10 +150,8 @@ export function useHistoricoFuncionalController({
     try {
       const recarregado = await buscarUltimoHistoricoFuncional(usuarioId)
       setHistorico(recarregado)
-      if (recarregado) {
-        setModoAtualizacaoHistorico(false)
-        setModoAnexoAfastamentos(true)
-      }
+      setModoAtualizacaoHistorico(false)
+      setModoAnexoAfastamentos(false)
     } catch (error) {
       setErro(error instanceof Error ? error.message : "Falha inesperada ao recarregar.")
     } finally {
@@ -203,7 +201,7 @@ export function useHistoricoFuncionalController({
 
         setHistorico(analisado)
         setModoAtualizacaoHistorico(false)
-        setModoAnexoAfastamentos(true)
+        setModoAnexoAfastamentos(false)
       } catch (error) {
         if (assinatura) {
           assinaturaEnvioAutomatico.current = null
@@ -253,7 +251,7 @@ export function useHistoricoFuncionalController({
 
         setHistorico(analisado)
         setArquivoAfastamentos(null)
-        setModoAnexoAfastamentos(true)
+        setModoAnexoAfastamentos(false)
       } catch (error) {
         if (assinatura) {
           assinaturaEnvioAutomatico.current = null

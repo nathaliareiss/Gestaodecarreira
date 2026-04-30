@@ -544,66 +544,6 @@ export function HistoricoFuncionalView({
         <span className="status-pill">{painel ? "salvo" : "aguardando PDF"}</span>
       </div>
 
-      {painel && resumo ? (
-        <section className="overview-panel">
-          <div className="overview-panel__chart">
-            <GraficoPizzaTempo
-              percentualTrabalhado={resumo.percentual_trabalhado}
-            />
-            {resumoAfastamentos ? <GraficoPizzaAfastamentos resumo={resumoAfastamentos} /> : null}
-          </div>
-
-          <div className="overview-panel__content">
-            <p className="helper">
-              Armazenamento do PDF: {rotuloArmazenamento(painel.armazenamento_origem)}.
-            </p>
-            <p className="helper">
-              Processamento: {rotuloProcessamento(painel.processamento_origem)}.
-            </p>
-            <div className="metric-strip">
-              <div className="metric-line">
-                <span>Tempo trabalhado</span>
-                <strong>{formatarDuracaoEmAnos(resumo.tempo_trabalhado_dias)}</strong>
-              </div>
-              <div className="metric-line">
-                <span>Tempo restante</span>
-                <strong>{formatarDuracaoEmAnos(resumo.tempo_restante_dias)}</strong>
-              </div>
-              <div className="metric-line">
-                <span>Eventos</span>
-                <strong>{resumo.eventos_totais}</strong>
-              </div>
-              {resumoAfastamentos ? (
-                <div className="metric-line metric-line--danger">
-                  <span>Dias afastados</span>
-                  <strong>{resumoAfastamentos.dias_totais}</strong>
-                </div>
-              ) : null}
-              {resumoAfastamentos ? (
-                <div className="metric-line metric-line--danger">
-                  <span>Aguardando perícia</span>
-                  <strong>{afastamentoPericia}</strong>
-                </div>
-              ) : null}
-              <div className="metric-line">
-                <span>Próxima progressão</span>
-                <strong>{formatarData(painel.proxima_progressao_prevista)}</strong>
-              </div>
-            </div>
-
-          </div>
-        </section>
-      ) : (
-        <div className="history-empty">
-          <p>
-            Envie o PDF do histórico funcional para analisar os dados e montar os cálculos de carreira.
-          </p>
-          <p>
-            Aqui você vai ver o tempo de trabalho, a previsão de aposentadoria e a próxima progressão e promoção.
-          </p>
-        </div>
-      )}
-
       <section className="upload-shell">
         <div className="upload-shell__header">
           <div>
@@ -612,6 +552,15 @@ export function HistoricoFuncionalView({
           </div>
 
           <div className="upload-shell__actions">
+            {!painel ? (
+              <button
+                className="ghost-button ghost-button--compact"
+                type="button"
+                onClick={iniciarAtualizacaoHistorico}
+              >
+                Enviar histórico funcional
+              </button>
+            ) : null}
             {painel ? (
               <button
                 className="ghost-button ghost-button--compact"
@@ -642,7 +591,14 @@ export function HistoricoFuncionalView({
           </div>
         </div>
 
-        {!painel || modoAtualizacaoHistorico ? (
+        {!painel && !modoAtualizacaoHistorico ? (
+          <div className="upload-shell__collapsed">
+            <p className="helper">
+              Clique em &quot;Enviar histórico funcional&quot; para abrir o campo de envio.
+            </p>
+            {erro ? <p className="error-box">{erro}</p> : null}
+          </div>
+        ) : modoAtualizacaoHistorico ? (
           <form className="upload-form" onSubmit={enviarFormulario}>
             <label className="field">
               <span>PDF do histórico funcional</span>
@@ -720,12 +676,72 @@ export function HistoricoFuncionalView({
         ) : (
           <div className="upload-shell__collapsed">
             <p className="helper">
-              O último PDF já foi lido. Se quiser, você pode abrir essa área para enviar outro arquivo.
+              Se quiser enviar outros arquivos, use os botões acima para abrir o campo correspondente.
             </p>
             {erro ? <p className="error-box">{erro}</p> : null}
           </div>
         )}
       </section>
+
+      {painel && resumo ? (
+        <section className="overview-panel">
+          <div className="overview-panel__chart">
+            <GraficoPizzaTempo
+              percentualTrabalhado={resumo.percentual_trabalhado}
+            />
+            {resumoAfastamentos ? <GraficoPizzaAfastamentos resumo={resumoAfastamentos} /> : null}
+          </div>
+
+          <div className="overview-panel__content">
+            <p className="helper">
+              Armazenamento do PDF: {rotuloArmazenamento(painel.armazenamento_origem)}.
+            </p>
+            <p className="helper">
+              Processamento: {rotuloProcessamento(painel.processamento_origem)}.
+            </p>
+            <div className="metric-strip">
+              <div className="metric-line">
+                <span>Tempo trabalhado</span>
+                <strong>{formatarDuracaoEmAnos(resumo.tempo_trabalhado_dias)}</strong>
+              </div>
+              <div className="metric-line">
+                <span>Tempo restante</span>
+                <strong>{formatarDuracaoEmAnos(resumo.tempo_restante_dias)}</strong>
+              </div>
+              <div className="metric-line">
+                <span>Eventos</span>
+                <strong>{resumo.eventos_totais}</strong>
+              </div>
+              {resumoAfastamentos ? (
+                <div className="metric-line metric-line--danger">
+                  <span>Dias afastados</span>
+                  <strong>{resumoAfastamentos.dias_totais}</strong>
+                </div>
+              ) : null}
+              {resumoAfastamentos ? (
+                <div className="metric-line metric-line--danger">
+                  <span>Aguardando perícia</span>
+                  <strong>{afastamentoPericia}</strong>
+                </div>
+              ) : null}
+              <div className="metric-line">
+                <span>Próxima progressão</span>
+                <strong>{formatarData(painel.proxima_progressao_prevista)}</strong>
+              </div>
+            </div>
+
+          </div>
+        </section>
+      ) : (
+        <div className="history-empty">
+          <p>
+            Envie o PDF do histórico funcional para analisar os dados e montar os cálculos de carreira.
+          </p>
+          <p>
+            Aqui você vai ver o tempo de trabalho, a previsão de aposentadoria e a próxima progressão e promoção.
+          </p>
+        </div>
+      )}
 
       {painel && resumo ? (
         <section className="timeline-panel">
