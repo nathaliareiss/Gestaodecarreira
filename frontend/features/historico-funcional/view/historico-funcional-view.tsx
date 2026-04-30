@@ -90,9 +90,13 @@ function GraficoPizzaTempo({
         className="pie-visual__ring"
         style={{
           background: `conic-gradient(var(--accent) 0 ${percentualFormatado}%, rgba(148, 163, 184, 0.18) ${percentualFormatado}% 100%)`,
+          width: "240px",
+          height: "240px",
+          maxWidth: "100%",
+          maxHeight: "100%",
         }}
       >
-        <div className="pie-visual__center">
+        <div className="pie-visual__center" style={{ overflow: "hidden" }}>
           <strong>{formatarPorcentagem(percentualTrabalhado)}</strong>
           <span>trabalhado</span>
         </div>
@@ -123,10 +127,19 @@ function GraficoPizzaAfastamentos({ resumo }: { resumo: ResumoAfastamentos }) {
 
   return (
     <div className="pie-visual pie-visual--afastamentos">
-      <div className="pie-visual__ring" style={{ background }}>
-        <div className="pie-visual__center">
+      <div
+        className="pie-visual__ring"
+        style={{
+          background,
+          width: "240px",
+          height: "240px",
+          maxWidth: "100%",
+          maxHeight: "100%",
+        }}
+      >
+        <div className="pie-visual__center" style={{ overflow: "hidden" }}>
           <strong>{resumo.dias_totais}</strong>
-          <span>dias afastado</span>
+          <span>afastado</span>
         </div>
       </div>
       <div className="pie-visual__legend">
