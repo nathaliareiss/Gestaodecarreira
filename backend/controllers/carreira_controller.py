@@ -57,8 +57,8 @@ def ler_sim_nao(mensagem: str) -> bool:
 
 
 def executar() -> None:
-    logger.info("Iniciando fluxo de carreira")
-    logger.info("Coletando dados iniciais")
+    logger.info("Iniciando fluxo de carreira", extra={"etapa": "inicio"})
+    logger.info("Coletando dados iniciais", extra={"etapa": "coleta"})
 
     nome = ler_texto_nao_vazio("Nome: ")
     data_nascimento = ler_data("Data de nascimento (dd/mm/aaaa): ")
@@ -81,7 +81,7 @@ def executar() -> None:
 
     resumo = montar_resumo_funcional(servidora)
 
-    logger.info("Cadastro realizado")
+    logger.info("Cadastro realizado", extra={"etapa": "cadastro"})
     logger.info("Nome informado", extra={"nome": servidora.nome})
     logger.info(
         "Data de nascimento informada",
@@ -95,7 +95,7 @@ def executar() -> None:
         "Tempo CLT averbado",
         extra={"tem_tempo_clt_averbado": servidora.tem_tempo_clt_averbado},
     )
-    logger.info("Resumo funcional")
+    logger.info("Resumo funcional", extra={"etapa": "resumo"})
     logger.info(
         "Marco de 25 anos de carreira",
         extra={"data": resumo.data_25_anos_carreira.strftime("%d/%m/%Y")},

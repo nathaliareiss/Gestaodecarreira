@@ -35,7 +35,7 @@ def sincronizar_usuario_table() -> None:
 
 def criar_tabelas() -> None:
     sincronizar_usuario_table()
-    logger.info("Tabelas criadas com sucesso!")
+    logger.info("Tabelas criadas com sucesso!", extra={"tabelas": "usuarios"})
 
 
 if __name__ == "__main__":

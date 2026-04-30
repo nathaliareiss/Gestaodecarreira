@@ -15,6 +15,7 @@ BASE_LOG_RECORD_KEYS = set(
         exc_info=None,
     ).__dict__.keys()
 )
+BASE_LOG_RECORD_KEYS.update({"message", "asctime", "exc_text"})
 
 
 class StructuredFormatter(logging.Formatter):
