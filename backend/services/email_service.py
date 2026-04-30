@@ -22,6 +22,10 @@ from backend.config import (
 
 def _validar_configuracao_smtp() -> None:
     if not SMTP_HOST:
+        logger.critical(
+            "Configuracao SMTP ausente",
+            extra={"campo": "SMTP_HOST", "porta": SMTP_PORT},
+        )
         raise RuntimeError(
             "Configure SMTP_HOST, SMTP_PORT e as credenciais de envio para mandar emails."
         )
@@ -45,7 +49,16 @@ def _enviar_mensagem(mensagem: EmailMessage) -> None:
 
     cliente_cls = smtplib.SMTP_SSL if SMTP_USE_SSL else smtplib.SMTP
     try:
-        logger.info("Conectando ao SMTP para enviar email a %s", mensagem["To"])
+        logger.info(
+            "Conectando ao SMTP",
+            extra={
+                "destinatario": mensagem["To"],
+                "host": SMTP_HOST,
+                "porta": SMTP_PORT,
+                "tls": SMTP_USE_TLS,
+                "ssl": SMTP_USE_SSL,
+            },
+        )
         with cliente_cls(SMTP_HOST, SMTP_PORT, timeout=30) as cliente:
             cliente.ehlo()
             if SMTP_USE_TLS and not SMTP_USE_SSL:
@@ -56,14 +69,26 @@ def _enviar_mensagem(mensagem: EmailMessage) -> None:
                 cliente.login(SMTP_USER, SMTP_PASSWORD)
 
             cliente.send_message(mensagem)
-        logger.info("Email enviado com sucesso para %s", mensagem["To"])
+        logger.info("Email enviado com sucesso", extra={"destinatario": mensagem["To"]})
     except smtplib.SMTPAuthenticationError as erro:
+        logger.error(
+            "Credenciais SMTP recusadas",
+            extra={"destinatario": mensagem["To"], "host": SMTP_HOST},
+        )
         raise RuntimeError(
             "Credenciais SMTP recusadas. Verifique o SMTP_USER e a App Password do Gmail."
         ) from erro
     except OSError as erro:
+        logger.error(
+            "Falha ao conectar ao servidor SMTP",
+            extra={"destinatario": mensagem["To"], "host": SMTP_HOST, "porta": SMTP_PORT},
+        )
         raise RuntimeError("Nao foi possivel conectar ao servidor de email SMTP.") from erro
     except smtplib.SMTPException as erro:
+        logger.error(
+            "Falha ao enviar email pelo SMTP",
+            extra={"destinatario": mensagem["To"], "host": SMTP_HOST},
+        )
         raise RuntimeError("Nao foi possivel enviar o email pelo servidor SMTP.") from erro
 
 
@@ -77,7 +102,10 @@ def _montar_link_redefinicao(token: str) -> str:
 
 def enviar_email_confirmacao(destinatario: str, nome: str, token: str) -> None:
     link = _montar_link_confirmacao(token)
-    logger.info("Preparando email de confirmacao para %s", destinatario)
+    logger.info(
+        "Preparando email de confirmacao",
+        extra={"destinatario": destinatario, "tipo": "confirmacao"},
+    )
     texto = "\n".join(
         [
             f"Ola, {nome}.",
@@ -109,7 +137,10 @@ def enviar_email_confirmacao(destinatario: str, nome: str, token: str) -> None:
 
 def enviar_email_recuperacao_senha(destinatario: str, nome: str, token: str) -> None:
     link = _montar_link_redefinicao(token)
-    logger.info("Preparando email de recuperacao de senha para %s", destinatario)
+    logger.info(
+        "Preparando email de recuperacao de senha",
+        extra={"destinatario": destinatario, "tipo": "recuperacao_senha"},
+    )
     texto = "\n".join(
         [
             f"Ola, {nome}.",

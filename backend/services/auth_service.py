@@ -29,7 +29,7 @@ def _hash_token(valor: str) -> str:
 def autenticar_usuario(db: Session, dados: UsuarioLoginRequest) -> tuple[Usuario, str]:
     identificador = dados.login.strip()
     senha = dados.senha
-    logger.info("Tentativa de login para %s", identificador)
+    logger.info("Processando autenticacao", extra={"identificador": identificador})
 
     if "@" in identificador:
         usuario = obter_usuario_por_email(db, identificador.lower())
@@ -51,7 +51,10 @@ def autenticar_usuario(db: Session, dados: UsuarioLoginRequest) -> tuple[Usuario
     usuario.sessao_token_hash = _hash_token(token_sessao)
     usuario.sessao_expira_em = datetime.now(timezone.utc) + timedelta(days=7)
     atualizar_usuario(db, usuario)
-    logger.info("Login concluido para %s", usuario.email)
+    logger.info(
+        "Autenticacao concluida",
+        extra={"usuario_id": usuario.id, "email": usuario.email},
+    )
 
     return usuario, token_sessao
 
@@ -66,12 +69,16 @@ def obter_usuario_autenticado_por_token(
 def encerrar_sessao_usuario(db: Session, token: str) -> None:
     usuario = obter_usuario_autenticado_por_token(db, token)
     if usuario is None:
+        logger.warning("Encerramento de sessao ignorado porque o token nao foi encontrado")
         return
 
     usuario.sessao_token_hash = None
     usuario.sessao_expira_em = None
     atualizar_usuario(db, usuario)
-    logger.info("Sessao encerrada para %s", usuario.email)
+    logger.info(
+        "Sessao encerrada",
+        extra={"usuario_id": usuario.id, "email": usuario.email},
+    )
 
 
 def solicitar_recuperacao_senha(
@@ -79,9 +86,10 @@ def solicitar_recuperacao_senha(
     dados: UsuarioSolicitarRecuperacaoSenhaRequest,
 ) -> bool:
     email = dados.email.strip().lower()
-    logger.info("Solicitacao de recuperacao de senha para %s", email)
+    logger.info("Processando recuperacao de senha", extra={"email": email})
     usuario = obter_usuario_por_email(db, email)
     if usuario is None:
+        logger.warning("Recuperacao solicitada para email nao cadastrado", extra={"email": email})
         return False
 
     token = gerar_token_seguro()
@@ -97,7 +105,10 @@ def solicitar_recuperacao_senha(
             token=token,
         )
         db.commit()
-        logger.info("Email de recuperacao enviado para %s", usuario.email)
+        logger.info(
+            "Email de recuperacao enviado",
+            extra={"usuario_id": usuario.id, "email": usuario.email},
+        )
     except Exception:
         db.rollback()
         raise
@@ -119,5 +130,8 @@ def redefinir_senha_usuario(
     usuario.sessao_token_hash = None
     usuario.sessao_expira_em = None
     atualizar_usuario(db, usuario)
-    logger.info("Senha redefinida com sucesso para %s", usuario.email)
+    logger.info(
+        "Senha redefinida com sucesso",
+        extra={"usuario_id": usuario.id, "email": usuario.email},
+    )
     return usuario

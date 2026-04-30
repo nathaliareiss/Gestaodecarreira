@@ -248,15 +248,54 @@ function LinhaDoTempoGrafica({ eventos }: { eventos: HistoricoFuncionalAnalise["
 function GraficoComparativoTempo({
   painel,
   resumo,
-  resumoAfastamentos,
 }: {
   painel: HistoricoFuncionalAnalise
   resumo: NonNullable<HistoricoFuncionalAnalise["resumo_grafico"]>
   resumoAfastamentos: ResumoAfastamentos | null
 }) {
-  const totalDias = Math.max(resumo.tempo_trabalhado_dias + resumo.tempo_restante_dias, 1)
-  const percentualTrabalhado = Math.max(0, Math.min(resumo.tempo_trabalhado_dias / totalDias, 1))
-  const percentualAfastado = Math.max(0, Math.min((resumoAfastamentos?.dias_totais ?? 0) / totalDias, 1))
+  const afastamentos = painel.afastamentos || []
+
+  if (afastamentos.length === 0) {
+    return (
+      <div className="career-bars">
+        <div className="career-bars__title">
+          <p className="eyebrow">Comparativo</p>
+          <h3>Tempo trabalhado e afastamentos</h3>
+        </div>
+        <div className="history-empty history-empty--compact">
+          <p>Você não possui afastamentos registrados para desenhar a linha do tempo.</p>
+        </div>
+      </div>
+    )
+  }
+
+  const tempos = afastamentos.map(a => new Date(`${a.data_inicio}T00:00:00`).getTime())
+
+  const inicioCarreira = new Date(`${painel.data_exercicio}T00:00:00`).getTime()
+  const hoje = new Date().getTime()
+
+  const minimo = inicioCarreira
+  const maximo = Math.max(hoje, ...tempos)
+
+  const largura = 1000
+  const altura = 280
+  const margemX = 104
+  const eixoY = 148
+  const alcance = Math.max(maximo - minimo, 1)
+
+  function posicaoX(data: string) {
+    const valor = new Date(`${data}T00:00:00`).getTime()
+    const rawPos = margemX + ((valor - minimo) / alcance) * (largura - margemX * 2)
+    return Math.max(margemX, Math.min(largura - margemX, rawPos))
+  }
+
+  const hoje = new Date().getTime()
+  const xHojeRaw = margemX + ((hoje - minimo) / alcance) * (largura - margemX * 2)
+  const xHoje = Math.max(margemX, Math.min(largura - margemX, xHojeRaw))
+
+  const ordenados = [...afastamentos].sort((a, b) =>
+    new Date(`${a.data_inicio}T00:00:00`).getTime() - new Date(`${b.data_inicio}T00:00:00`).getTime()
+  )
 
   return (
     <div className="career-bars">
@@ -265,42 +304,66 @@ function GraficoComparativoTempo({
         <h3>Tempo trabalhado e afastamentos</h3>
       </div>
 
-      <div className="career-bars__grid">
-        <div className="career-bars__item">
-          <div className="career-bars__meta">
-            <span>Tempo trabalhado</span>
-            <strong>{formatarDuracaoEmAnos(resumo.tempo_trabalhado_dias)}</strong>
-            <small>
-              {formatarData(painel.data_exercicio)} · até hoje
-            </small>
-          </div>
-          <div className="career-bars__track">
-            <span
-              className="career-bars__fill career-bars__fill--worked"
-              style={{ width: `${percentualTrabalhado * 100}%` }}
-            />
-          </div>
-        </div>
+      <div className="timeline-graph">
+        <svg
+          aria-label="Linha do tempo de afastamentos e carreira"
+          className="timeline-graph__svg"
+          preserveAspectRatio="none"
+          viewBox={`0 0 ${largura} ${altura}`}
+          role="img"
+        >
+          {/* Linha: Tempo Trabalhado (Efetivo) */}
+          <line className="timeline-graph__axis" x1={margemX} x2={xHoje} y1={eixoY} y2={eixoY} style={{ stroke: "var(--accent)", strokeWidth: 4 }} />
 
-        <div className="career-bars__item">
-          <div className="career-bars__meta">
-            <span>Dias afastados</span>
-            <strong>{resumoAfastamentos?.dias_totais ?? 0}</strong>
-            <small>
-              {painel.afastamentos.length > 0
-                ? `${formatarMesAno(painel.afastamentos[0]?.data_inicio ?? null)} · ${formatarMesAno(
-                  painel.afastamentos[painel.afastamentos.length - 1]?.data_fim ?? null,
-                )}`
-                : "Sem afastamentos registrados"}
-            </small>
-          </div>
-          <div className="career-bars__track">
-            <span
-              className="career-bars__fill career-bars__fill--away"
-              style={{ width: `${percentualAfastado * 100}%` }}
-            />
-          </div>
-        </div>
+          <circle cx={xHoje} cy={eixoY} r="5" style={{ fill: "var(--accent)" }} />
+          <text className="timeline-graph__label timeline-graph__label--muted" textAnchor="end" x={xHoje} y={eixoY + 22}>Hoje</text>
+
+          <circle cx={margemX} cy={eixoY} r="4" style={{ fill: "var(--accent)" }} />
+          <text className="timeline-graph__label timeline-graph__label--muted" textAnchor="end" x={margemX - 10} y={eixoY + 4}>Início</text>
+
+          {ordenados.map((afastamento, indice) => {
+            const x = posicaoX(afastamento.data_inicio)
+            const y = indice % 2 === 0 ? 68 : 228
+            const isAbove = y < eixoY
+            const cor = corTipoAfastamento(afastamento.tipo)
+
+            return (
+              <g key={`${afastamento.tipo}-${afastamento.data_inicio}-${indice}`}>
+                <line
+                  className="timeline-graph__spoke"
+                  x1={x}
+                  x2={x}
+                  y1={eixoY}
+                  y2={y}
+                  style={{ stroke: cor }}
+                />
+                <circle
+                  cx={x}
+                  cy={y}
+                  r="10"
+                  className="timeline-graph__node"
+                  style={{ fill: cor }}
+                />
+                <text
+                  className={`timeline-graph__label ${isAbove ? "timeline-graph__label--above" : "timeline-graph__label--below"}`}
+                  textAnchor="middle"
+                  x={x}
+                  y={isAbove ? y - 18 : y + 32}
+                >
+                  {afastamento.total_dias} dias
+                </text>
+                <text
+                  className={`timeline-graph__label timeline-graph__label--muted ${isAbove ? "timeline-graph__label--above" : "timeline-graph__label--below"}`}
+                  textAnchor="middle"
+                  x={x}
+                  y={isAbove ? y + 8 : y + 48}
+                >
+                  {formatarData(afastamento.data_inicio)}
+                </text>
+              </g>
+            )
+          })}
+        </svg>
       </div>
     </div>
   )

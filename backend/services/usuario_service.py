@@ -27,7 +27,10 @@ def cadastrar_usuario(db: Session, cadastro: UsuarioCreateRequest) -> Usuario:
     email = cadastro.email.strip().lower()
     login = cadastro.login.strip()
     senha = cadastro.senha
-    logger.info("Iniciando cadastro para %s", email)
+    logger.info(
+        "Iniciando cadastro de usuario",
+        extra={"email": email, "login": login},
+    )
 
     email_existente = obter_usuario_por_email(db, email)
     if email_existente is not None:
@@ -59,9 +62,13 @@ def cadastrar_usuario(db: Session, cadastro: UsuarioCreateRequest) -> Usuario:
         )
         db.commit()
         db.refresh(usuario)
-        logger.info("Cadastro concluido para %s", usuario.email)
+        logger.info(
+            "Cadastro concluido",
+            extra={"usuario_id": usuario.id, "email": usuario.email},
+        )
     except Exception as exc:
         db.rollback()
+        logger.exception("Falha ao concluir cadastro", extra={"email": email, "login": login})
         raise RuntimeError(
             "Nao foi possivel enviar o email de confirmacao agora. Tente novamente."
         ) from exc
@@ -84,7 +91,10 @@ def confirmar_usuario(db: Session, dados: UsuarioConfirmarRequest) -> Usuario:
 
     usuario.email_confirmado = True
     usuario.confirmado_em = datetime.now(timezone.utc)
-    logger.info("Confirmacao de email concluida para %s", usuario.email)
+    logger.info(
+        "Confirmacao de email concluida",
+        extra={"usuario_id": usuario.id, "email": usuario.email},
+    )
     return atualizar_usuario(db, usuario)
 
 
@@ -94,5 +104,8 @@ def excluir_usuario_mais_recente(db: Session) -> Usuario | None:
         return None
 
     remover_usuario(db, usuario)
-    logger.info("Usuario removido: %s", usuario.email)
+    logger.info(
+        "Usuario removido",
+        extra={"usuario_id": usuario.id, "email": usuario.email},
+    )
     return usuario

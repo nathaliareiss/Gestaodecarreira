@@ -362,7 +362,10 @@ def analisar_afastamentos_pdf(
 ) -> tuple[list[AfastamentoPeriodo], AfastamentoResumoResponse]:
     afastamentos = extrair_afastamentos_pdf(conteudo_pdf)
     resumo_afastamentos = _montar_resumo_afastamentos(afastamentos)
-    logger.info("Afastamentos analisados: %s periodo(s)", len(afastamentos))
+    logger.info(
+        "Afastamentos analisados",
+        extra={"periodos": len(afastamentos)},
+    )
     return afastamentos, resumo_afastamentos
 
 
@@ -717,12 +720,23 @@ def analisar_historico_funcional(
     conteudo_afastamentos_pdf: bytes | None = None,
     arquivo_afastamentos_nome: str | None = None,
 ) -> tuple[HistoricoFuncionalResponse, str]:
-    logger.info("Iniciando analise de historico funcional para o arquivo %s", arquivo_nome)
+    logger.info(
+        "Iniciando analise de historico funcional",
+        extra={
+            "arquivo_nome": arquivo_nome,
+            "usuario_id": usuario_id,
+            "possui_afastamentos": conteudo_afastamentos_pdf is not None,
+        },
+    )
     texto = extrair_texto_pdf(conteudo_pdf)
     nome, masp, cpf, data_emissao = _extrair_cabecalho(texto)
     blocos = _extrair_blocos(texto)
     if not blocos:
         raise ValueError("Nao foi possivel localizar os blocos do historico funcional.")
+    logger.debug(
+        "Blocos do historico identificados",
+        extra={"arquivo_nome": arquivo_nome, "blocos": len(blocos)},
+    )
 
     eventos = _gerar_eventos(blocos)
     ultimo_evento = eventos[-1]
@@ -765,8 +779,12 @@ def analisar_historico_funcional(
         afastamentos = extrair_afastamentos_pdf(conteudo_afastamentos_pdf)
         resumo_afastamentos = _montar_resumo_afastamentos(afastamentos)
         logger.info(
-            "Historico funcional com afastamentos anexados: %s periodo(s)",
-            len(afastamentos),
+            "Historico funcional com afastamentos anexados",
+            extra={
+                "arquivo_nome": arquivo_nome,
+                "arquivo_afastamentos_nome": arquivo_afastamentos_nome,
+                "periodos_afastamento": len(afastamentos),
+            },
         )
 
     resposta = HistoricoFuncionalResponse(
@@ -830,9 +848,12 @@ def analisar_historico_funcional(
     )
 
     logger.info(
-        "Analise concluida para %s com %s evento(s) e %s afastamento(s)",
-        arquivo_nome,
-        len(eventos),
-        len(afastamentos),
+        "Analise concluida",
+        extra={
+            "arquivo_nome": arquivo_nome,
+            "usuario_id": usuario_id,
+            "eventos": len(eventos),
+            "afastamentos": len(afastamentos),
+        },
     )
     return resposta, texto

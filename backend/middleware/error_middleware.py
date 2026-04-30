@@ -16,9 +16,11 @@ def registrar_middleware_de_erros(app) -> None:
             raise
         except Exception:
             logger.exception(
-                "Erro interno nao tratado em %s %s",
-                request.method,
-                request.url.path,
+                "Erro interno nao tratado",
+                extra={
+                    "method": request.method,
+                    "path": request.url.path,
+                },
             )
             return JSONResponse(
                 status_code=HTTP_500_INTERNAL_SERVER_ERROR,
