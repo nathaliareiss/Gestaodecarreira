@@ -38,9 +38,6 @@ class Usuario(Base):
 
 class HistoricoFuncional(Base):
     __tablename__ = "historicos_funcionais"
-    __table_args__ = (
-        Index("ix_historicos_funcionais_usuario_criado_em_id", "usuario_id", criado_em.desc(), id.desc()),
-    )
 
     id = Column(Integer, primary_key=True, index=True)
     usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=True, index=True)
@@ -66,4 +63,8 @@ class HistoricoFuncional(Base):
         DateTime(timezone=True),
         nullable=False,
         default=lambda: datetime.now(timezone.utc),
+    )
+
+    __table_args__ = (
+        Index("ix_historicos_funcionais_usuario_criado_em_id", "usuario_id", "criado_em", "id"),
     )
