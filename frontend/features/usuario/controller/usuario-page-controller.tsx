@@ -46,6 +46,9 @@ export function UsuarioPageController({
   const [carregando, setCarregando] = useState(false)
   const [removendo, setRemovendo] = useState(false)
   const [saindo, setSaindo] = useState(false)
+  const dataExercicioExibida = usuario?.data_exercicio ?? historicoInicial?.data_exercicio ?? null
+  const nivelExibido = historicoInicial?.nivel_atual ?? "-"
+  const grauExibido = historicoInicial?.grau_atual ?? "-"
 
   async function recarregarUsuario() {
     const token = obterTokenAutenticacao()
@@ -173,8 +176,16 @@ export function UsuarioPageController({
                       <strong>{usuario.email}</strong>
                     </div>
                     <div className="result-block">
+                      <span className="label">Nível</span>
+                      <strong>{nivelExibido}</strong>
+                    </div>
+                    <div className="result-block">
+                      <span className="label">Grau</span>
+                      <strong>{grauExibido}</strong>
+                    </div>
+                    <div className="result-block">
                       <span className="label">Data de exercício</span>
-                      <strong>{formatarDataCurta(usuario.data_exercicio)}</strong>
+                      <strong>{formatarDataCurta(dataExercicioExibida)}</strong>
                     </div>
                   </div>
 

@@ -11,6 +11,7 @@ from backend.repositories.historico_funcional_repository import (
     criar_historico,
     obter_ultimo_historico_por_usuario,
 )
+from backend.repositories.usuario_repository import obter_usuario_por_id, atualizar_usuario
 from backend.schemas.historico_funcional_schema import (
     AfastamentosUploadRequest,
     HistoricoFuncionalResponse,
@@ -104,6 +105,12 @@ def analisar_e_salvar_historico(
         dados_json="{}",
     )
     historico = criar_historico(db, historico)
+
+    if dados.usuario_id is not None:
+        usuario = obter_usuario_por_id(db, dados.usuario_id)
+        if usuario is not None and usuario.data_exercicio is None:
+            usuario.data_exercicio = resposta.data_exercicio
+            atualizar_usuario(db, usuario)
 
     resposta = resposta.model_copy(update={"historico_id": historico.id})
     historico.dados_json = json.dumps(resposta.model_dump(mode="json"), ensure_ascii=False)

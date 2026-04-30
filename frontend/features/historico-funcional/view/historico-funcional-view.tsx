@@ -1,6 +1,5 @@
 ﻿"use client"
 
-import { useState } from "react"
 
 import { useHistoricoFuncionalController } from "../controller/use-historico-funcional-controller"
 import { formatarTipoEvento, type HistoricoFuncionalAnalise } from "../model/historico-funcional.model"
@@ -13,16 +12,14 @@ type HistoricoFuncionalViewProps = {
 type StatusEvento = HistoricoFuncionalAnalise["eventos"][number]["status"]
 type ResumoAfastamentos = NonNullable<HistoricoFuncionalAnalise["afastamentos_resumo"]>
 
-const STATUS_ORDEM: StatusEvento[] = [
-  "cumprindo",
-  "estagio_probatorio",
-  "atrasado",
-  "nao_aplicavel",
-]
-
-const TIPOS_AFASTAMENTO = {
-  aguardando_resultado_conclusivo_de_exame_pericial: "#f59e0b",
+const CORES_AFASTAMENTO = {
+  aguardando_resultado_conclusivo_de_exame_pericial: "#fb7185",
   licenca_para_tratamento_de_saude: "#5eead4",
+} as const
+
+const ROTULOS_AFASTAMENTO = {
+  aguardando_resultado_conclusivo_de_exame_pericial: "Aguardando perícia",
+  licenca_para_tratamento_de_saude: "Licença para tratamento de saúde",
 } as const
 
 function formatarData(valor: string | null) {
@@ -43,22 +40,6 @@ function formatarPorcentagem(valor: number) {
   return `${valor.toFixed(1).replace(".", ",")}%`
 }
 
-function statusLabel(status: StatusEvento) {
-  if (status === "atrasado") {
-    return "Atrasado"
-  }
-
-  if (status === "cumprindo") {
-    return "Cumprindo"
-  }
-
-  if (status === "estagio_probatorio") {
-    return "Em estágio probatório"
-  }
-
-  return "Não aplicável"
-}
-
 function corDoStatus(status: StatusEvento) {
   if (status === "atrasado") {
     return "#fb7185"
@@ -75,8 +56,23 @@ function corDoStatus(status: StatusEvento) {
   return "#94a3b8"
 }
 
-function corTipoAfastamento(tipo: keyof typeof TIPOS_AFASTAMENTO) {
-  return TIPOS_AFASTAMENTO[tipo]
+function corTipoAfastamento(tipo: keyof typeof CORES_AFASTAMENTO) {
+  return CORES_AFASTAMENTO[tipo]
+}
+
+function rotuloAfastamento(tipo: keyof typeof ROTULOS_AFASTAMENTO) {
+  return ROTULOS_AFASTAMENTO[tipo]
+}
+
+function formatarMesAno(valor: string | null) {
+  if (!valor) {
+    return "-"
+  }
+
+  return new Intl.DateTimeFormat("pt-BR", {
+    month: "2-digit",
+    year: "numeric",
+  }).format(new Date(`${valor}T00:00:00`))
 }
 
 function GraficoPizzaTempo({
@@ -109,7 +105,7 @@ function GraficoPizzaAfastamentos({ resumo }: { resumo: ResumoAfastamentos }) {
   const total = Math.max(resumo.dias_totais, 1)
   const tipos = Object.entries(resumo.dias_por_tipo)
     .filter(([, dias]) => dias > 0)
-    .sort((a, b) => b[1] - a[1]) as Array<[keyof typeof TIPOS_AFASTAMENTO, number]>
+    .sort((a, b) => b[1] - a[1]) as Array<[keyof typeof CORES_AFASTAMENTO, number]>
 
   let acumulado = 0
   const fatias = tipos.map(([tipo, dias]) => {
@@ -127,19 +123,22 @@ function GraficoPizzaAfastamentos({ resumo }: { resumo: ResumoAfastamentos }) {
   return (
     <div className="pie-visual pie-visual--afastamentos">
       <div className="pie-visual__ring" style={{ background }} />
+      <div className="pie-visual__legend">
+        {tipos.map(([tipo, dias]) => (
+          <div className="pie-visual__legend-item" key={tipo}>
+            <span className="pie-visual__legend-dot" style={{ background: corTipoAfastamento(tipo) }} />
+            <div>
+              <strong>{rotuloAfastamento(tipo)}</strong>
+              <span>{dias} dia(s)</span>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
 
-function LinhaDoTempoGrafica({
-  eventos,
-  filtroStatus,
-  onFiltroStatusChange,
-}: {
-  eventos: HistoricoFuncionalAnalise["eventos"]
-  filtroStatus: StatusEvento | null
-  onFiltroStatusChange: (status: StatusEvento | null) => void
-}) {
+function LinhaDoTempoGrafica({ eventos }: { eventos: HistoricoFuncionalAnalise["eventos"] }) {
   if (eventos.length === 0) {
     return (
       <div className="history-empty history-empty--compact">
@@ -148,24 +147,7 @@ function LinhaDoTempoGrafica({
     )
   }
 
-  const eventosVisiveis = filtroStatus
-    ? eventos.filter((evento) => evento.status === filtroStatus)
-    : eventos
-  const totalEventos = eventos.length
-  const totalVisiveis = eventosVisiveis.length
-
-  if (eventosVisiveis.length === 0) {
-    return (
-      <div className="history-empty history-empty--compact">
-        <p>Não há eventos para esse filtro.</p>
-        <button className="ghost-button ghost-button--compact" type="button" onClick={() => onFiltroStatusChange(null)}>
-          Mostrar todos
-        </button>
-      </div>
-    )
-  }
-
-  const ordenados = [...eventosVisiveis].sort(
+  const ordenados = [...eventos].sort(
     (a, b) => new Date(`${a.data_efetiva}T00:00:00`).getTime() - new Date(`${b.data_efetiva}T00:00:00`).getTime(),
   )
   const tempos = ordenados.map((evento) => new Date(`${evento.data_efetiva}T00:00:00`).getTime())
@@ -188,28 +170,8 @@ function LinhaDoTempoGrafica({
 
   return (
     <div className="timeline-graph">
-      <div className="timeline-graph__toolbar">
-        <p className="helper">
-          Clique em um status para filtrar a linha do tempo e ver só os eventos daquela faixa.
-        </p>
-        {filtroStatus ? (
-          <button
-            className="ghost-button ghost-button--compact"
-            type="button"
-            onClick={() => onFiltroStatusChange(null)}
-          >
-            Mostrar todos
-          </button>
-        ) : null}
-      </div>
-      {filtroStatus ? (
-        <p className="helper">
-          Mostrando {totalVisiveis} de {totalEventos} eventos.
-        </p>
-      ) : null}
-
       <svg
-        aria-label="Linha do tempo dos eventos funcionais"
+        aria-label="Linha do tempo de progressões e promoções"
         className="timeline-graph__svg"
         preserveAspectRatio="none"
         viewBox={`0 0 ${largura} ${altura}`}
@@ -260,39 +222,66 @@ function LinhaDoTempoGrafica({
           )
         })}
       </svg>
+    </div>
+  )
+}
 
-      <div className="timeline-legend" role="group" aria-label="Filtrar eventos da linha do tempo">
-        {STATUS_ORDEM.map((status) => {
-          const total = eventos.filter((evento) => evento.status === status).length
-          if (total === 0) {
-            return null
-          }
+function GraficoComparativoTempo({
+  painel,
+  resumo,
+  resumoAfastamentos,
+}: {
+  painel: HistoricoFuncionalAnalise
+  resumo: NonNullable<HistoricoFuncionalAnalise["resumo_grafico"]>
+  resumoAfastamentos: ResumoAfastamentos | null
+}) {
+  const totalDias = Math.max(resumo.tempo_trabalhado_dias + resumo.tempo_restante_dias, 1)
+  const percentualTrabalhado = Math.max(0, Math.min(resumo.tempo_trabalhado_dias / totalDias, 1))
+  const percentualAfastado = Math.max(0, Math.min((resumoAfastamentos?.dias_totais ?? 0) / totalDias, 1))
 
-          const ativo = filtroStatus === status
+  return (
+    <div className="career-bars">
+      <div className="career-bars__title">
+        <p className="eyebrow">Comparativo</p>
+        <h3>Tempo trabalhado e afastamentos</h3>
+      </div>
 
-          return (
-            <button
-              key={status}
-              aria-pressed={ativo}
-              className={
-                ativo
-                  ? "timeline-legend__chip timeline-legend__chip--active"
-                  : "timeline-legend__chip"
-              }
-              type="button"
-              onClick={() => onFiltroStatusChange(ativo ? null : status)}
-            >
-              <span
-                aria-hidden="true"
-                className="timeline-legend__chip-dot"
-                style={{ background: corDoStatus(status) }}
-              />
-              <span>
-                {statusLabel(status)} · {total}
-              </span>
-            </button>
-          )
-        })}
+      <div className="career-bars__grid">
+        <div className="career-bars__item">
+          <div className="career-bars__meta">
+            <span>Dias trabalhados</span>
+            <strong>{resumo.tempo_trabalhado_dias}</strong>
+            <small>
+              {formatarData(painel.data_exercicio)} · até hoje
+            </small>
+          </div>
+          <div className="career-bars__track">
+            <span
+              className="career-bars__fill career-bars__fill--worked"
+              style={{ width: `${percentualTrabalhado * 100}%` }}
+            />
+          </div>
+        </div>
+
+        <div className="career-bars__item">
+          <div className="career-bars__meta">
+            <span>Dias afastados</span>
+            <strong>{resumoAfastamentos?.dias_totais ?? 0}</strong>
+            <small>
+              {painel.afastamentos.length > 0
+                ? `${formatarMesAno(painel.afastamentos[0]?.data_inicio ?? null)} · ${formatarMesAno(
+                    painel.afastamentos[painel.afastamentos.length - 1]?.data_fim ?? null,
+                  )}`
+                : "Sem afastamentos registrados"}
+            </small>
+          </div>
+          <div className="career-bars__track">
+            <span
+              className="career-bars__fill career-bars__fill--away"
+              style={{ width: `${percentualAfastado * 100}%` }}
+            />
+          </div>
+        </div>
       </div>
     </div>
   )
@@ -302,7 +291,6 @@ export function HistoricoFuncionalView({
   usuarioId,
   historicoInicial,
 }: HistoricoFuncionalViewProps) {
-  const [filtroStatus, setFiltroStatus] = useState<StatusEvento | null>(null)
   const {
     arquivo,
     arquivoDownloadUrl,
@@ -331,6 +319,7 @@ export function HistoricoFuncionalView({
   const painel = historico ?? historicoInicial
   const resumo = painel?.resumo_grafico
   const resumoAfastamentos = painel?.afastamentos_resumo
+  const afastamentoPericia = resumoAfastamentos?.dias_por_tipo.aguardando_resultado_conclusivo_de_exame_pericial ?? 0
 
   return (
     <section className="analysis-card card">
@@ -373,26 +362,16 @@ export function HistoricoFuncionalView({
                   <strong>{resumoAfastamentos.dias_totais}</strong>
                 </div>
               ) : null}
+              {resumoAfastamentos ? (
+                <div className="metric-line metric-line--danger">
+                  <span>Aguardando perícia</span>
+                  <strong>{afastamentoPericia}</strong>
+                </div>
+              ) : null}
               <div className="metric-line">
                 <span>Próxima progressão</span>
                 <strong>{formatarData(painel.proxima_progressao_prevista)}</strong>
               </div>
-            </div>
-
-            <div className="status-stack">
-              {STATUS_ORDEM.map((status) => {
-                const total = resumo.eventos_por_status[status] ?? 0
-                if (total === 0) {
-                  return null
-                }
-
-                return (
-                  <div key={status} className="status-stack__row">
-                    <span>{statusLabel(status)}</span>
-                    <strong>{total}</strong>
-                  </div>
-                )
-              })}
             </div>
 
           </div>
@@ -529,38 +508,28 @@ export function HistoricoFuncionalView({
         )}
       </section>
 
-      {painel ? (
+      {painel && resumo ? (
         <section className="timeline-panel">
           <div className="card-header card-header--tight">
             <div className="analysis-header__title">
               <p className="eyebrow">Linha do tempo</p>
-              <h3>Leitura em gráfico</h3>
-              <p className="analysis-header__subtitle">Status dos eventos ao longo da carreira</p>
+              <h3>Linha do tempo: progressões e promoções</h3>
             </div>
           </div>
 
-          <div className="timeline-marcos">
-            <article className="timeline-marco-card">
-              <span>Próxima progressão</span>
-              <strong>{formatarData(painel.proxima_progressao_prevista)}</strong>
-              <p>Marco calculado a partir do fim do estágio probatório.</p>
-            </article>
-            <article className="timeline-marco-card">
-              <span>Próxima promoção</span>
-              <strong>{formatarData(painel.proxima_promocao_prevista)}</strong>
-              <p>Usa a mesma base inicial da contagem de carreira.</p>
-            </article>
-          </div>
+          <LinhaDoTempoGrafica eventos={painel.eventos} />
 
-          <LinhaDoTempoGrafica
-            eventos={painel.eventos}
-            filtroStatus={filtroStatus}
-            onFiltroStatusChange={setFiltroStatus}
+          <GraficoComparativoTempo
+            painel={painel}
+            resumo={resumo}
+            resumoAfastamentos={resumoAfastamentos ?? null}
           />
         </section>
       ) : null}
     </section>
   )
 }
+
+
 
 

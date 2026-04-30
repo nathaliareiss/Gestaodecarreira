@@ -768,6 +768,49 @@ html[data-theme="light"] .pie-visual__center {
   text-transform: uppercase;
 }
 
+.pie-visual--afastamentos {
+  gap: 0.75rem;
+}
+
+.pie-visual__legend {
+  display: grid;
+  gap: 0.55rem;
+  width: min(100%, 240px);
+}
+
+.pie-visual__legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.75rem 0.85rem;
+  border-radius: 16px;
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  background: rgba(8, 16, 30, 0.42);
+}
+
+html[data-theme="light"] .pie-visual__legend-item {
+  background: rgba(255, 255, 255, 0.78);
+  border-color: rgba(15, 23, 42, 0.08);
+}
+
+.pie-visual__legend-item strong {
+  display: block;
+  font-size: 0.9rem;
+}
+
+.pie-visual__legend-item span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.pie-visual__legend-dot {
+  width: 0.8rem;
+  height: 0.8rem;
+  border-radius: 999px;
+  flex: none;
+}
+
 .pie-legend {
   display: grid;
   gap: 0.75rem;
@@ -860,6 +903,82 @@ html[data-theme="light"] .result-block {
   display: block;
   margin-top: 0.3rem;
   font-size: 1.1rem;
+}
+
+.career-bars {
+  display: grid;
+  gap: 0.85rem;
+  margin-top: 0.25rem;
+}
+
+.career-bars__title {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.career-bars__title h3 {
+  margin: 0;
+}
+
+.career-bars__grid {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.career-bars__item {
+  display: grid;
+  gap: 0.6rem;
+  padding: 0.9rem 1rem;
+  border-radius: 18px;
+  background: rgba(8, 16, 30, 0.55);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+html[data-theme="light"] .career-bars__item {
+  background: rgba(255, 255, 255, 0.8);
+  border-color: rgba(15, 23, 42, 0.08);
+}
+
+.career-bars__meta {
+  display: grid;
+  gap: 0.16rem;
+}
+
+.career-bars__meta span {
+  color: var(--muted);
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.career-bars__meta strong {
+  font-size: 1.05rem;
+}
+
+.career-bars__meta small {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.career-bars__track {
+  height: 0.78rem;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.14);
+  overflow: hidden;
+}
+
+.career-bars__fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+}
+
+.career-bars__fill--worked {
+  background: linear-gradient(90deg, var(--accent), #9ef7e8);
+}
+
+.career-bars__fill--away {
+  background: linear-gradient(90deg, #fb7185, #fda4af);
 }
 
 .status-stack {

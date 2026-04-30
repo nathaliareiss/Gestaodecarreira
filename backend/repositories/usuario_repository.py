@@ -16,6 +16,10 @@ def obter_usuario_por_email(db: Session, email: str) -> Usuario | None:
     return db.scalar(select(Usuario).where(Usuario.email == email))
 
 
+def obter_usuario_por_id(db: Session, usuario_id: int) -> Usuario | None:
+    return db.scalar(select(Usuario).where(Usuario.id == usuario_id))
+
+
 def obter_usuario_por_login(db: Session, login: str) -> Usuario | None:
     return db.scalar(select(Usuario).where(Usuario.login == login))
 
