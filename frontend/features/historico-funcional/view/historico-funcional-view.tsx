@@ -544,218 +544,220 @@ export function HistoricoFuncionalView({
         <span className="status-pill">{painel ? "salvo" : "aguardando PDF"}</span>
       </div>
 
-      <section className="upload-shell">
-        <div className="upload-shell__header">
-          <div>
-            <p className="eyebrow">Arquivos</p>
-            <h3>{painel ? "Adicionar arquivos" : "Enviar documentos"}</h3>
-          </div>
-
-          <div className="upload-shell__actions">
-            {!painel ? (
-              <button
-                className="ghost-button ghost-button--compact"
-                type="button"
-                onClick={iniciarAtualizacaoHistorico}
-              >
-                Enviar histórico funcional
-              </button>
-            ) : null}
-            {painel ? (
-              <button
-                className="ghost-button ghost-button--compact"
-                type="button"
-                onClick={iniciarAnexoAfastamentos}
-              >
-                Anexar afastamentos
-              </button>
-            ) : null}
-            {painel ? (
-              <button
-                className="ghost-button ghost-button--compact"
-                type="button"
-                onClick={iniciarAtualizacaoHistorico}
-              >
-                Atualizar histórico funcional
-              </button>
-            ) : null}
-            {arquivoDownloadUrl ? (
-              <a
-                className="ghost-button ghost-button--compact"
-                download={arquivo?.name ?? "historico-funcional.pdf"}
-                href={arquivoDownloadUrl}
-              >
-                Baixar PDF
-              </a>
-            ) : null}
-          </div>
-        </div>
-
-        {!painel && !modoAtualizacaoHistorico ? (
-          <div className="upload-shell__collapsed">
-            <p className="helper">
-              Clique em &quot;Enviar histórico funcional&quot; para abrir o campo de envio.
-            </p>
-            {erro ? <p className="error-box">{erro}</p> : null}
-          </div>
-        ) : modoAtualizacaoHistorico ? (
-          <form className="upload-form" onSubmit={enviarFormulario}>
-            <label className="field">
-              <span>PDF do histórico funcional</span>
-              <input type="file" accept="application/pdf" onChange={selecionarArquivo} />
-            </label>
-
-            <div className="field-grid">
-              <label className="field">
-                <span>Data de nascimento</span>
-                <input
-                  type="date"
-                  value={dataNascimento}
-                  onChange={(evento) => setDataNascimento(evento.target.value)}
-                  required
-                />
-              </label>
-
-              <label className="field">
-                <span>Anos de CLT averbados</span>
-                <input
-                  type="number"
-                  min={0}
-                  max={10}
-                  value={anosCltAverbados}
-                  onChange={(evento) => setAnosCltAverbados(Number(evento.target.value))}
-                />
-              </label>
+      <div className="analysis-stack">
+        <section className="upload-shell">
+          <div className="upload-shell__header">
+            <div>
+              <p className="eyebrow">Arquivos</p>
+              <h3>{painel ? "Adicionar arquivos" : "Enviar documentos"}</h3>
             </div>
 
-            <label className="field">
-              <span>PDF dos afastamentos</span>
-              <input type="file" accept="application/pdf" onChange={selecionarArquivoAfastamentos} />
-            </label>
+            <div className="upload-shell__actions">
+              {!painel ? (
+                <button
+                  className="ghost-button ghost-button--compact"
+                  type="button"
+                  onClick={iniciarAtualizacaoHistorico}
+                >
+                  Enviar histórico funcional
+                </button>
+              ) : null}
+              {painel ? (
+                <button
+                  className="ghost-button ghost-button--compact"
+                  type="button"
+                  onClick={iniciarAnexoAfastamentos}
+                >
+                  Anexar afastamentos
+                </button>
+              ) : null}
+              {painel ? (
+                <button
+                  className="ghost-button ghost-button--compact"
+                  type="button"
+                  onClick={iniciarAtualizacaoHistorico}
+                >
+                  Atualizar histórico funcional
+                </button>
+              ) : null}
+              {arquivoDownloadUrl ? (
+                <a
+                  className="ghost-button ghost-button--compact"
+                  download={arquivo?.name ?? "historico-funcional.pdf"}
+                  href={arquivoDownloadUrl}
+                >
+                  Baixar PDF
+                </a>
+              ) : null}
+            </div>
+          </div>
 
-            {arquivoAfastamentos ? (
-              <p className="helper">Arquivo de afastamentos selecionado: {arquivoAfastamentos.name}</p>
-            ) : null}
+          {!painel && !modoAtualizacaoHistorico ? (
+            <div className="upload-shell__collapsed">
+              <p className="helper">
+                Clique em &quot;Enviar histórico funcional&quot; para abrir o campo de envio.
+              </p>
+              {erro ? <p className="error-box">{erro}</p> : null}
+            </div>
+          ) : modoAtualizacaoHistorico ? (
+            <form className="upload-form" onSubmit={enviarFormulario}>
+              <label className="field">
+                <span>PDF do histórico funcional</span>
+                <input type="file" accept="application/pdf" onChange={selecionarArquivo} />
+              </label>
 
-            <div className="upload-actions">
-              <button className="ghost-button" type="button" onClick={usarCltMaximo}>
-                Preencher 10 anos de CLT
-              </button>
+              <div className="field-grid">
+                <label className="field">
+                  <span>Data de nascimento</span>
+                  <input
+                    type="date"
+                    value={dataNascimento}
+                    onChange={(evento) => setDataNascimento(evento.target.value)}
+                    required
+                  />
+                </label>
+
+                <label className="field">
+                  <span>Anos de CLT averbados</span>
+                  <input
+                    type="number"
+                    min={0}
+                    max={10}
+                    value={anosCltAverbados}
+                    onChange={(evento) => setAnosCltAverbados(Number(evento.target.value))}
+                  />
+                </label>
+              </div>
+
+              <label className="field">
+                <span>PDF dos afastamentos</span>
+                <input type="file" accept="application/pdf" onChange={selecionarArquivoAfastamentos} />
+              </label>
+
+              {arquivoAfastamentos ? (
+                <p className="helper">Arquivo de afastamentos selecionado: {arquivoAfastamentos.name}</p>
+              ) : null}
+
+              <div className="upload-actions">
+                <button className="ghost-button" type="button" onClick={usarCltMaximo}>
+                  Preencher 10 anos de CLT
+                </button>
+              </div>
+
+              <p className="helper">
+                Você pode informar no máximo 10 anos de CLT. Se já tiver esse tempo, basta preencher `10` ou usar o atalho.
+              </p>
+
+              {arquivo ? <p className="helper">Arquivo selecionado: {arquivo.name}</p> : null}
+              {usuarioId ? (
+                <button className="ghost-button" type="button" onClick={() => void recarregarHistorico()}>
+                  Recarregar último salvo
+                </button>
+              ) : null}
+
+              {mensagemProcessamento ? <p className="helper">{mensagemProcessamento}</p> : null}
+              {erro ? <p className="error-box">{erro}</p> : null}
+            </form>
+          ) : painel && modoAnexoAfastamentos ? (
+            <div className="upload-shell__collapsed upload-shell__collapsed--compact">
+              <label className="field">
+                <span>PDF dos afastamentos</span>
+                <input type="file" accept="application/pdf" onChange={selecionarArquivoAfastamentos} />
+              </label>
+
+              {arquivoAfastamentos ? (
+                <p className="helper">Arquivo de afastamentos selecionado: {arquivoAfastamentos.name}</p>
+              ) : (
+                <p className="helper">Selecione o PDF para anexar aos dados já salvos.</p>
+              )}
+
+              {mensagemProcessamento ? <p className="helper">{mensagemProcessamento}</p> : null}
+              {erro ? <p className="error-box">{erro}</p> : null}
+            </div>
+          ) : (
+            <div className="upload-shell__collapsed">
+              <p className="helper">
+                Se quiser enviar outros arquivos, use os botões acima para abrir o campo correspondente.
+              </p>
+              {erro ? <p className="error-box">{erro}</p> : null}
+            </div>
+          )}
+        </section>
+
+        {painel && resumo ? (
+          <section className="overview-panel">
+            <div className="overview-panel__chart">
+              <GraficoPizzaTempo
+                percentualTrabalhado={resumo.percentual_trabalhado}
+              />
+              {resumoAfastamentos ? <GraficoPizzaAfastamentos resumo={resumoAfastamentos} /> : null}
             </div>
 
-            <p className="helper">
-              Você pode informar no máximo 10 anos de CLT. Se já tiver esse tempo, basta preencher `10` ou usar o atalho.
-            </p>
+            <div className="overview-panel__content">
+              <p className="helper">
+                Armazenamento do PDF: {rotuloArmazenamento(painel.armazenamento_origem)}.
+              </p>
+              <p className="helper">
+                Processamento: {rotuloProcessamento(painel.processamento_origem)}.
+              </p>
+              <div className="metric-strip">
+                <div className="metric-line">
+                  <span>Tempo trabalhado</span>
+                  <strong>{formatarDuracaoEmAnos(resumo.tempo_trabalhado_dias)}</strong>
+                </div>
+                <div className="metric-line">
+                  <span>Tempo restante</span>
+                  <strong>{formatarDuracaoEmAnos(resumo.tempo_restante_dias)}</strong>
+                </div>
+                <div className="metric-line">
+                  <span>Eventos</span>
+                  <strong>{resumo.eventos_totais}</strong>
+                </div>
+                {resumoAfastamentos ? (
+                  <div className="metric-line metric-line--danger">
+                    <span>Dias afastados</span>
+                    <strong>{resumoAfastamentos.dias_totais}</strong>
+                  </div>
+                ) : null}
+                {resumoAfastamentos ? (
+                  <div className="metric-line metric-line--danger">
+                    <span>Aguardando perícia</span>
+                    <strong>{afastamentoPericia}</strong>
+                  </div>
+                ) : null}
+                <div className="metric-line">
+                  <span>Próxima progressão</span>
+                  <strong>{formatarData(painel.proxima_progressao_prevista)}</strong>
+                </div>
+              </div>
 
-            {arquivo ? <p className="helper">Arquivo selecionado: {arquivo.name}</p> : null}
-            {usuarioId ? (
-              <button className="ghost-button" type="button" onClick={() => void recarregarHistorico()}>
-                Recarregar último salvo
-              </button>
-            ) : null}
-
-            {mensagemProcessamento ? <p className="helper">{mensagemProcessamento}</p> : null}
-            {erro ? <p className="error-box">{erro}</p> : null}
-          </form>
-        ) : painel && modoAnexoAfastamentos ? (
-          <div className="upload-shell__collapsed upload-shell__collapsed--compact">
-            <label className="field">
-              <span>PDF dos afastamentos</span>
-              <input type="file" accept="application/pdf" onChange={selecionarArquivoAfastamentos} />
-            </label>
-
-            {arquivoAfastamentos ? (
-              <p className="helper">Arquivo de afastamentos selecionado: {arquivoAfastamentos.name}</p>
-            ) : (
-              <p className="helper">Selecione o PDF para anexar aos dados já salvos.</p>
-            )}
-
-            {mensagemProcessamento ? <p className="helper">{mensagemProcessamento}</p> : null}
-            {erro ? <p className="error-box">{erro}</p> : null}
-          </div>
+            </div>
+          </section>
         ) : (
-          <div className="upload-shell__collapsed">
-            <p className="helper">
-              Se quiser enviar outros arquivos, use os botões acima para abrir o campo correspondente.
+          <div className="history-empty">
+            <p>
+              Envie o PDF do histórico funcional para analisar os dados e montar os cálculos de carreira.
             </p>
-            {erro ? <p className="error-box">{erro}</p> : null}
+            <p>
+              Aqui você vai ver o tempo de trabalho, a previsão de aposentadoria e a próxima progressão e promoção.
+            </p>
           </div>
         )}
-      </section>
 
-      {painel && resumo ? (
-        <section className="overview-panel">
-          <div className="overview-panel__chart">
-            <GraficoPizzaTempo
-              percentualTrabalhado={resumo.percentual_trabalhado}
-            />
-            {resumoAfastamentos ? <GraficoPizzaAfastamentos resumo={resumoAfastamentos} /> : null}
-          </div>
-
-          <div className="overview-panel__content">
-            <p className="helper">
-              Armazenamento do PDF: {rotuloArmazenamento(painel.armazenamento_origem)}.
-            </p>
-            <p className="helper">
-              Processamento: {rotuloProcessamento(painel.processamento_origem)}.
-            </p>
-            <div className="metric-strip">
-              <div className="metric-line">
-                <span>Tempo trabalhado</span>
-                <strong>{formatarDuracaoEmAnos(resumo.tempo_trabalhado_dias)}</strong>
-              </div>
-              <div className="metric-line">
-                <span>Tempo restante</span>
-                <strong>{formatarDuracaoEmAnos(resumo.tempo_restante_dias)}</strong>
-              </div>
-              <div className="metric-line">
-                <span>Eventos</span>
-                <strong>{resumo.eventos_totais}</strong>
-              </div>
-              {resumoAfastamentos ? (
-                <div className="metric-line metric-line--danger">
-                  <span>Dias afastados</span>
-                  <strong>{resumoAfastamentos.dias_totais}</strong>
-                </div>
-              ) : null}
-              {resumoAfastamentos ? (
-                <div className="metric-line metric-line--danger">
-                  <span>Aguardando perícia</span>
-                  <strong>{afastamentoPericia}</strong>
-                </div>
-              ) : null}
-              <div className="metric-line">
-                <span>Próxima progressão</span>
-                <strong>{formatarData(painel.proxima_progressao_prevista)}</strong>
-              </div>
+        {painel && resumo ? (
+          <section className="timeline-panel">
+            <div className="career-bars__title" style={{ marginBottom: "1.5rem" }}>
+              <p className="eyebrow">Linha do tempo: progressões e promoções</p>
             </div>
 
-          </div>
-        </section>
-      ) : (
-        <div className="history-empty">
-          <p>
-            Envie o PDF do histórico funcional para analisar os dados e montar os cálculos de carreira.
-          </p>
-          <p>
-            Aqui você vai ver o tempo de trabalho, a previsão de aposentadoria e a próxima progressão e promoção.
-          </p>
-        </div>
-      )}
+            <LinhaDoTempoGrafica eventos={painel.eventos} />
 
-      {painel && resumo ? (
-        <section className="timeline-panel">
-          <div className="career-bars__title" style={{ marginBottom: "1.5rem" }}>
-            <p className="eyebrow">Linha do tempo: progressões e promoções</p>
-          </div>
-
-          <LinhaDoTempoGrafica eventos={painel.eventos} />
-
-          <GraficoComparativoTempo
-            painel={painel}
-          />
-        </section>
-      ) : null}
+            <GraficoComparativoTempo
+              painel={painel}
+            />
+          </section>
+        ) : null}
+      </div>
     </section>
   )
 }

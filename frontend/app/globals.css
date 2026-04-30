@@ -659,6 +659,11 @@ html[data-theme="light"] .results-card {
   width: 100%;
 }
 
+.analysis-stack {
+  display: grid;
+  gap: 1.5rem;
+}
+
 .analysis-header {
   display: flex;
   align-items: flex-start;

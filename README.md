@@ -117,6 +117,35 @@ As imagens do projeto ficaram separadas por serviço:
 - backend: [Dockerfile](Dockerfile)
 - frontend: [frontend/Dockerfile](frontend/Dockerfile)
 
+O `Dockerfile` empacota só a aplicação. Banco e Redis ficam como serviços externos.
+Para desenvolvimento local, o `docker-compose.yml` junta tudo na mesma rede:
+
+- backend
+- worker
+- frontend
+- postgres
+- redis
+
+### Compose local
+
+Subir a stack inteira:
+
+```powershell
+docker compose up --build
+```
+
+Se quiser subir em segundo plano:
+
+```powershell
+docker compose up --build -d
+```
+
+Parar tudo:
+
+```powershell
+docker compose down
+```
+
 ### Backend
 
 Build:
@@ -156,6 +185,8 @@ docker run --rm -p 3000:3000 gestao-carreira-frontend
 
 ### Observação
 
+O `compose` é para o ambiente local e de testes. No deploy, o backend continua usando as URLs do
+serviço de banco e Redis configuradas no ambiente da plataforma.
 Se o Docker Desktop não estiver rodando, o build falha com erro de conexão no daemon, como aconteceu
 aqui nesta sessão.
 
