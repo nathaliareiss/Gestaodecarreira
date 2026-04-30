@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -16,17 +16,6 @@ import {
   obterTokenAutenticacao,
   removerTokenAutenticacao,
 } from "@/shared/auth/session"
-
-function formatarData(valor: string | null) {
-  if (!valor) {
-    return "-"
-  }
-
-  return new Intl.DateTimeFormat("pt-BR", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(valor))
-}
 
 function formatarDataCurta(valor: string | null) {
   if (!valor) {
@@ -180,10 +169,6 @@ export function UsuarioPageController({
                       <strong>{usuario.nome}</strong>
                     </div>
                     <div className="result-block">
-                      <span className="label">Apelido</span>
-                      <strong>{usuario.apelido || "Não informado"}</strong>
-                    </div>
-                    <div className="result-block">
                       <span className="label">E-mail</span>
                       <strong>{usuario.email}</strong>
                     </div>
@@ -191,20 +176,9 @@ export function UsuarioPageController({
                       <span className="label">Data de exercício</span>
                       <strong>{formatarDataCurta(usuario.data_exercicio)}</strong>
                     </div>
-                    <div className="result-block">
-                      <span className="label">Criado em</span>
-                      <strong>{formatarData(usuario.criado_em)}</strong>
-                    </div>
-                    <div className="result-block">
-                      <span className="label">Confirmado em</span>
-                      <strong>{formatarData(usuario.confirmado_em)}</strong>
-                    </div>
                   </div>
 
                   <div className="actions">
-                    <p className="helper">
-                      O e-mail de confirmação foi enviado para <strong>{usuario.email}</strong>.
-                    </p>
                     <div className="actions-row">
                       <button
                         className="ghost-button"
@@ -247,3 +221,4 @@ export function UsuarioPageController({
     </main>
   )
 }
+

@@ -1,4 +1,4 @@
-import type { FormEvent } from "react"
+﻿import type { FormEvent } from "react"
 
 import type { UsuarioCadastro } from "../model/usuario.model"
 
@@ -122,3 +122,4 @@ export function UsuarioFormView({
     </form>
   )
 }
+

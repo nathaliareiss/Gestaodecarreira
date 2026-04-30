@@ -1,4 +1,4 @@
-import Link from "next/link"
+﻿import Link from "next/link"
 
 export function UsuarioHeroSection() {
   return (
@@ -24,3 +24,4 @@ export function UsuarioHeroSection() {
     </div>
   )
 }
+

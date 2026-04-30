@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react"
 
@@ -46,9 +46,6 @@ export function useHistoricoFuncionalController({
   const [arquivo, setArquivo] = useState<File | null>(null)
   const [arquivoDownloadUrl, setArquivoDownloadUrl] = useState<string | null>(null)
   const [arquivoAfastamentos, setArquivoAfastamentos] = useState<File | null>(null)
-  const [arquivoAfastamentosDownloadUrl, setArquivoAfastamentosDownloadUrl] = useState<string | null>(
-    null,
-  )
   const [dataNascimento, setDataNascimento] = useState(historicoInicial?.data_nascimento ?? "")
   const [anosCltAverbados, setAnosCltAverbados] = useState(
     historicoInicial?.tempo_clt_averbado_anos ?? 0,
@@ -56,7 +53,6 @@ export function useHistoricoFuncionalController({
   const [historico, setHistorico] = useState<HistoricoFuncionalAnalise | null>(historicoInicial)
   const [carregando, setCarregando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
-  const [mostrarUpload, setMostrarUpload] = useState(historicoInicial === null)
   const [modoAtualizacaoHistorico, setModoAtualizacaoHistorico] = useState(historicoInicial === null)
   const [modoAnexoAfastamentos, setModoAnexoAfastamentos] = useState(historicoInicial !== null)
   const assinaturaEnvioAutomatico = useRef<string | null>(null)
@@ -75,26 +71,11 @@ export function useHistoricoFuncionalController({
     }
   }, [arquivo])
 
-  useEffect(() => {
-    if (!arquivoAfastamentos) {
-      setArquivoAfastamentosDownloadUrl(null)
-      return
-    }
-
-    const url = URL.createObjectURL(arquivoAfastamentos)
-    setArquivoAfastamentosDownloadUrl(url)
-
-    return () => {
-      URL.revokeObjectURL(url)
-    }
-  }, [arquivoAfastamentos])
-
   function selecionarArquivo(evento: ChangeEvent<HTMLInputElement>) {
     const selecionado = evento.target.files?.[0] ?? null
     setArquivo(selecionado)
     setModoAtualizacaoHistorico(true)
     setModoAnexoAfastamentos(false)
-    setMostrarUpload(true)
     setErro(null)
   }
 
@@ -102,21 +83,18 @@ export function useHistoricoFuncionalController({
     const selecionado = evento.target.files?.[0] ?? null
     setArquivoAfastamentos(selecionado)
     setModoAnexoAfastamentos(true)
-    setMostrarUpload(true)
     setErro(null)
   }
 
   function iniciarAnexoAfastamentos() {
     setModoAnexoAfastamentos(true)
     setModoAtualizacaoHistorico(false)
-    setMostrarUpload(true)
     setErro(null)
   }
 
   function iniciarAtualizacaoHistorico() {
     setModoAtualizacaoHistorico(true)
     setModoAnexoAfastamentos(false)
-    setMostrarUpload(true)
     setErro(null)
   }
 
@@ -158,7 +136,6 @@ export function useHistoricoFuncionalController({
       const recarregado = await buscarUltimoHistoricoFuncional(usuarioId)
       setHistorico(recarregado)
       if (recarregado) {
-        setMostrarUpload(false)
         setModoAtualizacaoHistorico(false)
         setModoAnexoAfastamentos(true)
       }
@@ -211,7 +188,6 @@ export function useHistoricoFuncionalController({
       setHistorico(analisado)
       setModoAtualizacaoHistorico(false)
       setModoAnexoAfastamentos(true)
-      setMostrarUpload(false)
     } catch (error) {
       if (assinatura) {
         assinaturaEnvioAutomatico.current = null
@@ -255,7 +231,6 @@ export function useHistoricoFuncionalController({
       setHistorico(analisado)
       setArquivoAfastamentos(null)
       setModoAnexoAfastamentos(true)
-      setMostrarUpload(false)
     } catch (error) {
       if (assinatura) {
         assinaturaEnvioAutomatico.current = null
@@ -301,13 +276,11 @@ export function useHistoricoFuncionalController({
     arquivo,
     arquivoDownloadUrl,
     arquivoAfastamentos,
-    arquivoAfastamentosDownloadUrl,
     anosCltAverbados,
     carregando,
     dataNascimento,
     erro,
     historico,
-    mostrarUpload,
     modoAtualizacaoHistorico,
     modoAnexoAfastamentos,
     iniciarAnexoAfastamentos,
@@ -317,8 +290,8 @@ export function useHistoricoFuncionalController({
     selecionarArquivoAfastamentos,
     setAnosCltAverbados,
     setDataNascimento,
-    setMostrarUpload,
     usarCltMaximo,
     enviarFormulario,
   }
 }
+

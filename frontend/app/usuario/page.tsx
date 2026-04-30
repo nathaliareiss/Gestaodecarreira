@@ -1,4 +1,4 @@
-import { cookies } from "next/headers"
+﻿import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 
 import type { UsuarioConta } from "@/features/usuario/model/usuario.model"
@@ -65,3 +65,4 @@ export default async function UsuarioPage() {
     />
   )
 }
+

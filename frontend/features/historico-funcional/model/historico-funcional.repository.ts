@@ -1,4 +1,4 @@
-import type {
+﻿import type {
   AfastamentosUpload,
   HistoricoFuncionalAnalise,
   HistoricoFuncionalUpload,
@@ -56,3 +56,4 @@ export async function anexarAfastamentosAoHistorico(
     "Erro ao analisar o arquivo de afastamentos.",
   )
 }
+

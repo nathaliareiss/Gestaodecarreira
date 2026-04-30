@@ -886,49 +886,6 @@ html[data-theme="light"] .result-block {
   font-size: 1rem;
 }
 
-.afastamentos-periods {
-  display: grid;
-  gap: 0.7rem;
-  width: min(100%, 240px);
-}
-
-.afastamentos-periods__item {
-  display: grid;
-  gap: 0.35rem;
-  padding: 0.85rem 0.95rem;
-  border-radius: 18px;
-  border: 1px solid rgba(148, 163, 184, 0.12);
-  background: rgba(8, 16, 30, 0.42);
-}
-
-html[data-theme="light"] .afastamentos-periods__item {
-  background: rgba(255, 255, 255, 0.8);
-  border-color: rgba(15, 23, 42, 0.08);
-}
-
-.afastamentos-periods__topline {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 0.75rem;
-}
-
-.afastamentos-periods__topline strong {
-  font-size: 0.92rem;
-}
-
-.afastamentos-periods__topline span {
-  color: #fb7185;
-  font-size: 0.84rem;
-  font-weight: 800;
-}
-
-.afastamentos-periods__detail {
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.84rem;
-}
-
 .upload-shell {
   display: grid;
   gap: 1rem;

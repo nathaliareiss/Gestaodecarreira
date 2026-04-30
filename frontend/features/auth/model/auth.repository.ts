@@ -1,4 +1,4 @@
-import type {
+﻿import type {
   UsuarioAuthResponse,
   UsuarioLogin,
   UsuarioSolicitacaoRecuperacaoSenha,
@@ -77,4 +77,5 @@ export async function redefinirSenhaUsuario(
     "Não foi possível redefinir a senha.",
   )
 }
+
 

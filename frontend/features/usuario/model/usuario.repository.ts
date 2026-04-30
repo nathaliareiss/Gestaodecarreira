@@ -1,4 +1,4 @@
-import type { UsuarioCadastro, UsuarioConta } from "./usuario.model"
+﻿import type { UsuarioCadastro, UsuarioConta } from "./usuario.model"
 import { apiFetch, parseApiResponse } from "@/shared/api/client"
 
 export async function criarUsuario(
@@ -56,3 +56,4 @@ export async function removerUsuarioMaisRecente(): Promise<void> {
 
   await parseApiResponse<{ status: string }>(response, "Não foi possível remover o usuário.")
 }
+

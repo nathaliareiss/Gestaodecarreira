@@ -1,46 +1,51 @@
 # Frontend
 
-Aplicacao Next.js responsavel pela experiencia visual do sistema.
+Aplicação Next.js responsável pela interface do sistema.
 
-## O que o frontend faz
+## O que aparece no frontend
 
-- mostra a tela de cadastro
-- mostra a tela de login
-- protege a pagina do usuario
-- envia historico funcional em PDF
-- exibe os calculos e os resumos vindos da API
+- tela de cadastro
+- tela de login
+- recuperação de senha
+- confirmação de e-mail
+- página do usuário
+- envio do histórico funcional em PDF
+- envio opcional dos afastamentos
+- gráficos e linha do tempo da carreira
+- seletor de tema claro e escuro
 
 ## Como rodar
 
+Na raiz do projeto:
+
 ```powershell
-..\run-frontend.cmd
+.\run-frontend.cmd
 ```
 
-Ou, dentro da pasta `frontend/`:
+Dentro da pasta `frontend/`:
 
 ```powershell
 npm run dev
 ```
 
-## Dependencias de ambiente
+## Variáveis de ambiente
 
-- `NEXT_PUBLIC_API_URL`: URL do backend, por exemplo `http://localhost:8000`
+- `NEXT_PUBLIC_API_URL`: URL pública do backend
 
-## Estrutura Principal
+## Estrutura principal
 
 - `frontend/app/`: rotas do App Router
-- `frontend/features/`: features por dominio
-- `frontend/shared/`: utilitarios compartilhados
+- `frontend/features/`: módulos por domínio
+- `frontend/shared/`: utilitários compartilhados
 
 ## Fluxo
 
 1. `app/page.tsx` abre o cadastro.
 2. `app/login/page.tsx` abre o login.
-3. `app/usuario/page.tsx` carrega a sessao autenticada.
-4. O front conversa com a API por meio dos repositories.
+3. `app/usuario/page.tsx` abre o perfil do usuário.
+4. O frontend consome a API por meio dos repositories.
 
-## Observacao
+## Observação
 
-O layout foi pensado para ser limpo e direto, sem excesso de blocos
-explicativos para o usuario final.
+Os títulos e mensagens usam português como idioma principal, com alguns subtítulos em inglês para manter uma identidade visual consistente.
 

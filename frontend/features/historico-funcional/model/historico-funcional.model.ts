@@ -1,4 +1,4 @@
-export type HistoricoFuncionalUpload = {
+﻿export type HistoricoFuncionalUpload = {
   usuario_id: number | null
   arquivo_nome: string
   arquivo_base64: string
@@ -98,3 +98,4 @@ export function formatarTipoEvento(tipo: HistoricoFuncionalEvento["tipo"]) {
       return "Substituição"
   }
 }
+

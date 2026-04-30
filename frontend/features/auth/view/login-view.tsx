@@ -1,4 +1,4 @@
-import Link from "next/link"
+﻿import Link from "next/link"
 import type { FormEvent } from "react"
 
 import type {
@@ -170,3 +170,4 @@ export function LoginView({
     </main>
   )
 }
+

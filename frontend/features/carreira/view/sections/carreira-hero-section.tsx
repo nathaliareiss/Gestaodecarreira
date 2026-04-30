@@ -1,4 +1,4 @@
-export function CarreiraHeroSection() {
+﻿export function CarreiraHeroSection() {
   return (
     <section className="hero">
       <div className="hero-copy">
@@ -12,3 +12,4 @@ export function CarreiraHeroSection() {
     </section>
   )
 }
+
