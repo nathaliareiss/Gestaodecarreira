@@ -9,16 +9,16 @@ from pydantic import BaseModel, ConfigDict, Field
 class HistoricoFuncionalUploadRequest(BaseModel):
     usuario_id: int | None = None
     arquivo_nome: str = Field(min_length=1)
-    arquivo_base64: str = Field(min_length=1)
+    arquivo_storage_path: str = Field(min_length=1)
     data_nascimento: date
     anos_clt_averbados: int = Field(default=0, ge=0, le=10)
     afastamentos_arquivo_nome: str | None = None
-    afastamentos_arquivo_base64: str | None = None
+    afastamentos_storage_path: str | None = None
 
 
 class AfastamentosUploadRequest(BaseModel):
     arquivo_nome: str = Field(min_length=1)
-    arquivo_base64: str = Field(min_length=1)
+    arquivo_storage_path: str = Field(min_length=1)
 
 
 class HistoricoFuncionalEventoResponse(BaseModel):

@@ -1,17 +1,6 @@
-﻿export type HistoricoFuncionalUpload = {
-  usuario_id: number | null
-  arquivo_nome: string
-  arquivo_base64: string
-  data_nascimento: string
-  anos_clt_averbados: number
-  afastamentos_arquivo_nome?: string | null
-  afastamentos_arquivo_base64?: string | null
-}
+export type HistoricoFuncionalUpload = FormData
 
-export type AfastamentosUpload = {
-  arquivo_nome: string
-  arquivo_base64: string
-}
+export type AfastamentosUpload = FormData
 
 export type JobAgendadoResponse = {
   job_id: string
@@ -111,4 +100,3 @@ export function formatarTipoEvento(tipo: HistoricoFuncionalEvento["tipo"]) {
       return "Substituição"
   }
 }
-

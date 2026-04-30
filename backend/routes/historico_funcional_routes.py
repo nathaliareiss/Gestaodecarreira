@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import json
+from datetime import date
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
 
 from backend.database.database import get_db
@@ -24,12 +25,35 @@ from backend.services.historico_funcional_job_service import (
     processar_afastamentos_db,
     processar_historico_funcional_db,
 )
+from backend.storage.supabase_storage import (
+    enviar_pdf_para_storage,
+    gerar_caminho_storage_afastamentos,
+    gerar_caminho_storage_historico,
+)
 
 router = APIRouter(prefix="/historicos-funcionais", tags=["historicos-funcionais"])
 
 
 def _responder_job_agendado(job_id: str, detalhe: str) -> JobAgendadoResponse:
     return JobAgendadoResponse(job_id=job_id, status="queued", detail=detalhe)
+
+
+def _ler_nome_arquivo(upload: UploadFile, fallback: str) -> str:
+    return upload.filename or fallback
+
+
+async def _armazenar_arquivo_pdf(
+    upload: UploadFile,
+    caminho_storage: str,
+) -> None:
+    conteudo = await upload.read()
+    if not isinstance(conteudo, bytes) or not conteudo:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Nao foi possivel ler o arquivo enviado.",
+        )
+
+    enviar_pdf_para_storage(conteudo, caminho_storage)
 
 
 def _responder_status_job(job_id: str) -> JobStatusResponse:
@@ -70,16 +94,43 @@ def _responder_status_job(job_id: str) -> JobStatusResponse:
     response_model=HistoricoFuncionalResponse | JobAgendadoResponse,
     status_code=status.HTTP_201_CREATED,
 )
-def analisar_e_salvar_historico(
-    dados: HistoricoFuncionalUploadRequest,
+async def analisar_e_salvar_historico(
+    arquivo: UploadFile = File(...),
+    data_nascimento: date = Form(...),
+    anos_clt_averbados: int = Form(0),
+    usuario_id: int | None = Form(None),
+    afastamentos_arquivo: UploadFile | None = File(None),
     db: Session = Depends(get_db),
 ) -> HistoricoFuncionalResponse | JobAgendadoResponse:
+    arquivo_nome = _ler_nome_arquivo(arquivo, "historico-funcional.pdf")
+    arquivo_storage_path = gerar_caminho_storage_historico(arquivo_nome, usuario_id)
+    await _armazenar_arquivo_pdf(arquivo, arquivo_storage_path)
+
+    afastamentos_arquivo_nome = None
+    afastamentos_storage_path = None
+    if afastamentos_arquivo is not None:
+        afastamentos_arquivo_nome = _ler_nome_arquivo(afastamentos_arquivo, "afastamentos.pdf")
+        afastamentos_storage_path = gerar_caminho_storage_afastamentos(
+            afastamentos_arquivo_nome,
+            usuario_id,
+        )
+        await _armazenar_arquivo_pdf(afastamentos_arquivo, afastamentos_storage_path)
+
+    dados = HistoricoFuncionalUploadRequest(
+        usuario_id=usuario_id,
+        arquivo_nome=arquivo_nome,
+        arquivo_storage_path=arquivo_storage_path,
+        data_nascimento=data_nascimento,
+        anos_clt_averbados=anos_clt_averbados,
+        afastamentos_arquivo_nome=afastamentos_arquivo_nome,
+        afastamentos_storage_path=afastamentos_storage_path,
+    )
     logger.info(
         "Recebido historico funcional para analise",
         extra={
             "usuario_id": dados.usuario_id,
             "arquivo_nome": dados.arquivo_nome,
-            "tem_afastamentos": bool(dados.afastamentos_arquivo_base64),
+            "tem_afastamentos": bool(dados.afastamentos_storage_path),
         },
     )
 
@@ -139,11 +190,19 @@ def analisar_e_salvar_historico(
     "/usuario/{usuario_id}/afastamentos",
     response_model=HistoricoFuncionalResponse | JobAgendadoResponse,
 )
-def anexar_afastamentos_historico(
+async def anexar_afastamentos_historico(
     usuario_id: int,
-    dados: AfastamentosUploadRequest,
+    arquivo: UploadFile = File(...),
     db: Session = Depends(get_db),
 ) -> HistoricoFuncionalResponse | JobAgendadoResponse:
+    arquivo_nome = _ler_nome_arquivo(arquivo, "afastamentos.pdf")
+    arquivo_storage_path = gerar_caminho_storage_afastamentos(arquivo_nome, usuario_id)
+    await _armazenar_arquivo_pdf(arquivo, arquivo_storage_path)
+
+    dados = AfastamentosUploadRequest(
+        arquivo_nome=arquivo_nome,
+        arquivo_storage_path=arquivo_storage_path,
+    )
     logger.info(
         "Recebido arquivo de afastamentos",
         extra={"user_id": usuario_id, "arquivo_nome": dados.arquivo_nome},

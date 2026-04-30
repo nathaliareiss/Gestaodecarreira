@@ -12,10 +12,7 @@ export async function analisarHistoricoFuncional(
 ): Promise<HistoricoFuncionalAnalise | JobAgendadoResponse> {
   const response = await apiFetch("/api/historicos-funcionais/analisar", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
+    body: payload,
   })
 
   return parseApiResponse<HistoricoFuncionalAnalise | JobAgendadoResponse>(
@@ -47,10 +44,7 @@ export async function anexarAfastamentosAoHistorico(
 ): Promise<HistoricoFuncionalAnalise | JobAgendadoResponse> {
   const response = await apiFetch(`/api/historicos-funcionais/usuario/${usuarioId}/afastamentos`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
+    body: payload,
   })
 
   return parseApiResponse<HistoricoFuncionalAnalise | JobAgendadoResponse>(

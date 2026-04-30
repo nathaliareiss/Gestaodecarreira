@@ -17,10 +17,10 @@ from backend.schemas.historico_funcional_schema import (
     HistoricoFuncionalUploadRequest,
     HistoricoFuncionalResumoGraficoResponse,
 )
+from backend.storage.supabase_storage import baixar_pdf_storage
 from backend.services.historico_funcional_service import (
     analisar_afastamentos_pdf,
     analisar_historico_funcional,
-    decodificar_arquivo_base64,
 )
 
 
@@ -77,10 +77,14 @@ def _persistir_historico_analisado(
     texto_extraido: str,
     arquivo_nome: str,
     usuario_id: int | None,
+    arquivo_storage_path: str,
+    afastamentos_storage_path: str | None,
 ) -> HistoricoFuncionalResponse:
     historico = HistoricoFuncional(
         usuario_id=usuario_id,
         arquivo_nome=resposta.arquivo_nome,
+        arquivo_storage_path=arquivo_storage_path,
+        afastamentos_storage_path=afastamentos_storage_path,
         nome=resposta.nome,
         masp=resposta.masp,
         cpf=resposta.cpf,
@@ -129,10 +133,10 @@ def processar_historico_funcional_db(
     db: Session,
     dados: HistoricoFuncionalUploadRequest,
 ) -> HistoricoFuncionalResponse:
-    conteudo_pdf = decodificar_arquivo_base64(dados.arquivo_base64)
+    conteudo_pdf = baixar_pdf_storage(dados.arquivo_storage_path)
     conteudo_afastamentos_pdf = (
-        decodificar_arquivo_base64(dados.afastamentos_arquivo_base64)
-        if dados.afastamentos_arquivo_base64
+        baixar_pdf_storage(dados.afastamentos_storage_path)
+        if dados.afastamentos_storage_path
         else None
     )
     resposta, texto_extraido = analisar_historico_funcional(
@@ -150,6 +154,8 @@ def processar_historico_funcional_db(
         texto_extraido=texto_extraido,
         arquivo_nome=dados.arquivo_nome,
         usuario_id=dados.usuario_id,
+        arquivo_storage_path=dados.arquivo_storage_path,
+        afastamentos_storage_path=dados.afastamentos_storage_path,
     )
 
 
@@ -164,7 +170,7 @@ def processar_afastamentos_db(
 
     dados_historico = json.loads(historico.dados_json)
     dados_historico = normalizar_dados_historico_salvo(dados_historico, historico.id, usuario_id)
-    conteudo_afastamentos_pdf = decodificar_arquivo_base64(dados.arquivo_base64)
+    conteudo_afastamentos_pdf = baixar_pdf_storage(dados.arquivo_storage_path)
     afastamentos, resumo_afastamentos = analisar_afastamentos_pdf(conteudo_afastamentos_pdf)
 
     resposta = HistoricoFuncionalResponse.model_validate(dados_historico).model_copy(
@@ -188,6 +194,7 @@ def processar_afastamentos_db(
     )
 
     historico.dados_json = json.dumps(resposta.model_dump(mode="json"), ensure_ascii=False)
+    historico.afastamentos_storage_path = dados.arquivo_storage_path
     db.add(historico)
     db.commit()
     db.refresh(historico)

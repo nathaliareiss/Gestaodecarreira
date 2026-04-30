@@ -5,7 +5,6 @@ import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "r
 import type {
   HistoricoFuncionalAnalise,
   JobAgendadoResponse,
-  HistoricoFuncionalUpload,
 } from "../model/historico-funcional.model"
 import {
   anexarAfastamentosAoHistorico,
@@ -17,28 +16,6 @@ import {
 type UseHistoricoFuncionalControllerParams = {
   usuarioId: number | null
   historicoInicial: HistoricoFuncionalAnalise | null
-}
-
-function lerArquivoComoBase64(arquivo: File) {
-  return new Promise<string>((resolve, reject) => {
-    const leitor = new FileReader()
-
-    leitor.onerror = () => {
-      reject(new Error("Não foi possível ler o PDF selecionado."))
-    }
-
-    leitor.onload = () => {
-      const resultado = leitor.result
-      if (typeof resultado !== "string") {
-        reject(new Error("Não foi possível converter o PDF para base64."))
-        return
-      }
-
-      resolve(resultado.split(",")[1] ?? resultado)
-    }
-
-    leitor.readAsDataURL(arquivo)
-  })
 }
 
 function respostaEhJob(
@@ -204,18 +181,13 @@ export function useHistoricoFuncionalController({
     }
 
     try {
-      const arquivoBase64 = await lerArquivoComoBase64(arquivo)
-      const afastamentosArquivoBase64 = arquivoAfastamentos
-        ? await lerArquivoComoBase64(arquivoAfastamentos)
-        : null
-      const payload: HistoricoFuncionalUpload = {
-        usuario_id: usuarioId,
-        arquivo_nome: arquivo.name,
-        arquivo_base64: arquivoBase64,
-        data_nascimento: dataNascimento,
-        anos_clt_averbados: Math.min(Math.max(anosCltAverbados, 0), 10),
-        afastamentos_arquivo_nome: arquivoAfastamentos?.name ?? null,
-        afastamentos_arquivo_base64: afastamentosArquivoBase64,
+      const payload = new FormData()
+      payload.append("usuario_id", String(usuarioId))
+      payload.append("arquivo", arquivo)
+      payload.append("data_nascimento", dataNascimento)
+      payload.append("anos_clt_averbados", String(Math.min(Math.max(anosCltAverbados, 0), 10)))
+      if (arquivoAfastamentos) {
+        payload.append("afastamentos_arquivo", arquivoAfastamentos)
       }
 
       const resposta = await analisarHistoricoFuncional(payload)
@@ -262,11 +234,9 @@ export function useHistoricoFuncionalController({
     }
 
     try {
-      const arquivoBase64 = await lerArquivoComoBase64(arquivoAfastamentos)
-      const resposta = await anexarAfastamentosAoHistorico(usuarioId, {
-        arquivo_nome: arquivoAfastamentos.name,
-        arquivo_base64: arquivoBase64,
-      })
+      const payload = new FormData()
+      payload.append("arquivo", arquivoAfastamentos)
+      const resposta = await anexarAfastamentosAoHistorico(usuarioId, payload)
 
       const analisado = respostaEhJob(resposta)
         ? await aguardarResultadoJob(resposta.job_id)

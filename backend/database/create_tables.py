@@ -26,6 +26,12 @@ def sincronizar_usuario_table() -> None:
         "UPDATE usuarios SET email_confirmado = COALESCE(email_confirmado, FALSE) WHERE email_confirmado IS NULL",
         "UPDATE usuarios SET criado_em = COALESCE(criado_em, NOW()) WHERE criado_em IS NULL",
     ]
+    comandos.extend(
+        [
+            "ALTER TABLE IF EXISTS historicos_funcionais ADD COLUMN IF NOT EXISTS arquivo_storage_path VARCHAR",
+            "ALTER TABLE IF EXISTS historicos_funcionais ADD COLUMN IF NOT EXISTS afastamentos_storage_path VARCHAR",
+        ]
+    )
 
     with engine.begin() as conexao:
         Base.metadata.create_all(bind=conexao)
