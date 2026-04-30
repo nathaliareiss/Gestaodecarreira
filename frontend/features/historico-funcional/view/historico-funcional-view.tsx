@@ -268,8 +268,8 @@ function GraficoComparativoTempo({
       <div className="career-bars__grid">
         <div className="career-bars__item">
           <div className="career-bars__meta">
-            <span>Dias trabalhados</span>
-            <strong>{resumo.tempo_trabalhado_dias}</strong>
+            <span>Tempo trabalhado</span>
+            <strong>{formatarDuracaoEmAnos(resumo.tempo_trabalhado_dias)}</strong>
             <small>
               {formatarData(painel.data_exercicio)} · até hoje
             </small>

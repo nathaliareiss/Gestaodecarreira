@@ -2,6 +2,7 @@ from sqlalchemy import text
 
 from backend.database.database import Base, engine
 from backend.database import models as database_models  # noqa: F401
+from backend.logger import logger
 
 
 def sincronizar_usuario_table() -> None:
@@ -34,7 +35,7 @@ def sincronizar_usuario_table() -> None:
 
 def criar_tabelas() -> None:
     sincronizar_usuario_table()
-    print("Tabelas criadas com sucesso!")
+    logger.info("Tabelas criadas com sucesso!")
 
 
 if __name__ == "__main__":

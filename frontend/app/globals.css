@@ -319,7 +319,7 @@ html[data-theme="light"] .form-card--recovery {
   text-transform: uppercase;
   letter-spacing: 0.18em;
   color: var(--accent);
-  font-size: 0.72rem;
+  font-size: 0.85rem;
   font-weight: 700;
 }
 
@@ -329,6 +329,21 @@ html[data-theme="light"] .form-card--recovery {
 .mini-card h2 {
   margin: 0;
   line-height: 1.05;
+}
+
+.card h2,
+.note-card h2,
+.mini-card h2,
+.analysis-header__title h2 {
+  font-size: 1.25rem;
+}
+
+.card h3,
+.career-bars__title h3,
+.analysis-header__title h3 {
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .hero h1 {
@@ -1471,7 +1486,7 @@ html[data-theme="light"] .theme-toggle__dot {
   padding-left: 1.25rem;
 }
 
-.note-card li + li {
+.note-card li+li {
   margin-top: 0.6rem;
 }
 
@@ -1480,6 +1495,7 @@ html[data-theme="light"] .theme-toggle__dot {
     opacity: 0;
     transform: translateY(12px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -1487,16 +1503,19 @@ html[data-theme="light"] .theme-toggle__dot {
 }
 
 @keyframes float {
+
   0%,
   100% {
     transform: translateY(0);
   }
+
   50% {
     transform: translateY(-10px);
   }
 }
 
 @media (max-width: 980px) {
+
   .hero,
   .workbench,
   .notes-grid,
