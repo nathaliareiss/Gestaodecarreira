@@ -64,23 +64,10 @@ function rotuloAfastamento(tipo: keyof typeof ROTULOS_AFASTAMENTO) {
   return ROTULOS_AFASTAMENTO[tipo]
 }
 
-function formatarMesAno(valor: string | null) {
-  if (!valor) {
-    return "-"
-  }
-
-  return new Intl.DateTimeFormat("pt-BR", {
-    month: "2-digit",
-    year: "numeric",
-  }).format(new Date(`${valor}T00:00:00`))
-}
-
 function GraficoPizzaTempo({
   percentualTrabalhado,
-  percentualRestante,
 }: {
   percentualTrabalhado: number
-  percentualRestante: number
 }) {
   const percentualFormatado = Math.max(0, Math.min(percentualTrabalhado, 100))
 
@@ -247,11 +234,8 @@ function LinhaDoTempoGrafica({ eventos }: { eventos: HistoricoFuncionalAnalise["
 
 function GraficoComparativoTempo({
   painel,
-  resumo,
 }: {
   painel: HistoricoFuncionalAnalise
-  resumo: NonNullable<HistoricoFuncionalAnalise["resumo_grafico"]>
-  resumoAfastamentos: ResumoAfastamentos | null
 }) {
   const afastamentos = painel.afastamentos || []
 
@@ -263,7 +247,7 @@ function GraficoComparativoTempo({
           <h3>Tempo trabalhado e afastamentos</h3>
         </div>
         <div className="history-empty history-empty--compact">
-          <p>Você não possui afastamentos registrados para desenhar a linha do tempo.</p>
+          <p>Você não possui afastamentos registrados para desenhar o comparativo.</p>
         </div>
       </div>
     )
@@ -272,10 +256,10 @@ function GraficoComparativoTempo({
   const tempos = afastamentos.map(a => new Date(`${a.data_inicio}T00:00:00`).getTime())
 
   const inicioCarreira = new Date(`${painel.data_exercicio}T00:00:00`).getTime()
-  const hoje = new Date().getTime()
+  const agora = new Date().getTime()
 
   const minimo = inicioCarreira
-  const maximo = Math.max(hoje, ...tempos)
+  const maximo = Math.max(agora, ...tempos)
 
   const largura = 1000
   const altura = 280
@@ -289,8 +273,7 @@ function GraficoComparativoTempo({
     return Math.max(margemX, Math.min(largura - margemX, rawPos))
   }
 
-  const hoje = new Date().getTime()
-  const xHojeRaw = margemX + ((hoje - minimo) / alcance) * (largura - margemX * 2)
+  const xHojeRaw = margemX + ((agora - minimo) / alcance) * (largura - margemX * 2)
   const xHoje = Math.max(margemX, Math.min(largura - margemX, xHojeRaw))
 
   const ordenados = [...afastamentos].sort((a, b) =>
@@ -418,7 +401,6 @@ export function HistoricoFuncionalView({
         <section className="overview-panel">
           <div className="overview-panel__chart">
             <GraficoPizzaTempo
-              percentualRestante={resumo.percentual_restante}
               percentualTrabalhado={resumo.percentual_trabalhado}
             />
             {resumoAfastamentos ? <GraficoPizzaAfastamentos resumo={resumoAfastamentos} /> : null}
@@ -600,8 +582,6 @@ export function HistoricoFuncionalView({
 
           <GraficoComparativoTempo
             painel={painel}
-            resumo={resumo}
-            resumoAfastamentos={resumoAfastamentos ?? null}
           />
         </section>
       ) : null}
