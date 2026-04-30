@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import os
 import re
 from pathlib import PurePosixPath
+from pathlib import Path
 from uuid import uuid4
 
 import requests
@@ -14,6 +16,8 @@ from backend.config import (
     SUPABASE_URL,
 )
 from backend.logger import logger
+
+LOCAL_STORAGE_ROOT = Path(os.getenv("STORAGE_LOCAL_DIR", str(Path(__file__).resolve().parent.parent / "storage_data")))
 
 
 class StorageError(RuntimeError):
@@ -64,48 +68,86 @@ def _headers() -> dict[str, str]:
     }
 
 
+def _caminho_local(caminho_storage: str) -> Path:
+    return LOCAL_STORAGE_ROOT / caminho_storage
+
+
+def _salvar_localmente(conteudo_pdf: bytes, caminho_storage: str) -> str:
+    caminho = _caminho_local(caminho_storage)
+    caminho.parent.mkdir(parents=True, exist_ok=True)
+    caminho.write_bytes(conteudo_pdf)
+    logger.warning(
+        "Arquivo salvo no storage local de fallback",
+        extra={"storage_path": caminho_storage, "local_path": str(caminho)},
+    )
+    return caminho_storage
+
+
+def _arquivo_local_existe(caminho_storage: str) -> bool:
+    return _caminho_local(caminho_storage).is_file()
+
+
+def obter_origem_storage(caminho_storage: str) -> str:
+    return "local" if _arquivo_local_existe(caminho_storage) else "supabase"
+
+
 def enviar_pdf_para_storage(
     conteudo_pdf: bytes,
     caminho_storage: str,
     content_type: str = "application/pdf",
 ) -> str:
-    _validar_configuracao()
-
-    assert SUPABASE_URL
-    url = f"{SUPABASE_URL.rstrip('/')}/storage/v1/object/{SUPABASE_STORAGE_BUCKET}/{caminho_storage}"
-    headers = _headers()
-    headers.update(
-        {
-            "Content-Type": content_type,
-            "x-upsert": "false",
-        }
-    )
-    resposta = requests.post(url, headers=headers, data=conteudo_pdf, timeout=60)
-    if not resposta.ok:
-        logger.error(
-            "Falha ao enviar arquivo para o Supabase Storage",
-            extra={"storage_path": caminho_storage, "status_code": resposta.status_code},
+    if SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY:
+        assert SUPABASE_URL
+        url = f"{SUPABASE_URL.rstrip('/')}/storage/v1/object/{SUPABASE_STORAGE_BUCKET}/{caminho_storage}"
+        headers = _headers()
+        headers.update(
+            {
+                "Content-Type": content_type,
+                "x-upsert": "false",
+            }
         )
-        raise StorageError(
-            f"Nao foi possivel enviar o arquivo para o storage ({resposta.status_code})."
-        )
+        try:
+            resposta = requests.post(url, headers=headers, data=conteudo_pdf, timeout=60)
+            if resposta.ok:
+                return caminho_storage
 
-    return caminho_storage
+            logger.warning(
+                "Supabase Storage recusou o upload, usando fallback local",
+                extra={"storage_path": caminho_storage, "status_code": resposta.status_code},
+            )
+        except Exception as erro:
+            logger.warning(
+                "Falha ao enviar arquivo para o Supabase Storage, usando fallback local",
+                extra={"storage_path": caminho_storage, "erro": str(erro)},
+            )
+
+    return _salvar_localmente(conteudo_pdf, caminho_storage)
 
 
 def baixar_pdf_storage(caminho_storage: str) -> bytes:
+    if _arquivo_local_existe(caminho_storage):
+        return _caminho_local(caminho_storage).read_bytes()
+
     _validar_configuracao()
 
     assert SUPABASE_URL
     url = f"{SUPABASE_URL.rstrip('/')}/storage/v1/object/{SUPABASE_STORAGE_BUCKET}/{caminho_storage}"
-    resposta = requests.get(url, headers=_headers(), timeout=60)
-    if not resposta.ok:
+    try:
+        resposta = requests.get(url, headers=_headers(), timeout=60)
+        if not resposta.ok:
+            logger.error(
+                "Falha ao baixar arquivo do Supabase Storage",
+                extra={"storage_path": caminho_storage, "status_code": resposta.status_code},
+            )
+            raise StorageError(
+                f"Nao foi possivel baixar o arquivo do storage ({resposta.status_code})."
+            )
+        return resposta.content
+    except StorageError:
+        raise
+    except Exception as erro:
         logger.error(
-            "Falha ao baixar arquivo do Supabase Storage",
-            extra={"storage_path": caminho_storage, "status_code": resposta.status_code},
+            "Falha ao acessar o Supabase Storage",
+            extra={"storage_path": caminho_storage, "erro": str(erro)},
         )
-        raise StorageError(
-            f"Nao foi possivel baixar o arquivo do storage ({resposta.status_code})."
-        )
-
-    return resposta.content
+        raise StorageError("Nao foi possivel acessar o storage do Supabase no momento.") from erro

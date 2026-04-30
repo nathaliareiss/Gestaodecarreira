@@ -99,3 +99,5 @@ class HistoricoFuncionalResponse(BaseModel):
     afastamentos_resumo: AfastamentoResumoResponse | None = None
     afastamentos: list[AfastamentoPeriodoResponse] = Field(default_factory=list)
     eventos: list[HistoricoFuncionalEventoResponse]
+    armazenamento_origem: Literal["supabase", "local"] = "supabase"
+    processamento_origem: Literal["fila", "direto"] = "direto"
