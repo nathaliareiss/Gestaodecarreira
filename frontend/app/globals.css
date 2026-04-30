@@ -319,8 +319,8 @@ html[data-theme="light"] .form-card--recovery {
   text-transform: uppercase;
   letter-spacing: 0.18em;
   color: var(--accent);
-  font-size: 0.85rem;
-  font-weight: 700;
+  font-size: 0.98rem;
+  font-weight: 800;
 }
 
 .hero h1,
@@ -681,7 +681,7 @@ html[data-theme="light"] .results-card {
 .analysis-header__subtitle {
   margin: 0;
   color: var(--muted);
-  font-size: 0.95rem;
+  font-size: 0.82rem;
 }
 
 .analysis-header__title--compact {
