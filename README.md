@@ -88,3 +88,20 @@ e processamento em fila para as tarefas mais pesadas.
 - Next.js
 - React
 - TypeScript
+
+## Observabilidade
+
+O backend expõe métricas em `GET /api/metrics` no formato Prometheus.
+
+Para subir a stack local de coleta e visualização:
+
+```powershell
+.\run-observability.cmd
+```
+
+Isso inicia:
+
+- Prometheus em `http://localhost:9090`
+- Grafana em `http://localhost:3001`
+
+Mais detalhes em [observability/README.md](observability/README.md).

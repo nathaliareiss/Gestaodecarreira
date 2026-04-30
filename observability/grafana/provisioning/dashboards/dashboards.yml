@@ -1,0 +1,11 @@
+apiVersion: 1
+
+providers:
+  - name: gestao-carreira
+    orgId: 1
+    folder: Gestao de Carreira
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /var/lib/grafana/dashboards
