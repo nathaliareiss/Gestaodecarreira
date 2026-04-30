@@ -15,7 +15,7 @@ def registrar_middleware_de_metricas(app) -> None:
     @app.middleware("http")
     async def medir_requisicoes(request: Request, call_next):
         metodo = request.method
-        registrar_request_em_andamento(metodo, "__all__")
+        registrar_request_em_andamento()
         inicio = perf_counter()
         status_code = 500
         try:
@@ -27,4 +27,4 @@ def registrar_middleware_de_metricas(app) -> None:
             nome_rota = getattr(route, "path", None) or request.url.path
             duracao = perf_counter() - inicio
             registro_http_request(metodo, nome_rota, status_code, duracao)
-            liberar_request_em_andamento(metodo, "__all__")
+            liberar_request_em_andamento()

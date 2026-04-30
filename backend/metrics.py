@@ -213,17 +213,11 @@ def registro_http_request(
     )
 
 
-def registrar_request_em_andamento(
-    metodo: str,
-    rota: str,
-) -> None:
+def registrar_request_em_andamento() -> None:
     metrics.increment_gauge("http_requests_in_flight")
 
 
-def liberar_request_em_andamento(
-    metodo: str,
-    rota: str,
-) -> None:
+def liberar_request_em_andamento() -> None:
     metrics.decrement_gauge("http_requests_in_flight")
 
 
