@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-import base64
 import re
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import date
 from io import BytesIO
 from typing import Literal
 
@@ -23,20 +22,6 @@ SECAO_NOMEOACAO_PREFIXOS = ("Efetivo-Nomeado",)
 SECAO_PROGRESSAO_PREFIXOS = ("Progressão",)
 SECAO_PROMOCAO_PREFIXOS = ("Promoção",)
 SECAO_SUBSTITUICAO_PREFIXOS = ("Substituição",)
-
-ROMANOS_VALIDOS = {
-    "I",
-    "II",
-    "III",
-    "IV",
-    "V",
-    "VI",
-    "VII",
-    "VIII",
-    "IX",
-    "X",
-}
-
 
 @dataclass(frozen=True, slots=True)
 class EventoHistorico:
@@ -81,16 +66,6 @@ class AfastamentoPeriodo:
     publicacao: date | None
     mes_ano_afastamento: str
     dias_restantes_ate_pericia: int
-
-
-def decodificar_arquivo_base64(conteudo_base64: str) -> bytes:
-    if "," in conteudo_base64:
-        conteudo_base64 = conteudo_base64.split(",", 1)[1]
-
-    try:
-        return base64.b64decode(conteudo_base64, validate=True)
-    except Exception as exc:
-        raise ValueError("Arquivo PDF invalido ou corrompido.") from exc
 
 
 def _limpar_linhas(texto: str) -> list[str]:

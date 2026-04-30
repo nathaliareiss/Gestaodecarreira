@@ -25,14 +25,6 @@ def obter_usuario_por_login(db: Session, login: str) -> Usuario | None:
     return db.scalar(select(Usuario).where(Usuario.login == login))
 
 
-def obter_usuario_por_login_ou_email(db: Session, identificador: str) -> Usuario | None:
-    usuario = obter_usuario_por_login(db, identificador)
-    if usuario is not None:
-        return usuario
-
-    return obter_usuario_por_email(db, identificador)
-
-
 def obter_usuario_por_token(db: Session, token: str) -> Usuario | None:
     return db.scalar(
         select(Usuario).where(Usuario.token_confirmacao_email == token)
