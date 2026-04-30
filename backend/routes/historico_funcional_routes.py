@@ -26,6 +26,7 @@ from backend.services.historico_funcional_job_service import (
     processar_historico_funcional_db,
 )
 from backend.storage.supabase_storage import (
+    StorageError,
     enviar_pdf_para_storage,
     gerar_caminho_storage_afastamentos,
     gerar_caminho_storage_historico,
@@ -53,7 +54,13 @@ async def _armazenar_arquivo_pdf(
             detail="Nao foi possivel ler o arquivo enviado.",
         )
 
-    enviar_pdf_para_storage(conteudo, caminho_storage)
+    try:
+        enviar_pdf_para_storage(conteudo, caminho_storage)
+    except StorageError as erro:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Nao foi possivel salvar o arquivo no storage no momento.",
+        ) from erro
 
 
 def _responder_status_job(job_id: str) -> JobStatusResponse:
@@ -166,6 +173,11 @@ async def analisar_e_salvar_historico(
 
     try:
         return processar_historico_funcional_db(db, dados)
+    except StorageError as erro:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Nao foi possivel acessar o storage para processar o PDF.",
+        ) from erro
     except ValueError as erro:
         logger.warning(
             "Falha ao analisar historico funcional",
@@ -241,6 +253,11 @@ async def anexar_afastamentos_historico(
 
     try:
         return processar_afastamentos_db(db, usuario_id, dados)
+    except StorageError as erro:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Nao foi possivel acessar o storage para processar o PDF.",
+        ) from erro
     except ValueError as erro:
         mensagem = str(erro)
         logger.warning(

@@ -1,6 +1,6 @@
 ﻿"use client"
 
-import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from "react"
 
 import type {
   HistoricoFuncionalAnalise,
@@ -29,7 +29,6 @@ export function useHistoricoFuncionalController({
   historicoInicial,
 }: UseHistoricoFuncionalControllerParams) {
   const [arquivo, setArquivo] = useState<File | null>(null)
-  const [arquivoDownloadUrl, setArquivoDownloadUrl] = useState<string | null>(null)
   const [arquivoAfastamentos, setArquivoAfastamentos] = useState<File | null>(null)
   const [dataNascimento, setDataNascimento] = useState(historicoInicial?.data_nascimento ?? "")
   const [anosCltAverbados, setAnosCltAverbados] = useState(
@@ -42,6 +41,14 @@ export function useHistoricoFuncionalController({
   const [modoAtualizacaoHistorico, setModoAtualizacaoHistorico] = useState(historicoInicial === null)
   const [modoAnexoAfastamentos, setModoAnexoAfastamentos] = useState(historicoInicial !== null)
   const assinaturaEnvioAutomatico = useRef<string | null>(null)
+
+  const arquivoDownloadUrl = useMemo(() => {
+    if (!arquivo) {
+      return null
+    }
+
+    return URL.createObjectURL(arquivo)
+  }, [arquivo])
 
   async function aguardarResultadoJob(jobId: string) {
     for (let tentativas = 0; tentativas < 60; tentativas += 1) {
@@ -68,18 +75,12 @@ export function useHistoricoFuncionalController({
   }
 
   useEffect(() => {
-    if (!arquivo) {
-      setArquivoDownloadUrl(null)
-      return
-    }
-
-    const url = URL.createObjectURL(arquivo)
-    setArquivoDownloadUrl(url)
-
     return () => {
-      URL.revokeObjectURL(url)
+      if (arquivoDownloadUrl) {
+        URL.revokeObjectURL(arquivoDownloadUrl)
+      }
     }
-  }, [arquivo])
+  }, [arquivoDownloadUrl])
 
   function selecionarArquivo(evento: ChangeEvent<HTMLInputElement>) {
     const selecionado = evento.target.files?.[0] ?? null
@@ -113,26 +114,30 @@ export function useHistoricoFuncionalController({
     setErro(null)
   }
 
-  function criarAssinaturaHistorico() {
-    return [
-      arquivo?.name ?? "",
-      arquivo?.size ?? 0,
-      arquivo?.lastModified ?? 0,
-      dataNascimento,
-      anosCltAverbados,
-      usuarioId ?? "",
-    ].join("|")
-  }
+  const criarAssinaturaHistorico = useCallback(
+    () =>
+      [
+        arquivo?.name ?? "",
+        arquivo?.size ?? 0,
+        arquivo?.lastModified ?? 0,
+        dataNascimento,
+        anosCltAverbados,
+        usuarioId ?? "",
+      ].join("|"),
+    [arquivo, dataNascimento, anosCltAverbados, usuarioId],
+  )
 
-  function criarAssinaturaAfastamentos() {
-    return [
-      arquivoAfastamentos?.name ?? "",
-      arquivoAfastamentos?.size ?? 0,
-      arquivoAfastamentos?.lastModified ?? 0,
-      historico?.historico_id ?? "",
-      usuarioId ?? "",
-    ].join("|")
-  }
+  const criarAssinaturaAfastamentos = useCallback(
+    () =>
+      [
+        arquivoAfastamentos?.name ?? "",
+        arquivoAfastamentos?.size ?? 0,
+        arquivoAfastamentos?.lastModified ?? 0,
+        historico?.historico_id ?? "",
+        usuarioId ?? "",
+      ].join("|"),
+    [arquivoAfastamentos, historico, usuarioId],
+  )
 
   async function recarregarHistorico() {
     if (!usuarioId) {
@@ -156,105 +161,111 @@ export function useHistoricoFuncionalController({
     }
   }
 
-  async function submeterAnalise(assinatura?: string) {
-    if (!usuarioId) {
-      setErro("Cadastre um usuário antes de enviar o histórico funcional.")
-      return
-    }
-
-    if (!arquivo) {
-      setErro("Escolha um PDF do histórico funcional.")
-      return
-    }
-
-    if (!dataNascimento) {
-      setErro("Informe a data de nascimento para calcular a aposentadoria.")
-      return
-    }
-
-    setCarregando(true)
-    setErro(null)
-    setMensagemProcessamento("Processando o PDF do histórico funcional em segundo plano...")
-
-    if (assinatura) {
-      assinaturaEnvioAutomatico.current = assinatura
-    }
-
-    try {
-      const payload = new FormData()
-      payload.append("usuario_id", String(usuarioId))
-      payload.append("arquivo", arquivo)
-      payload.append("data_nascimento", dataNascimento)
-      payload.append("anos_clt_averbados", String(Math.min(Math.max(anosCltAverbados, 0), 10)))
-      if (arquivoAfastamentos) {
-        payload.append("afastamentos_arquivo", arquivoAfastamentos)
+  const submeterAnalise = useCallback(
+    async (assinatura?: string) => {
+      if (!usuarioId) {
+        setErro("Cadastre um usuário antes de enviar o histórico funcional.")
+        return
       }
 
-      const resposta = await analisarHistoricoFuncional(payload)
-      const analisado = respostaEhJob(resposta)
-        ? await aguardarResultadoJob(resposta.job_id)
-        : resposta
+      if (!arquivo) {
+        setErro("Escolha um PDF do histórico funcional.")
+        return
+      }
 
-      setHistorico(analisado)
-      setModoAtualizacaoHistorico(false)
-      setModoAnexoAfastamentos(true)
-    } catch (error) {
+      if (!dataNascimento) {
+        setErro("Informe a data de nascimento para calcular a aposentadoria.")
+        return
+      }
+
+      setCarregando(true)
+      setErro(null)
+      setMensagemProcessamento("Processando o PDF do histórico funcional em segundo plano...")
+
       if (assinatura) {
-        assinaturaEnvioAutomatico.current = null
+        assinaturaEnvioAutomatico.current = assinatura
       }
-      setErro(error instanceof Error ? error.message : "Falha inesperada ao analisar.")
-    } finally {
-      setMensagemProcessamento(null)
-      setCarregando(false)
-    }
-  }
 
-  async function submeterAfastamentos(assinatura?: string) {
-    if (!usuarioId) {
-      setErro("Cadastre um usuário antes de enviar os afastamentos.")
-      return
-    }
+      try {
+        const payload = new FormData()
+        payload.append("usuario_id", String(usuarioId))
+        payload.append("arquivo", arquivo)
+        payload.append("data_nascimento", dataNascimento)
+        payload.append("anos_clt_averbados", String(Math.min(Math.max(anosCltAverbados, 0), 10)))
+        if (arquivoAfastamentos) {
+          payload.append("afastamentos_arquivo", arquivoAfastamentos)
+        }
 
-    if (!historico) {
-      setErro("Envie primeiro o histórico funcional.")
-      return
-    }
+        const resposta = await analisarHistoricoFuncional(payload)
+        const analisado = respostaEhJob(resposta)
+          ? await aguardarResultadoJob(resposta.job_id)
+          : resposta
 
-    if (!arquivoAfastamentos) {
-      setErro("Escolha um PDF de afastamentos.")
-      return
-    }
+        setHistorico(analisado)
+        setModoAtualizacaoHistorico(false)
+        setModoAnexoAfastamentos(true)
+      } catch (error) {
+        if (assinatura) {
+          assinaturaEnvioAutomatico.current = null
+        }
+        setErro(error instanceof Error ? error.message : "Falha inesperada ao analisar.")
+      } finally {
+        setMensagemProcessamento(null)
+        setCarregando(false)
+      }
+    },
+    [arquivo, arquivoAfastamentos, anosCltAverbados, dataNascimento, usuarioId],
+  )
 
-    setCarregando(true)
-    setErro(null)
-    setMensagemProcessamento("Processando o PDF dos afastamentos em segundo plano...")
+  const submeterAfastamentos = useCallback(
+    async (assinatura?: string) => {
+      if (!usuarioId) {
+        setErro("Cadastre um usuário antes de enviar os afastamentos.")
+        return
+      }
 
-    if (assinatura) {
-      assinaturaEnvioAutomatico.current = assinatura
-    }
+      if (!historico) {
+        setErro("Envie primeiro o histórico funcional.")
+        return
+      }
 
-    try {
-      const payload = new FormData()
-      payload.append("arquivo", arquivoAfastamentos)
-      const resposta = await anexarAfastamentosAoHistorico(usuarioId, payload)
+      if (!arquivoAfastamentos) {
+        setErro("Escolha um PDF de afastamentos.")
+        return
+      }
 
-      const analisado = respostaEhJob(resposta)
-        ? await aguardarResultadoJob(resposta.job_id)
-        : resposta
+      setCarregando(true)
+      setErro(null)
+      setMensagemProcessamento("Processando o PDF dos afastamentos em segundo plano...")
 
-      setHistorico(analisado)
-      setArquivoAfastamentos(null)
-      setModoAnexoAfastamentos(true)
-    } catch (error) {
       if (assinatura) {
-        assinaturaEnvioAutomatico.current = null
+        assinaturaEnvioAutomatico.current = assinatura
       }
-      setErro(error instanceof Error ? error.message : "Falha inesperada ao analisar os afastamentos.")
-    } finally {
-      setMensagemProcessamento(null)
-      setCarregando(false)
-    }
-  }
+
+      try {
+        const payload = new FormData()
+        payload.append("arquivo", arquivoAfastamentos)
+        const resposta = await anexarAfastamentosAoHistorico(usuarioId, payload)
+
+        const analisado = respostaEhJob(resposta)
+          ? await aguardarResultadoJob(resposta.job_id)
+          : resposta
+
+        setHistorico(analisado)
+        setArquivoAfastamentos(null)
+        setModoAnexoAfastamentos(true)
+      } catch (error) {
+        if (assinatura) {
+          assinaturaEnvioAutomatico.current = null
+        }
+        setErro(error instanceof Error ? error.message : "Falha inesperada ao analisar os afastamentos.")
+      } finally {
+        setMensagemProcessamento(null)
+        setCarregando(false)
+      }
+    },
+    [arquivoAfastamentos, historico, usuarioId],
+  )
 
   async function enviarFormulario(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault()
@@ -272,7 +283,16 @@ export function useHistoricoFuncionalController({
     }
 
     void submeterAnalise(assinatura)
-  }, [arquivo, dataNascimento, anosCltAverbados, carregando, usuarioId, modoAtualizacaoHistorico])
+  }, [
+    arquivo,
+    dataNascimento,
+    anosCltAverbados,
+    carregando,
+    usuarioId,
+    modoAtualizacaoHistorico,
+    criarAssinaturaHistorico,
+    submeterAnalise,
+  ])
 
   useEffect(() => {
     if (!modoAnexoAfastamentos || !historico || !arquivoAfastamentos || carregando) {
@@ -285,7 +305,15 @@ export function useHistoricoFuncionalController({
     }
 
     void submeterAfastamentos(assinatura)
-  }, [arquivoAfastamentos, carregando, usuarioId, historico, modoAnexoAfastamentos])
+  }, [
+    arquivoAfastamentos,
+    carregando,
+    usuarioId,
+    historico,
+    modoAnexoAfastamentos,
+    criarAssinaturaAfastamentos,
+    submeterAfastamentos,
+  ])
 
   return {
     arquivo,

@@ -82,6 +82,11 @@ backend.app:app
 - `HOST`
 - `PORT`
 - `REDIS_URL`
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `SUPABASE_STORAGE_BUCKET`
+- `SUPABASE_STORAGE_HISTORICO_PREFIX`
+- `SUPABASE_STORAGE_AFASTAMENTOS_PREFIX`
 - `CORS_ORIGINS`
 - `DATABASE_URL`
 - `FRONTEND_BASE_URL`
@@ -113,6 +118,17 @@ As tarefas mais pesadas usam Redis + RQ:
 Quando `REDIS_URL` estiver configurado, a API agenda a tarefa e o frontend consulta o status em
 `GET /api/historicos-funcionais/jobs/{job_id}`. Se a fila não estiver disponível, o backend faz
 o processamento de forma direta para manter o ambiente local funcionando.
+
+## Storage de PDFs
+
+Os PDFs ficam no Supabase Storage:
+
+- bucket: `gestaocarreira`
+- pasta de histórico funcional: `historicofuncional`
+- pasta de afastamentos: `afastamentos`
+
+O backend recebe os arquivos via `multipart/form-data`, envia para o Storage e salva no banco
+somente o caminho do objeto.
 
 ## Fluxo
 

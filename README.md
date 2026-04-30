@@ -49,6 +49,11 @@ e processamento em fila para as tarefas mais pesadas.
 
 - `DATABASE_URL`
 - `REDIS_URL`
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `SUPABASE_STORAGE_BUCKET`
+- `SUPABASE_STORAGE_HISTORICO_PREFIX`
+- `SUPABASE_STORAGE_AFASTAMENTOS_PREFIX`
 - `CORS_ORIGINS`
 - `FRONTEND_BASE_URL`
 - `SMTP_HOST`
@@ -68,6 +73,16 @@ e processamento em fila para as tarefas mais pesadas.
 - frontend: configure `NEXT_PUBLIC_API_URL` com a URL pública da API
 - o link dos e-mails precisa usar a URL pública do frontend em `FRONTEND_BASE_URL`
 - a fila precisa de `REDIS_URL`
+
+## Storage
+
+Os PDFs agora sÃ£o enviados para o Supabase Storage:
+
+- bucket: `gestaocarreira`
+- pasta de histÃ³rico funcional: `historicofuncional`
+- pasta de afastamentos: `afastamentos`
+
+O banco guarda apenas o caminho do arquivo e os metadados da anÃ¡lise.
 
 ## Fluxo principal
 

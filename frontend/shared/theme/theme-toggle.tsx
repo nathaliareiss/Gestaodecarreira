@@ -25,15 +25,14 @@ function temaInicial(): ThemeMode {
 }
 
 export function ThemeToggle() {
-  const [tema, setTema] = useState<ThemeMode>("dark")
+  const [tema, setTema] = useState<ThemeMode>(() => temaInicial())
   const [pronto, setPronto] = useState(false)
 
   useLayoutEffect(() => {
-    const inicial = temaInicial()
-    setTema(inicial)
-    aplicarTema(inicial)
-    setPronto(true)
-  }, [])
+    aplicarTema(tema)
+    const frame = window.requestAnimationFrame(() => setPronto(true))
+    return () => window.cancelAnimationFrame(frame)
+  }, [tema])
 
   function alternarTema() {
     setTema((atual) => {

@@ -500,7 +500,6 @@ export function HistoricoFuncionalView({
     arquivoDownloadUrl,
     arquivoAfastamentos,
     anosCltAverbados,
-    carregando,
     dataNascimento,
     erro,
     mensagemProcessamento,
