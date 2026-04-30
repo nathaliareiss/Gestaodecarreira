@@ -323,6 +323,11 @@ html[data-theme="light"] .form-card--recovery {
   font-weight: 800;
 }
 
+.eyebrow--title {
+  font-size: 1.12rem;
+  letter-spacing: 0.2em;
+}
+
 .hero h1,
 .card h2,
 .note-card h2,
@@ -357,6 +362,13 @@ html[data-theme="light"] .form-card--recovery {
   text-align: center;
   align-self: center;
   margin-block: -1.45rem 0;
+}
+
+.hero-title--nowrap {
+  white-space: nowrap;
+  overflow-wrap: normal;
+  line-height: 1;
+  font-size: clamp(1.9rem, 4vw, 4.4rem);
 }
 
 .hero-text {

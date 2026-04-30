@@ -20,6 +20,7 @@ ARG NEXT_PUBLIC_API_URL=https://astonishing-forgiveness-production-c90d.up.railw
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV PORT=3000
 
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev && npm cache clean --force
@@ -29,4 +30,4 @@ COPY --from=builder /app/next.config.mjs ./next.config.mjs
 
 EXPOSE 3000
 
-CMD ["npm", "start", "--", "-H", "0.0.0.0", "-p", "3000"]
+CMD ["sh", "-c", "npm start -- -H 0.0.0.0 -p ${PORT:-3000}"]

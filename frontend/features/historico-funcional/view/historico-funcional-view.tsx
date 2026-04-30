@@ -537,7 +537,7 @@ export function HistoricoFuncionalView({
     <section className="analysis-card card">
       <div className="analysis-header">
         <div className="analysis-header__title">
-          <p className="eyebrow">Histórico funcional</p>
+          <p className="eyebrow eyebrow--title">Histórico funcional</p>
           <h2>Gestão de dados</h2>
           <p className="analysis-header__subtitle">Data management</p>
         </div>
