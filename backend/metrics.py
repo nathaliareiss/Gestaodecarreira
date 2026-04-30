@@ -1,9 +1,18 @@
 from __future__ import annotations
 
+import json
 from collections import defaultdict
 from dataclasses import dataclass, field
 from threading import Lock
 from typing import Any
+
+from backend.config import REDIS_URL
+from backend.logger import logger
+
+try:
+    from redis import Redis
+except ImportError:  # pragma: no cover - optional when redis is not installed
+    Redis = None
 
 DEFAULT_HISTOGRAM_BUCKETS: tuple[float, ...] = (
     0.05,
@@ -28,6 +37,20 @@ _METRIC_HELP = {
     "email_send_duration_seconds": "Duracao do envio de email em segundos.",
 }
 
+_COUNTER_METRICS = (
+    "http_requests_total",
+    "job_executions_total",
+    "email_send_total",
+)
+
+_GAUGE_METRICS = ("http_requests_in_flight",)
+
+_HISTOGRAM_METRICS = (
+    "http_request_duration_seconds",
+    "job_execution_duration_seconds",
+    "email_send_duration_seconds",
+)
+
 
 @dataclass
 class _HistogramState:
@@ -42,6 +65,7 @@ class MetricsRegistry:
         self._counters: dict[tuple[str, tuple[tuple[str, str], ...]], float] = defaultdict(float)
         self._gauges: dict[tuple[str, tuple[tuple[str, str], ...]], float] = defaultdict(float)
         self._histograms: dict[tuple[str, tuple[tuple[str, str], ...]], _HistogramState] = {}
+        self._redis = self._conectar_redis()
 
     def increment_counter(
         self,
@@ -50,6 +74,10 @@ class MetricsRegistry:
         labels: dict[str, Any] | None = None,
     ) -> None:
         key = self._build_key(name, labels)
+        if self._redis is not None:
+            self._redis.hincrbyfloat(self._redis_key("counter", name), self._serializar_labels(key[1]), amount)
+            return
+
         with self._lock:
             self._counters[key] += amount
 
@@ -60,6 +88,10 @@ class MetricsRegistry:
         labels: dict[str, Any] | None = None,
     ) -> None:
         key = self._build_key(name, labels)
+        if self._redis is not None:
+            self._redis.hincrbyfloat(self._redis_key("gauge", name), self._serializar_labels(key[1]), amount)
+            return
+
         with self._lock:
             self._gauges[key] += amount
 
@@ -78,6 +110,10 @@ class MetricsRegistry:
         labels: dict[str, Any] | None = None,
     ) -> None:
         key = self._build_key(name, labels)
+        if self._redis is not None:
+            self._redis.hset(self._redis_key("gauge", name), self._serializar_labels(key[1]), value)
+            return
+
         with self._lock:
             self._gauges[key] = value
 
@@ -89,6 +125,18 @@ class MetricsRegistry:
         buckets: tuple[float, ...] = DEFAULT_HISTOGRAM_BUCKETS,
     ) -> None:
         key = self._build_key(name, labels)
+        if self._redis is not None:
+            redis_key = self._redis_key("histogram", name)
+            serie = self._serializar_labels(key[1])
+            pipeline = self._redis.pipeline(transaction=True)
+            pipeline.hincrby(redis_key, f"{serie}|count", 1)
+            pipeline.hincrbyfloat(redis_key, f"{serie}|sum", value)
+            for bucket in buckets:
+                if value <= bucket:
+                    pipeline.hincrby(redis_key, f"{serie}|bucket:{bucket}", 1)
+            pipeline.execute()
+            return
+
         with self._lock:
             state = self._histograms.setdefault(key, _HistogramState())
             state.count += 1
@@ -98,6 +146,11 @@ class MetricsRegistry:
                     state.buckets[bucket] += 1
 
     def render(self) -> str:
+        if self._redis is not None:
+            return self._render_from_redis()
+        return self._render_from_memory()
+
+    def _render_from_memory(self) -> str:
         with self._lock:
             counters = dict(self._counters)
             gauges = dict(self._gauges)
@@ -121,22 +174,17 @@ class MetricsRegistry:
             metric_types[name] = "histogram"
 
         for name in sorted(metric_types):
-            help_text = _METRIC_HELP.get(name)
-            if help_text:
-                linhas.append(f"# HELP {name} {help_text}")
-            linhas.append(f"# TYPE {name} {metric_types[name]}")
+            self._append_help_and_type(linhas, name, metric_types[name])
 
             if metric_types[name] == "counter":
                 for (metric_name, labels), value in sorted(counters.items()):
-                    if metric_name != name:
-                        continue
-                    linhas.append(f"{name}{self._format_labels(labels)} {self._format_value(value)}")
+                    if metric_name == name:
+                        linhas.append(f"{name}{self._format_labels(labels)} {self._format_value(value)}")
 
             elif metric_types[name] == "gauge":
                 for (metric_name, labels), value in sorted(gauges.items()):
-                    if metric_name != name:
-                        continue
-                    linhas.append(f"{name}{self._format_labels(labels)} {self._format_value(value)}")
+                    if metric_name == name:
+                        linhas.append(f"{name}{self._format_labels(labels)} {self._format_value(value)}")
 
             else:
                 for (metric_name, labels), state in sorted(histograms.items()):
@@ -146,13 +194,74 @@ class MetricsRegistry:
                     for bucket in DEFAULT_HISTOGRAM_BUCKETS:
                         bucket_labels = dict(base_labels)
                         bucket_labels["le"] = self._format_bucket(bucket)
-                        count = state.buckets.get(bucket, 0)
-                        linhas.append(f"{name}_bucket{self._format_labels(bucket_labels)} {count}")
+                        linhas.append(
+                            f"{name}_bucket{self._format_labels(bucket_labels)} "
+                            f"{state.buckets.get(bucket, 0)}"
+                        )
                     bucket_labels = dict(base_labels)
                     bucket_labels["le"] = "+Inf"
                     linhas.append(f"{name}_bucket{self._format_labels(bucket_labels)} {state.count}")
                     linhas.append(f"{name}_sum{self._format_labels(base_labels)} {self._format_value(state.total)}")
                     linhas.append(f"{name}_count{self._format_labels(base_labels)} {state.count}")
+
+        return "\n".join(linhas) + ("\n" if linhas else "")
+
+    def _render_from_redis(self) -> str:
+        linhas: list[str] = []
+
+        for name in _COUNTER_METRICS:
+            valores = self._redis.hgetall(self._redis_key("counter", name))
+            if not valores:
+                continue
+            self._append_help_and_type(linhas, name, "counter")
+            for serie, valor in sorted(valores.items()):
+                labels = self._desserializar_labels(serie)
+                linhas.append(f"{name}{self._format_labels(labels)} {self._format_value(float(valor))}")
+
+        for name in _GAUGE_METRICS:
+            valores = self._redis.hgetall(self._redis_key("gauge", name))
+            if not valores:
+                continue
+            self._append_help_and_type(linhas, name, "gauge")
+            for serie, valor in sorted(valores.items()):
+                labels = self._desserializar_labels(serie)
+                linhas.append(f"{name}{self._format_labels(labels)} {self._format_value(float(valor))}")
+
+        for name in _HISTOGRAM_METRICS:
+            valores = self._redis.hgetall(self._redis_key("histogram", name))
+            if not valores:
+                continue
+            self._append_help_and_type(linhas, name, "histogram")
+
+            series: dict[str, dict[str, Any]] = defaultdict(
+                lambda: {"count": 0, "sum": 0.0, "buckets": defaultdict(int)}
+            )
+            for campo, valor in valores.items():
+                serie, secao = campo.rsplit("|", 1)
+                dados = series[serie]
+                if secao == "count":
+                    dados["count"] = int(float(valor))
+                elif secao == "sum":
+                    dados["sum"] = float(valor)
+                elif secao.startswith("bucket:"):
+                    bucket = secao.split(":", 1)[1]
+                    dados["buckets"][bucket] = int(float(valor))
+
+            for serie, dados in sorted(series.items()):
+                labels = self._desserializar_labels(serie)
+                for bucket in DEFAULT_HISTOGRAM_BUCKETS:
+                    bucket_key = self._format_bucket(bucket)
+                    bucket_labels = dict(labels)
+                    bucket_labels["le"] = bucket_key
+                    linhas.append(
+                        f"{name}_bucket{self._format_labels(bucket_labels)} "
+                        f"{dados['buckets'].get(str(bucket), 0)}"
+                    )
+                bucket_labels = dict(labels)
+                bucket_labels["le"] = "+Inf"
+                linhas.append(f"{name}_bucket{self._format_labels(bucket_labels)} {dados['count']}")
+                linhas.append(f"{name}_sum{self._format_labels(labels)} {self._format_value(dados['sum'])}")
+                linhas.append(f"{name}_count{self._format_labels(labels)} {dados['count']}")
 
         return "\n".join(linhas) + ("\n" if linhas else "")
 
@@ -163,6 +272,36 @@ class MetricsRegistry:
     ) -> tuple[str, tuple[tuple[str, str], ...]]:
         normalized = tuple(sorted((str(chave), str(valor)) for chave, valor in (labels or {}).items()))
         return name, normalized
+
+    def _conectar_redis(self) -> Redis | None:
+        if Redis is None or not REDIS_URL:
+            return None
+
+        try:
+            cliente = Redis.from_url(REDIS_URL, decode_responses=True)
+            cliente.ping()
+            return cliente
+        except Exception as erro:  # pragma: no cover - depends on runtime environment
+            logger.warning(
+                "Metrica Redis indisponivel, usando armazenamento local",
+                extra={"erro": str(erro)},
+            )
+            return None
+
+    def _redis_key(self, kind: str, name: str) -> str:
+        return f"metrics:{kind}:{name}"
+
+    def _serializar_labels(self, labels: tuple[tuple[str, str], ...]) -> str:
+        return json.dumps(dict(labels), sort_keys=True, ensure_ascii=False, separators=(",", ":"))
+
+    def _desserializar_labels(self, valor: str) -> dict[str, str]:
+        return json.loads(valor) if valor else {}
+
+    def _append_help_and_type(self, linhas: list[str], name: str, metric_type: str) -> None:
+        help_text = _METRIC_HELP.get(name)
+        if help_text:
+            linhas.append(f"# HELP {name} {help_text}")
+        linhas.append(f"# TYPE {name} {metric_type}")
 
     def _labels_dict(self, labels: tuple[tuple[str, str], ...]) -> dict[str, str]:
         return {chave: valor for chave, valor in labels}
@@ -188,8 +327,6 @@ class MetricsRegistry:
         return f"{value:.6f}".rstrip("0").rstrip(".")
 
     def _format_bucket(self, bucket: float) -> str:
-        if bucket == float("inf"):
-            return "+Inf"
         if bucket.is_integer():
             return str(int(bucket))
         return f"{bucket:.6f}".rstrip("0").rstrip(".")
