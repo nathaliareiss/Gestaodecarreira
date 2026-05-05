@@ -371,6 +371,25 @@ html[data-theme="light"] .form-card--recovery {
   font-size: 0.88rem;
 }
 
+.ghost-button--text {
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  box-shadow: none;
+  width: fit-content;
+  min-width: 0;
+}
+
+.ghost-button--text:hover {
+  color: var(--accent);
+  transform: none;
+}
+
 .button--large {
   padding: 1rem 1.25rem;
   font-size: 1rem;

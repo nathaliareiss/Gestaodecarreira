@@ -9,6 +9,7 @@ from backend.schemas.auth_schema import (
     UsuarioAuthResponse,
     UsuarioLoginRequest,
     UsuarioRedefinirSenhaRequest,
+    UsuarioReenviarConfirmacaoRequest,
     UsuarioSolicitarRecuperacaoSenhaRequest,
 )
 from backend.schemas.usuario_schema import UsuarioResponse
@@ -17,9 +18,13 @@ from backend.services.auth_service import (
     encerrar_sessao_usuario,
     obter_usuario_autenticado_por_token,
     redefinir_senha_usuario,
+    reenviar_confirmacao_email,
     solicitar_recuperacao_senha,
 )
-from backend.services.email_service import enviar_email_recuperacao_senha
+from backend.services.email_service import (
+    enviar_email_confirmacao,
+    enviar_email_recuperacao_senha,
+)
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -133,6 +138,42 @@ def solicitar_recuperacao(
     return {
         "status": "ok",
         "message": "Se o email estiver cadastrado, voce vai receber o link de redefinicao.",
+    }
+
+
+@router.post("/reenviar-confirmacao-email")
+def reenviar_confirmacao(
+    dados: UsuarioReenviarConfirmacaoRequest,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+) -> dict[str, str]:
+    identificador = dados.identificador.strip()
+    logger.info(
+        "Recebida solicitacao de reenvio de confirmacao",
+        extra={"identificador": identificador},
+    )
+    try:
+        usuario, token = reenviar_confirmacao_email(db, dados)
+    except ValueError as erro:
+        logger.warning(
+            "Reenvio de confirmacao recusado",
+            extra={"identificador": identificador, "motivo": str(erro)},
+        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(erro)) from erro
+
+    background_tasks.add_task(
+        enviar_email_confirmacao,
+        destinatario=usuario.email,
+        nome=usuario.nome,
+        token=token,
+    )
+    logger.info(
+        "Email de confirmacao agendado para reenvio",
+        extra={"usuario_id": usuario.id, "email": usuario.email},
+    )
+    return {
+        "status": "ok",
+        "message": "Se o cadastro ainda estiver pendente, um novo email de confirmacao foi enviado.",
     }
 
 

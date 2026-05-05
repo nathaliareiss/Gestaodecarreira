@@ -16,6 +16,7 @@ from backend.repositories.usuario_repository import (
 from backend.schemas.auth_schema import (
     UsuarioLoginRequest,
     UsuarioRedefinirSenhaRequest,
+    UsuarioReenviarConfirmacaoRequest,
     UsuarioSolicitarRecuperacaoSenhaRequest,
 )
 from backend.services.security_service import gerar_hash_sha256, gerar_token_seguro
@@ -100,6 +101,35 @@ def solicitar_recuperacao_senha(
     db.commit()
     logger.info(
         "Recuperacao de senha preparada",
+        extra={"usuario_id": usuario.id, "email": usuario.email},
+    )
+    return usuario, token
+
+
+def reenviar_confirmacao_email(
+    db: Session,
+    dados: UsuarioReenviarConfirmacaoRequest,
+) -> tuple[Usuario, str]:
+    identificador = dados.identificador.strip()
+    logger.info("Processando reenvio de confirmacao", extra={"identificador": identificador})
+
+    if "@" in identificador:
+        usuario = obter_usuario_por_email(db, identificador.lower())
+    else:
+        usuario = obter_usuario_por_login(db, identificador)
+
+    if usuario is None:
+        raise ValueError("Nao encontramos um usuario cadastrado com esse login ou email.")
+
+    if usuario.email_confirmado:
+        raise ValueError("Este usuario ja esta com o email confirmado.")
+
+    token = gerar_token_seguro()
+    usuario.token_confirmacao_email = token
+    db.add(usuario)
+    db.commit()
+    logger.info(
+        "Confirmacao preparada para reenvio",
         extra={"usuario_id": usuario.id, "email": usuario.email},
     )
     return usuario, token

@@ -11,12 +11,16 @@ type LoginViewProps = {
   dados: UsuarioLogin
   recuperacao: UsuarioSolicitacaoRecuperacaoSenha
   carregando: boolean
+  reenviandoConfirmacao: boolean
   recuperando: boolean
   erro: string | null
+  mensagemConfirmacao: string | null
+  erroConfirmacao: string | null
   erroRecuperacao: string | null
   mensagemRecuperacao: string | null
   onSubmit: (evento: FormEvent<HTMLFormElement>) => void
   onRecuperacaoSubmit: (evento: FormEvent<HTMLFormElement>) => void
+  onReenviarConfirmacao: () => void
   onAbrirRecuperacao: () => void
   onVoltarLogin: () => void
   onLoginChange: (valor: string) => void
@@ -29,12 +33,16 @@ export function LoginView({
   dados,
   recuperacao,
   carregando,
+  reenviandoConfirmacao,
   recuperando,
   erro,
+  mensagemConfirmacao,
+  erroConfirmacao,
   erroRecuperacao,
   mensagemRecuperacao,
   onSubmit,
   onRecuperacaoSubmit,
+  onReenviarConfirmacao,
   onAbrirRecuperacao,
   onVoltarLogin,
   onLoginChange,
@@ -114,9 +122,21 @@ export function LoginView({
                 >
                   Esqueci minha senha
                 </button>
+                <button
+                  className="ghost-button ghost-button--text"
+                  type="button"
+                  onClick={onReenviarConfirmacao}
+                  disabled={reenviandoConfirmacao}
+                >
+                  {reenviandoConfirmacao
+                    ? "Reenviando confirmação..."
+                    : "Reenviar email de confirmação"}
+                </button>
                 <p className="helper">Depois de entrar, você vai para sua página.</p>
               </div>
 
+              {mensagemConfirmacao ? <p className="success-box">{mensagemConfirmacao}</p> : null}
+              {erroConfirmacao ? <p className="error-box">{erroConfirmacao}</p> : null}
               {erro ? <p className="error-box">{erro}</p> : null}
             </form>
           ) : (
@@ -171,4 +191,3 @@ export function LoginView({
     </main>
   )
 }
-

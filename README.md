@@ -12,7 +12,7 @@ e processamento em fila para as tarefas mais pesadas.
 - página de perfil do usuário
 - envio e leitura de histórico funcional em PDF
 - envio opcional dos afastamentos em PDF
-- filas para processamento de PDFs e e-mails
+- fila para processamento de PDFs
 - gráficos de tempo trabalhado, tempo restante e afastamentos
 - linha do tempo dos eventos da carreira
 - alternância entre tema claro e escuro
@@ -236,3 +236,10 @@ Isso inicia:
 - Grafana em `http://localhost:3001`
 
 Mais detalhes em [observability/README.md](observability/README.md).
+
+## Atualizacao recente
+
+- o login continua direto no backend, sem fila
+- o cadastro envia email de confirmacao em background logo depois de salvar o usuario
+- a tela de login ganhou a opcao discreta de reenviar email de confirmacao
+- a fila Redis/RQ ficou só para o processamento pesado de PDFs

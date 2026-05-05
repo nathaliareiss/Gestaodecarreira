@@ -1,6 +1,7 @@
-﻿import type {
+import type {
   UsuarioAuthResponse,
   UsuarioLogin,
+  UsuarioReenviarConfirmacaoEmail,
   UsuarioSolicitacaoRecuperacaoSenha,
   UsuarioRedefinicaoSenha,
 } from "./auth.model"
@@ -61,6 +62,23 @@ export async function solicitarRecuperacaoSenha(
   )
 }
 
+export async function reenviarConfirmacaoEmail(
+  dados: UsuarioReenviarConfirmacaoEmail,
+): Promise<{ status: string; message: string }> {
+  const response = await apiFetch("/api/auth/reenviar-confirmacao-email", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(dados),
+  })
+
+  return parseApiResponse<{ status: string; message: string }>(
+    response,
+    "Não foi possível reenviar o e-mail de confirmação.",
+  )
+}
+
 export async function redefinirSenhaUsuario(
   dados: UsuarioRedefinicaoSenha,
 ): Promise<{ status: string; message: string }> {
@@ -77,5 +95,3 @@ export async function redefinirSenhaUsuario(
     "Não foi possível redefinir a senha.",
   )
 }
-
-

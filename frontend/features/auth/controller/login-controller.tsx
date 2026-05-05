@@ -13,12 +13,16 @@ export function LoginController() {
     dados,
     recuperacao,
     carregando,
+    reenviandoConfirmacao,
     recuperando,
     erro,
+    mensagemConfirmacao,
+    erroConfirmacao,
     erroRecuperacao,
     mensagemRecuperacao,
     enviarFormulario,
     enviarRecuperacao,
+    reenviarConfirmacao,
     abrirRecuperacao,
     voltarParaLogin,
     atualizarCampo,
@@ -35,12 +39,16 @@ export function LoginController() {
       dados={dados}
       recuperacao={recuperacao}
       carregando={carregando}
+      reenviandoConfirmacao={reenviandoConfirmacao}
       recuperando={recuperando}
       erro={erro}
+      mensagemConfirmacao={mensagemConfirmacao}
+      erroConfirmacao={erroConfirmacao}
       erroRecuperacao={erroRecuperacao}
       mensagemRecuperacao={mensagemRecuperacao}
       onSubmit={enviarFormulario}
       onRecuperacaoSubmit={enviarRecuperacao}
+      onReenviarConfirmacao={reenviarConfirmacao}
       onAbrirRecuperacao={abrirRecuperacao}
       onVoltarLogin={voltarParaLogin}
       onLoginChange={(valor) => atualizarCampo("login", valor)}

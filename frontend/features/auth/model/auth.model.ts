@@ -9,6 +9,10 @@ export type UsuarioSolicitacaoRecuperacaoSenha = {
   email: string
 }
 
+export type UsuarioReenviarConfirmacaoEmail = {
+  identificador: string
+}
+
 export type UsuarioRedefinicaoSenha = {
   token: string
   nova_senha: string

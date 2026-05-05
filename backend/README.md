@@ -62,6 +62,7 @@ backend.app:app
 - `GET /api/auth/me`
 - `POST /api/auth/logout`
 - `POST /api/auth/solicitar-recuperacao-senha`
+- `POST /api/auth/reenviar-confirmacao-email`
 - `POST /api/auth/redefinir-senha`
 
 ### Usuários
@@ -128,18 +129,22 @@ As tarefas mais pesadas usam Redis + RQ:
 
 - leitura do PDF do histórico funcional
 - leitura dos afastamentos
-- envio de e-mails de confirmação e recuperação
 
 Quando `REDIS_URL` estiver configurado, a API agenda a tarefa e o frontend consulta o status em
 `GET /api/historicos-funcionais/jobs/{job_id}`. Se a fila não estiver disponível, o backend faz
 o processamento de forma direta para manter o ambiente local funcionando.
 
-Se o Redis cair durante o envio, a API tenta seguir no modo direto em vez de parar na etapa de
-agendamento. A resposta passa a indicar `processamento_origem: "direto"` quando isso acontece.
+Se o Redis cair durante o processamento, a API tenta seguir no modo direto em vez de parar na
+etapa de agendamento. A resposta passa a indicar `processamento_origem: "direto"` quando isso
+acontece.
+
+Os e-mails de confirmação, reenvio de confirmação e recuperação de senha não usam fila externa
+mais. Eles são disparados como `BackgroundTasks` do FastAPI logo depois que a resposta principal
+é preparada. Isso mantém a interação rápida sem depender de Redis para o fluxo de autenticação.
 
 `CORS_ORIGINS` é opcional. Se ele estiver vazio, o backend usa uma configuração CORS permissiva
 como fallback para evitar falhas de preflight durante o desenvolvimento e em deploys antigos.
-O frontend continua usando o proxy do Next para as chamadas normais.
+O frontend agora chama a API diretamente pela URL pública configurada em `NEXT_PUBLIC_API_URL`.
 
 Se `DATABASE_URL` vier do Supabase, use a conexão do pooler no Railway sempre que possível.
 O backend adiciona `sslmode=require` automaticamente quando detecta um host `*.supabase.co`.
