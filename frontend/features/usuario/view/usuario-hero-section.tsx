@@ -21,7 +21,7 @@ export function UsuarioHeroSection() {
         </h1>
         <p className="hero-text hero-text--centered">
           Cadastre-se para assumir o controle da sua carreira de forma prática. Fique
-          tranquilo: seus dados estarão seguros e ninguém terá acesso a eles.
+          tranquilo: seus dados estarão seguros.
         </p>
       </div>
     </div>
