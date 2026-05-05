@@ -1,9 +1,13 @@
 "use client"
 
+import { useEffect } from "react"
+import { useRouter } from "next/navigation"
+
 import { LoginView } from "../view/login-view"
 import { useLoginController } from "./use-login-controller"
 
 export function LoginController() {
+  const router = useRouter()
   const {
     modo,
     dados,
@@ -20,6 +24,10 @@ export function LoginController() {
     atualizarCampo,
     atualizarCampoRecuperacao,
   } = useLoginController()
+
+  useEffect(() => {
+    router.prefetch("/usuario")
+  }, [router])
 
   return (
     <LoginView

@@ -1,10 +1,12 @@
+import { obterApiBaseUrl } from "@/shared/config/api"
+
 type RespostaErroApi = {
   detail?: string
 }
 
 export async function apiFetch(path: string, init: RequestInit = {}) {
   const caminho = path.startsWith("/") ? path : `/${path}`
-  return fetch(caminho, init)
+  return fetch(`${obterApiBaseUrl()}${caminho}`, init)
 }
 
 export async function parseApiResponse<T>(

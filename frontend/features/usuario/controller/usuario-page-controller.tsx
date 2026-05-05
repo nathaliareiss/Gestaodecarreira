@@ -15,6 +15,7 @@ import { removerUsuarioMaisRecente } from "@/features/usuario/model/usuario.repo
 import {
   obterTokenAutenticacao,
   removerTokenAutenticacao,
+  removerUsuarioAutenticadoCache,
 } from "@/shared/auth/session"
 
 function formatarDataCurta(valor: string | null) {
@@ -98,6 +99,7 @@ export function UsuarioPageController({
       // Se a chamada remota falhar, a sessao local ainda pode ser encerrada.
     } finally {
       removerTokenAutenticacao()
+      removerUsuarioAutenticadoCache()
       setSaindo(false)
       router.push("/login")
     }

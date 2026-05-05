@@ -13,7 +13,10 @@ import {
   autenticarUsuario,
   solicitarRecuperacaoSenha,
 } from "../model/auth.repository"
-import { salvarTokenAutenticacao } from "@/shared/auth/session"
+import {
+  salvarTokenAutenticacao,
+  salvarUsuarioAutenticadoCache,
+} from "@/shared/auth/session"
 
 type ModoAutenticacao = "login" | "recuperacao"
 
@@ -75,7 +78,8 @@ export function useLoginController() {
       })
 
       salvarTokenAutenticacao(resposta.access_token)
-      router.push("/usuario")
+      salvarUsuarioAutenticadoCache(resposta.usuario)
+      router.replace("/usuario")
     } catch (error) {
       setErro(error instanceof Error ? error.message : "Falha inesperada ao entrar.")
     } finally {

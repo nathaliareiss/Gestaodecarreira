@@ -32,9 +32,12 @@ npm run dev
 
 - `NEXT_PUBLIC_API_URL`: URL pública do backend
 
-As chamadas do frontend para `/api/*` passam por um rewrite do Next.js para o backend
-indicado em `NEXT_PUBLIC_API_URL`. Isso evita erro de CORS no navegador durante login,
-cadastro e demais operações da interface.
+Se essa variável não estiver definida no ambiente de produção, o frontend usa por padrão
+`https://astonishing-forgiveness-production-c90d.up.railway.app`.
+
+As chamadas do frontend vão direto para o backend indicado em `NEXT_PUBLIC_API_URL`.
+O backend precisa responder CORS para a origem do frontend ou aceitar `*` quando não
+houver uma lista específica configurada.
 
 ## Estrutura principal
 
