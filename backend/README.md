@@ -11,6 +11,12 @@ Servidor HTTP:
 ..\run-backend.cmd
 ```
 
+Ou, diretamente como módulo do pacote:
+
+```powershell
+.\venv\Scripts\python.exe -m backend
+```
+
 Terminal interativo:
 
 ```powershell

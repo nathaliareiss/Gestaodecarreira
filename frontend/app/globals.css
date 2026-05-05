@@ -81,6 +81,29 @@ input:focus {
   background: rgba(8, 16, 30, 0.82);
 }
 
+.form-card--login input,
+.form-card--recovery input {
+  color: #f8fbff;
+  -webkit-text-fill-color: #f8fbff;
+  caret-color: #5eead4;
+}
+
+.form-card--login input::placeholder,
+.form-card--recovery input::placeholder {
+  color: rgba(248, 251, 255, 0.68);
+}
+
+html[data-theme="light"] .form-card--login input,
+html[data-theme="light"] .form-card--recovery input {
+  color: #102033;
+  -webkit-text-fill-color: #102033;
+}
+
+html[data-theme="light"] .form-card--login input::placeholder,
+html[data-theme="light"] .form-card--recovery input::placeholder {
+  color: rgba(16, 32, 51, 0.56);
+}
+
 code {
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
 }
