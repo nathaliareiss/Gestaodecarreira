@@ -28,6 +28,16 @@ from backend.services.email_service import enviar_email_confirmacao
 router = APIRouter(prefix="/usuarios", tags=["usuarios"])
 
 
+def _enviar_email_confirmacao_com_erro_isolado(destinatario: str, nome: str, token: str) -> None:
+    try:
+        enviar_email_confirmacao(destinatario=destinatario, nome=nome, token=token)
+    except Exception:
+        logger.exception(
+            "Falha no envio do email de confirmacao em background",
+            extra={"destinatario": destinatario},
+        )
+
+
 @router.post("", response_model=UsuarioResponse, status_code=status.HTTP_201_CREATED)
 def criar_usuario(
     cadastro: UsuarioCreateRequest,
@@ -57,7 +67,7 @@ def criar_usuario(
         ) from erro
 
     background_tasks.add_task(
-        enviar_email_confirmacao,
+        _enviar_email_confirmacao_com_erro_isolado,
         destinatario=usuario.email,
         nome=usuario.nome,
         token=usuario.token_confirmacao_email,

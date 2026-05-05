@@ -107,6 +107,7 @@ backend.app:app
 - `SMTP_FROM_NAME`
 - `SMTP_USE_TLS`
 - `SMTP_USE_SSL`
+- `SMTP_TIMEOUT`
 - `AUTO_SYNC_DB_SCHEMA`
 
 ## E-mail

@@ -19,6 +19,7 @@ from backend.config import (
     SMTP_USER,
     SMTP_USE_SSL,
     SMTP_USE_TLS,
+    SMTP_TIMEOUT,
 )
 
 
@@ -62,7 +63,7 @@ def _enviar_mensagem(mensagem: EmailMessage) -> None:
                 "ssl": SMTP_USE_SSL,
             },
         )
-        with cliente_cls(SMTP_HOST, SMTP_PORT, timeout=30) as cliente:
+        with cliente_cls(SMTP_HOST, SMTP_PORT, timeout=SMTP_TIMEOUT) as cliente:
             cliente.ehlo()
             if SMTP_USE_TLS and not SMTP_USE_SSL:
                 cliente.starttls()

@@ -29,6 +29,26 @@ from backend.services.email_service import (
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
+def _enviar_email_confirmacao_com_erro_isolado(destinatario: str, nome: str, token: str) -> None:
+    try:
+        enviar_email_confirmacao(destinatario=destinatario, nome=nome, token=token)
+    except Exception:
+        logger.exception(
+            "Falha no reenvio do email de confirmacao em background",
+            extra={"destinatario": destinatario},
+        )
+
+
+def _enviar_email_recuperacao_com_erro_isolado(destinatario: str, nome: str, token: str) -> None:
+    try:
+        enviar_email_recuperacao_senha(destinatario=destinatario, nome=nome, token=token)
+    except Exception:
+        logger.exception(
+            "Falha no envio do email de recuperacao em background",
+            extra={"destinatario": destinatario},
+        )
+
+
 def _extrair_token_bearer(authorization: str | None) -> str:
     if not authorization:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Nao autenticado.")
@@ -128,7 +148,7 @@ def solicitar_recuperacao(
         ) from erro
     else:
         background_tasks.add_task(
-            enviar_email_recuperacao_senha,
+            _enviar_email_recuperacao_com_erro_isolado,
             destinatario=usuario.email,
             nome=usuario.nome,
             token=token,
@@ -162,7 +182,7 @@ def reenviar_confirmacao(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(erro)) from erro
 
     background_tasks.add_task(
-        enviar_email_confirmacao,
+        _enviar_email_confirmacao_com_erro_isolado,
         destinatario=usuario.email,
         nome=usuario.nome,
         token=token,
