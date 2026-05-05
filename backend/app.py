@@ -30,6 +30,10 @@ def criar_app() -> FastAPI:
     registrar_middleware_de_metricas(app)
     app.include_router(api_router)
 
+    @app.get("/")
+    def raiz() -> dict[str, str]:
+        return {"status": "ok", "service": "Gestao de Carreira API"}
+
     @app.on_event("startup")
     def _criar_tabelas() -> None:
         if AUTO_SYNC_DB_SCHEMA:
