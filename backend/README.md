@@ -137,8 +137,9 @@ o processamento de forma direta para manter o ambiente local funcionando.
 Se o Redis cair durante o envio, a API tenta seguir no modo direto em vez de parar na etapa de
 agendamento. A resposta passa a indicar `processamento_origem: "direto"` quando isso acontece.
 
-`CORS_ORIGINS` é opcional. Se ele estiver vazio, o backend não registra `CORSMiddleware`.
-Isso funciona bem porque o frontend usa rewrite do Next e não depende de CORS para falar com a API.
+`CORS_ORIGINS` é opcional. Se ele estiver vazio, o backend usa uma configuração CORS permissiva
+como fallback para evitar falhas de preflight durante o desenvolvimento e em deploys antigos.
+O frontend continua usando o proxy do Next para as chamadas normais.
 
 ## Storage de PDFs
 

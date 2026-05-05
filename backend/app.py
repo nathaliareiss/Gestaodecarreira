@@ -17,14 +17,14 @@ def criar_app() -> FastAPI:
         version="0.1.0",
     )
 
-    if CORS_ORIGINS:
-        app.add_middleware(
-            CORSMiddleware,
-            allow_origins=CORS_ORIGINS,
-            allow_credentials=False,
-            allow_methods=["*"],
-            allow_headers=["*"],
-        )
+    origens_cors = CORS_ORIGINS or ["*"]
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=origens_cors,
+        allow_credentials=False,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
     registrar_middleware_de_erros(app)
     registrar_middleware_de_metricas(app)
@@ -38,7 +38,7 @@ def criar_app() -> FastAPI:
             "Aplicacao FastAPI iniciada com sucesso",
             extra={
                 "titulo": "Gestao de Carreira API",
-                "origens_cors": CORS_ORIGINS,
+                "origens_cors": origens_cors,
                 "auto_sync_db_schema": AUTO_SYNC_DB_SCHEMA,
             },
         )

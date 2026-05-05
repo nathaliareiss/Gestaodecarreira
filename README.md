@@ -73,7 +73,7 @@ e processamento em fila para as tarefas mais pesadas.
 - backend worker: execute `python -m backend.worker.worker`
 - frontend: configure `NEXT_PUBLIC_API_URL` com a URL pública da API
 - o link dos e-mails precisa usar a URL pública do frontend em `FRONTEND_BASE_URL`
-- `CORS_ORIGINS` só é necessário se algum cliente externo chamar a API direto do navegador
+- `CORS_ORIGINS` é opcional; se vazio, o backend fica permissivo para evitar falhas de preflight
 - a fila precisa de `REDIS_URL`
 - em produção, deixe `AUTO_SYNC_DB_SCHEMA=false` para o backend subir mais rápido
 
