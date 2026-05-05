@@ -62,3 +62,6 @@ SMTP_FROM_NAME = os.getenv("SMTP_FROM_NAME", "Gestao de Carreira").strip()
 SMTP_USE_TLS = _ler_bool("SMTP_USE_TLS", True)
 SMTP_USE_SSL = _ler_bool("SMTP_USE_SSL", False)
 AUTO_SYNC_DB_SCHEMA = _ler_bool("AUTO_SYNC_DB_SCHEMA", False)
+
+if not CORS_ORIGINS and FRONTEND_BASE_URL:
+    CORS_ORIGINS = [FRONTEND_BASE_URL]
