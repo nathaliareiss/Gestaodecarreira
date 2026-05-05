@@ -64,8 +64,14 @@ e processamento em fila para as tarefas mais pesadas.
 - `SMTP_FROM_NAME`
 - `SMTP_USE_TLS`
 - `SMTP_USE_SSL`
+- `SMTP_TIMEOUT`
+- `EMAIL_PROVIDER`
+- `RESEND_API_KEY`
+- `RESEND_FROM_EMAIL`
 - `AUTO_SYNC_DB_SCHEMA`
 - `NEXT_PUBLIC_API_URL`
+
+Para emails em producao, prefira `EMAIL_PROVIDER=resend` com um remetente verificado.
 
 Se o `DATABASE_URL` vier do Supabase, prefira a conexão do pooler no Railway. O backend
 adiciona `sslmode=require` automaticamente quando o host termina em `supabase.co`, mas a

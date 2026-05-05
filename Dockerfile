@@ -15,5 +15,6 @@ COPY backend ./backend
 EXPOSE 8000
 
 # Emails de autenticacao saem como BackgroundTasks do FastAPI.
+# O backend pode usar SMTP local ou um provedor HTTPS como Resend.
 # A fila externa fica apenas para o processamento pesado de PDFs.
 CMD ["sh", "-c", "uvicorn backend.app:app --host 0.0.0.0 --port ${PORT:-8000}"]

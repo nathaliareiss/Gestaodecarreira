@@ -5,9 +5,12 @@ from email.message import EmailMessage
 from email.utils import formataddr
 from time import perf_counter
 
+import requests
+
 from backend.logger import logger
 from backend.metrics import registrar_envio_email
 from backend.config import (
+    EMAIL_PROVIDER,
     EMAIL_CONFIRMATION_SUBJECT,
     EMAIL_RECOVERY_SUBJECT,
     FRONTEND_BASE_URL,
@@ -16,10 +19,12 @@ from backend.config import (
     SMTP_HOST,
     SMTP_PASSWORD,
     SMTP_PORT,
+    SMTP_TIMEOUT,
+    RESEND_API_KEY,
+    RESEND_FROM_EMAIL,
     SMTP_USER,
     SMTP_USE_SSL,
     SMTP_USE_TLS,
-    SMTP_TIMEOUT,
 )
 
 
@@ -36,7 +41,7 @@ def _validar_configuracao_smtp() -> None:
 
 def _montar_envio_email(destinatario: str, assunto: str, texto: str, html: str) -> EmailMessage:
     mensagem = EmailMessage()
-    remetente_email = SMTP_FROM_EMAIL or SMTP_USER or "no-reply@localhost"
+    remetente_email = RESEND_FROM_EMAIL or SMTP_FROM_EMAIL or SMTP_USER or "no-reply@localhost"
     remetente_nome = SMTP_FROM_NAME or "Gestao de Carreira"
 
     mensagem["Subject"] = assunto
@@ -47,7 +52,7 @@ def _montar_envio_email(destinatario: str, assunto: str, texto: str, html: str) 
     return mensagem
 
 
-def _enviar_mensagem(mensagem: EmailMessage) -> None:
+def _enviar_via_smtp(mensagem: EmailMessage) -> None:
     _validar_configuracao_smtp()
 
     cliente_cls = smtplib.SMTP_SSL if SMTP_USE_SSL else smtplib.SMTP
@@ -114,6 +119,85 @@ def _enviar_mensagem(mensagem: EmailMessage) -> None:
             perf_counter() - inicio,
         )
         raise RuntimeError("Nao foi possivel enviar o email pelo servidor SMTP.") from erro
+
+
+def _enviar_via_resend(mensagem: EmailMessage) -> None:
+    if not RESEND_API_KEY:
+        raise RuntimeError("Configure RESEND_API_KEY e RESEND_FROM_EMAIL para enviar emails via Resend.")
+
+    if not mensagem.is_multipart():
+        raise RuntimeError("Mensagem de email invalida para Resend.")
+
+    texto = mensagem.get_body(preferencelist=("plain",))
+    html = mensagem.get_body(preferencelist=("html",))
+    inicio = perf_counter()
+    payload = {
+        "from": mensagem["From"],
+        "to": [mensagem["To"]],
+        "subject": mensagem["Subject"],
+        "text": texto.get_content() if texto else "",
+        "html": html.get_content() if html else "",
+    }
+
+    try:
+        logger.info(
+            "Enviando email via Resend",
+            extra={"destinatario": mensagem["To"]},
+        )
+        resposta = requests.post(
+            "https://api.resend.com/emails",
+            headers={
+                "Authorization": f"Bearer {RESEND_API_KEY}",
+                "Content-Type": "application/json",
+            },
+            json=payload,
+            timeout=SMTP_TIMEOUT,
+        )
+        if resposta.status_code >= 400:
+            raise RuntimeError(f"Resend recusou o envio ({resposta.status_code}).")
+
+        logger.info("Email enviado com sucesso", extra={"destinatario": mensagem["To"]})
+        registrar_envio_email("resend", "sent", perf_counter() - inicio)
+    except requests.RequestException as erro:
+        logger.error(
+            "Falha ao enviar email via Resend",
+            extra={"destinatario": mensagem["To"]},
+        )
+        registrar_envio_email("resend", "connection_error", perf_counter() - inicio)
+        raise RuntimeError("Nao foi possivel enviar o email via Resend.") from erro
+    except RuntimeError:
+        registrar_envio_email("resend", "provider_error", perf_counter() - inicio)
+        raise
+
+
+def _enviar_mensagem(mensagem: EmailMessage) -> None:
+    provedor = EMAIL_PROVIDER or ("resend" if RESEND_API_KEY else "smtp")
+    if provedor == "resend":
+        try:
+            _enviar_via_resend(mensagem)
+            return
+        except Exception as erro:
+            logger.warning(
+                "Resend falhou, tentando SMTP como fallback",
+                extra={"destinatario": mensagem["To"], "erro": str(erro)},
+            )
+            if SMTP_HOST:
+                _enviar_via_smtp(mensagem)
+            else:
+                raise
+            return
+
+    try:
+        _enviar_via_smtp(mensagem)
+    except Exception as erro:
+        if RESEND_API_KEY:
+            logger.warning(
+                "SMTP falhou, tentando Resend como fallback",
+                extra={"destinatario": mensagem["To"], "erro": str(erro)},
+            )
+            _enviar_via_resend(mensagem)
+            return
+        raise
 
 
 def _montar_link_confirmacao(token: str) -> str:

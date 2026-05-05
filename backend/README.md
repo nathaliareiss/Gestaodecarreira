@@ -108,6 +108,9 @@ backend.app:app
 - `SMTP_USE_TLS`
 - `SMTP_USE_SSL`
 - `SMTP_TIMEOUT`
+- `EMAIL_PROVIDER`
+- `RESEND_API_KEY`
+- `RESEND_FROM_EMAIL`
 - `AUTO_SYNC_DB_SCHEMA`
 
 ## E-mail
@@ -115,6 +118,15 @@ backend.app:app
 O sistema usa SMTP com a biblioteca nativa `smtplib` do Python.
 Configure um servidor SMTP válido nas variáveis de ambiente para permitir o envio
 de confirmação de cadastro e recuperação de senha.
+
+Em produção, você também pode usar um provedor de e-mail por HTTPS, como o Resend:
+
+- `EMAIL_PROVIDER=resend`
+- `RESEND_API_KEY=<sua_chave>`
+- `RESEND_FROM_EMAIL=<remetente_verificado>`
+
+Se `EMAIL_PROVIDER=auto`, o backend tenta o provedor mais apropriado conforme as variáveis
+disponíveis e usa fallback quando possível.
 
 ## Sincronização do schema
 
