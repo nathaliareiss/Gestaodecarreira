@@ -55,23 +55,30 @@ def cadastrar_usuario(db: Session, cadastro: UsuarioCreateRequest) -> Usuario:
     usuario = criar_usuario(db, usuario)
 
     try:
+        db.commit()
+    except Exception as exc:
+        db.rollback()
+        logger.exception("Falha ao concluir cadastro", extra={"email": email, "login": login})
+        raise RuntimeError(
+            "Nao foi possivel concluir o cadastro. Tente novamente."
+        ) from exc
+
+    try:
         agendar_email_confirmacao(
             destinatario=usuario.email,
             nome=usuario.nome,
             token=usuario.token_confirmacao_email,
         )
-        db.commit()
-        db.refresh(usuario)
-        logger.info(
-            "Cadastro concluido",
-            extra={"usuario_id": usuario.id, "email": usuario.email},
+    except Exception:
+        logger.exception(
+            "Nao foi possivel agendar o email de confirmacao",
+            extra={"email": email, "login": login},
         )
-    except Exception as exc:
-        db.rollback()
-        logger.exception("Falha ao concluir cadastro", extra={"email": email, "login": login})
-        raise RuntimeError(
-            "Nao foi possivel enviar o email de confirmacao agora. Tente novamente."
-        ) from exc
+
+    logger.info(
+        "Cadastro concluido",
+        extra={"usuario_id": usuario.id, "email": usuario.email},
+    )
 
     return usuario
 

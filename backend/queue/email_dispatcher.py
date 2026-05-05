@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from threading import Thread
+
 from backend.logger import logger
 from backend.queue.queue_config import obter_fila_emails
 from backend.queue.tasks.email_tasks import (
@@ -12,14 +14,35 @@ from backend.services.email_service import (
 )
 
 
+def _disparar_em_segundo_plano(funcao, *args, **kwargs) -> None:
+    def _executar() -> None:
+        try:
+            funcao(*args, **kwargs)
+        except Exception:
+            logger.exception(
+                "Falha no envio de email em segundo plano",
+                extra={
+                    "destinatario": kwargs.get("destinatario"),
+                    "tipo": kwargs.get("tipo"),
+                },
+            )
+
+    Thread(target=_executar, daemon=True).start()
+
+
 def agendar_email_confirmacao(destinatario: str, nome: str, token: str) -> None:
     fila = obter_fila_emails()
     if fila is None:
         logger.warning(
-            "Fila de emails indisponivel, enviando confirmacao de forma direta",
+            "Fila de emails indisponivel, enviando confirmacao em segundo plano",
             extra={"destinatario": destinatario, "tipo": "confirmacao"},
         )
-        enviar_email_confirmacao(destinatario=destinatario, nome=nome, token=token)
+        _disparar_em_segundo_plano(
+            enviar_email_confirmacao,
+            destinatario=destinatario,
+            nome=nome,
+            token=token,
+        )
         return
 
     job = fila.enqueue(
@@ -38,10 +61,15 @@ def agendar_email_recuperacao_senha(destinatario: str, nome: str, token: str) ->
     fila = obter_fila_emails()
     if fila is None:
         logger.warning(
-            "Fila de emails indisponivel, enviando recuperacao de forma direta",
+            "Fila de emails indisponivel, enviando recuperacao em segundo plano",
             extra={"destinatario": destinatario, "tipo": "recuperacao_senha"},
         )
-        enviar_email_recuperacao_senha(destinatario=destinatario, nome=nome, token=token)
+        _disparar_em_segundo_plano(
+            enviar_email_recuperacao_senha,
+            destinatario=destinatario,
+            nome=nome,
+            token=token,
+        )
         return
 
     job = fila.enqueue(
