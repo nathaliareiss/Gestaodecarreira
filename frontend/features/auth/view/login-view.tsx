@@ -83,7 +83,6 @@ export function LoginView({
                   onChange={(evento) => onLoginChange(evento.target.value)}
                   placeholder="maria.silva"
                   autoComplete="username"
-                  style={{ color: "#f8fbff", WebkitTextFillColor: "#f8fbff" }}
                   required
                 />
               </label>

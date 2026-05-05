@@ -91,11 +91,6 @@ input:focus {
   color: var(--muted);
 }
 
-html[data-theme="light"] .form-card--login .login-input {
-  color: #102033 !important;
-  -webkit-text-fill-color: #102033 !important;
-}
-
 html[data-theme="light"] .form-card--login .login-input::placeholder {
   color: var(--muted);
 }
@@ -113,7 +108,7 @@ html[data-theme="light"] .form-card--login .login-input:-webkit-autofill,
 html[data-theme="light"] .form-card--login .login-input:-webkit-autofill:hover,
 html[data-theme="light"] .form-card--login .login-input:-webkit-autofill:focus,
 html[data-theme="light"] .form-card--login .login-input:-webkit-autofill:active {
-  -webkit-text-fill-color: #102033 !important;
+  -webkit-text-fill-color: #f8fbff !important;
 }
 
 code {
