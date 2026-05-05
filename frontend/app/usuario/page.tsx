@@ -5,8 +5,8 @@ import type { UsuarioConta } from "@/features/usuario/model/usuario.model"
 import { UsuarioPageController } from "@/features/usuario/controller/usuario-page-controller"
 import type { HistoricoFuncionalAnalise } from "@/features/historico-funcional/model/historico-funcional.model"
 import { AUTH_COOKIE_NAME } from "@/shared/auth/session"
-import { apiFetch, parseApiResponse } from "@/shared/api/client"
-import { carregarUsuarioAutenticado } from "@/features/auth/model/auth.repository"
+import { obterApiBaseUrlServidor } from "@/shared/config/api-server"
+import { parseApiResponse } from "@/shared/api/client"
 
 export const dynamic = "force-dynamic"
 
@@ -14,8 +14,8 @@ async function carregarHistoricoInicial(
   usuarioId: number,
 ): Promise<HistoricoFuncionalAnalise | null> {
   try {
-    const response = await apiFetch(
-      `/api/historicos-funcionais/usuario/${usuarioId}/ultimo`,
+    const response = await fetch(
+      `${obterApiBaseUrlServidor()}/api/historicos-funcionais/usuario/${usuarioId}/ultimo`,
       {
         cache: "no-store",
       },
@@ -42,7 +42,18 @@ async function carregarUsuarioAutenticadoInicial(): Promise<UsuarioConta | null>
   }
 
   try {
-    return await carregarUsuarioAutenticado(token)
+    const response = await fetch(`${obterApiBaseUrlServidor()}/api/auth/me`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      cache: "no-store",
+    })
+
+    if (!response.ok) {
+      redirect("/login")
+    }
+
+    return await parseApiResponse<UsuarioConta>(response, "Não foi possível carregar a sessão.")
   } catch {
     redirect("/login")
   }
