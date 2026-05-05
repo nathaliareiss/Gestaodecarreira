@@ -67,6 +67,10 @@ e processamento em fila para as tarefas mais pesadas.
 - `AUTO_SYNC_DB_SCHEMA`
 - `NEXT_PUBLIC_API_URL`
 
+Se o `DATABASE_URL` vier do Supabase, prefira a conexão do pooler no Railway. O backend
+adiciona `sslmode=require` automaticamente quando o host termina em `supabase.co`, mas a
+conexão pooler ainda é o caminho mais estável para deploy.
+
 ## Deploy
 
 - backend: use `backend.app:app`

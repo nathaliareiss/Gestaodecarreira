@@ -141,6 +141,9 @@ agendamento. A resposta passa a indicar `processamento_origem: "direto"` quando 
 como fallback para evitar falhas de preflight durante o desenvolvimento e em deploys antigos.
 O frontend continua usando o proxy do Next para as chamadas normais.
 
+Se `DATABASE_URL` vier do Supabase, use a conexão do pooler no Railway sempre que possível.
+O backend adiciona `sslmode=require` automaticamente quando detecta um host `*.supabase.co`.
+
 ## Storage de PDFs
 
 Os PDFs ficam no Supabase Storage:
