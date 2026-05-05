@@ -50,7 +50,8 @@ def autenticar_usuario(db: Session, dados: UsuarioLoginRequest) -> tuple[Usuario
     token_sessao = gerar_token_seguro()
     usuario.sessao_token_hash = _hash_token(token_sessao)
     usuario.sessao_expira_em = datetime.now(timezone.utc) + timedelta(days=7)
-    atualizar_usuario(db, usuario)
+    db.add(usuario)
+    db.commit()
     logger.info(
         "Autenticacao concluida",
         extra={"usuario_id": usuario.id, "email": usuario.email},

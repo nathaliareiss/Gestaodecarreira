@@ -296,7 +296,11 @@ export function useHistoricoFuncionalController({
       return
     }
 
-    void recarregarHistorico()
+    const timer = window.setTimeout(() => {
+      void recarregarHistorico()
+    }, 0)
+
+    return () => window.clearTimeout(timer)
   }, [historicoInicial, recarregarHistorico, usuarioId])
 
   useEffect(() => {
