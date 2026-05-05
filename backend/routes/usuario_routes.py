@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from backend.database.database import get_db
@@ -23,6 +23,7 @@ from backend.services.usuario_service import (
     excluir_usuario_mais_recente,
     obter_usuario_mais_recente,
 )
+from backend.services.email_service import enviar_email_confirmacao
 
 router = APIRouter(prefix="/usuarios", tags=["usuarios"])
 
@@ -30,6 +31,7 @@ router = APIRouter(prefix="/usuarios", tags=["usuarios"])
 @router.post("", response_model=UsuarioResponse, status_code=status.HTTP_201_CREATED)
 def criar_usuario(
     cadastro: UsuarioCreateRequest,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
 ) -> UsuarioResponse:
     logger.info(
@@ -54,8 +56,14 @@ def criar_usuario(
             detail="Nao foi possivel concluir o cadastro agora. Tente novamente mais tarde.",
         ) from erro
 
+    background_tasks.add_task(
+        enviar_email_confirmacao,
+        destinatario=usuario.email,
+        nome=usuario.nome,
+        token=usuario.token_confirmacao_email,
+    )
     logger.info(
-        "Cadastro enviado com sucesso",
+        "Cadastro concluido e email programado em background",
         extra={"usuario_id": usuario.id, "email": usuario.email},
     )
     return UsuarioResponse.model_validate(usuario)

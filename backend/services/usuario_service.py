@@ -17,7 +17,6 @@ from backend.repositories.usuario_repository import (
     remover_usuario,
 )
 from backend.schemas.usuario_schema import UsuarioConfirmarRequest, UsuarioCreateRequest
-from backend.queue.email_dispatcher import agendar_email_confirmacao
 from backend.services.security_service import gerar_hash_sha256, gerar_token_seguro
 
 
@@ -62,18 +61,6 @@ def cadastrar_usuario(db: Session, cadastro: UsuarioCreateRequest) -> Usuario:
         raise RuntimeError(
             "Nao foi possivel concluir o cadastro. Tente novamente."
         ) from exc
-
-    try:
-        agendar_email_confirmacao(
-            destinatario=usuario.email,
-            nome=usuario.nome,
-            token=usuario.token_confirmacao_email,
-        )
-    except Exception:
-        logger.exception(
-            "Nao foi possivel agendar o email de confirmacao",
-            extra={"email": email, "login": login},
-        )
 
     logger.info(
         "Cadastro concluido",

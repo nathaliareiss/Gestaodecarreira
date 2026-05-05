@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Header, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, Header, HTTPException, status
 from sqlalchemy.orm import Session
 
 from backend.database.database import get_db
@@ -19,6 +19,7 @@ from backend.services.auth_service import (
     redefinir_senha_usuario,
     solicitar_recuperacao_senha,
 )
+from backend.services.email_service import enviar_email_recuperacao_senha
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -99,12 +100,18 @@ def logout(
 @router.post("/solicitar-recuperacao-senha")
 def solicitar_recuperacao(
     dados: UsuarioSolicitarRecuperacaoSenhaRequest,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
 ) -> dict[str, str]:
     email = dados.email.strip().lower()
     logger.info("Recebida solicitacao de recuperacao de senha", extra={"email": email})
     try:
-        solicitar_recuperacao_senha(db, dados)
+        usuario, token = solicitar_recuperacao_senha(db, dados)
+    except ValueError:
+        logger.info(
+            "Solicitacao de recuperacao ignorada porque o email nao esta cadastrado",
+            extra={"email": email},
+        )
     except RuntimeError as erro:
         logger.exception(
             "Falha ao solicitar recuperacao de senha",
@@ -114,6 +121,13 @@ def solicitar_recuperacao(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Nao foi possivel enviar o email de recuperacao agora. Tente novamente mais tarde.",
         ) from erro
+    else:
+        background_tasks.add_task(
+            enviar_email_recuperacao_senha,
+            destinatario=usuario.email,
+            nome=usuario.nome,
+            token=token,
+        )
 
     logger.info("Solicitacao de recuperacao processada", extra={"email": email})
     return {

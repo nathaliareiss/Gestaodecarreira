@@ -18,7 +18,6 @@ from backend.schemas.auth_schema import (
     UsuarioRedefinirSenhaRequest,
     UsuarioSolicitarRecuperacaoSenhaRequest,
 )
-from backend.queue.email_dispatcher import agendar_email_recuperacao_senha
 from backend.services.security_service import gerar_hash_sha256, gerar_token_seguro
 
 
@@ -85,36 +84,25 @@ def encerrar_sessao_usuario(db: Session, token: str) -> None:
 def solicitar_recuperacao_senha(
     db: Session,
     dados: UsuarioSolicitarRecuperacaoSenhaRequest,
-) -> bool:
+) -> tuple[Usuario, str]:
     email = dados.email.strip().lower()
     logger.info("Processando recuperacao de senha", extra={"email": email})
     usuario = obter_usuario_por_email(db, email)
     if usuario is None:
         logger.warning("Recuperacao solicitada para email nao cadastrado", extra={"email": email})
-        return False
+        raise ValueError("Nao encontramos um usuario cadastrado com este email.")
 
     token = gerar_token_seguro()
     usuario.redefinir_senha_token_hash = _hash_token(token)
     usuario.redefinir_senha_expira_em = datetime.now(timezone.utc) + timedelta(minutes=30)
     db.add(usuario)
     db.flush()
-
-    try:
-        agendar_email_recuperacao_senha(
-            destinatario=usuario.email,
-            nome=usuario.nome,
-            token=token,
-        )
-        db.commit()
-        logger.info(
-            "Email de recuperacao enviado",
-            extra={"usuario_id": usuario.id, "email": usuario.email},
-        )
-    except Exception:
-        db.rollback()
-        raise
-
-    return True
+    db.commit()
+    logger.info(
+        "Recuperacao de senha preparada",
+        extra={"usuario_id": usuario.id, "email": usuario.email},
+    )
+    return usuario, token
 
 
 def redefinir_senha_usuario(
