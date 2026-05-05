@@ -138,7 +138,7 @@ export function useHistoricoFuncionalController({
     [arquivoAfastamentos, historico, usuarioId],
   )
 
-  async function recarregarHistorico() {
+  const recarregarHistorico = useCallback(async () => {
     if (!usuarioId) {
       return
     }
@@ -156,7 +156,7 @@ export function useHistoricoFuncionalController({
     } finally {
       setCarregando(false)
     }
-  }
+  }, [usuarioId])
 
   const submeterAnalise = useCallback(
     async (assinatura?: string) => {
@@ -290,6 +290,14 @@ export function useHistoricoFuncionalController({
     criarAssinaturaHistorico,
     submeterAnalise,
   ])
+
+  useEffect(() => {
+    if (historicoInicial !== null || !usuarioId) {
+      return
+    }
+
+    void recarregarHistorico()
+  }, [historicoInicial, recarregarHistorico, usuarioId])
 
   useEffect(() => {
     if (!modoAnexoAfastamentos || !historico || !arquivoAfastamentos || carregando) {
