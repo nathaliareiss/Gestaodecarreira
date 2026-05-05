@@ -78,10 +78,12 @@ export function LoginView({
               <label className="field">
                 <span>Login ou e-mail</span>
                 <input
+                  className="login-input"
                   value={dados.login}
                   onChange={(evento) => onLoginChange(evento.target.value)}
                   placeholder="maria.silva"
                   autoComplete="username"
+                  style={{ color: "#f8fbff", WebkitTextFillColor: "#f8fbff" }}
                   required
                 />
               </label>
