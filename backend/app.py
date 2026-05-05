@@ -17,13 +17,14 @@ def criar_app() -> FastAPI:
         version="0.1.0",
     )
 
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=CORS_ORIGINS,
-        allow_credentials=False,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
+    if CORS_ORIGINS:
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=CORS_ORIGINS,
+            allow_credentials=False,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
 
     registrar_middleware_de_erros(app)
     registrar_middleware_de_metricas(app)
