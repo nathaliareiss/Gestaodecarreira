@@ -122,16 +122,19 @@ export function LoginView({
                 >
                   Esqueci minha senha
                 </button>
-                <button
-                  className="ghost-button ghost-button--text"
-                  type="button"
-                  onClick={onReenviarConfirmacao}
-                  disabled={reenviandoConfirmacao}
-                >
-                  {reenviandoConfirmacao
-                    ? "Reenviando confirmação..."
-                    : "Reenviar email de confirmação"}
-                </button>
+                <div className="login-secondary-link">
+                  <span className="login-secondary-link__label">Não recebeu o e-mail?</span>
+                  <button
+                    className="ghost-button ghost-button--text"
+                    type="button"
+                    onClick={onReenviarConfirmacao}
+                    disabled={reenviandoConfirmacao}
+                  >
+                    {reenviandoConfirmacao
+                      ? "Reenviando confirmação..."
+                      : "Reenviar e-mail de confirmação"}
+                  </button>
+                </div>
                 <p className="helper">Depois de entrar, você vai para sua página.</p>
               </div>
 

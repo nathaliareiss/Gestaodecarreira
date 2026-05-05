@@ -642,6 +642,19 @@ html[data-theme="light"] .ghost-button {
   flex-basis: 100%;
 }
 
+.login-secondary-link {
+  display: grid;
+  gap: 0.2rem;
+  flex-basis: 100%;
+  margin-top: -0.1rem;
+}
+
+.login-secondary-link__label {
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.2;
+}
+
 .actions--compact {
   margin-top: 1rem;
   display: flex;
