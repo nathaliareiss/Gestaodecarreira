@@ -42,7 +42,7 @@ backend.app:app
 - FastAPI
 - SQLAlchemy
 - PostgreSQL
-- Redis + RQ para filas
+- Redis + RQ para processamento de PDFs
 - Python 3.11+
 
 ## Estrutura
