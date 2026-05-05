@@ -49,7 +49,7 @@ export function LoginView({
       <section className="hero hero--login">
         <div className="hero-copy hero-copy--login">
           <p className="eyebrow">Entrar</p>
-          <h1>Acesse seu perfil e acompanhe seu histórico.</h1>
+          <h1>Acesse seu perfil e acompanhe sua carreira.</h1>
 
           <div className="hero-links hero-links--top">
             <Link className="primary-button button--large" href="/">
