@@ -81,27 +81,39 @@ input:focus {
   background: rgba(8, 16, 30, 0.82);
 }
 
-.form-card--login input,
-.form-card--recovery input {
-  color: #f8fbff;
-  -webkit-text-fill-color: #f8fbff;
+.form-card--login input {
+  color: #f8fbff !important;
+  -webkit-text-fill-color: #f8fbff !important;
   caret-color: #5eead4;
 }
 
-.form-card--login input::placeholder,
-.form-card--recovery input::placeholder {
-  color: rgba(248, 251, 255, 0.68);
+.form-card--login input::placeholder {
+  color: var(--muted);
 }
 
-html[data-theme="light"] .form-card--login input,
-html[data-theme="light"] .form-card--recovery input {
-  color: #102033;
-  -webkit-text-fill-color: #102033;
+html[data-theme="light"] .form-card--login input {
+  color: #102033 !important;
+  -webkit-text-fill-color: #102033 !important;
 }
 
-html[data-theme="light"] .form-card--login input::placeholder,
-html[data-theme="light"] .form-card--recovery input::placeholder {
-  color: rgba(16, 32, 51, 0.56);
+html[data-theme="light"] .form-card--login input::placeholder {
+  color: var(--muted);
+}
+
+.form-card--login input:-webkit-autofill,
+.form-card--login input:-webkit-autofill:hover,
+.form-card--login input:-webkit-autofill:focus,
+.form-card--login input:-webkit-autofill:active {
+  -webkit-text-fill-color: #f8fbff !important;
+  caret-color: #5eead4;
+  transition: background-color 9999s ease-out 0s, color 9999s ease-out 0s;
+}
+
+html[data-theme="light"] .form-card--login input:-webkit-autofill,
+html[data-theme="light"] .form-card--login input:-webkit-autofill:hover,
+html[data-theme="light"] .form-card--login input:-webkit-autofill:focus,
+html[data-theme="light"] .form-card--login input:-webkit-autofill:active {
+  -webkit-text-fill-color: #102033 !important;
 }
 
 code {
