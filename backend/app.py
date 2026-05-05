@@ -3,7 +3,7 @@ from __future__ import annotations
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from backend.config import AUTO_SYNC_DB_SCHEMA
+from backend.config import AUTO_SYNC_DB_SCHEMA, CORS_ORIGINS
 from backend.logger import logger
 from backend.database.create_tables import sincronizar_usuario_table
 from backend.middleware.error_middleware import registrar_middleware_de_erros
@@ -19,7 +19,7 @@ def criar_app() -> FastAPI:
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
+        allow_origins=CORS_ORIGINS,
         allow_credentials=False,
         allow_methods=["*"],
         allow_headers=["*"],
@@ -37,7 +37,7 @@ def criar_app() -> FastAPI:
             "Aplicacao FastAPI iniciada com sucesso",
             extra={
                 "titulo": "Gestao de Carreira API",
-                "origens_cors": ["*"],
+                "origens_cors": CORS_ORIGINS,
                 "auto_sync_db_schema": AUTO_SYNC_DB_SCHEMA,
             },
         )

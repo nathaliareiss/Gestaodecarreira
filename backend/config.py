@@ -43,8 +43,8 @@ SUPABASE_STORAGE_AFASTAMENTOS_PREFIX = os.getenv(
     "SUPABASE_STORAGE_AFASTAMENTOS_PREFIX",
     "afastamentos",
 ).strip()
-CORS_ORIGINS = _ler_lista_csv("CORS_ORIGINS") or ["*"]
-FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL", "http://localhost:3000").rstrip("/")
+CORS_ORIGINS = _ler_lista_csv("CORS_ORIGINS")
+FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL", "").rstrip("/")
 EMAIL_CONFIRMATION_SUBJECT = os.getenv(
     "EMAIL_CONFIRMATION_SUBJECT",
     "Confirme seu cadastro",

@@ -32,12 +32,11 @@ npm run dev
 
 - `NEXT_PUBLIC_API_URL`: URL pública do backend
 
-Se essa variável não estiver definida no ambiente de produção, o frontend usa por padrão
-`https://astonishing-forgiveness-production-c90d.up.railway.app`.
-
 As chamadas do frontend vão direto para o backend indicado em `NEXT_PUBLIC_API_URL`.
-O backend precisa responder CORS para a origem do frontend ou aceitar `*` quando não
-houver uma lista específica configurada.
+Não há URL padrão embutida no código: localmente use `frontend/.env.local` e, em produção,
+defina a variável no ambiente de deploy.
+
+O backend precisa responder CORS para a origem do frontend por meio de `CORS_ORIGINS`.
 
 ## Estrutura principal
 

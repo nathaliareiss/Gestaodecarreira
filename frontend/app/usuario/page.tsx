@@ -5,7 +5,7 @@ import type { UsuarioConta } from "@/features/usuario/model/usuario.model"
 import { UsuarioPageController } from "@/features/usuario/controller/usuario-page-controller"
 import type { HistoricoFuncionalAnalise } from "@/features/historico-funcional/model/historico-funcional.model"
 import { AUTH_COOKIE_NAME, AUTH_USER_COOKIE_NAME } from "@/shared/auth/session"
-import { obterApiBaseUrlServidor } from "@/shared/config/api-server"
+import { obterApiBaseUrl } from "@/shared/config/api"
 import { parseApiResponse } from "@/shared/api/client"
 
 export const dynamic = "force-dynamic"
@@ -15,7 +15,7 @@ async function carregarHistoricoInicial(
 ): Promise<HistoricoFuncionalAnalise | null> {
   try {
     const response = await fetch(
-      `${obterApiBaseUrlServidor()}/api/historicos-funcionais/usuario/${usuarioId}/ultimo`,
+      `${obterApiBaseUrl()}/api/historicos-funcionais/usuario/${usuarioId}/ultimo`,
       {
         cache: "no-store",
       },
@@ -36,7 +36,7 @@ async function carregarHistoricoInicial(
 
 async function carregarUsuarioAutenticadoInicial(token: string): Promise<UsuarioConta | null> {
   try {
-    const response = await fetch(`${obterApiBaseUrlServidor()}/api/auth/me`, {
+    const response = await fetch(`${obterApiBaseUrl()}/api/auth/me`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },

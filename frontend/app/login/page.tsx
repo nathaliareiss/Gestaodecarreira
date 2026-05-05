@@ -2,7 +2,7 @@ import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 
 import { AUTH_COOKIE_NAME } from "@/shared/auth/session"
-import { obterApiBaseUrlServidor } from "@/shared/config/api-server"
+import { obterApiBaseUrl } from "@/shared/config/api"
 import { LoginController } from "@/features/auth/controller/login-controller"
 
 export const dynamic = "force-dynamic"
@@ -15,7 +15,7 @@ async function usuarioJaAutenticado(): Promise<boolean> {
   }
 
   try {
-    const response = await fetch(`${obterApiBaseUrlServidor()}/api/auth/me`, {
+    const response = await fetch(`${obterApiBaseUrl()}/api/auth/me`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },

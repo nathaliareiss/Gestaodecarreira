@@ -6,7 +6,7 @@ RUN npm ci
 
 FROM node:22-alpine AS builder
 WORKDIR /app
-ARG NEXT_PUBLIC_API_URL=https://astonishing-forgiveness-production-c90d.up.railway.app
+ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 ENV NEXT_TELEMETRY_DISABLED=1
 
@@ -16,7 +16,7 @@ RUN npm run build
 
 FROM node:22-alpine AS runner
 WORKDIR /app
-ARG NEXT_PUBLIC_API_URL=https://astonishing-forgiveness-production-c90d.up.railway.app
+ARG NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
