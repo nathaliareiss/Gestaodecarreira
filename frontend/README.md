@@ -32,6 +32,10 @@ npm run dev
 
 - `NEXT_PUBLIC_API_URL`: URL pública do backend
 
+As chamadas do frontend para `/api/*` passam por um rewrite do Next.js para o backend
+indicado em `NEXT_PUBLIC_API_URL`. Isso evita erro de CORS no navegador durante login,
+cadastro e demais operações da interface.
+
 ## Estrutura principal
 
 - `frontend/app/`: rotas do App Router
@@ -48,4 +52,3 @@ npm run dev
 ## Observação
 
 Os títulos e mensagens usam português como idioma principal, com alguns subtítulos em inglês para manter uma identidade visual consistente.
-
