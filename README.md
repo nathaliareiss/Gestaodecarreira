@@ -244,6 +244,12 @@ Isso inicia:
 
 Mais detalhes em [observability/README.md](observability/README.md).
 
+## Demo
+
+Frontend publicado:
+
+- [https://gestaodecarreira.vercel.app/](https://gestaodecarreira.vercel.app/)
+
 ## Atualizacao recente
 
 - o login continua direto no backend, sem fila
