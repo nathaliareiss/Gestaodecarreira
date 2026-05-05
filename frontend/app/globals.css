@@ -111,6 +111,38 @@ html[data-theme="light"] .form-card--login .login-input:-webkit-autofill:active 
   -webkit-text-fill-color: #f8fbff !important;
 }
 
+.form-card--register input {
+  color: #f8fbff !important;
+  -webkit-text-fill-color: #f8fbff !important;
+  caret-color: #5eead4;
+  color-scheme: light;
+}
+
+.form-card--register input::placeholder {
+  color: rgba(248, 251, 255, 0.68);
+}
+
+.form-card--register input:-webkit-autofill,
+.form-card--register input:-webkit-autofill:hover,
+.form-card--register input:-webkit-autofill:focus,
+.form-card--register input:-webkit-autofill:active {
+  -webkit-text-fill-color: #f8fbff !important;
+  caret-color: #5eead4;
+  transition: background-color 9999s ease-out 0s, color 9999s ease-out 0s;
+}
+
+html[data-theme="light"] .form-card--register input {
+  color: #f8fbff !important;
+  -webkit-text-fill-color: #f8fbff !important;
+}
+
+html[data-theme="light"] .form-card--register input:-webkit-autofill,
+html[data-theme="light"] .form-card--register input:-webkit-autofill:hover,
+html[data-theme="light"] .form-card--register input:-webkit-autofill:focus,
+html[data-theme="light"] .form-card--register input:-webkit-autofill:active {
+  -webkit-text-fill-color: #f8fbff !important;
+}
+
 code {
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
 }
