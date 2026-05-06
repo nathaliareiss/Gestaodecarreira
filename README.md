@@ -14,23 +14,23 @@ Frontend publicado:
 
 ### Login
 
-![Tela de login](docs/screenshots/login.png)
+<img src="docs/screenshots/login.png" alt="Tela de login" width="240" />
 
 ### Cadastro no tema claro
 
-![Tela de cadastro no tema claro](docs/screenshots/tema-claro.png)
+<img src="docs/screenshots/tema-claro.png" alt="Tela de cadastro no tema claro" width="240" />
 
 ### Cadastro no tema escuro
 
-![Tela de cadastro no tema escuro](docs/screenshots/tema-escuro.png)
+<img src="docs/screenshots/tema-escuro.png" alt="Tela de cadastro no tema escuro" width="240" />
 
 ### Gráficos e resumo funcional
 
-![Tela com gráficos e indicadores](docs/screenshots/graficos.png)
+<img src="docs/screenshots/graficos.png" alt="Tela com gráficos e indicadores" width="240" />
 
 ### Histórico funcional
 
-![Página de histórico funcional](docs/screenshots/pagina-historico.png)
+<img src="docs/screenshots/pagina-historico.png" alt="Página de histórico funcional" width="240" />
 
 
 ## Visão Geral
@@ -293,37 +293,3 @@ Isso inicia:
 Mais detalhes em [observability/README.md](observability/README.md).
 
 
-
-<<<<<<< HEAD
-- [https://gestaodecarreira.vercel.app/](https://gestaodecarreira.vercel.app/)
-
-## Capturas de Tela
-
-### Login
-
-<img src="docs/screenshots/login.png" alt="Tela de login" width="380" />
-
-### Cadastro no tema claro
-
-<img src="docs/screenshots/tema-claro.png" alt="Tela de cadastro no tema claro" width="380" />
-
-### Cadastro no tema escuro
-
-<img src="docs/screenshots/tema-escuro.png" alt="Tela de cadastro no tema escuro" width="380" />
-
-### Gráficos e resumo funcional
-
-<img src="docs/screenshots/graficos.png" alt="Tela com gráficos e indicadores" width="380" />
-
-### Histórico funcional
-
-<img src="docs/screenshots/pagina-historico.png" alt="Página de histórico funcional" width="380" />
-
-## Atualização Recente
-
-- o login continua direto no backend, sem fila
-- o cadastro envia e-mail de confirmação em background logo depois de salvar o usuário
-- a tela de login ganhou a opção discreta de reenviar e-mail de confirmação
-- a fila Redis/RQ ficou só para o processamento pesado de PDFs
-=======
->>>>>>> 8863ad0e48b7279e4e70dda7604bbc6418ad8fdf
