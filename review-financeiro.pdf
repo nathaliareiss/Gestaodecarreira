@@ -3,76 +3,184 @@
 << /Type /Catalog /Pages 2 0 R >>
 endobj
 2 0 obj
-<< /Type /Pages /Kids [3 0 R 5 0 R] /Count 2 >>
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
 endobj
 3 0 obj
-<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 7 0 R >> >> /Contents 4 0 R >>
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>
 endobj
 4 0 obj
-<< /Length 1317 >>
+<< /Length 3915 >>
 stream
 BT
-/F1 11 Tf
-1 0 0 1 48 793.89 Tm
-0 -14 Td
-(- Nao existe ainda uma tela de lote/progresso no frontend.) Tj
-0 -14 Td
-(- Nao existe ainda historico visual de lotes processados.) Tj
-0 -14 Td
+/F1 10 Tf
+1 0 0 1 46 795.89 Tm
+/F1 14 Tf
+0 -16 Td
+(Review do modulo Financeiro) Tj
+/F1 10 Tf
+0 -12 Td
+(- Data: 2026-05-06) Tj
+0 -12 Td
+(- Escopo: revisao do estado atual do modulo Financeiro sem implementar nada novo.) Tj
+0 -12 Td
+/F1 14 Tf
+0 -16 Td
+(Arquivos alterados) Tj
+/F1 10 Tf
+0 -12 Td
+(- backend/database/database.py) Tj
+0 -12 Td
+(- backend/database/models.py) Tj
+0 -12 Td
+(- backend/database/create_tables.py) Tj
+0 -12 Td
+(- backend/routes/financeiro_routes.py) Tj
+0 -12 Td
+(- backend/repositories/financeiro_repository.py) Tj
+0 -12 Td
+(- backend/schemas/financeiro_schema.py) Tj
+0 -12 Td
+(- backend/services/contracheque_parser.py) Tj
+0 -12 Td
+(- backend/services/financeiro_service.py) Tj
+0 -12 Td
+(- backend/services/financeiro_batch_service.py) Tj
+0 -12 Td
+(- backend/queue/queue_config.py) Tj
+0 -12 Td
+(- backend/queue/tasks/financeiro_tasks.py) Tj
+0 -12 Td
+(- backend/worker/financeiro_worker.py) Tj
+0 -12 Td
+(- backend/tests/conftest.py) Tj
+0 -12 Td
+(- backend/tests/test_contracheque_parser.py) Tj
+0 -12 Td
+(- backend/tests/test_financeiro_service.py) Tj
+0 -12 Td
+(- backend/tests/test_financeiro_routes.py) Tj
+0 -12 Td
+(- backend/tests/test_financeiro_lote_routes.py) Tj
+0 -12 Td
+(- backend/tests/test_financeiro_lote_worker.py) Tj
+0 -12 Td
+(- backend/tests/fixtures/contracheque_exemplo.pdf) Tj
+0 -12 Td
+(- frontend/features/financeiro/view/financeiro-view.tsx) Tj
+0 -12 Td
+(- frontend/features/financeiro/model/financeiro.repository.ts) Tj
+0 -12 Td
+(- frontend/features/usuario/controller/usuario-page-controller.tsx) Tj
+0 -12 Td
+(- requirements.txt) Tj
+0 -12 Td
+(- CHECKLIST.md) Tj
+0 -12 Td
+/F1 14 Tf
+0 -16 Td
+(Fluxo atual) Tj
+/F1 10 Tf
+0 -12 Td
+(- 1. A aba Finance analisa um PDF por vez no frontend.) Tj
+0 -12 Td
+(- 2. O PDF vai para POST /api/financeiro/contracheque/analisar.) Tj
+0 -12 Td
+(- 3. O backend valida, salva temporario e chama parse_contracheque\(\).) Tj
+0 -12 Td
+(- 4. O parser usa pypdf, regex e Decimal para extrair os valores.) Tj
+0 -12 Td
+(- 5. O lote entra por POST /api/financeiro/upload-lote.) Tj
+0 -12 Td
+(- 6. O backend cria payroll_batches e enfileira job no Redis/RQ.) Tj
+0 -12 Td
+(- 7. O worker processa cada arquivo e salva paychecks e items no PostgreSQL.) Tj
+0 -12 Td
+(- 8. GET /api/financeiro/batch/{batch_id} mostra o progresso.) Tj
+0 -12 Td
+/F1 14 Tf
+0 -16 Td
+(O que ja funciona) Tj
+/F1 10 Tf
+0 -12 Td
+(- Parser do PDF real de MG.) Tj
+0 -12 Td
+(- Analise individual.) Tj
+0 -12 Td
+(- Upload de lote com job assicrono.) Tj
+0 -12 Td
+(- Persistencia no PostgreSQL.) Tj
+0 -12 Td
+(- Duplicidade por user_id + competencia.) Tj
+0 -12 Td
+(- Tratamento de PDF invalido.) Tj
+0 -12 Td
+(- Endpoint de progresso do lote.) Tj
+0 -12 Td
+(- Testes do backend passando.) Tj
+0 -12 Td
+/F1 14 Tf
+0 -16 Td
+(O que ainda e base inicial) Tj
+/F1 10 Tf
+0 -12 Td
+(- Nao existe tela de lote/progresso no frontend.) Tj
+0 -12 Td
+(- Nao existe historico visual dos lotes.) Tj
+0 -12 Td
 (- Nao existem graficos financeiros ainda.) Tj
-0 -14 Td
-(- O fluxo de lote depende de Redis/RQ em runtime.) Tj
-0 -14 Td
-(- A experiencia financeira da UI ainda e a primeira versao simples.) Tj
-0 -14 Td
-/F1 17 Tf
-0 -18 Td
+0 -12 Td
+(- O fluxo em lote depende de Redis/RQ em runtime.) Tj
+0 -12 Td
+(- A experiencia da UI ainda e a primeira versao simples.) Tj
+0 -12 Td
+/F1 14 Tf
+0 -16 Td
 (Como testar localmente) Tj
-/F1 11 Tf
-0 -14 Td
-(- Variaveis necessarias: DATABASE_URL, REDIS_URL e NEXT_PUBLIC_API_URL.) Tj
-0 -14 Td
-(- Se o banco for novo, executar: .\\venv\\Scripts\\python.exe -m backend.database.create_tables) Tj
-0 -14 Td
-(- Subir API: .\\venv\\Scripts\\python.exe -m backend) Tj
-0 -14 Td
-(- Subir worker: .\\venv\\Scripts\\python.exe -m backend.worker.financeiro_worker) Tj
-0 -14 Td
-(- Subir frontend: cd frontend; npm run dev) Tj
-0 -14 Td
-(- Testar analise individual em POST /api/financeiro/contracheque/analisar.) Tj
-0 -14 Td
-(- Testar lote em POST /api/financeiro/upload-lote.) Tj
-0 -14 Td
-(- Consultar progresso em GET /api/financeiro/batch/{batch_id}.) Tj
-0 -14 Td
-/F1 17 Tf
-0 -18 Td
+/F1 10 Tf
+0 -12 Td
+(- Variaveis: DATABASE_URL, REDIS_URL, NEXT_PUBLIC_API_URL.) Tj
+0 -12 Td
+(- Se o banco for novo: .\\venv\\Scripts\\python.exe -m backend.database.create_tables) Tj
+0 -12 Td
+(- API: .\\venv\\Scripts\\python.exe -m backend) Tj
+0 -12 Td
+(- Worker: .\\venv\\Scripts\\python.exe -m backend.worker.financeiro_worker) Tj
+0 -12 Td
+(- Frontend: cd frontend; npm run dev) Tj
+0 -12 Td
+(- POST /api/financeiro/contracheque/analisar.) Tj
+0 -12 Td
+(- POST /api/financeiro/upload-lote.) Tj
+0 -12 Td
+(- GET /api/financeiro/batch/{batch_id}.) Tj
+0 -12 Td
+/F1 14 Tf
+0 -16 Td
 (Testes executados) Tj
-/F1 11 Tf
-0 -14 Td
+/F1 10 Tf
+0 -12 Td
 (- Backend: 25 passed.) Tj
-0 -14 Td
+0 -12 Td
 (- Frontend lint: passou.) Tj
-0 -14 Td
-(- Existe warning nao bloqueante de cache do pytest no Windows.) Tj
-0 -14 Td
+0 -12 Td
+(- Warning de cache do pytest no Windows e nao bloqueante.) Tj
+0 -12 Td
 ET
 endstream
 endobj
 5 0 obj
-<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 7 0 R >> >> /Contents 6 0 R >>
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
 endobj
 xref
 0 6
 0000000000 65535 f 
 0000000009 00000 n 
 0000000058 00000 n 
-0000000121 00000 n 
-0000000253 00000 n 
-0000001622 00000 n 
+0000000115 00000 n 
+0000000247 00000 n 
+0000004214 00000 n 
 trailer
 << /Size 6 /Root 1 0 R >>
 startxref
-1754
+4284
 %%EOF

@@ -301,23 +301,23 @@ Mais detalhes em [observability/README.md](observability/README.md).
 
 ### Login
 
-<img src="docs/screenshots/login.png" alt="Tela de login" width="720" />
+<img src="docs/screenshots/login.png" alt="Tela de login" width="560" />
 
 ### Cadastro no tema claro
 
-<img src="docs/screenshots/tema-claro.png" alt="Tela de cadastro no tema claro" width="720" />
+<img src="docs/screenshots/tema-claro.png" alt="Tela de cadastro no tema claro" width="560" />
 
 ### Cadastro no tema escuro
 
-<img src="docs/screenshots/tema-escuro.png" alt="Tela de cadastro no tema escuro" width="720" />
+<img src="docs/screenshots/tema-escuro.png" alt="Tela de cadastro no tema escuro" width="560" />
 
 ### Gráficos e resumo funcional
 
-<img src="docs/screenshots/graficos.png" alt="Tela com gráficos e indicadores" width="720" />
+<img src="docs/screenshots/graficos.png" alt="Tela com gráficos e indicadores" width="560" />
 
 ### Histórico funcional
 
-<img src="docs/screenshots/pagina-historico.png" alt="Página de histórico funcional" width="720" />
+<img src="docs/screenshots/pagina-historico.png" alt="Página de histórico funcional" width="560" />
 
 ## Atualização Recente
 
