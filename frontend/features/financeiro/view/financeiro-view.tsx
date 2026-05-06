@@ -77,16 +77,16 @@ export function FinanceiroView() {
   }
 
   const campos: LinhaFinanceira[] = resultado
-    ? [
-        { label: "Competência", value: resultado.competencia },
-        { label: "Salário bruto", value: resultado.bruto },
+      ? [
+        { label: "Compet\u00eancia", value: resultado.competencia },
+        { label: "Sal\u00e1rio bruto", value: resultado.bruto },
         { label: "Total de descontos", value: resultado.descontos },
-        { label: "Salário líquido", value: resultado.liquido },
-        { label: "Vencimento básico", value: resultado.vencimento_basico },
+        { label: "Sal\u00e1rio l\u00edquido", value: resultado.liquido },
+        { label: "Vencimento b\u00e1sico", value: resultado.vencimento_basico },
         { label: "Adicional desempenho", value: resultado.adicional_desempenho },
         { label: "Adicional noturno", value: resultado.adicional_noturno },
         { label: "IRRF", value: resultado.irrf },
-        { label: "Previdência", value: resultado.previdencia },
+        { label: "Previd\u00eancia", value: resultado.previdencia },
       ]
     : []
 
@@ -95,9 +95,9 @@ export function FinanceiroView() {
       <div className="analysis-header">
         <div className="analysis-header__title">
           <p className="eyebrow eyebrow--title">Financeiro</p>
-          <h2>Análise financeira</h2>
+          <h2>{"An\u00e1lise financeira"}</h2>
           <p className="analysis-header__subtitle">
-            Envie seus contracheques para acompanhar sua evolução salarial ao longo da carreira.
+            {"Envie seus contracheques para acompanhar sua evolu\u00e7\u00e3o salarial ao longo da carreira."}
           </p>
         </div>
       </div>
@@ -134,14 +134,18 @@ export function FinanceiroView() {
           <section className="summary-panel">
             <div className="analysis-header__title analysis-header__title--compact">
               <p className="eyebrow eyebrow--title">Resultado</p>
-              <h3>Dados extraídos</h3>
+              <h3>{"Dados extra\u00eddos"}</h3>
             </div>
 
             <div className="metric-strip">
               {campos.map((campo) => (
                 <div className="metric-line" key={campo.label}>
                   <span>{campo.label}</span>
-                  <strong>{campo.label === "Competência" ? String(campo.value ?? "-") : formatarValor(campo.value)}</strong>
+                  <strong>
+                    {campo.label === "Compet\u00eancia"
+                      ? String(campo.value ?? "-")
+                      : formatarValor(campo.value)}
+                  </strong>
                 </div>
               ))}
             </div>
