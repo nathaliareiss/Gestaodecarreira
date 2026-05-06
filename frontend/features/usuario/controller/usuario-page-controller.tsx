@@ -78,6 +78,7 @@ export function UsuarioPageController({
   const [carregando, setCarregando] = useState(false)
   const [removendo, setRemovendo] = useState(false)
   const [saindo, setSaindo] = useState(false)
+  const [indoParaCadastro, setIndoParaCadastro] = useState(false)
   const dataExercicioExibida = usuario?.data_exercicio ?? historicoInicial?.data_exercicio ?? null
   const nivelExibido = historicoInicial?.nivel_atual ?? "-"
   const grauExibido = historicoInicial?.grau_atual ?? "-"
@@ -155,6 +156,24 @@ export function UsuarioPageController({
       removerUsuarioAutenticadoCache()
       setSaindo(false)
       router.push("/login")
+    }
+  }
+
+  async function criarConta() {
+    setIndoParaCadastro(true)
+    setErro(null)
+
+    try {
+      if (modoDemo) {
+        removerSessaoDemo()
+      }
+    } catch {
+      // Se a limpeza local falhar, seguimos para a tela de cadastro.
+    } finally {
+      removerTokenAutenticacao()
+      removerUsuarioAutenticadoCache()
+      setIndoParaCadastro(false)
+      router.push("/")
     }
   }
 
@@ -298,7 +317,9 @@ export function UsuarioPageController({
               historicoInicial={historicoInicial}
               modoDemo={modoDemo}
               onExit={() => void sair()}
+              onCreateAccount={() => void criarConta()}
               saindo={saindo}
+              criandoConta={indoParaCadastro}
             />
           )}
         </section>

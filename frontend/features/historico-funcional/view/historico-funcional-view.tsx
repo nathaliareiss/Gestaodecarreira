@@ -11,7 +11,9 @@ type HistoricoFuncionalViewProps = {
   historicoInicial: HistoricoFuncionalAnalise | null
   modoDemo: boolean
   onExit?: () => void
+  onCreateAccount?: () => void
   saindo?: boolean
+  criandoConta?: boolean
 }
 
 type StatusEvento = HistoricoFuncionalAnalise["eventos"][number]["status"]
@@ -508,7 +510,9 @@ export function HistoricoFuncionalView({
   historicoInicial,
   modoDemo,
   onExit,
+  onCreateAccount,
   saindo = false,
+  criandoConta = false,
 }: HistoricoFuncionalViewProps) {
   const {
     arquivo,
@@ -622,9 +626,16 @@ export function HistoricoFuncionalView({
                 <Link className="primary-button" href="/login">
                   Exit Demo
                 </Link>
-                <Link className="ghost-button" href="/">
-                  Create Account
-                </Link>
+                {onCreateAccount ? (
+                  <button
+                    className="ghost-button"
+                    type="button"
+                    onClick={onCreateAccount}
+                    disabled={criandoConta}
+                  >
+                    {criandoConta ? "Opening..." : "Create Account"}
+                  </button>
+                ) : null}
               </div>
             </div>
           ) : !painel && !modoAtualizacaoHistorico ? (
