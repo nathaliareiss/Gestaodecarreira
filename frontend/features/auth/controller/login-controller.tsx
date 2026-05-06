@@ -22,6 +22,7 @@ export function LoginController() {
     erroRecuperacao,
     mensagemRecuperacao,
     enviarFormulario,
+    entrarComDadosDeExemplo,
     enviarRecuperacao,
     reenviarConfirmacao,
     abrirRecuperacao,

@@ -293,7 +293,11 @@ def parse_contracheque(pdf_path: str) -> dict[str, Decimal | int | str]:
 
 def extrair_rubricas_contracheque(pdf_path: str) -> list[dict[str, str | Decimal]]:
     texto = _extrair_texto_pdf(pdf_path)
-    return _extrair_rubricas_do_texto_limpo(texto)
+    rubricas = _extrair_rubricas_do_texto_limpo(texto)
+    if rubricas:
+        return rubricas
+
+    return _extrair_rubricas_por_padroes(_normalizar_para_busca(texto))
 
 
 def _extrair_rubricas_do_texto_limpo(texto: str) -> list[dict[str, str | Decimal]]:
@@ -338,6 +342,44 @@ def _extrair_rubricas_do_texto_limpo(texto: str) -> list[dict[str, str | Decimal
                 "valor": _converter_valor_monetario(correspondencia.group("valor")),
             }
         )
+
+    return rubricas
+
+
+def _extrair_rubricas_por_padroes(texto_busca: str) -> list[dict[str, str | Decimal]]:
+    rubricas: list[dict[str, str | Decimal]] = []
+    padroes = [
+        ("vantagem", "Vencimento basico", [rf"VENCIMENTO\s+BASICO.*?{PADRAO_VALOR}"]),
+        (
+            "vantagem",
+            "Adicional desempenho",
+            [rf"ADICIONAL\s+DESEMPENHO.*?{PADRAO_VALOR}"],
+        ),
+        (
+            "vantagem",
+            "Adicional noturno",
+            [rf"ADICIONAL\s+NOTURNO.*?{PADRAO_VALOR}", rf"ADIC\s+NOT.*?{PADRAO_VALOR}"],
+        ),
+        ("vantagem", "Abono aquisicao vestimenta", [rf"ABONO\s+AQ\.?VESTIMENTA.*?{PADRAO_VALOR}"]),
+        ("desconto", "Contribuicao previdenciaria", [rf"CONTRIB\.?PREV.*?{PADRAO_VALOR}", rf"PREVIDENCIA.*?{PADRAO_VALOR}"]),
+        ("desconto", "IRRF", [rf"IRRF.*?{PADRAO_VALOR}", rf"IMP\.\s+RENDA.*?{PADRAO_VALOR}"]),
+        ("desconto", "B.pan emprestimo", [rf"B\.?PAN.*?{PADRAO_VALOR}"]),
+    ]
+
+    for tipo, descricao, padroes_item in padroes:
+        for padrao in padroes_item:
+            correspondencia = re.search(padrao, texto_busca, flags=re.IGNORECASE | re.DOTALL)
+            if not correspondencia:
+                continue
+
+            rubricas.append(
+                {
+                    "tipo": tipo,
+                    "descricao": descricao,
+                    "valor": _converter_valor_monetario(correspondencia.group("valor")),
+                }
+            )
+            break
 
     return rubricas
 

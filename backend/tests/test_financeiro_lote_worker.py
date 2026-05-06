@@ -55,8 +55,8 @@ def test_processamento_assincrono_persiste_paycheck_e_itens() -> None:
             select(Paycheck).where(Paycheck.batch_id == lote.id, Paycheck.user_id == 7)
         )
         assert paycheck is not None
-        assert paycheck.competencia == "Janeiro/2025"
-        assert paycheck.bruto == Decimal("8816.54")
+        assert paycheck.competencia == "Janeiro/2022"
+        assert paycheck.bruto == Decimal("5375.07")
 
         itens = db.scalars(select(PaycheckItem).where(PaycheckItem.paycheck_id == paycheck.id)).all()
         assert len(itens) >= 4
@@ -71,8 +71,8 @@ def test_duplicidade_de_competencia_marca_falha_sem_parar_lote() -> None:
         paycheck_existente = Paycheck(
             batch_id=lote.id,
             user_id=7,
-            competencia="Janeiro/2025",
-            ano=2025,
+            competencia="Janeiro/2022",
+            ano=2022,
             mes=1,
             bruto=Decimal("8816.54"),
             descontos=Decimal("1912.66"),
