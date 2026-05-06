@@ -1,4 +1,4 @@
-﻿import type { ResumoCarreira } from "../model/carreira.model"
+import type { ResumoCarreira } from "../model/carreira.model"
 import { formatarDataISO, formatarSimNao } from "./carreira.formatters"
 
 type CarreiraResultsViewProps = {
@@ -10,72 +10,70 @@ export function CarreiraResultsView({ resumo }: CarreiraResultsViewProps) {
     <section className="card results-card">
       <div className="card-header">
         <div>
-          <p className="eyebrow">Resultado</p>
-          <h2>Resumo funcional</h2>
+          <p className="eyebrow">Result</p>
+          <h2>Career Summary</h2>
         </div>
-        <span className="status-pill">{resumo ? "recebido" : "aguardando"}</span>
+        <span className="status-pill">{resumo ? "Received" : "Waiting"}</span>
       </div>
 
       {resumo ? (
         <div className="results-grid">
           <div className="result-block">
-            <span className="label">Nome</span>
+            <span className="label">Name</span>
             <strong>{resumo.nome}</strong>
           </div>
           <div className="result-block">
-            <span className="label">Nascimento</span>
+            <span className="label">Birth</span>
             <strong>{formatarDataISO(resumo.data_nascimento)}</strong>
           </div>
           <div className="result-block">
-            <span className="label">Ingresso</span>
+            <span className="label">Join Date</span>
             <strong>{formatarDataISO(resumo.data_ingresso)}</strong>
           </div>
           <div className="result-block">
-            <span className="label">CLT averbado</span>
+            <span className="label">Recognized CLT</span>
             <strong>{formatarSimNao(resumo.tem_tempo_clt_averbado)}</strong>
           </div>
           <div className="result-block">
-            <span className="label">25 anos de carreira</span>
+            <span className="label">25 Years of Career</span>
             <strong>{formatarDataISO(resumo.data_25_anos_carreira)}</strong>
           </div>
           <div className="result-block">
-            <span className="label">Idade nessa data</span>
-            <strong>{resumo.idade_na_data_25_anos_carreira} anos</strong>
+            <span className="label">Age at That Date</span>
+            <strong>{resumo.idade_na_data_25_anos_carreira} years</strong>
           </div>
           <div className="result-block">
-            <span className="label">Idade mínima</span>
+            <span className="label">Minimum Age</span>
             <strong>{formatarDataISO(resumo.data_idade_minima_aposentadoria)}</strong>
           </div>
           <div className="result-block">
-            <span className="label">Pode aposentar</span>
+            <span className="label">Can Retire</span>
             <strong>{formatarSimNao(resumo.possui_idade_minima_na_data_25_anos_carreira)}</strong>
           </div>
           <div className="result-block">
-            <span className="label">Aposentadoria provável</span>
+            <span className="label">Projected Retirement</span>
             <strong>{formatarDataISO(resumo.data_prevista_aposentadoria)}</strong>
           </div>
           <div className="result-block">
-            <span className="label">Grau aos 45</span>
+            <span className="label">Grade at 45</span>
             <strong>
-              {resumo.grau_aos_45_anos} / Nível {resumo.nivel_aos_45_anos}
+              {resumo.grau_aos_45_anos} / Level {resumo.nivel_aos_45_anos}
             </strong>
           </div>
           <div className="result-block">
-            <span className="label">Grau na aposentadoria</span>
+            <span className="label">Grade at Retirement</span>
             <strong>
-              {resumo.grau_na_aposentadoria} / Nível {resumo.nivel_na_aposentadoria}
+              {resumo.grau_na_aposentadoria} / Level {resumo.nivel_na_aposentadoria}
             </strong>
           </div>
         </div>
       ) : (
         <div className="empty-state">
           <p>
-            Preencha o formulário e clique em <strong>Calcular resumo</strong> para ver
-            os resultados.
+            Fill out the form and click <strong>Calculate Summary</strong> to see the results.
           </p>
         </div>
       )}
     </section>
   )
 }
-

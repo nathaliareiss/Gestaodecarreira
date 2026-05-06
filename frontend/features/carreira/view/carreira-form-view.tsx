@@ -29,16 +29,16 @@ export function CarreiraFormView({
     <form className="card form-card" onSubmit={onSubmit}>
       <div className="card-header card-header--tight">
         <div>
-          <p className="eyebrow">Cadastro</p>
-          <h2>Entrada de dados</h2>
+          <p className="eyebrow">Registration</p>
+          <h2>Data Entry</h2>
         </div>
         <button className="ghost-button" type="button" onClick={onUsarExemplo}>
-          Usar exemplo
+          Use Example
         </button>
       </div>
 
       <label className="field">
-        <span>Nome</span>
+        <span>Name</span>
         <input
           value={cadastro.nome}
           onChange={(evento) => onNomeChange(evento.target.value)}
@@ -49,7 +49,7 @@ export function CarreiraFormView({
 
       <div className="field-grid">
         <label className="field">
-          <span>Data de nascimento</span>
+          <span>Date of Birth</span>
           <input
             type="date"
             value={cadastro.data_nascimento}
@@ -59,7 +59,7 @@ export function CarreiraFormView({
         </label>
 
         <label className="field">
-          <span>Data de ingresso</span>
+          <span>Join Date</span>
           <input
             type="date"
             value={cadastro.data_ingresso}
@@ -75,12 +75,12 @@ export function CarreiraFormView({
           checked={cadastro.tem_tempo_clt_averbado}
           onChange={(evento) => onCltChange(evento.target.checked)}
         />
-        <span>Tem tempo CLT averbado</span>
+        <span>Has recognized CLT time</span>
       </label>
 
       <div className="actions">
         <button className="primary-button button--large" type="submit" disabled={carregando}>
-          {carregando ? "Calculando..." : "Calcular resumo"}
+          {carregando ? "Calculating..." : "Calculate Summary"}
         </button>
       </div>
 

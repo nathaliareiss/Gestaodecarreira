@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -27,11 +27,11 @@ export function RedefinirSenhaView({ token }: RedefinirSenhaViewProps) {
 
     try {
       if (!token) {
-        throw new Error("Token ausente.")
+        throw new Error("Missing token.")
       }
 
       if (novaSenha !== confirmarSenha) {
-        throw new Error("As senhas não conferem.")
+        throw new Error("Passwords do not match.")
       }
 
       const resposta = await redefinirSenhaUsuario({
@@ -44,7 +44,7 @@ export function RedefinirSenhaView({ token }: RedefinirSenhaViewProps) {
       setConfirmarSenha("")
       router.push("/login")
     } catch (error) {
-      setErro(error instanceof Error ? error.message : "Não foi possível atualizar a senha.")
+      setErro(error instanceof Error ? error.message : "Unable to update the password.")
     } finally {
       setCarregando(false)
     }
@@ -57,10 +57,10 @@ export function RedefinirSenhaView({ token }: RedefinirSenhaViewProps) {
 
       <section className="hero hero--login">
         <div className="hero-copy hero-copy--login">
-          <p className="eyebrow">Redefinir senha</p>
-          <h1>Crie uma nova senha para acessar sua conta.</h1>
+          <p className="eyebrow">Reset Password</p>
+          <h1>Create a new password to access your account.</h1>
           <p className="hero-text">
-            Use o link recebido por e-mail para definir uma nova senha com segurança.
+            Use the link you received by email to set a new password securely.
           </p>
         </div>
 
@@ -68,13 +68,13 @@ export function RedefinirSenhaView({ token }: RedefinirSenhaViewProps) {
           <form className="card form-card form-card--recovery" onSubmit={enviar}>
             <div className="card-header card-header--tight">
               <div>
-                <p className="eyebrow">Nova senha</p>
-                <h2>Atualizar acesso</h2>
+                <p className="eyebrow">New Password</p>
+                <h2>Update Access</h2>
               </div>
             </div>
 
             <label className="field">
-              <span>Nova senha</span>
+              <span>New Password</span>
               <input
                 type="password"
                 value={novaSenha}
@@ -87,7 +87,7 @@ export function RedefinirSenhaView({ token }: RedefinirSenhaViewProps) {
             </label>
 
             <label className="field">
-              <span>Confirmar senha</span>
+              <span>Confirm Password</span>
               <input
                 type="password"
                 value={confirmarSenha}
@@ -101,20 +101,19 @@ export function RedefinirSenhaView({ token }: RedefinirSenhaViewProps) {
 
             <div className="actions actions--compact">
               <button className="primary-button button--large" type="submit" disabled={carregando}>
-                {carregando ? "Atualizando..." : "Redefinir senha"}
+                {carregando ? "Updating..." : "Reset Password"}
               </button>
               <Link className="ghost-button ghost-button--compact" href="/login">
-                Voltar para o login
+                Back to Sign In
               </Link>
             </div>
 
             {sucesso ? <p className="success-box">{sucesso}</p> : null}
             {erro ? <p className="error-box">{erro}</p> : null}
-            {!token ? <p className="error-box">Token ausente.</p> : null}
+            {!token ? <p className="error-box">Missing token.</p> : null}
           </form>
         </div>
       </section>
     </main>
   )
 }
-

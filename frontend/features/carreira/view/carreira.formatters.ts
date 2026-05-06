@@ -4,6 +4,5 @@ export function formatarDataISO(valor: string) {
 }
 
 export function formatarSimNao(valor: boolean) {
-  return valor ? "sim" : "nao"
+  return valor ? "Yes" : "No"
 }
-

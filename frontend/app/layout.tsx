@@ -5,8 +5,8 @@ import "./globals.css"
 import { ThemeToggle } from "@/shared/theme/theme-toggle"
 
 export const metadata: Metadata = {
-  title: "Gestão de Carreira | Career Progression Analyzer",
-  description: "Cadastro, login, recuperação de senha e histórico funcional em um só lugar.",
+  title: "Career Management | Career Progression Analyzer",
+  description: "Sign up, login, password recovery, and career history in one place.",
 }
 
 export default function RootLayout({
@@ -15,7 +15,7 @@ export default function RootLayout({
   children: ReactNode
 }>) {
   return (
-    <html lang="pt-BR" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <body className="antialiased">
         <ThemeToggle />
         {children}

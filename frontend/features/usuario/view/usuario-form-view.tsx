@@ -1,4 +1,4 @@
-﻿import type { FormEvent } from "react"
+import type { FormEvent } from "react"
 
 import type { UsuarioCadastro } from "../model/usuario.model"
 
@@ -33,20 +33,20 @@ export function UsuarioFormView({
     <form className="card form-card form-card--register" onSubmit={onSubmit}>
       <div className="card-header card-header--tight">
         <div>
-          <p className="eyebrow">Novo usuário</p>
-          <h2>Dados de acesso</h2>
+          <p className="eyebrow">New User</p>
+          <h2>Access Details</h2>
         </div>
         <button
           className="ghost-button ghost-button--compact"
           type="button"
           onClick={onUsarExemplo}
         >
-          Usar exemplo
+          Use Example
         </button>
       </div>
 
       <label className="field">
-        <span>Nome completo</span>
+        <span>Full Name</span>
         <input
           value={cadastro.nome}
           onChange={(evento) => onNomeChange(evento.target.value)}
@@ -56,7 +56,7 @@ export function UsuarioFormView({
       </label>
 
       <label className="field">
-        <span>Apelido (opcional)</span>
+        <span>Nickname (optional)</span>
         <input
           value={cadastro.apelido}
           onChange={(evento) => onApelidoChange(evento.target.value)}
@@ -65,7 +65,7 @@ export function UsuarioFormView({
       </label>
 
       <label className="field">
-        <span>E-mail para confirmação</span>
+        <span>Confirmation Email</span>
         <input
           type="email"
           value={cadastro.email}
@@ -76,7 +76,7 @@ export function UsuarioFormView({
       </label>
 
       <label className="field">
-        <span>Data de exercício</span>
+        <span>Start Date</span>
         <input
           type="date"
           value={cadastro.data_exercicio}
@@ -97,7 +97,7 @@ export function UsuarioFormView({
         </label>
 
         <label className="field">
-          <span>Senha</span>
+          <span>Password</span>
           <input
             type="password"
             value={cadastro.senha}
@@ -111,10 +111,10 @@ export function UsuarioFormView({
 
       <div className="actions">
         <button className="primary-button button--large" type="submit" disabled={carregando}>
-          {carregando ? "Salvando..." : "Cadastrar e ir para o usuário"}
+          {carregando ? "Saving..." : "Create Account and Go to Profile"}
         </button>
         <p className="helper">
-          Depois do cadastro, você vai receber um e-mail para confirmar o acesso.
+          After registration, you will receive an email to confirm access.
         </p>
       </div>
 
@@ -122,4 +122,3 @@ export function UsuarioFormView({
     </form>
   )
 }
-

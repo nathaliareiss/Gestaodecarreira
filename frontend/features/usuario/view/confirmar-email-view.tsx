@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import Link from "next/link"
 import { useEffect, useState } from "react"
@@ -20,7 +20,7 @@ export function ConfirmarEmailView({ token }: ConfirmarEmailViewProps) {
 
     async function confirmar() {
       if (!token) {
-        setErro("Token ausente.")
+        setErro("Missing token.")
         setCarregando(false)
         return
       }
@@ -39,7 +39,7 @@ export function ConfirmarEmailView({ token }: ConfirmarEmailViewProps) {
         }
 
         setUsuario(null)
-        setErro(error instanceof Error ? error.message : "Não foi possível confirmar este e-mail.")
+        setErro(error instanceof Error ? error.message : "Unable to confirm this email.")
       } finally {
         if (ativo) {
           setCarregando(false)
@@ -61,18 +61,18 @@ export function ConfirmarEmailView({ token }: ConfirmarEmailViewProps) {
 
       <section className="hero">
         <div className="hero-copy">
-          <p className="eyebrow">Confirmação de e-mail</p>
-          <h1>Valide o acesso com um clique no link do e-mail.</h1>
+          <p className="eyebrow">Email Confirmation</p>
+          <h1>Validate access with one click on the email link.</h1>
         </div>
 
         <div className="hero-grid">
           <article className="mini-card">
             <h2>Status</h2>
-            <p>{carregando ? "Processando" : usuario ? "E-mail confirmado" : erro ?? "Pendente"}</p>
+            <p>{carregando ? "Processing" : usuario ? "Email confirmed" : erro ?? "Pending"}</p>
           </article>
           <article className="mini-card">
-            <h2>Próxima etapa</h2>
-            <p>Voltar para a página do usuário e conferir os dados salvos.</p>
+            <h2>Next Step</h2>
+            <p>Return to the user page and review the saved data.</p>
           </article>
         </div>
       </section>
@@ -81,30 +81,30 @@ export function ConfirmarEmailView({ token }: ConfirmarEmailViewProps) {
         <section className="card results-card">
           <div className="card-header">
             <div>
-              <p className="eyebrow">Resultado</p>
-              <h2>Confirmação finalizada</h2>
+              <p className="eyebrow">Result</p>
+              <h2>Confirmation Complete</h2>
             </div>
-            <span className="status-pill">{usuario ? "ok" : "pendente"}</span>
+            <span className="status-pill">{usuario ? "OK" : "Pending"}</span>
           </div>
 
           {carregando ? (
             <div className="empty-state">
-              <p>Confirmando usuário...</p>
+              <p>Confirming user...</p>
             </div>
           ) : usuario ? (
             <div className="empty-state">
               <p>
-                O e-mail de <strong>{usuario.email}</strong> foi confirmado com sucesso.
+                The email <strong>{usuario.email}</strong> was confirmed successfully.
               </p>
               <Link className="primary-button" href="/usuario">
-                Ir para a página do usuário
+                Go to User Page
               </Link>
             </div>
           ) : (
             <div className="empty-state">
-              <p>{erro ?? "Aguardando confirmação..."}</p>
+              <p>{erro ?? "Waiting for confirmation..."}</p>
               <Link className="primary-button" href="/usuario">
-                Voltar para o usuário
+                Back to User Page
               </Link>
             </div>
           )}
@@ -113,4 +113,3 @@ export function ConfirmarEmailView({ token }: ConfirmarEmailViewProps) {
     </main>
   )
 }
-

@@ -193,7 +193,7 @@ export function UsuarioPageController({
               type="button"
               onClick={() => setAbaAtiva("perfil")}
             >
-              Perfil
+              Profile
             </button>
             <button
               className={
@@ -202,7 +202,7 @@ export function UsuarioPageController({
               type="button"
               onClick={() => setAbaAtiva("historico")}
             >
-              Histórico funcional
+              Career History
             </button>
           </div>
 
@@ -214,13 +214,13 @@ export function UsuarioPageController({
                   <h2>Professional Profile</h2>
                 </div>
                 <span className="status-pill">
-                  {usuario?.email_confirmado ? "confirmado" : "pendente"}
+                  {usuario?.email_confirmado ? "Confirmed" : "Pending"}
                 </span>
               </div>
 
               {carregando ? (
                 <div className="empty-state">
-                  <p>Carregando dados da sessão...</p>
+                  <p>Loading session data...</p>
                 </div>
               ) : erro ? (
                 <div className="empty-state">
@@ -230,30 +230,30 @@ export function UsuarioPageController({
                     type="button"
                     onClick={() => void recarregarUsuario()}
                   >
-                    Tentar novamente
+                    Try again
                   </button>
                 </div>
               ) : usuario ? (
                 <>
                   <div className="results-grid">
                     <div className="result-block">
-                      <span className="label">Nome completo</span>
+                      <span className="label">Full Name</span>
                       <strong>{usuario.nome}</strong>
                     </div>
                     <div className="result-block">
-                      <span className="label">E-mail</span>
+                      <span className="label">Email</span>
                       <strong>{usuario.email}</strong>
                     </div>
                     <div className="result-block">
-                      <span className="label">Nível</span>
+                      <span className="label">Level</span>
                       <strong>{nivelExibido}</strong>
                     </div>
                     <div className="result-block">
-                      <span className="label">Grau</span>
+                      <span className="label">Grade</span>
                       <strong>{grauExibido}</strong>
                     </div>
                     <div className="result-block">
-                      <span className="label">Data de exercício</span>
+                      <span className="label">Start Date</span>
                       <strong>{formatarDataCurta(dataExercicioExibida)}</strong>
                     </div>
                   </div>
@@ -267,7 +267,7 @@ export function UsuarioPageController({
                           onClick={() => void excluirCadastro()}
                           disabled={removendo}
                         >
-                          {removendo ? "Removendo..." : "Limpar último cadastro"}
+                          {removendo ? "Removing..." : "Clear Last Record"}
                         </button>
                       ) : null}
                       <button
@@ -276,7 +276,7 @@ export function UsuarioPageController({
                         onClick={() => void sair()}
                         disabled={saindo}
                       >
-                        {saindo ? "Saindo..." : modoDemo ? "Sair do demo" : "Sair"}
+                        {saindo ? "Exiting..." : modoDemo ? "Exit Demo" : "Exit"}
                       </button>
                     </div>
                   </div>
@@ -284,10 +284,10 @@ export function UsuarioPageController({
               ) : (
                 <div className="empty-state">
                   <p>
-                    Nenhuma sessão ativa foi encontrada. Entre novamente para ver seus dados.
+                    No active session was found. Sign in again to view your data.
                   </p>
                   <Link className="primary-button" href="/login">
-                    Ir para o login
+                    Go to Login
                   </Link>
                 </div>
               )}

@@ -1,15 +1,14 @@
-﻿export function CarreiraHeroSection() {
+export function CarreiraHeroSection() {
   return (
     <section className="hero">
       <div className="hero-copy">
-        <p className="eyebrow">Gestão de carreira</p>
-        <h1>Visualize sua carreira com clareza e rapidez.</h1>
+        <p className="eyebrow">Career Management</p>
+        <h1>Visualize your career with clarity and speed.</h1>
         <p className="hero-text">
-          Acompanhe seus dados, veja os marcos principais e explore os resultados em
-          uma tela limpa e objetiva.
+          Track your data, review the key milestones, and explore the results in a
+          clean, focused screen.
         </p>
       </div>
     </section>
   )
 }
-

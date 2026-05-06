@@ -28,8 +28,8 @@ const CORES_AFASTAMENTO = {
 } as const
 
 const ROTULOS_AFASTAMENTO = {
-  aguardando_resultado_conclusivo_de_exame_pericial: "Aguardando perícia",
-  licenca_para_tratamento_de_saude: "Licença para tratamento de saúde",
+  aguardando_resultado_conclusivo_de_exame_pericial: "Medical Review",
+  licenca_para_tratamento_de_saude: "Medical Leave",
 } as const
 
 function formatarData(valor: string | null) {
@@ -43,7 +43,7 @@ function formatarData(valor: string | null) {
 function formatarDuracaoEmAnos(dias: number) {
   const anos = Math.floor(dias / 365)
   const meses = Math.floor((dias % 365) / 30)
-  return `${anos}a ${meses}m`
+  return `${anos}y ${meses}mo`
 }
 
 function formatarAtraso(dataPrevista: string | null, dataEfetiva: string | null) {
@@ -99,18 +99,18 @@ function corDoStatus(status: StatusEvento) {
 
 function rotuloStatus(status: StatusEvento) {
   if (status === "atrasado") {
-    return "Atrasado"
+    return "Delayed"
   }
 
   if (status === "estagio_probatorio") {
-    return "Em estágio probatório"
+    return "Probation"
   }
 
   if (status === "cumprindo") {
-    return "Cumprindo"
+    return "On Track"
   }
 
-  return "Não aplicável"
+  return "N/A"
 }
 
 function corTipoAfastamento(tipo: keyof typeof CORES_AFASTAMENTO) {
@@ -356,11 +356,11 @@ function GraficoComparativoTempo({
     return (
       <div className="career-bars">
         <div className="career-bars__title">
-          <p className="eyebrow">Comparativo</p>
-          <h3>Tempo trabalhado e afastamentos</h3>
+          <p className="eyebrow">Comparison</p>
+          <h3>Time Worked and Leave</h3>
         </div>
         <div className="history-empty history-empty--compact">
-          <p>Você não possui afastamentos registrados para desenhar o comparativo.</p>
+          <p>You do not have any recorded leave periods to draw the comparison.</p>
         </div>
       </div>
     )
@@ -405,13 +405,13 @@ function GraficoComparativoTempo({
       alinhamento,
       titulo: rotuloAfastamento(afastamento.tipo),
       linhas: [
-        `Início: ${formatarData(afastamento.data_inicio)}`,
-        `Fim: ${formatarData(afastamento.data_fim)}`,
-        `Mês/ano: ${afastamento.mes_ano_afastamento}`,
-        `${afastamento.total_dias} dia(s)`,
+        `Start: ${formatarData(afastamento.data_inicio)}`,
+        `End: ${formatarData(afastamento.data_fim)}`,
+        `Month/Year: ${afastamento.mes_ano_afastamento}`,
+        `${afastamento.total_dias} day(s)`,
         afastamento.dias_restantes_ate_pericia > 0
-          ? `${afastamento.dias_restantes_ate_pericia} dia(s) até a perícia`
-          : "Perícia concluída",
+          ? `${afastamento.dias_restantes_ate_pericia} day(s) until medical review`
+          : "Medical review completed",
       ],
     })
   }
@@ -419,27 +419,27 @@ function GraficoComparativoTempo({
   return (
     <div className="career-bars">
       <div className="career-bars__title">
-        <p className="eyebrow">Comparativo</p>
-        <h3>Tempo trabalhado e afastamentos</h3>
+        <p className="eyebrow">Comparison</p>
+        <h3>Time Worked and Leave</h3>
       </div>
 
       <div className="timeline-graph timeline-graph--interactive">
         <ExibirTooltip tooltip={tooltip} />
         <svg
-          aria-label="Linha do tempo de afastamentos e carreira"
+          aria-label="Leave and career timeline"
           className="timeline-graph__svg"
           preserveAspectRatio="none"
           viewBox={`0 0 ${largura} ${altura}`}
           role="img"
         >
-          {/* Linha: Tempo Trabalhado (Efetivo) */}
+          {/* Line: Worked Time (Effective) */}
           <line className="timeline-graph__axis" x1={margemX} x2={xHoje} y1={eixoY} y2={eixoY} style={{ stroke: "var(--accent)", strokeWidth: 4 }} />
 
           <circle cx={xHoje} cy={eixoY} r="5" style={{ fill: "var(--accent)" }} />
-          <text className="timeline-graph__label timeline-graph__label--muted" textAnchor="end" x={xHoje} y={eixoY + 22}>Hoje</text>
+          <text className="timeline-graph__label timeline-graph__label--muted" textAnchor="end" x={xHoje} y={eixoY + 22}>Today</text>
 
           <circle cx={margemX} cy={eixoY} r="4" style={{ fill: "var(--accent)" }} />
-          <text className="timeline-graph__label timeline-graph__label--muted" textAnchor="end" x={margemX - 10} y={eixoY + 4}>Início</text>
+          <text className="timeline-graph__label timeline-graph__label--muted" textAnchor="end" x={margemX - 10} y={eixoY + 4}>Start</text>
 
           {ordenados.map((afastamento, indice) => {
             const x = posicaoX(afastamento.data_inicio)
@@ -474,7 +474,7 @@ function GraficoComparativoTempo({
                   x={x}
                   y={isAbove ? y - 18 : y + 32}
                 >
-                  {afastamento.total_dias} dias
+                  {afastamento.total_dias} days
                 </text>
                 <text
                   className={`timeline-graph__label timeline-graph__label--muted ${isAbove ? "timeline-graph__label--above" : "timeline-graph__label--below"}`}
@@ -540,22 +540,22 @@ export function HistoricoFuncionalView({
     <section className="analysis-card card">
       <div className="analysis-header">
         <div className="analysis-header__title">
-          <p className="eyebrow eyebrow--title">Histórico funcional</p>
-          <h2>Gestão de dados</h2>
+          <p className="eyebrow eyebrow--title">Career History</p>
+          <h2>Data Management</h2>
           <p className="analysis-header__subtitle">Data management</p>
         </div>
-        <span className="status-pill">{painel ? "salvo" : "aguardando PDF"}</span>
+        <span className="status-pill">{painel ? "Saved" : "Waiting for PDF"}</span>
       </div>
 
       <div className="analysis-stack">
         <section className="upload-shell">
           <div className="upload-shell__header">
             <div>
-              <p className="eyebrow">Arquivos</p>
-              <h3>{modoDemo ? "Painel demonstrativo" : painel ? "Adicionar arquivos" : "Enviar documentos"}</h3>
+              <p className="eyebrow">Documents</p>
+              <h3>{modoDemo ? "Demo Dashboard" : painel ? "Add Documents" : "Upload Documents"}</h3>
             </div>
 
-            {modoDemo ? <span className="status-pill">somente visualização</span> : null}
+            {modoDemo ? <span className="status-pill">View Only</span> : null}
             {!modoDemo ? (
               <div className="upload-shell__actions">
                 {!painel ? (
@@ -564,7 +564,7 @@ export function HistoricoFuncionalView({
                     type="button"
                     onClick={iniciarAtualizacaoHistorico}
                   >
-                    Enviar histórico funcional
+                    Upload Career History
                   </button>
                 ) : null}
                 {painel ? (
@@ -573,7 +573,7 @@ export function HistoricoFuncionalView({
                     type="button"
                     onClick={iniciarAnexoAfastamentos}
                   >
-                    Anexar afastamentos
+                    Attach Leave Records
                   </button>
                 ) : null}
                 {painel ? (
@@ -582,7 +582,7 @@ export function HistoricoFuncionalView({
                     type="button"
                     onClick={iniciarAtualizacaoHistorico}
                   >
-                    Atualizar histórico funcional
+                    Update Career History
                   </button>
                 ) : null}
                 {arquivoDownloadUrl ? (
@@ -591,7 +591,7 @@ export function HistoricoFuncionalView({
                     download={arquivo?.name ?? "historico-funcional.pdf"}
                     href={arquivoDownloadUrl}
                   >
-                    Baixar PDF
+                    Download PDF
                   </a>
                 ) : null}
               </div>
@@ -601,35 +601,35 @@ export function HistoricoFuncionalView({
           {modoDemo ? (
             <div className="upload-shell__collapsed">
               <p className="helper">
-                Os dados abaixo já foram carregados para a demonstração. Você pode navegar pelos
-                gráficos, linha do tempo e indicadores sem criar conta.
+                The data below is already loaded for the demo. You can explore the charts,
+                timeline, and indicators without creating an account.
               </p>
               <div className="actions-row">
                 <Link className="primary-button" href="/login">
-                  Sair do demo
+                  Exit Demo
                 </Link>
                 <Link className="ghost-button" href="/">
-                  Criar conta real
+                  Create Account
                 </Link>
               </div>
             </div>
           ) : !painel && !modoAtualizacaoHistorico ? (
             <div className="upload-shell__collapsed">
               <p className="helper">
-                Clique em &quot;Enviar histórico funcional&quot; para abrir o campo de envio.
+                Click &quot;Upload Career History&quot; to open the upload fields.
               </p>
               {erro ? <p className="error-box">{erro}</p> : null}
             </div>
           ) : modoAtualizacaoHistorico ? (
             <form className="upload-form" onSubmit={enviarFormulario}>
               <label className="field">
-                <span>PDF do histórico funcional</span>
+                <span>Career History PDF</span>
                 <input type="file" accept="application/pdf" onChange={selecionarArquivo} />
               </label>
 
               <div className="field-grid">
                 <label className="field">
-                  <span>Data de nascimento</span>
+                  <span>Date of Birth</span>
                   <input
                     type="date"
                     value={dataNascimento}
@@ -639,7 +639,7 @@ export function HistoricoFuncionalView({
                 </label>
 
                 <label className="field">
-                  <span>Anos de CLT averbados</span>
+                  <span>Recognized CLT Years</span>
                   <input
                     type="number"
                     min={0}
@@ -651,28 +651,28 @@ export function HistoricoFuncionalView({
               </div>
 
               <label className="field">
-                <span>PDF dos afastamentos</span>
+                <span>Leave Records PDF</span>
                 <input type="file" accept="application/pdf" onChange={selecionarArquivoAfastamentos} />
               </label>
 
               {arquivoAfastamentos ? (
-                <p className="helper">Arquivo de afastamentos selecionado: {arquivoAfastamentos.name}</p>
+                <p className="helper">Selected leave records file: {arquivoAfastamentos.name}</p>
               ) : null}
 
               <div className="upload-actions">
                 <button className="ghost-button" type="button" onClick={usarCltMaximo}>
-                  Preencher 10 anos de CLT
+                  Fill 10 CLT Years
                 </button>
               </div>
 
               <p className="helper">
-                Você pode informar no máximo 10 anos de CLT. Se já tiver esse tempo, basta preencher `10` ou usar o atalho.
+                You can enter up to 10 CLT years. If you already have that time, enter `10` or use the shortcut.
               </p>
 
-              {arquivo ? <p className="helper">Arquivo selecionado: {arquivo.name}</p> : null}
+              {arquivo ? <p className="helper">Selected file: {arquivo.name}</p> : null}
               {usuarioId ? (
                 <button className="ghost-button" type="button" onClick={() => void recarregarHistorico()}>
-                  Recarregar último salvo
+                  Reload Last Saved
                 </button>
               ) : null}
 
@@ -682,14 +682,14 @@ export function HistoricoFuncionalView({
           ) : painel && modoAnexoAfastamentos ? (
             <div className="upload-shell__collapsed upload-shell__collapsed--compact">
               <label className="field">
-                <span>PDF dos afastamentos</span>
+                <span>Leave Records PDF</span>
                 <input type="file" accept="application/pdf" onChange={selecionarArquivoAfastamentos} />
               </label>
 
               {arquivoAfastamentos ? (
-                <p className="helper">Arquivo de afastamentos selecionado: {arquivoAfastamentos.name}</p>
+                <p className="helper">Selected leave records file: {arquivoAfastamentos.name}</p>
               ) : (
-                <p className="helper">Selecione o PDF para anexar aos dados já salvos.</p>
+                <p className="helper">Select the PDF to attach to the saved data.</p>
               )}
 
               {mensagemProcessamento ? <p className="helper">{mensagemProcessamento}</p> : null}
@@ -698,7 +698,7 @@ export function HistoricoFuncionalView({
           ) : (
             <div className="upload-shell__collapsed">
               <p className="helper">
-                Se quiser enviar outros arquivos, use os botões acima para abrir o campo correspondente.
+                To send other files, use the buttons above to open the corresponding field.
               </p>
               {erro ? <p className="error-box">{erro}</p> : null}
             </div>
@@ -716,38 +716,38 @@ export function HistoricoFuncionalView({
 
             <div className="overview-panel__content">
               <p className="helper">
-                Armazenamento do PDF: {rotuloArmazenamento(painel.armazenamento_origem)}.
+                PDF storage: {rotuloArmazenamento(painel.armazenamento_origem)}.
               </p>
               <p className="helper">
-                Processamento: {rotuloProcessamento(painel.processamento_origem)}.
+                Processing: {rotuloProcessamento(painel.processamento_origem)}.
               </p>
               <div className="metric-strip">
                 <div className="metric-line">
-                  <span>Tempo trabalhado</span>
+                  <span>Time Worked</span>
                   <strong>{formatarDuracaoEmAnos(resumo.tempo_trabalhado_dias)}</strong>
                 </div>
                 <div className="metric-line">
-                  <span>Tempo restante</span>
+                  <span>Time Remaining</span>
                   <strong>{formatarDuracaoEmAnos(resumo.tempo_restante_dias)}</strong>
                 </div>
                 <div className="metric-line">
-                  <span>Eventos</span>
+                  <span>Events</span>
                   <strong>{resumo.eventos_totais}</strong>
                 </div>
                 {resumoAfastamentos ? (
                   <div className="metric-line metric-line--danger">
-                    <span>Dias afastados</span>
+                    <span>Days Away</span>
                     <strong>{resumoAfastamentos.dias_totais}</strong>
                   </div>
                 ) : null}
                 {resumoAfastamentos ? (
                   <div className="metric-line metric-line--danger">
-                    <span>Aguardando perícia</span>
+                    <span>Medical Review</span>
                     <strong>{afastamentoPericia}</strong>
                   </div>
                 ) : null}
                 <div className="metric-line">
-                  <span>Próxima progressão</span>
+                  <span>Next Progression</span>
                   <strong>{formatarData(painel.proxima_progressao_prevista)}</strong>
                 </div>
               </div>
@@ -757,18 +757,18 @@ export function HistoricoFuncionalView({
         ) : (
           <div className="history-empty">
             <p>
-              Envie o PDF do histórico funcional para analisar os dados e montar os cálculos de carreira.
+              Upload the career history PDF to analyze the data and build the career calculations.
             </p>
             <p>
-              Aqui você vai ver o tempo de trabalho, a previsão de aposentadoria e a próxima progressão e promoção.
+              Here you will see time worked, retirement projection, and the next progression and promotion.
             </p>
           </div>
         )}
 
         {painel && resumo ? (
           <section className="timeline-panel">
-            <div className="career-bars__title" style={{ marginBottom: "1.5rem" }}>
-              <p className="eyebrow">Linha do tempo: progressões e promoções</p>
+          <div className="career-bars__title" style={{ marginBottom: "1.5rem" }}>
+              <p className="eyebrow">Timeline: Progressions and Promotions</p>
             </div>
 
             <LinhaDoTempoGrafica eventos={painel.eventos} />

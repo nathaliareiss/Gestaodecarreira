@@ -1,4 +1,4 @@
-﻿import Link from "next/link"
+import Link from "next/link"
 import type { FormEvent } from "react"
 
 import type {
@@ -60,8 +60,8 @@ export function LoginView({
 
       <section className="hero hero--login">
         <div className="hero-copy hero-copy--login">
-          <p className="eyebrow">Entrar</p>
-          <h1>Acesse seu perfil e acompanhe sua carreira.</h1>
+          <p className="eyebrow">Sign In</p>
+          <h1>Access your profile and track your career.</h1>
 
           <div className="hero-links hero-links--top">
             <button
@@ -70,18 +70,18 @@ export function LoginView({
               onClick={onEntrarDemo}
               disabled={entrandoDemo}
             >
-              {entrandoDemo ? "Entrando no demo..." : "Entrar com dados de exemplo"}
+              {entrandoDemo ? "Entering demo..." : "Enter Demo With Sample Data"}
             </button>
             <Link className="ghost-button button--large" href="/">
-              Criar conta
+              Create Account
             </Link>
             <Link className="ghost-button button--large" href="/usuario">
-              Ver perfil
+              View Profile
             </Link>
           </div>
 
           <p className="hero-text">
-            Entre com seu login ou e-mail e sua senha, ou use os dados de exemplo para abrir o dashboard sem criar conta.
+            Sign in with your login or email and password, or use the sample data to open the dashboard without creating an account.
           </p>
         </div>
 
@@ -90,13 +90,13 @@ export function LoginView({
             <form className="card form-card form-card--login" onSubmit={onSubmit}>
               <div className="card-header card-header--tight">
                 <div>
-                  <p className="eyebrow">Acesso</p>
-                  <h2>Entrar</h2>
+                  <p className="eyebrow">Access</p>
+                  <h2>Sign In</h2>
                 </div>
               </div>
 
               <label className="field">
-                <span>Login ou e-mail</span>
+                <span>Login or Email</span>
                 <input
                   className="login-input"
                   value={dados.login}
@@ -108,7 +108,7 @@ export function LoginView({
               </label>
 
               <label className="field">
-                <span>Senha</span>
+                <span>Password</span>
                 <input
                   type="password"
                   value={dados.senha}
@@ -125,17 +125,17 @@ export function LoginView({
                   type="submit"
                   disabled={carregando}
                 >
-                  {carregando ? "Entrando..." : "Entrar"}
+                  {carregando ? "Signing in..." : "Sign In"}
                 </button>
                 <button
                   className="ghost-button ghost-button--compact"
                   type="button"
                   onClick={onAbrirRecuperacao}
                 >
-                  Esqueci minha senha
+                  Forgot Password
                 </button>
                 <div className="login-secondary-link">
-                  <span className="login-secondary-link__label">Não recebeu o e-mail?</span>
+                  <span className="login-secondary-link__label">Didn't receive the email?</span>
                   <button
                     className="ghost-button ghost-button--text"
                     type="button"
@@ -143,11 +143,11 @@ export function LoginView({
                     disabled={reenviandoConfirmacao}
                   >
                     {reenviandoConfirmacao
-                      ? "Reenviando confirmação..."
-                      : "Reenviar e-mail de confirmação"}
+                      ? "Resending confirmation..."
+                      : "Resend Confirmation Email"}
                   </button>
                 </div>
-                <p className="helper">Depois de entrar, você vai para sua página.</p>
+                <p className="helper">After signing in, you'll go to your page.</p>
               </div>
 
               {mensagemConfirmacao ? <p className="success-box">{mensagemConfirmacao}</p> : null}
@@ -158,25 +158,24 @@ export function LoginView({
             <form className="card form-card form-card--recovery" onSubmit={onRecuperacaoSubmit}>
               <div className="card-header card-header--tight">
                 <div>
-                  <p className="eyebrow">Ajuda de acesso</p>
-                  <h2>Esqueci minha senha</h2>
+                  <p className="eyebrow">Access Help</p>
+                  <h2>Forgot Password</h2>
                 </div>
                 <button
                   className="ghost-button ghost-button--compact"
                   type="button"
                   onClick={onVoltarLogin}
                 >
-                  Voltar
+                  Back
                 </button>
               </div>
 
               <p className="helper">
-                Informe apenas o seu e-mail. Se ele estiver cadastrado, você receberá um
-                link para criar uma nova senha.
+                Enter only your email. If it is registered, you will receive a link to create a new password.
               </p>
 
               <label className="field">
-                <span>E-mail</span>
+                <span>Email</span>
                 <input
                   type="email"
                   value={recuperacao.email}
@@ -193,7 +192,7 @@ export function LoginView({
                   type="submit"
                   disabled={recuperando}
                 >
-                  {recuperando ? "Enviando..." : "Enviar link"}
+                  {recuperando ? "Sending..." : "Send Link"}
                 </button>
               </div>
 
