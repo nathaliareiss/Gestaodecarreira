@@ -6,6 +6,7 @@ import { useState } from "react"
 
 import type { HistoricoFuncionalAnalise } from "@/features/historico-funcional/model/historico-funcional.model"
 import { HistoricoFuncionalView } from "@/features/historico-funcional/view/historico-funcional-view"
+import { FinanceiroView } from "@/features/financeiro/view/financeiro-view"
 import {
   carregarUsuarioAutenticado,
   encerrarSessao,
@@ -71,7 +72,7 @@ export function UsuarioPageController({
 }: UsuarioPageControllerProps) {
   const router = useRouter()
   const [usuario, setUsuario] = useState<UsuarioConta | null>(usuarioInicial)
-  const [abaAtiva, setAbaAtiva] = useState<"perfil" | "historico">(
+  const [abaAtiva, setAbaAtiva] = useState<"perfil" | "historico" | "financeiro">(
     modoDemo ? "historico" : "perfil",
   )
   const [erro, setErro] = useState<string | null>(erroInicial)
@@ -223,6 +224,15 @@ export function UsuarioPageController({
             >
               Career History
             </button>
+            <button
+              className={
+                abaAtiva === "financeiro" ? "tab-button tab-button--active" : "tab-button"
+              }
+              type="button"
+              onClick={() => setAbaAtiva("financeiro")}
+            >
+              Financeiro
+            </button>
           </div>
 
           {abaAtiva === "perfil" ? (
@@ -311,7 +321,7 @@ export function UsuarioPageController({
                 </div>
               )}
             </>
-          ) : (
+          ) : abaAtiva === "historico" ? (
             <HistoricoFuncionalView
               usuarioId={usuario?.id ?? null}
               historicoInicial={historicoInicial}
@@ -321,6 +331,8 @@ export function UsuarioPageController({
               saindo={saindo}
               criandoConta={indoParaCadastro}
             />
+          ) : (
+            <FinanceiroView />
           )}
         </section>
       </section>
