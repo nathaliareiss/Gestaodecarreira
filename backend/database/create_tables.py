@@ -5,6 +5,23 @@ from backend.database import models as database_models  # noqa: F401
 from backend.logger import logger
 
 
+def habilitar_rls_tabelas_publicas() -> None:
+    comandos = [
+        "ALTER TABLE IF EXISTS public.usuarios ENABLE ROW LEVEL SECURITY",
+        "ALTER TABLE IF EXISTS public.historicos_funcionais ENABLE ROW LEVEL SECURITY",
+    ]
+
+    try:
+        with engine.begin() as conexao:
+            for comando in comandos:
+                conexao.execute(text(comando))
+    except Exception:
+        logger.exception(
+            "Falha ao habilitar RLS nas tabelas publicas",
+            extra={"tabelas": ["usuarios", "historicos_funcionais"]},
+        )
+
+
 def sincronizar_usuario_table() -> None:
     comandos = [
         "ALTER TABLE IF EXISTS usuarios ADD COLUMN IF NOT EXISTS apelido VARCHAR",
@@ -44,6 +61,7 @@ def sincronizar_usuario_table() -> None:
 
 def criar_tabelas() -> None:
     sincronizar_usuario_table()
+    habilitar_rls_tabelas_publicas()
     logger.info("Tabelas criadas com sucesso!", extra={"tabelas": "usuarios"})
 
 

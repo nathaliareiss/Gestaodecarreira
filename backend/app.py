@@ -5,7 +5,10 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from backend.config import AUTO_SYNC_DB_SCHEMA, CORS_ORIGINS, FRONTEND_BASE_URL
 from backend.logger import logger
-from backend.database.create_tables import sincronizar_usuario_table
+from backend.database.create_tables import (
+    habilitar_rls_tabelas_publicas,
+    sincronizar_usuario_table,
+)
 from backend.middleware.error_middleware import registrar_middleware_de_erros
 from backend.middleware.metrics_middleware import registrar_middleware_de_metricas
 from backend.routes import router as api_router
@@ -36,6 +39,7 @@ def criar_app() -> FastAPI:
 
     @app.on_event("startup")
     def _criar_tabelas() -> None:
+        habilitar_rls_tabelas_publicas()
         if AUTO_SYNC_DB_SCHEMA:
             sincronizar_usuario_table()
         logger.info(
