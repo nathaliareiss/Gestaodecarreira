@@ -84,6 +84,7 @@ export function UsuarioPageController({
   const nivelExibido = historicoInicial?.nivel_atual ?? "-"
   const grauExibido = historicoInicial?.grau_atual ?? "-"
   const resumoDemo = historicoInicial?.resumo_grafico ?? null
+  const rotuloSair = saindo ? "Exiting..." : modoDemo ? "Exit Demo" : "Exit"
   const indicadoresDemo = modoDemo && historicoInicial && resumoDemo ? [
     {
       label: "Years Worked",
@@ -208,30 +209,27 @@ export function UsuarioPageController({
       <section className="workbench workbench--single">
         <section className="card results-card">
           <div className="tab-bar">
+            {[
+              { key: "perfil" as const, label: "Profile" },
+              { key: "historico" as const, label: "Career History" },
+              { key: "financeiro" as const, label: "Finance" },
+            ].map((aba) => (
+              <button
+                className={abaAtiva === aba.key ? "tab-button tab-button--active" : "tab-button"}
+                key={aba.key}
+                type="button"
+                onClick={() => setAbaAtiva(aba.key)}
+              >
+                {aba.label}
+              </button>
+            ))}
             <button
-              className={abaAtiva === "perfil" ? "tab-button tab-button--active" : "tab-button"}
+              className="ghost-button ghost-button--compact tab-bar__action"
               type="button"
-              onClick={() => setAbaAtiva("perfil")}
+              onClick={() => void sair()}
+              disabled={saindo}
             >
-              Profile
-            </button>
-            <button
-              className={
-                abaAtiva === "historico" ? "tab-button tab-button--active" : "tab-button"
-              }
-              type="button"
-              onClick={() => setAbaAtiva("historico")}
-            >
-              Career History
-            </button>
-            <button
-              className={
-                abaAtiva === "financeiro" ? "tab-button tab-button--active" : "tab-button"
-              }
-              type="button"
-              onClick={() => setAbaAtiva("financeiro")}
-            >
-              Finance
+              {rotuloSair}
             </button>
           </div>
 
@@ -299,14 +297,6 @@ export function UsuarioPageController({
                           {removendo ? "Removing..." : "Clear Last Record"}
                         </button>
                       ) : null}
-                      <button
-                        className="ghost-button"
-                        type="button"
-                        onClick={() => void sair()}
-                        disabled={saindo}
-                      >
-                        {saindo ? "Exiting..." : modoDemo ? "Exit Demo" : "Exit"}
-                      </button>
                     </div>
                   </div>
                 </>
@@ -326,9 +316,7 @@ export function UsuarioPageController({
               usuarioId={usuario?.id ?? null}
               historicoInicial={historicoInicial}
               modoDemo={modoDemo}
-              onExit={() => void sair()}
               onCreateAccount={() => void criarConta()}
-              saindo={saindo}
               criandoConta={indoParaCadastro}
             />
           ) : (

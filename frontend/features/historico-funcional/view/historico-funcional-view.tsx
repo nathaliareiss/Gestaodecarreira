@@ -1,7 +1,6 @@
 ﻿"use client"
 
 
-import Link from "next/link"
 import { useState } from "react"
 import { useHistoricoFuncionalController } from "../controller/use-historico-funcional-controller"
 import { formatarTipoEvento, type HistoricoFuncionalAnalise } from "../model/historico-funcional.model"
@@ -10,9 +9,7 @@ type HistoricoFuncionalViewProps = {
   usuarioId: number | null
   historicoInicial: HistoricoFuncionalAnalise | null
   modoDemo: boolean
-  onExit?: () => void
   onCreateAccount?: () => void
-  saindo?: boolean
   criandoConta?: boolean
 }
 
@@ -509,9 +506,7 @@ export function HistoricoFuncionalView({
   usuarioId,
   historicoInicial,
   modoDemo,
-  onExit,
   onCreateAccount,
-  saindo = false,
   criandoConta = false,
 }: HistoricoFuncionalViewProps) {
   const {
@@ -602,16 +597,6 @@ export function HistoricoFuncionalView({
                     Download PDF
                   </a>
                 ) : null}
-                {onExit ? (
-                  <button
-                    className="ghost-button ghost-button--compact"
-                    type="button"
-                    onClick={onExit}
-                    disabled={saindo}
-                  >
-                    {saindo ? "Exiting..." : "Exit"}
-                  </button>
-                ) : null}
               </div>
             ) : null}
           </div>
@@ -623,9 +608,6 @@ export function HistoricoFuncionalView({
                 timeline, and indicators without creating an account.
               </p>
               <div className="actions-row">
-                <Link className="primary-button" href="/login">
-                  Exit Demo
-                </Link>
                 {onCreateAccount ? (
                   <button
                     className="ghost-button"
