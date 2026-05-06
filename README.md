@@ -250,6 +250,28 @@ Frontend publicado:
 
 - [https://gestaodecarreira.vercel.app/](https://gestaodecarreira.vercel.app/)
 
+## Capturas de tela
+
+### Login
+
+![Tela de login](docs/screenshots/login.png)
+
+### Cadastro no tema claro
+
+![Tela de cadastro no tema claro](docs/screenshots/tema-claro.png)
+
+### Cadastro no tema escuro
+
+![Tela de cadastro no tema escuro](docs/screenshots/tema-escuro.png)
+
+### Gráficos e resumo funcional
+
+![Tela com gráficos e indicadores](docs/screenshots/graficos.png)
+
+### Histórico funcional
+
+![Página de histórico funcional](docs/screenshots/pagina-historico.png)
+
 ## Atualizacao recente
 
 - o login continua direto no backend, sem fila
