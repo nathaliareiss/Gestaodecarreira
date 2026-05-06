@@ -50,12 +50,20 @@ export function salvarSessaoDemo(usuario: UsuarioConta) {
   document.cookie = [getDemoModeCookiePair("1"), "Path=/", `Max-Age=${AUTH_COOKIE_MAX_AGE}`, "SameSite=Lax"].join(
     "; ",
   )
+
+  if (typeof window !== "undefined") {
+    window.localStorage.setItem(DEMO_MODE_COOKIE_NAME, "1")
+  }
 }
 
 export function removerSessaoDemo() {
   removerTokenAutenticacao()
   removerUsuarioAutenticadoCache()
   document.cookie = [getDemoModeCookiePair(""), "Path=/", "Max-Age=0", "SameSite=Lax"].join("; ")
+
+  if (typeof window !== "undefined") {
+    window.localStorage.removeItem(DEMO_MODE_COOKIE_NAME)
+  }
 }
 
 export function obterTokenAutenticacao(): string | null {
@@ -91,10 +99,20 @@ export function obterUsuarioAutenticadoCache(): UsuarioConta | null {
 }
 
 export function modoDemoAtivoNoCliente(): boolean {
-  return document.cookie
+  const demoAtivoNoCookie = document.cookie
     .split(";")
     .map((item) => item.trim())
     .filter(Boolean)
     .some((item) => item.startsWith(`${DEMO_MODE_COOKIE_NAME}=`))
+
+  if (demoAtivoNoCookie) {
+    return true
+  }
+
+  try {
+    return window.localStorage.getItem(DEMO_MODE_COOKIE_NAME) === "1"
+  } catch {
+    return false
+  }
 }
 
