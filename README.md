@@ -273,23 +273,23 @@ Frontend publicado:
 
 ### Login
 
-![Tela de login](docs/screenshots/login.png)
+<img src="docs/screenshots/login.png" alt="Tela de login" width="720" />
 
 ### Cadastro no tema claro
 
-![Tela de cadastro no tema claro](docs/screenshots/tema-claro.png)
+<img src="docs/screenshots/tema-claro.png" alt="Tela de cadastro no tema claro" width="720" />
 
 ### Cadastro no tema escuro
 
-![Tela de cadastro no tema escuro](docs/screenshots/tema-escuro.png)
+<img src="docs/screenshots/tema-escuro.png" alt="Tela de cadastro no tema escuro" width="720" />
 
 ### Gráficos e resumo funcional
 
-![Tela com gráficos e indicadores](docs/screenshots/graficos.png)
+<img src="docs/screenshots/graficos.png" alt="Tela com gráficos e indicadores" width="720" />
 
 ### Histórico funcional
 
-![Página de histórico funcional](docs/screenshots/pagina-historico.png)
+<img src="docs/screenshots/pagina-historico.png" alt="Página de histórico funcional" width="720" />
 
 ## Atualização Recente
 
