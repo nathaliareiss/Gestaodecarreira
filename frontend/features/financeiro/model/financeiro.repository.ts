@@ -12,6 +12,6 @@ export async function analisarContracheque(
 
   return parseApiResponse<ContrachequeAnalise>(
     response,
-    "Nao foi possivel analisar o contracheque.",
+    "We could not analyze the pay stub.",
   )
 }

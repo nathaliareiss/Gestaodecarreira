@@ -71,6 +71,7 @@ PADROES_VALORES = {
         rf"DESCONTOS\s*[:\-]?\s*{PADRAO_VALOR}",
     ],
     "liquido": [
+        rf"VALOR\s+A\s+RECEBER\s*R?\$\s*{PADRAO_VALOR}",
         rf"(?:VALOR\s+)?LIQUIDO\s*[:\-]?\s*{PADRAO_VALOR}",
     ],
     "vencimento_basico": [
@@ -112,7 +113,7 @@ def _extrair_texto_pdf(pdf_path: str) -> str:
 
 
 def _normalizar_para_busca(texto: str) -> str:
-    return _remover_acentos(texto).upper()
+    return _remover_acentos(texto).upper().strip()
 
 
 def _converter_valor_monetario(valor: str | None) -> Decimal:
@@ -255,9 +256,6 @@ def parse_contracheque(pdf_path: str) -> dict[str, Decimal | int | str]:
     texto_busca = _normalizar_para_busca(texto)
     competencia, ano, mes = _extrair_competencia(texto_busca)
     dados_linhas = _extrair_dados_por_linhas(texto)
-    bruto_bloco = _extrair_total_por_bloco(texto_busca, "VANTAGENS")
-    descontos_bloco = _extrair_total_por_bloco(texto_busca, "DESCONTOS")
-    liquido_bloco = _extrair_liquido_por_bloco(texto_busca)
 
     # Cada campo monetario usa um conjunto pequeno de padroes para continuar
     # funcionando mesmo quando o contracheque variar levemente de layout.
@@ -265,14 +263,11 @@ def parse_contracheque(pdf_path: str) -> dict[str, Decimal | int | str]:
         "competencia": competencia,
         "ano": ano,
         "mes": mes,
-        "bruto": bruto_bloco
-        or _extrair_por_padroes(texto_busca, PADROES_VALORES["bruto"])
+        "bruto": _extrair_por_padroes(texto_busca, PADROES_VALORES["bruto"])
         or dados_linhas["bruto"],
-        "descontos": descontos_bloco
-        or _extrair_por_padroes(texto_busca, PADROES_VALORES["descontos"])
+        "descontos": _extrair_por_padroes(texto_busca, PADROES_VALORES["descontos"])
         or dados_linhas["descontos"],
-        "liquido": liquido_bloco
-        or _extrair_por_padroes(texto_busca, PADROES_VALORES["liquido"])
+        "liquido": _extrair_por_padroes(texto_busca, PADROES_VALORES["liquido"])
         or dados_linhas["liquido"],
         "vencimento_basico": _extrair_por_padroes(
             texto_busca, PADROES_VALORES["vencimento_basico"]
