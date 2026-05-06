@@ -3,7 +3,7 @@ from __future__ import annotations
 from decimal import Decimal
 from pathlib import Path
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from backend.database.database import SessionLocal
 from backend.database.models import PayrollBatch, Paycheck, PaycheckItem
@@ -12,19 +12,21 @@ from backend.queue.tasks.financeiro_tasks import processar_lote_financeiro_job
 
 
 FIXTURE_PDF = Path(__file__).parent / "fixtures" / "contracheque_exemplo.pdf"
+TEST_TEMP_DIR = Path(__file__).parent / "_tmp_financeiro"
+TEST_TEMP_DIR.mkdir(parents=True, exist_ok=True)
 
 
-def _criar_copia_pdf(tmp_path: Path, nome: str) -> Path:
-    destino = tmp_path / nome
+def _criar_copia_pdf(nome: str) -> Path:
+    destino = TEST_TEMP_DIR / nome
     destino.write_bytes(FIXTURE_PDF.read_bytes())
     return destino
 
 
-def test_processamento_assincrono_persiste_paycheck_e_itens(tmp_path: Path) -> None:
+def test_processamento_assincrono_persiste_paycheck_e_itens() -> None:
     with SessionLocal() as db:
         lote = criar_lote_financeiro(db, user_id=7, total_files=1)
 
-    arquivo = _criar_copia_pdf(tmp_path, "contracheque-1.pdf")
+    arquivo = _criar_copia_pdf("contracheque-1.pdf")
     resultado = processar_lote_financeiro_job(
         {
             "batch_id": lote.id,
@@ -62,7 +64,7 @@ def test_processamento_assincrono_persiste_paycheck_e_itens(tmp_path: Path) -> N
         assert any(item.tipo == "desconto" for item in itens)
 
 
-def test_duplicidade_de_competencia_marca_falha_sem_parar_lote(tmp_path: Path) -> None:
+def test_duplicidade_de_competencia_marca_falha_sem_parar_lote() -> None:
     with SessionLocal() as db:
         lote = criar_lote_financeiro(db, user_id=7, total_files=1)
         lote_duplicado = criar_lote_financeiro(db, user_id=7, total_files=1)
@@ -84,7 +86,7 @@ def test_duplicidade_de_competencia_marca_falha_sem_parar_lote(tmp_path: Path) -
         db.add(paycheck_existente)
         db.commit()
 
-    arquivo = _criar_copia_pdf(tmp_path, "contracheque-duplicado.pdf")
+    arquivo = _criar_copia_pdf("contracheque-duplicado.pdf")
     resultado = processar_lote_financeiro_job(
         {
             "batch_id": lote_duplicado.id,
@@ -109,5 +111,39 @@ def test_duplicidade_de_competencia_marca_falha_sem_parar_lote(tmp_path: Path) -
         assert lote_salvo.processed_files == 0
         assert lote_salvo.failed_files == 1
 
-        total_paychecks = db.scalar(select(Paycheck).where(Paycheck.user_id == 7).count())  # type: ignore[attr-defined]
-        assert total_paychecks is None
+        total_paychecks = db.scalar(
+            select(func.count()).select_from(Paycheck).where(Paycheck.user_id == 7)
+        )
+        assert total_paychecks == 1
+
+
+def test_pdf_invalido_marca_falha_e_continua_processamento() -> None:
+    with SessionLocal() as db:
+        lote = criar_lote_financeiro(db, user_id=7, total_files=1)
+
+    arquivo = TEST_TEMP_DIR / "contracheque-invalido.pdf"
+    arquivo.write_bytes(b"isto nao e um pdf")
+
+    resultado = processar_lote_financeiro_job(
+        {
+            "batch_id": lote.id,
+            "user_id": 7,
+            "arquivos": [
+                {
+                    "arquivo_nome": arquivo.name,
+                    "arquivo_temporario_path": str(arquivo),
+                }
+            ],
+        }
+    )
+
+    assert resultado["status"] == "failed"
+    assert resultado["processed"] == 0
+    assert resultado["failed"] == 1
+
+    with SessionLocal() as db:
+        lote_salvo = db.get(PayrollBatch, lote.id)
+        assert lote_salvo is not None
+        assert lote_salvo.status == "failed"
+        assert lote_salvo.processed_files == 0
+        assert lote_salvo.failed_files == 1

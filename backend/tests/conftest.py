@@ -1,8 +1,14 @@
 from __future__ import annotations
 
 import os
+from pathlib import Path
 
+_TMP_TEST_DIR = Path(__file__).resolve().parent / "_tmp"
+_TMP_TEST_DIR.mkdir(parents=True, exist_ok=True)
 os.environ.setdefault("DATABASE_URL", "sqlite+pysqlite:///:memory:")
+os.environ.setdefault("TMPDIR", str(_TMP_TEST_DIR))
+os.environ.setdefault("TEMP", str(_TMP_TEST_DIR))
+os.environ.setdefault("TMP", str(_TMP_TEST_DIR))
 
 import pytest
 

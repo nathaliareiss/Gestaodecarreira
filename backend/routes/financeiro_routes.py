@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-import tempfile
+import uuid
 from decimal import Decimal
 from pathlib import Path
 
@@ -47,6 +47,12 @@ def _nome_arquivo_seguro(nome: str | None, fallback: str) -> str:
     return candidato or fallback
 
 
+def _diretorio_temporario_financeiro() -> Path:
+    diretorio = Path(__file__).resolve().parents[1] / "temp_data" / "financeiro"
+    diretorio.mkdir(parents=True, exist_ok=True)
+    return diretorio
+
+
 @router.post("/contracheque/analisar")
 async def analisar_contracheque(arquivo: UploadFile = File(...)) -> dict[str, object]:
     conteudo = await arquivo.read()
@@ -64,11 +70,10 @@ async def analisar_contracheque(arquivo: UploadFile = File(...)) -> dict[str, ob
 
     caminho_temporario = None
     try:
-        with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as arquivo_temporario:
-            arquivo_temporario.write(conteudo)
-            caminho_temporario = arquivo_temporario.name
+        caminho_temporario = _diretorio_temporario_financeiro() / f"analisar_{uuid.uuid4().hex}.pdf"
+        caminho_temporario.write_bytes(conteudo)
 
-        dados = parse_contracheque(caminho_temporario)
+        dados = parse_contracheque(str(caminho_temporario))
         return _serializar_contracheque(dados)
     except HTTPException:
         raise
@@ -126,14 +131,16 @@ async def upload_lote_financeiro(
             detail="A fila financeira nao esta disponivel no momento.",
         )
 
-    diretorio_temporario = Path(tempfile.mkdtemp(prefix=f"financeiro_batch_{lote.id}_"))
+    diretorio_temporario = _diretorio_temporario_financeiro() / f"batch_{lote.id}_{uuid.uuid4().hex}"
+    diretorio_temporario.mkdir(parents=True, exist_ok=True)
     arquivos_job: list[dict[str, str]] = []
     agendado = False
 
     try:
         for indice, (nome_arquivo, conteudo) in enumerate(arquivos_em_memoria, start=1):
             caminho = diretorio_temporario / f"{indice:03d}_{nome_arquivo}"
-            caminho.write_bytes(conteudo)
+            with caminho.open("wb") as arquivo_saida:
+                arquivo_saida.write(conteudo)
             arquivos_job.append(
                 {
                     "arquivo_nome": nome_arquivo,
@@ -151,12 +158,18 @@ async def upload_lote_financeiro(
             payload.model_dump(mode="json"),
             job_timeout=3600,
         )
+        agendado = True
         logger.info(
             "Lote financeiro agendado",
             extra={"batch_id": lote.id, "job_id": job.id, "total_files": lote.total_files},
         )
-        atualizar_lote_financeiro(db, lote, status="processing")
-        agendado = True
+        try:
+            atualizar_lote_financeiro(db, lote, status="processing")
+        except Exception as erro_status:
+            logger.warning(
+                "Nao foi possivel atualizar o status do lote financeiro",
+                extra={"batch_id": lote.id, "erro": str(erro_status)},
+            )
         return LoteFinanceiroUploadResponse(batch_id=lote.id, status="processing")
     except HTTPException:
         atualizar_lote_financeiro(db, lote, status="failed")
