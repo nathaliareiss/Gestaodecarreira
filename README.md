@@ -1,3 +1,9 @@
+# CareerFlow AI
+
+AI-powered platform for career progression analysis and financial forecasting.
+
+Built with FastAPI, Next.js, PostgreSQL and modern AI-ready architecture.
+
 # Gestão de Carreira
 
 Aplicação para cadastro, login, confirmação por e-mail e análise de histórico funcional.
