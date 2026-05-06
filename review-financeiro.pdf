@@ -1,0 +1,78 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R 5 0 R] /Count 2 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 7 0 R >> >> /Contents 4 0 R >>
+endobj
+4 0 obj
+<< /Length 1317 >>
+stream
+BT
+/F1 11 Tf
+1 0 0 1 48 793.89 Tm
+0 -14 Td
+(- Nao existe ainda uma tela de lote/progresso no frontend.) Tj
+0 -14 Td
+(- Nao existe ainda historico visual de lotes processados.) Tj
+0 -14 Td
+(- Nao existem graficos financeiros ainda.) Tj
+0 -14 Td
+(- O fluxo de lote depende de Redis/RQ em runtime.) Tj
+0 -14 Td
+(- A experiencia financeira da UI ainda e a primeira versao simples.) Tj
+0 -14 Td
+/F1 17 Tf
+0 -18 Td
+(Como testar localmente) Tj
+/F1 11 Tf
+0 -14 Td
+(- Variaveis necessarias: DATABASE_URL, REDIS_URL e NEXT_PUBLIC_API_URL.) Tj
+0 -14 Td
+(- Se o banco for novo, executar: .\\venv\\Scripts\\python.exe -m backend.database.create_tables) Tj
+0 -14 Td
+(- Subir API: .\\venv\\Scripts\\python.exe -m backend) Tj
+0 -14 Td
+(- Subir worker: .\\venv\\Scripts\\python.exe -m backend.worker.financeiro_worker) Tj
+0 -14 Td
+(- Subir frontend: cd frontend; npm run dev) Tj
+0 -14 Td
+(- Testar analise individual em POST /api/financeiro/contracheque/analisar.) Tj
+0 -14 Td
+(- Testar lote em POST /api/financeiro/upload-lote.) Tj
+0 -14 Td
+(- Consultar progresso em GET /api/financeiro/batch/{batch_id}.) Tj
+0 -14 Td
+/F1 17 Tf
+0 -18 Td
+(Testes executados) Tj
+/F1 11 Tf
+0 -14 Td
+(- Backend: 25 passed.) Tj
+0 -14 Td
+(- Frontend lint: passou.) Tj
+0 -14 Td
+(- Existe warning nao bloqueante de cache do pytest no Windows.) Tj
+0 -14 Td
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 7 0 R >> >> /Contents 6 0 R >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000121 00000 n 
+0000000253 00000 n 
+0000001622 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+1754
+%%EOF
