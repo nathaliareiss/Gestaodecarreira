@@ -30,6 +30,32 @@ function formatarDataCurta(valor: string | null) {
   }).format(new Date(valor))
 }
 
+function formatarDuracaoEmIngles(dias: number) {
+  const anos = Math.floor(dias / 365)
+  const meses = Math.floor((dias % 365) / 30)
+
+  if (anos <= 0) {
+    return `${meses}mo`
+  }
+
+  if (meses <= 0) {
+    return `${anos}y`
+  }
+
+  return `${anos}y ${meses}mo`
+}
+
+function formatarDataEmIngles(valor: string | null) {
+  if (!valor) {
+    return "-"
+  }
+
+  return new Intl.DateTimeFormat("en-US", {
+    dateStyle: "medium",
+    timeZone: "UTC",
+  }).format(new Date(valor))
+}
+
 type UsuarioPageControllerProps = {
   usuarioInicial: UsuarioConta | null
   historicoInicial: HistoricoFuncionalAnalise | null
@@ -45,7 +71,9 @@ export function UsuarioPageController({
 }: UsuarioPageControllerProps) {
   const router = useRouter()
   const [usuario, setUsuario] = useState<UsuarioConta | null>(usuarioInicial)
-  const [abaAtiva, setAbaAtiva] = useState<"perfil" | "historico">("perfil")
+  const [abaAtiva, setAbaAtiva] = useState<"perfil" | "historico">(
+    modoDemo ? "historico" : "perfil",
+  )
   const [erro, setErro] = useState<string | null>(erroInicial)
   const [carregando, setCarregando] = useState(false)
   const [removendo, setRemovendo] = useState(false)
@@ -53,6 +81,25 @@ export function UsuarioPageController({
   const dataExercicioExibida = usuario?.data_exercicio ?? historicoInicial?.data_exercicio ?? null
   const nivelExibido = historicoInicial?.nivel_atual ?? "-"
   const grauExibido = historicoInicial?.grau_atual ?? "-"
+  const resumoDemo = historicoInicial?.resumo_grafico ?? null
+  const indicadoresDemo = modoDemo && historicoInicial && resumoDemo ? [
+    {
+      label: "Years Worked",
+      value: formatarDuracaoEmIngles(resumoDemo.tempo_trabalhado_dias),
+    },
+    {
+      label: "Events",
+      value: String(resumoDemo.eventos_totais),
+    },
+    {
+      label: "Next Progression",
+      value: formatarDataEmIngles(historicoInicial.proxima_progressao_prevista),
+    },
+    {
+      label: "Retirement Estimate",
+      value: formatarDataEmIngles(historicoInicial.data_aposentadoria_prevista),
+    },
+  ] : []
 
   async function recarregarUsuario() {
     const token = obterTokenAutenticacao()
@@ -118,12 +165,25 @@ export function UsuarioPageController({
 
       <section className="hero hero--usuario-dashboard">
         <div className="hero-copy hero-copy--dashboard hero-copy--centered">
-          <p className="eyebrow">Página do usuário</p>
-          <h1 className="hero-title--centered">Gerenciador de carreira</h1>
-          <p className="hero-subtitle hero-subtitle--dashboard">Career manager</p>
-          {modoDemo ? <span className="status-pill">modo demo</span> : null}
+          <p className="eyebrow">CAREER DASHBOARD</p>
+          <h1 className="hero-title--centered">CareerFlow</h1>
+          <p className="hero-subtitle hero-subtitle--dashboard">Career Progression Analytics</p>
+          {modoDemo ? <span className="status-pill">DEMO ACTIVE</span> : null}
         </div>
       </section>
+
+      {indicadoresDemo.length > 0 ? (
+        <section className="card hero-metrics" aria-label="Demo highlights">
+          <div className="metric-strip metric-strip--hero">
+            {indicadoresDemo.map((indicador) => (
+              <div className="metric-line" key={indicador.label}>
+                <span>{indicador.label}</span>
+                <strong>{indicador.value}</strong>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <section className="workbench workbench--single">
         <section className="card results-card">
@@ -150,8 +210,8 @@ export function UsuarioPageController({
             <>
               <div className="card-header">
                 <div>
-                  <p className="eyebrow">Dados salvos</p>
-                  <h2>Perfil do usuário</h2>
+                  <p className="eyebrow">PROFILE OVERVIEW</p>
+                  <h2>Professional Profile</h2>
                 </div>
                 <span className="status-pill">
                   {usuario?.email_confirmado ? "confirmado" : "pendente"}
