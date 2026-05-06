@@ -4,6 +4,35 @@ Plataforma web para cadastro, autenticação, confirmação por e-mail e anális
 O projeto combina FastAPI, Next.js, PostgreSQL, Redis e uma arquitetura preparada para filas e
 processamento assíncrono de PDFs.
 
+## Demo
+
+Frontend publicado:
+
+- [https://gestaodecarreira.vercel.app/](https://gestaodecarreira.vercel.app/)
+
+## Capturas de Tela
+
+### Login
+
+![Tela de login](docs/screenshots/login.png)
+
+### Cadastro no tema claro
+
+![Tela de cadastro no tema claro](docs/screenshots/tema-claro.png)
+
+### Cadastro no tema escuro
+
+![Tela de cadastro no tema escuro](docs/screenshots/tema-escuro.png)
+
+### Gráficos e resumo funcional
+
+![Tela com gráficos e indicadores](docs/screenshots/graficos.png)
+
+### Histórico funcional
+
+![Página de histórico funcional](docs/screenshots/pagina-historico.png)
+
+
 ## Visão Geral
 
 O sistema ajuda a visualizar a trajetória profissional com:
@@ -263,37 +292,5 @@ Isso inicia:
 
 Mais detalhes em [observability/README.md](observability/README.md).
 
-## Demo
 
-Frontend publicado:
 
-- [https://gestaodecarreira.vercel.app/](https://gestaodecarreira.vercel.app/)
-
-## Capturas de Tela
-
-### Login
-
-![Tela de login](docs/screenshots/login.png)
-
-### Cadastro no tema claro
-
-![Tela de cadastro no tema claro](docs/screenshots/tema-claro.png)
-
-### Cadastro no tema escuro
-
-![Tela de cadastro no tema escuro](docs/screenshots/tema-escuro.png)
-
-### Gráficos e resumo funcional
-
-![Tela com gráficos e indicadores](docs/screenshots/graficos.png)
-
-### Histórico funcional
-
-![Página de histórico funcional](docs/screenshots/pagina-historico.png)
-
-## Atualização Recente
-
-- o login continua direto no backend, sem fila
-- o cadastro envia e-mail de confirmação em background logo depois de salvar o usuário
-- a tela de login ganhou a opção discreta de reenviar e-mail de confirmação
-- a fila Redis/RQ ficou só para o processamento pesado de PDFs
