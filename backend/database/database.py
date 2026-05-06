@@ -6,6 +6,7 @@ from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, event
+from sqlalchemy.pool import StaticPool
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 from backend.logger import logger
@@ -43,11 +44,24 @@ def _garantir_sslmode_require(url: str) -> str:
 
 DATABASE_URL = _garantir_sslmode_require(DATABASE_URL)
 
-engine = create_engine(DATABASE_URL, pool_pre_ping=True)
+_E_SQLITE = DATABASE_URL.startswith("sqlite")
+_ENGINE_KWARGS = {"pool_pre_ping": True}
+if _E_SQLITE:
+    _ENGINE_KWARGS.update(
+        {
+            "connect_args": {"check_same_thread": False},
+            "poolclass": StaticPool,
+        }
+    )
+
+engine = create_engine(DATABASE_URL, **_ENGINE_KWARGS)
 
 
 @event.listens_for(engine, "connect")
 def _configurar_contexto_rls_backend(dbapi_connection, connection_record) -> None:
+    if _E_SQLITE:
+        return
+
     cursor = dbapi_connection.cursor()
     cursor.execute("SET app.backend_access = 'on'")
     cursor.close()

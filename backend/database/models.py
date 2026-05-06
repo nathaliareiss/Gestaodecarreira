@@ -1,6 +1,19 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, Column, Date, DateTime, ForeignKey, Index, Integer, String, Text
+from sqlalchemy import (
+    Boolean,
+    Column,
+    Date,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    Numeric,
+    String,
+    Text,
+    UniqueConstraint,
+)
+from sqlalchemy.orm import relationship
 
 from backend.database.database import Base
 
@@ -67,4 +80,94 @@ class HistoricoFuncional(Base):
 
     __table_args__ = (
         Index("ix_historicos_funcionais_usuario_criado_em_id", "usuario_id", "criado_em", "id"),
+    )
+
+
+class PayrollBatch(Base):
+    __tablename__ = "payroll_batches"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("usuarios.id"), nullable=True, index=True)
+    total_files = Column(Integer, nullable=False, default=0)
+    processed_files = Column(Integer, nullable=False, default=0)
+    failed_files = Column(Integer, nullable=False, default=0)
+    status = Column(String, nullable=False, default="pending")
+    created_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+    updated_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+    paychecks = relationship(
+        "Paycheck",
+        back_populates="batch",
+        cascade="all, delete-orphan",
+    )
+
+    __table_args__ = (
+        Index("ix_payroll_batches_user_id_created_at", "user_id", "created_at"),
+    )
+
+
+class Paycheck(Base):
+    __tablename__ = "paychecks"
+
+    id = Column(Integer, primary_key=True, index=True)
+    batch_id = Column(Integer, ForeignKey("payroll_batches.id"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("usuarios.id"), nullable=True, index=True)
+    competencia = Column(String, nullable=False)
+    ano = Column(Integer, nullable=False)
+    mes = Column(Integer, nullable=False)
+    bruto = Column(Numeric(14, 2, asdecimal=True), nullable=False, default=0)
+    descontos = Column(Numeric(14, 2, asdecimal=True), nullable=False, default=0)
+    liquido = Column(Numeric(14, 2, asdecimal=True), nullable=False, default=0)
+    vencimento_basico = Column(Numeric(14, 2, asdecimal=True), nullable=False, default=0)
+    adicional_desempenho = Column(Numeric(14, 2, asdecimal=True), nullable=False, default=0)
+    adicional_noturno = Column(Numeric(14, 2, asdecimal=True), nullable=False, default=0)
+    irrf = Column(Numeric(14, 2, asdecimal=True), nullable=False, default=0)
+    previdencia = Column(Numeric(14, 2, asdecimal=True), nullable=False, default=0)
+    created_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+
+    batch = relationship("PayrollBatch", back_populates="paychecks")
+    items = relationship(
+        "PaycheckItem",
+        back_populates="paycheck",
+        cascade="all, delete-orphan",
+    )
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "competencia", name="uq_paychecks_user_competencia"),
+        Index("ix_paychecks_batch_id_created_at", "batch_id", "created_at"),
+        Index("ix_paychecks_user_id_ano_mes", "user_id", "ano", "mes"),
+    )
+
+
+class PaycheckItem(Base):
+    __tablename__ = "paycheck_items"
+
+    id = Column(Integer, primary_key=True, index=True)
+    paycheck_id = Column(Integer, ForeignKey("paychecks.id"), nullable=False, index=True)
+    tipo = Column(String, nullable=False)
+    descricao = Column(String, nullable=False)
+    valor = Column(Numeric(14, 2, asdecimal=True), nullable=False, default=0)
+    created_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+
+    paycheck = relationship("Paycheck", back_populates="items")
+
+    __table_args__ = (
+        Index("ix_paycheck_items_paycheck_id_tipo", "paycheck_id", "tipo"),
     )

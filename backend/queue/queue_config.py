@@ -58,6 +58,23 @@ def obter_fila_historicos() -> Queue | None:
     )
 
 
+@lru_cache(maxsize=1)
+def obter_fila_financeiro() -> Queue | None:
+    if Queue is None:
+        return None
+
+    conexao = obter_conexao_redis()
+    if conexao is None:
+        return None
+
+    return Queue(
+        "financeiro",
+        connection=conexao,
+        default_timeout=3600,
+        result_ttl=86400,
+    )
+
+
 def obter_job(job_id: str) -> Any | None:
     if Job is None:
         return None

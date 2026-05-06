@@ -9,12 +9,27 @@ def habilitar_rls_tabelas_publicas() -> None:
     comandos = [
         "ALTER TABLE IF EXISTS public.usuarios ENABLE ROW LEVEL SECURITY",
         "ALTER TABLE IF EXISTS public.historicos_funcionais ENABLE ROW LEVEL SECURITY",
+        "ALTER TABLE IF EXISTS public.payroll_batches ENABLE ROW LEVEL SECURITY",
+        "ALTER TABLE IF EXISTS public.paychecks ENABLE ROW LEVEL SECURITY",
+        "ALTER TABLE IF EXISTS public.paycheck_items ENABLE ROW LEVEL SECURITY",
         "DROP POLICY IF EXISTS usuarios_backend_access ON public.usuarios",
         "CREATE POLICY usuarios_backend_access ON public.usuarios FOR ALL TO PUBLIC "
         "USING (current_setting('app.backend_access', true) = 'on') "
         "WITH CHECK (current_setting('app.backend_access', true) = 'on')",
         "DROP POLICY IF EXISTS historicos_funcionais_backend_access ON public.historicos_funcionais",
         "CREATE POLICY historicos_funcionais_backend_access ON public.historicos_funcionais FOR ALL TO PUBLIC "
+        "USING (current_setting('app.backend_access', true) = 'on') "
+        "WITH CHECK (current_setting('app.backend_access', true) = 'on')",
+        "DROP POLICY IF EXISTS payroll_batches_backend_access ON public.payroll_batches",
+        "CREATE POLICY payroll_batches_backend_access ON public.payroll_batches FOR ALL TO PUBLIC "
+        "USING (current_setting('app.backend_access', true) = 'on') "
+        "WITH CHECK (current_setting('app.backend_access', true) = 'on')",
+        "DROP POLICY IF EXISTS paychecks_backend_access ON public.paychecks",
+        "CREATE POLICY paychecks_backend_access ON public.paychecks FOR ALL TO PUBLIC "
+        "USING (current_setting('app.backend_access', true) = 'on') "
+        "WITH CHECK (current_setting('app.backend_access', true) = 'on')",
+        "DROP POLICY IF EXISTS paycheck_items_backend_access ON public.paycheck_items",
+        "CREATE POLICY paycheck_items_backend_access ON public.paycheck_items FOR ALL TO PUBLIC "
         "USING (current_setting('app.backend_access', true) = 'on') "
         "WITH CHECK (current_setting('app.backend_access', true) = 'on')",
     ]

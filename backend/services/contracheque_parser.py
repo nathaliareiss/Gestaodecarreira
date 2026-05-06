@@ -59,6 +59,9 @@ PADRAO_LIQUIDO_BLOCO = re.compile(
     rf"VALOR\s+A\s+RECEBER\s*R?\$\s*{PADRAO_VALOR}",
     re.IGNORECASE | re.DOTALL,
 )
+PADRAO_RUBRICA_VALOR_FINAL = re.compile(
+    rf"(?P<valor>-?(?:\d{{1,3}}(?:\.\d{{3}})*|\d+),\d{{2}})$",
+)
 
 PADROES_VALORES = {
     "bruto": [
@@ -286,3 +289,100 @@ def parse_contracheque(pdf_path: str) -> dict[str, Decimal | int | str]:
         "previdencia": _extrair_por_padroes(texto_busca, PADROES_VALORES["previdencia"])
         or dados_linhas["previdencia"],
     }
+
+
+def extrair_rubricas_contracheque(pdf_path: str) -> list[dict[str, str | Decimal]]:
+    texto = _extrair_texto_pdf(pdf_path)
+    return _extrair_rubricas_do_texto_limpo(texto)
+
+
+def _extrair_rubricas_do_texto_limpo(texto: str) -> list[dict[str, str | Decimal]]:
+    rubricas: list[dict[str, str | Decimal]] = []
+    secao: str | None = None
+
+    for linha_bruta in texto.splitlines():
+        linha_original = linha_bruta.strip()
+        if not linha_original:
+            continue
+
+        linha_busca = _normalizar_para_busca(linha_original)
+        if linha_busca.startswith("VANTAGENS"):
+            secao = "vantagem"
+            continue
+
+        if linha_busca.startswith("DESCONTOS"):
+            secao = "desconto"
+            continue
+
+        if linha_busca.startswith("TOTAL:") or "VALOR A RECEBER" in linha_busca:
+            secao = None
+            continue
+
+        if secao is None:
+            continue
+
+        correspondencia = PADRAO_RUBRICA_VALOR_FINAL.search(linha_original)
+        if not correspondencia:
+            continue
+
+        descricao = linha_original[: correspondencia.start("valor")].strip()
+        descricao = re.sub(r"^\d+\s+\S+\s+", "", descricao).strip()
+        descricao = re.sub(r"\s*-\s*$", "", descricao).strip()
+        descricao = re.sub(r"\s+\d+$", "", descricao).strip()
+        descricao = re.sub(r"\s+de$", "", descricao, flags=re.IGNORECASE).strip()
+
+        rubricas.append(
+            {
+                "tipo": secao,
+                "descricao": descricao or linha_original,
+                "valor": _converter_valor_monetario(correspondencia.group("valor")),
+            }
+        )
+
+    return rubricas
+
+
+def _extrair_rubricas_do_texto(texto: str) -> list[dict[str, str | Decimal]]:
+    rubricas: list[dict[str, str | Decimal]] = []
+    secao: str | None = None
+
+    for linha_bruta in texto.splitlines():
+        linha_original = linha_bruta.strip()
+        if not linha_original:
+            continue
+
+        linha_busca = _normalizar_para_busca(linha_original)
+        if linha_busca.startswith("VANTAGENS"):
+            secao = "vantagem"
+            continue
+
+        if linha_busca.startswith("DESCONTOS"):
+            secao = "desconto"
+            continue
+
+        if linha_busca.startswith("TOTAL:") or "VALOR A RECEBER" in linha_busca:
+            secao = None
+            continue
+
+        if secao is None:
+            continue
+
+        correspondencia = PADRAO_RUBRICA_VALOR_FINAL.search(linha_original)
+        if not correspondencia:
+            continue
+
+        descricao = linha_original[: correspondencia.start("valor")].strip()
+        descricao = re.sub(r"^\d+\s+\S+\s+", "", descricao).strip()
+        descricao = re.sub(r"\s*[-–]\s*$", "", descricao).strip()
+        descricao = re.sub(r"\s+\d+$", "", descricao).strip()
+        descricao = re.sub(r"\s+de$", "", descricao, flags=re.IGNORECASE).strip()
+
+        rubricas.append(
+            {
+                "tipo": secao,
+                "descricao": descricao or linha_original,
+                "valor": _converter_valor_monetario(correspondencia.group("valor")),
+            }
+        )
+
+    return rubricas
