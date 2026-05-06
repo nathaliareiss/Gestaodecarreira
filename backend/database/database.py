@@ -5,7 +5,7 @@ from pathlib import Path
 from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 
 from dotenv import load_dotenv
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 from backend.logger import logger
@@ -44,6 +44,13 @@ def _garantir_sslmode_require(url: str) -> str:
 DATABASE_URL = _garantir_sslmode_require(DATABASE_URL)
 
 engine = create_engine(DATABASE_URL, pool_pre_ping=True)
+
+
+@event.listens_for(engine, "connect")
+def _configurar_contexto_rls_backend(dbapi_connection, connection_record) -> None:
+    cursor = dbapi_connection.cursor()
+    cursor.execute("SET app.backend_access = 'on'")
+    cursor.close()
 
 SessionLocal = sessionmaker(
     autocommit=False,

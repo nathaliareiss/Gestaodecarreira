@@ -9,6 +9,14 @@ def habilitar_rls_tabelas_publicas() -> None:
     comandos = [
         "ALTER TABLE IF EXISTS public.usuarios ENABLE ROW LEVEL SECURITY",
         "ALTER TABLE IF EXISTS public.historicos_funcionais ENABLE ROW LEVEL SECURITY",
+        "DROP POLICY IF EXISTS usuarios_backend_access ON public.usuarios",
+        "CREATE POLICY usuarios_backend_access ON public.usuarios FOR ALL TO PUBLIC "
+        "USING (current_setting('app.backend_access', true) = 'on') "
+        "WITH CHECK (current_setting('app.backend_access', true) = 'on')",
+        "DROP POLICY IF EXISTS historicos_funcionais_backend_access ON public.historicos_funcionais",
+        "CREATE POLICY historicos_funcionais_backend_access ON public.historicos_funcionais FOR ALL TO PUBLIC "
+        "USING (current_setting('app.backend_access', true) = 'on') "
+        "WITH CHECK (current_setting('app.backend_access', true) = 'on')",
     ]
 
     try:
