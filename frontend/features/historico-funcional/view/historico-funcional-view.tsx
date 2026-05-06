@@ -605,12 +605,12 @@ export function HistoricoFuncionalView({
                 gráficos, linha do tempo e indicadores sem criar conta.
               </p>
               <div className="actions-row">
-                <a className="primary-button" href="/login">
+                <Link className="primary-button" href="/login">
                   Sair do demo
-                </a>
-                <a className="ghost-button" href="/">
+                </Link>
+                <Link className="ghost-button" href="/">
                   Criar conta real
-                </a>
+                </Link>
               </div>
             </div>
           ) : !painel && !modoAtualizacaoHistorico ? (

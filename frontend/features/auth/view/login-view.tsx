@@ -81,7 +81,7 @@ export function LoginView({
           </div>
 
           <p className="hero-text">
-            Entre com seu login ou e-mail e sua senha para abrir sua página.
+            Entre com seu login ou e-mail e sua senha, ou use os dados de exemplo para abrir o dashboard sem criar conta.
           </p>
         </div>
 
