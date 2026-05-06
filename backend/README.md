@@ -159,6 +159,9 @@ mais. Eles são disparados como `BackgroundTasks` do FastAPI logo depois que a r
 como fallback para evitar falhas de preflight durante o desenvolvimento e em deploys antigos.
 O frontend agora chama a API diretamente pela URL pública configurada em `NEXT_PUBLIC_API_URL`.
 
+Se `CORS_ORIGINS` estiver vazio, o backend usa `FRONTEND_BASE_URL` como origem permitida.
+Se os dois estiverem vazios, ele cai no fallback permissivo `*`.
+
 Se `DATABASE_URL` vier do Supabase, use a conexão do pooler no Railway sempre que possível.
 O backend adiciona `sslmode=require` automaticamente quando detecta um host `*.supabase.co`.
 

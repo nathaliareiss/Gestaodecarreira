@@ -3,7 +3,7 @@ from __future__ import annotations
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from backend.config import AUTO_SYNC_DB_SCHEMA, CORS_ORIGINS
+from backend.config import AUTO_SYNC_DB_SCHEMA, CORS_ORIGINS, FRONTEND_BASE_URL
 from backend.logger import logger
 from backend.database.create_tables import sincronizar_usuario_table
 from backend.middleware.error_middleware import registrar_middleware_de_erros
@@ -17,7 +17,7 @@ def criar_app() -> FastAPI:
         version="0.1.0",
     )
 
-    origens_cors = CORS_ORIGINS or ["*"]
+    origens_cors = CORS_ORIGINS or ([FRONTEND_BASE_URL] if FRONTEND_BASE_URL else ["*"])
     app.add_middleware(
         CORSMiddleware,
         allow_origins=origens_cors,
