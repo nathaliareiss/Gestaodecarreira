@@ -297,6 +297,8 @@ export function UsuarioPageController({
               usuarioId={usuario?.id ?? null}
               historicoInicial={historicoInicial}
               modoDemo={modoDemo}
+              onExit={() => void sair()}
+              saindo={saindo}
             />
           )}
         </section>

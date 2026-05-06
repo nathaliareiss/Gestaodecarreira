@@ -10,6 +10,8 @@ type HistoricoFuncionalViewProps = {
   usuarioId: number | null
   historicoInicial: HistoricoFuncionalAnalise | null
   modoDemo: boolean
+  onExit?: () => void
+  saindo?: boolean
 }
 
 type StatusEvento = HistoricoFuncionalAnalise["eventos"][number]["status"]
@@ -505,6 +507,8 @@ export function HistoricoFuncionalView({
   usuarioId,
   historicoInicial,
   modoDemo,
+  onExit,
+  saindo = false,
 }: HistoricoFuncionalViewProps) {
   const {
     arquivo,
@@ -593,6 +597,16 @@ export function HistoricoFuncionalView({
                   >
                     Download PDF
                   </a>
+                ) : null}
+                {onExit ? (
+                  <button
+                    className="ghost-button ghost-button--compact"
+                    type="button"
+                    onClick={onExit}
+                    disabled={saindo}
+                  >
+                    {saindo ? "Exiting..." : "Exit"}
+                  </button>
                 ) : null}
               </div>
             ) : null}
