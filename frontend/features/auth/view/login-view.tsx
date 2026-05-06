@@ -135,7 +135,7 @@ export function LoginView({
                   Forgot Password
                 </button>
                 <div className="login-secondary-link">
-                  <span className="login-secondary-link__label">Didn't receive the email?</span>
+                  <span className="login-secondary-link__label">Didn&apos;t receive the email?</span>
                   <button
                     className="ghost-button ghost-button--text"
                     type="button"
@@ -147,7 +147,7 @@ export function LoginView({
                       : "Resend Confirmation Email"}
                   </button>
                 </div>
-                <p className="helper">After signing in, you'll go to your page.</p>
+                <p className="helper">After signing in, you&apos;ll go to your page.</p>
               </div>
 
               {mensagemConfirmacao ? <p className="success-box">{mensagemConfirmacao}</p> : null}

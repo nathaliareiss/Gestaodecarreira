@@ -161,12 +161,12 @@ export function useHistoricoFuncionalController({
   const submeterAnalise = useCallback(
     async (assinatura?: string) => {
       if (!usuarioId) {
-        setErro("Cadastre um usuário antes de enviar o histórico funcional.")
+        setErro("Create a user before uploading the career history.")
         return
       }
 
       if (!arquivo) {
-        setErro("Escolha um PDF do histórico funcional.")
+        setErro("Choose a career history PDF.")
         return
       }
 
@@ -177,7 +177,7 @@ export function useHistoricoFuncionalController({
 
       setCarregando(true)
       setErro(null)
-      setMensagemProcessamento("Processando o PDF do histórico funcional em segundo plano...")
+      setMensagemProcessamento("Processing the career history PDF in the background...")
 
       if (assinatura) {
         assinaturaEnvioAutomatico.current = assinatura
@@ -217,23 +217,23 @@ export function useHistoricoFuncionalController({
   const submeterAfastamentos = useCallback(
     async (assinatura?: string) => {
       if (!usuarioId) {
-        setErro("Cadastre um usuário antes de enviar os afastamentos.")
+        setErro("Create a user before uploading leave records.")
         return
       }
 
       if (!historico) {
-        setErro("Envie primeiro o histórico funcional.")
+        setErro("Upload the career history first.")
         return
       }
 
       if (!arquivoAfastamentos) {
-        setErro("Escolha um PDF de afastamentos.")
+        setErro("Choose a leave records PDF.")
         return
       }
 
       setCarregando(true)
       setErro(null)
-      setMensagemProcessamento("Processando o PDF dos afastamentos em segundo plano...")
+      setMensagemProcessamento("Processing the leave records PDF in the background...")
 
       if (assinatura) {
         assinaturaEnvioAutomatico.current = assinatura
@@ -255,7 +255,7 @@ export function useHistoricoFuncionalController({
         if (assinatura) {
           assinaturaEnvioAutomatico.current = null
         }
-        setErro(error instanceof Error ? error.message : "Falha inesperada ao analisar os afastamentos.")
+        setErro(error instanceof Error ? error.message : "Unexpected failure while analyzing leave records.")
       } finally {
         setMensagemProcessamento(null)
         setCarregando(false)
