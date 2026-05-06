@@ -38,7 +38,7 @@ export function FinanceiroView() {
     if (selecionado && selecionado.type !== "application/pdf" && !selecionado.name.toLowerCase().endsWith(".pdf")) {
       setArquivo(null)
       setResultado(null)
-      setErro("Selecione um arquivo PDF.")
+      setErro("Select a PDF file.")
       return
     }
 
@@ -51,7 +51,7 @@ export function FinanceiroView() {
     evento.preventDefault()
 
     if (!arquivo) {
-      setErro("Selecione um contracheque em PDF antes de continuar.")
+      setErro("Select a pay stub PDF before continuing.")
       return
     }
 
@@ -69,7 +69,7 @@ export function FinanceiroView() {
       setErro(
         error instanceof Error
           ? error.message
-          : "Nao foi possivel analisar o contracheque. Verifique o PDF e tente novamente.",
+          : "We could not analyze the pay stub. Check the PDF and try again.",
       )
     } finally {
       setCarregando(false)
@@ -77,16 +77,16 @@ export function FinanceiroView() {
   }
 
   const campos: LinhaFinanceira[] = resultado
-      ? [
-        { label: "Compet\u00eancia", value: resultado.competencia },
-        { label: "Sal\u00e1rio bruto", value: resultado.bruto },
-        { label: "Total de descontos", value: resultado.descontos },
-        { label: "Sal\u00e1rio l\u00edquido", value: resultado.liquido },
-        { label: "Vencimento b\u00e1sico", value: resultado.vencimento_basico },
-        { label: "Adicional desempenho", value: resultado.adicional_desempenho },
-        { label: "Adicional noturno", value: resultado.adicional_noturno },
+    ? [
+        { label: "Competency", value: resultado.competencia },
+        { label: "Gross salary", value: resultado.bruto },
+        { label: "Total deductions", value: resultado.descontos },
+        { label: "Net salary", value: resultado.liquido },
+        { label: "Base salary", value: resultado.vencimento_basico },
+        { label: "Performance allowance", value: resultado.adicional_desempenho },
+        { label: "Night allowance", value: resultado.adicional_noturno },
         { label: "IRRF", value: resultado.irrf },
-        { label: "Previd\u00eancia", value: resultado.previdencia },
+        { label: "Pension contribution", value: resultado.previdencia },
       ]
     : []
 
@@ -94,10 +94,12 @@ export function FinanceiroView() {
     <section className="analysis-card card">
       <div className="analysis-header">
         <div className="analysis-header__title">
-          <p className="eyebrow eyebrow--title">Financeiro</p>
-          <h2>{"An\u00e1lise financeira"}</h2>
+          <p className="eyebrow eyebrow--title">Finance</p>
+          <h2>{"Financial Analysis"}</h2>
           <p className="analysis-header__subtitle">
-            {"Envie seus contracheques para acompanhar sua evolu\u00e7\u00e3o salarial ao longo da carreira."}
+            {
+              "Upload your pay stubs to track salary progression throughout your career."
+            }
           </p>
         </div>
       </div>
@@ -106,23 +108,23 @@ export function FinanceiroView() {
         <form className="upload-shell" onSubmit={enviarFormulario}>
           <div className="upload-shell__header">
             <div>
-              <p className="eyebrow">Contracheque</p>
+              <p className="eyebrow">Pay Stub</p>
               <h3>Upload PDF</h3>
             </div>
-            <span className="status-pill">Apenas teste</span>
+            <span className="status-pill">Test Mode</span>
           </div>
 
           <div className="upload-shell__collapsed">
             <label className="field">
-              <span>Arquivo PDF</span>
+              <span>PDF file</span>
               <input type="file" accept="application/pdf" onChange={selecionarArquivo} />
             </label>
 
-            {arquivo ? <p className="helper">Arquivo selecionado: {arquivo.name}</p> : null}
+            {arquivo ? <p className="helper">Selected file: {arquivo.name}</p> : null}
 
             <div className="actions-row">
               <button className="primary-button" type="submit" disabled={carregando}>
-                {carregando ? "Analisando..." : "Analisar contracheque"}
+                {carregando ? "Analyzing..." : "Analyze pay stub"}
               </button>
             </div>
 
@@ -133,8 +135,8 @@ export function FinanceiroView() {
         {resultado ? (
           <section className="summary-panel">
             <div className="analysis-header__title analysis-header__title--compact">
-              <p className="eyebrow eyebrow--title">Resultado</p>
-              <h3>{"Dados extra\u00eddos"}</h3>
+              <p className="eyebrow eyebrow--title">Result</p>
+              <h3>{"Extracted data"}</h3>
             </div>
 
             <div className="metric-strip">
@@ -142,7 +144,7 @@ export function FinanceiroView() {
                 <div className="metric-line" key={campo.label}>
                   <span>{campo.label}</span>
                   <strong>
-                    {campo.label === "Compet\u00eancia"
+                    {campo.label === "Competency"
                       ? String(campo.value ?? "-")
                       : formatarValor(campo.value)}
                   </strong>
@@ -151,7 +153,7 @@ export function FinanceiroView() {
             </div>
 
             <details className="upload-shell__collapsed upload-shell__collapsed--compact">
-              <summary className="helper">JSON bruto</summary>
+              <summary className="helper">Raw JSON</summary>
               <pre
                 className="helper"
                 style={{

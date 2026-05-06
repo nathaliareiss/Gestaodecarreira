@@ -50,6 +50,15 @@ PADRAO_COMPETENCIA_SIMPLES = re.compile(
 )
 
 PADRAO_VALOR = r"(?P<valor>-?(?:\d{1,3}(?:\.\d{3})*|\d+),\d{2})"
+PADRAO_VALOR_LINHA = re.compile(r"-?(?:\d{1,3}(?:\.\d{3})*|\d+),\d{2}")
+PADRAO_TOTAL_BLOCO = re.compile(
+    rf"(?P<section>VANTAGENS|DESCONTOS).*?TOTAL:\s*R?\$\s*{PADRAO_VALOR}",
+    re.IGNORECASE | re.DOTALL,
+)
+PADRAO_LIQUIDO_BLOCO = re.compile(
+    rf"VALOR\s+A\s+RECEBER\s*R?\$\s*{PADRAO_VALOR}",
+    re.IGNORECASE | re.DOTALL,
+)
 
 PADROES_VALORES = {
     "bruto": [
@@ -126,6 +135,14 @@ def _extrair_por_padroes(texto: str, padroes: list[str]) -> Decimal:
     return ZERO
 
 
+def _extrair_ultimo_valor_da_linha(linha: str) -> Decimal:
+    valores = PADRAO_VALOR_LINHA.findall(linha)
+    if not valores:
+        return ZERO
+
+    return _converter_valor_monetario(valores[-1])
+
+
 def _converter_mes_para_numero(mes_bruto: str) -> int | None:
     mes_normalizado = _remover_acentos(mes_bruto).upper()
 
@@ -152,10 +169,95 @@ def _extrair_competencia(texto: str) -> tuple[str, int, int]:
     return "", 0, 0
 
 
+def _extrair_dados_por_linhas(texto: str) -> dict[str, Decimal]:
+    dados = {
+        "bruto": ZERO,
+        "descontos": ZERO,
+        "liquido": ZERO,
+        "vencimento_basico": ZERO,
+        "adicional_desempenho": ZERO,
+        "adicional_noturno": ZERO,
+        "irrf": ZERO,
+        "previdencia": ZERO,
+    }
+
+    estado = None
+    for linha_bruta in texto.splitlines():
+        linha = _normalizar_para_busca(linha_bruta)
+        if not linha:
+            continue
+
+        if linha == "VANTAGENS":
+            estado = "vantagens"
+            continue
+
+        if linha == "DESCONTOS":
+            estado = "descontos"
+            continue
+
+        if linha.startswith("TOTAL:"):
+            valor = _extrair_ultimo_valor_da_linha(linha)
+            if estado == "vantagens" and dados["bruto"] == ZERO:
+                dados["bruto"] = valor
+            elif estado == "descontos" and dados["descontos"] == ZERO:
+                dados["descontos"] = valor
+            continue
+
+        if "VALOR A RECEBER" in linha:
+            dados["liquido"] = _extrair_ultimo_valor_da_linha(linha)
+            continue
+
+        if "VENCIMENTO BASICO" in linha:
+            dados["vencimento_basico"] = _extrair_ultimo_valor_da_linha(linha)
+            continue
+
+        if "ADICIONAL DESEMPENHO" in linha:
+            dados["adicional_desempenho"] = _extrair_ultimo_valor_da_linha(linha)
+            continue
+
+        if "ADIC NOT" in linha or "ADICIONAL NOTURNO" in linha:
+            dados["adicional_noturno"] = _extrair_ultimo_valor_da_linha(linha)
+            continue
+
+        if "IMP. RENDA RET.FONTE" in linha or "IMPOSTO DE RENDA" in linha or "IRRF" in linha:
+            dados["irrf"] = _extrair_ultimo_valor_da_linha(linha)
+            continue
+
+        if "CONTRIB.PREV" in linha or "PREVID" in linha:
+            dados["previdencia"] = _extrair_ultimo_valor_da_linha(linha)
+            continue
+
+    return dados
+
+
+def _extrair_total_por_bloco(texto: str, secao: str) -> Decimal:
+    correspondencia = re.search(
+        rf"{secao}.*?TOTAL:\s*R?\$\s*{PADRAO_VALOR}",
+        texto,
+        flags=re.IGNORECASE | re.DOTALL,
+    )
+    if not correspondencia:
+        return ZERO
+
+    return _converter_valor_monetario(correspondencia.group("valor"))
+
+
+def _extrair_liquido_por_bloco(texto: str) -> Decimal:
+    correspondencia = PADRAO_LIQUIDO_BLOCO.search(texto)
+    if not correspondencia:
+        return ZERO
+
+    return _converter_valor_monetario(correspondencia.group("valor"))
+
+
 def parse_contracheque(pdf_path: str) -> dict[str, Decimal | int | str]:
     texto = _extrair_texto_pdf(pdf_path)
     texto_busca = _normalizar_para_busca(texto)
     competencia, ano, mes = _extrair_competencia(texto_busca)
+    dados_linhas = _extrair_dados_por_linhas(texto)
+    bruto_bloco = _extrair_total_por_bloco(texto_busca, "VANTAGENS")
+    descontos_bloco = _extrair_total_por_bloco(texto_busca, "DESCONTOS")
+    liquido_bloco = _extrair_liquido_por_bloco(texto_busca)
 
     # Cada campo monetario usa um conjunto pequeno de padroes para continuar
     # funcionando mesmo quando o contracheque variar levemente de layout.
@@ -163,18 +265,29 @@ def parse_contracheque(pdf_path: str) -> dict[str, Decimal | int | str]:
         "competencia": competencia,
         "ano": ano,
         "mes": mes,
-        "bruto": _extrair_por_padroes(texto_busca, PADROES_VALORES["bruto"]),
-        "descontos": _extrair_por_padroes(texto_busca, PADROES_VALORES["descontos"]),
-        "liquido": _extrair_por_padroes(texto_busca, PADROES_VALORES["liquido"]),
+        "bruto": bruto_bloco
+        or _extrair_por_padroes(texto_busca, PADROES_VALORES["bruto"])
+        or dados_linhas["bruto"],
+        "descontos": descontos_bloco
+        or _extrair_por_padroes(texto_busca, PADROES_VALORES["descontos"])
+        or dados_linhas["descontos"],
+        "liquido": liquido_bloco
+        or _extrair_por_padroes(texto_busca, PADROES_VALORES["liquido"])
+        or dados_linhas["liquido"],
         "vencimento_basico": _extrair_por_padroes(
             texto_busca, PADROES_VALORES["vencimento_basico"]
-        ),
+        )
+        or dados_linhas["vencimento_basico"],
         "adicional_desempenho": _extrair_por_padroes(
             texto_busca, PADROES_VALORES["adicional_desempenho"]
-        ),
+        )
+        or dados_linhas["adicional_desempenho"],
         "adicional_noturno": _extrair_por_padroes(
             texto_busca, PADROES_VALORES["adicional_noturno"]
-        ),
-        "irrf": _extrair_por_padroes(texto_busca, PADROES_VALORES["irrf"]),
-        "previdencia": _extrair_por_padroes(texto_busca, PADROES_VALORES["previdencia"]),
+        )
+        or dados_linhas["adicional_noturno"],
+        "irrf": _extrair_por_padroes(texto_busca, PADROES_VALORES["irrf"])
+        or dados_linhas["irrf"],
+        "previdencia": _extrair_por_padroes(texto_busca, PADROES_VALORES["previdencia"])
+        or dados_linhas["previdencia"],
     }

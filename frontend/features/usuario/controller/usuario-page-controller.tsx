@@ -231,7 +231,7 @@ export function UsuarioPageController({
               type="button"
               onClick={() => setAbaAtiva("financeiro")}
             >
-              Financeiro
+              Finance
             </button>
           </div>
 
