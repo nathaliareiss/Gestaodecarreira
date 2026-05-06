@@ -8,8 +8,10 @@ import { UsuarioHeroSection } from "./usuario-hero-section"
 type UsuarioPageViewProps = {
   cadastro: UsuarioCadastro
   carregando: boolean
+  entrandoDemo: boolean
   erro: string | null
   onSubmit: (evento: FormEvent<HTMLFormElement>) => void
+  onEntrarDemo: () => void
   onNomeChange: (valor: string) => void
   onApelidoChange: (valor: string) => void
   onEmailChange: (valor: string) => void
@@ -22,8 +24,10 @@ type UsuarioPageViewProps = {
 export function UsuarioPageView({
   cadastro,
   carregando,
+  entrandoDemo,
   erro,
   onSubmit,
+  onEntrarDemo,
   onNomeChange,
   onApelidoChange,
   onEmailChange,
@@ -38,7 +42,10 @@ export function UsuarioPageView({
       <div className="bg-orb bg-orb-b" />
 
       <section className="hero hero--register">
-        <UsuarioHeroSection />
+        <UsuarioHeroSection
+          entrandoDemo={entrandoDemo}
+          onEntrarDemo={onEntrarDemo}
+        />
 
         <div className="side-panel side-panel--register">
           <UsuarioFormView

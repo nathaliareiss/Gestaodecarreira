@@ -13,6 +13,7 @@ import {
 import { type UsuarioConta } from "@/features/usuario/model/usuario.model"
 import { removerUsuarioMaisRecente } from "@/features/usuario/model/usuario.repository"
 import {
+  removerSessaoDemo,
   obterTokenAutenticacao,
   removerTokenAutenticacao,
   removerUsuarioAutenticadoCache,
@@ -33,12 +34,14 @@ type UsuarioPageControllerProps = {
   usuarioInicial: UsuarioConta | null
   historicoInicial: HistoricoFuncionalAnalise | null
   erroInicial: string | null
+  modoDemo: boolean
 }
 
 export function UsuarioPageController({
   usuarioInicial,
   historicoInicial,
   erroInicial,
+  modoDemo,
 }: UsuarioPageControllerProps) {
   const router = useRouter()
   const [usuario, setUsuario] = useState<UsuarioConta | null>(usuarioInicial)
@@ -86,14 +89,17 @@ export function UsuarioPageController({
   }
 
   async function sair() {
-    const token = obterTokenAutenticacao()
-
     setSaindo(true)
     setErro(null)
 
     try {
-      if (token) {
-        await encerrarSessao(token)
+      if (modoDemo) {
+        removerSessaoDemo()
+      } else {
+        const token = obterTokenAutenticacao()
+        if (token) {
+          await encerrarSessao(token)
+        }
       }
     } catch {
       // Se a chamada remota falhar, a sessao local ainda pode ser encerrada.
@@ -115,6 +121,7 @@ export function UsuarioPageController({
           <p className="eyebrow">Página do usuário</p>
           <h1 className="hero-title--centered">Gerenciador de carreira</h1>
           <p className="hero-subtitle hero-subtitle--dashboard">Career manager</p>
+          {modoDemo ? <span className="status-pill">modo demo</span> : null}
         </div>
       </section>
 
@@ -193,21 +200,23 @@ export function UsuarioPageController({
 
                   <div className="actions">
                     <div className="actions-row">
-                      <button
-                        className="ghost-button"
-                        type="button"
-                        onClick={() => void excluirCadastro()}
-                        disabled={removendo}
-                      >
-                        {removendo ? "Removendo..." : "Limpar último cadastro"}
-                      </button>
+                      {!modoDemo ? (
+                        <button
+                          className="ghost-button"
+                          type="button"
+                          onClick={() => void excluirCadastro()}
+                          disabled={removendo}
+                        >
+                          {removendo ? "Removendo..." : "Limpar último cadastro"}
+                        </button>
+                      ) : null}
                       <button
                         className="ghost-button"
                         type="button"
                         onClick={() => void sair()}
                         disabled={saindo}
                       >
-                        {saindo ? "Saindo..." : "Sair"}
+                        {saindo ? "Saindo..." : modoDemo ? "Sair do demo" : "Sair"}
                       </button>
                     </div>
                   </div>
@@ -227,6 +236,7 @@ export function UsuarioPageController({
             <HistoricoFuncionalView
               usuarioId={usuario?.id ?? null}
               historicoInicial={historicoInicial}
+              modoDemo={modoDemo}
             />
           )}
         </section>

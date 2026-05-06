@@ -72,7 +72,7 @@ export function LoginView({
             >
               {entrandoDemo ? "Entrando no demo..." : "Entrar com dados de exemplo"}
             </button>
-            <Link className="primary-button button--large" href="/">
+            <Link className="ghost-button button--large" href="/">
               Criar conta
             </Link>
             <Link className="ghost-button button--large" href="/usuario">

@@ -1,6 +1,7 @@
 ﻿"use client"
 
 
+import Link from "next/link"
 import { useState } from "react"
 import { useHistoricoFuncionalController } from "../controller/use-historico-funcional-controller"
 import { formatarTipoEvento, type HistoricoFuncionalAnalise } from "../model/historico-funcional.model"
@@ -8,6 +9,7 @@ import { formatarTipoEvento, type HistoricoFuncionalAnalise } from "../model/his
 type HistoricoFuncionalViewProps = {
   usuarioId: number | null
   historicoInicial: HistoricoFuncionalAnalise | null
+  modoDemo: boolean
 }
 
 type StatusEvento = HistoricoFuncionalAnalise["eventos"][number]["status"]
@@ -502,6 +504,7 @@ function rotuloProcessamento(origem: HistoricoFuncionalAnalise["processamento_or
 export function HistoricoFuncionalView({
   usuarioId,
   historicoInicial,
+  modoDemo,
 }: HistoricoFuncionalViewProps) {
   const {
     arquivo,
@@ -549,50 +552,68 @@ export function HistoricoFuncionalView({
           <div className="upload-shell__header">
             <div>
               <p className="eyebrow">Arquivos</p>
-              <h3>{painel ? "Adicionar arquivos" : "Enviar documentos"}</h3>
+              <h3>{modoDemo ? "Painel demonstrativo" : painel ? "Adicionar arquivos" : "Enviar documentos"}</h3>
             </div>
 
-            <div className="upload-shell__actions">
-              {!painel ? (
-                <button
-                  className="ghost-button ghost-button--compact"
-                  type="button"
-                  onClick={iniciarAtualizacaoHistorico}
-                >
-                  Enviar histórico funcional
-                </button>
-              ) : null}
-              {painel ? (
-                <button
-                  className="ghost-button ghost-button--compact"
-                  type="button"
-                  onClick={iniciarAnexoAfastamentos}
-                >
-                  Anexar afastamentos
-                </button>
-              ) : null}
-              {painel ? (
-                <button
-                  className="ghost-button ghost-button--compact"
-                  type="button"
-                  onClick={iniciarAtualizacaoHistorico}
-                >
-                  Atualizar histórico funcional
-                </button>
-              ) : null}
-              {arquivoDownloadUrl ? (
-                <a
-                  className="ghost-button ghost-button--compact"
-                  download={arquivo?.name ?? "historico-funcional.pdf"}
-                  href={arquivoDownloadUrl}
-                >
-                  Baixar PDF
-                </a>
-              ) : null}
-            </div>
+            {modoDemo ? <span className="status-pill">somente visualização</span> : null}
+            {!modoDemo ? (
+              <div className="upload-shell__actions">
+                {!painel ? (
+                  <button
+                    className="ghost-button ghost-button--compact"
+                    type="button"
+                    onClick={iniciarAtualizacaoHistorico}
+                  >
+                    Enviar histórico funcional
+                  </button>
+                ) : null}
+                {painel ? (
+                  <button
+                    className="ghost-button ghost-button--compact"
+                    type="button"
+                    onClick={iniciarAnexoAfastamentos}
+                  >
+                    Anexar afastamentos
+                  </button>
+                ) : null}
+                {painel ? (
+                  <button
+                    className="ghost-button ghost-button--compact"
+                    type="button"
+                    onClick={iniciarAtualizacaoHistorico}
+                  >
+                    Atualizar histórico funcional
+                  </button>
+                ) : null}
+                {arquivoDownloadUrl ? (
+                  <a
+                    className="ghost-button ghost-button--compact"
+                    download={arquivo?.name ?? "historico-funcional.pdf"}
+                    href={arquivoDownloadUrl}
+                  >
+                    Baixar PDF
+                  </a>
+                ) : null}
+              </div>
+            ) : null}
           </div>
 
-          {!painel && !modoAtualizacaoHistorico ? (
+          {modoDemo ? (
+            <div className="upload-shell__collapsed">
+              <p className="helper">
+                Os dados abaixo já foram carregados para a demonstração. Você pode navegar pelos
+                gráficos, linha do tempo e indicadores sem criar conta.
+              </p>
+              <div className="actions-row">
+                <a className="primary-button" href="/login">
+                  Sair do demo
+                </a>
+                <a className="ghost-button" href="/">
+                  Criar conta real
+                </a>
+              </div>
+            </div>
+          ) : !painel && !modoAtualizacaoHistorico ? (
             <div className="upload-shell__collapsed">
               <p className="helper">
                 Clique em &quot;Enviar histórico funcional&quot; para abrir o campo de envio.
