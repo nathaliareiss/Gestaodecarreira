@@ -2,6 +2,8 @@ import type { UsuarioConta } from "@/features/usuario/model/usuario.model"
 
 export const AUTH_COOKIE_NAME = "gc_auth_token"
 export const AUTH_USER_COOKIE_NAME = "gc_auth_user"
+export const DEMO_MODE_COOKIE_NAME = "gc_demo_mode"
+export const DEMO_SESSION_TOKEN = "demo-session"
 const AUTH_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
 
 function getCookiePair(valor: string) {
@@ -38,6 +40,24 @@ export function removerUsuarioAutenticadoCache() {
   document.cookie = [getUsuarioCookiePair(""), "Path=/", "Max-Age=0", "SameSite=Lax"].join("; ")
 }
 
+function getDemoModeCookiePair(valor: string) {
+  return `${DEMO_MODE_COOKIE_NAME}=${encodeURIComponent(valor)}`
+}
+
+export function salvarSessaoDemo(usuario: UsuarioConta) {
+  salvarTokenAutenticacao(DEMO_SESSION_TOKEN)
+  salvarUsuarioAutenticadoCache(usuario)
+  document.cookie = [getDemoModeCookiePair("1"), "Path=/", `Max-Age=${AUTH_COOKIE_MAX_AGE}`, "SameSite=Lax"].join(
+    "; ",
+  )
+}
+
+export function removerSessaoDemo() {
+  removerTokenAutenticacao()
+  removerUsuarioAutenticadoCache()
+  document.cookie = [getDemoModeCookiePair(""), "Path=/", "Max-Age=0", "SameSite=Lax"].join("; ")
+}
+
 export function obterTokenAutenticacao(): string | null {
   const cookies = document.cookie
     .split(";")
@@ -68,5 +88,13 @@ export function obterUsuarioAutenticadoCache(): UsuarioConta | null {
   } catch {
     return null
   }
+}
+
+export function modoDemoAtivoNoCliente(): boolean {
+  return document.cookie
+    .split(";")
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .some((item) => item.startsWith(`${DEMO_MODE_COOKIE_NAME}=`))
 }
 

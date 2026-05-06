@@ -13,6 +13,7 @@ export function LoginController() {
     dados,
     recuperacao,
     carregando,
+    entrandoDemo,
     reenviandoConfirmacao,
     recuperando,
     erro,
@@ -39,6 +40,7 @@ export function LoginController() {
       dados={dados}
       recuperacao={recuperacao}
       carregando={carregando}
+      entrandoDemo={entrandoDemo}
       reenviandoConfirmacao={reenviandoConfirmacao}
       recuperando={recuperando}
       erro={erro}
@@ -47,6 +49,7 @@ export function LoginController() {
       erroRecuperacao={erroRecuperacao}
       mensagemRecuperacao={mensagemRecuperacao}
       onSubmit={enviarFormulario}
+      onEntrarDemo={entrarComDadosDeExemplo}
       onRecuperacaoSubmit={enviarRecuperacao}
       onReenviarConfirmacao={reenviarConfirmacao}
       onAbrirRecuperacao={abrirRecuperacao}

@@ -15,9 +15,12 @@ import {
   solicitarRecuperacaoSenha,
 } from "../model/auth.repository"
 import {
+  removerSessaoDemo,
+  salvarSessaoDemo,
   salvarTokenAutenticacao,
   salvarUsuarioAutenticadoCache,
 } from "@/shared/auth/session"
+import { DEMO_USUARIO } from "@/shared/demo/demo-data"
 
 type ModoAutenticacao = "login" | "recuperacao"
 
@@ -29,6 +32,7 @@ export function useLoginController() {
     USUARIO_SOLICITACAO_RECUPERACAO_SENHA_INICIAL,
   )
   const [carregando, setCarregando] = useState(false)
+  const [entrandoDemo, setEntrandoDemo] = useState(false)
   const [recuperando, setRecuperando] = useState(false)
   const [reenviandoConfirmacao, setReenviandoConfirmacao] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
@@ -123,6 +127,23 @@ export function useLoginController() {
     }
   }
 
+  function entrarComDadosDeExemplo() {
+    setErro(null)
+    setErroConfirmacao(null)
+    setMensagemConfirmacao(null)
+    setErroRecuperacao(null)
+    setMensagemRecuperacao(null)
+    setEntrandoDemo(true)
+
+    try {
+      removerSessaoDemo()
+      salvarSessaoDemo(DEMO_USUARIO)
+      router.replace("/usuario")
+    } finally {
+      setEntrandoDemo(false)
+    }
+  }
+
   async function enviarRecuperacao(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault()
     setRecuperando(true)
@@ -150,6 +171,7 @@ export function useLoginController() {
     dados,
     recuperacao,
     carregando,
+    entrandoDemo,
     reenviandoConfirmacao,
     recuperando,
     erro,
@@ -158,6 +180,7 @@ export function useLoginController() {
     erroRecuperacao,
     mensagemRecuperacao,
     enviarFormulario,
+    entrarComDadosDeExemplo,
     enviarRecuperacao,
     reenviarConfirmacao,
     abrirRecuperacao,

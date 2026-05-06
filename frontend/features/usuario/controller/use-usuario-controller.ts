@@ -9,11 +9,14 @@ import {
   type UsuarioCadastro,
 } from "../model/usuario.model"
 import { criarUsuario } from "../model/usuario.repository"
+import { salvarSessaoDemo } from "@/shared/auth/session"
+import { DEMO_USUARIO } from "@/shared/demo/demo-data"
 
 export function useUsuarioController() {
   const router = useRouter()
   const [cadastro, setCadastro] = useState<UsuarioCadastro>(USUARIO_CADASTRO_INICIAL)
   const [carregando, setCarregando] = useState(false)
+  const [entrandoDemo, setEntrandoDemo] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
 
   function atualizarCampo<Chave extends keyof UsuarioCadastro>(
@@ -29,6 +32,17 @@ export function useUsuarioController() {
   function usarExemplo() {
     setCadastro(USUARIO_CADASTRO_EXEMPLO)
     setErro(null)
+  }
+
+  function entrarComDadosDeExemplo() {
+    setErro(null)
+    setEntrandoDemo(true)
+    try {
+      salvarSessaoDemo(DEMO_USUARIO)
+      router.replace("/usuario")
+    } finally {
+      setEntrandoDemo(false)
+    }
   }
 
   function validarCadastro() {
@@ -81,9 +95,11 @@ export function useUsuarioController() {
   return {
     cadastro,
     carregando,
+    entrandoDemo,
     erro,
     enviarFormulario,
     usarExemplo,
+    entrarComDadosDeExemplo,
     atualizarCampo,
   }
 }

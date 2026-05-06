@@ -7,9 +7,11 @@ export function UsuarioController() {
   const {
     cadastro,
     carregando,
+    entrandoDemo,
     erro,
     enviarFormulario,
     usarExemplo,
+    entrarComDadosDeExemplo,
     atualizarCampo,
   } = useUsuarioController()
 
@@ -17,8 +19,10 @@ export function UsuarioController() {
     <UsuarioPageView
       cadastro={cadastro}
       carregando={carregando}
+      entrandoDemo={entrandoDemo}
       erro={erro}
       onSubmit={enviarFormulario}
+      onEntrarDemo={entrarComDadosDeExemplo}
       onNomeChange={(valor) => atualizarCampo("nome", valor)}
       onApelidoChange={(valor) => atualizarCampo("apelido", valor)}
       onEmailChange={(valor) => atualizarCampo("email", valor)}

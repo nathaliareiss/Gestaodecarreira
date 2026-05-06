@@ -11,6 +11,7 @@ type LoginViewProps = {
   dados: UsuarioLogin
   recuperacao: UsuarioSolicitacaoRecuperacaoSenha
   carregando: boolean
+  entrandoDemo: boolean
   reenviandoConfirmacao: boolean
   recuperando: boolean
   erro: string | null
@@ -19,6 +20,7 @@ type LoginViewProps = {
   erroRecuperacao: string | null
   mensagemRecuperacao: string | null
   onSubmit: (evento: FormEvent<HTMLFormElement>) => void
+  onEntrarDemo: () => void
   onRecuperacaoSubmit: (evento: FormEvent<HTMLFormElement>) => void
   onReenviarConfirmacao: () => void
   onAbrirRecuperacao: () => void
@@ -33,6 +35,7 @@ export function LoginView({
   dados,
   recuperacao,
   carregando,
+  entrandoDemo,
   reenviandoConfirmacao,
   recuperando,
   erro,
@@ -41,6 +44,7 @@ export function LoginView({
   erroRecuperacao,
   mensagemRecuperacao,
   onSubmit,
+  onEntrarDemo,
   onRecuperacaoSubmit,
   onReenviarConfirmacao,
   onAbrirRecuperacao,
@@ -60,6 +64,14 @@ export function LoginView({
           <h1>Acesse seu perfil e acompanhe sua carreira.</h1>
 
           <div className="hero-links hero-links--top">
+            <button
+              className="primary-button button--large"
+              type="button"
+              onClick={onEntrarDemo}
+              disabled={entrandoDemo}
+            >
+              {entrandoDemo ? "Entrando no demo..." : "Entrar com dados de exemplo"}
+            </button>
             <Link className="primary-button button--large" href="/">
               Criar conta
             </Link>
