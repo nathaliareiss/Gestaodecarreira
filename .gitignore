@@ -9,9 +9,22 @@ build/
 
 __pycache__/
 *.pyc
+.coverage
+.coverage.*
+.db
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+*.err
+*.out
+*.tmp
+*.temp
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+coverage/
 
 backend/.env
 backend/*.env
@@ -27,3 +40,4 @@ frontend/*.log
 frontend/tsconfig.tsbuildinfo
 
 *.log
+*.tsbuildinfo
