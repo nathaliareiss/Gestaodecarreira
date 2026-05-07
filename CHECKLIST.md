@@ -22,6 +22,13 @@
 - [x] Corrigido o botão `Exit` para ficar fixo no fim da barra principal.
 - [x] Corrigida a página `/login` no frontend.
 - [x] Criada a base de testes com `pytest` para o módulo financeiro e para o parser.
+- [x] Gerado o PDF de review do módulo Financeiro.
+- [x] Reduzido e padronizado o tamanho das imagens no `README`.
+- [x] Reorganizado o `README` com versão em inglês primeiro e português depois.
+- [x] Corrigido o workflow antigo do GitHub Actions que dependia de `environment.yml`.
+- [x] Implementada a experiência visual de upload em lote no frontend do Financeiro.
+- [x] Adicionado polling automático do batch a cada 2 segundos.
+- [x] Criados testes do frontend para o polling do lote.
 
 ### Em andamento
 
