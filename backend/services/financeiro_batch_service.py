@@ -3,7 +3,9 @@ from __future__ import annotations
 import os
 from collections import defaultdict
 from decimal import Decimal, ROUND_HALF_UP
+from math import pow
 from time import perf_counter
+from statistics import median
 
 from sqlalchemy.orm import Session
 
@@ -25,6 +27,7 @@ from backend.services.contracheque_parser import (
 )
 
 ZERO = Decimal("0.00")
+THRESHOLD_CRESCIMENTO_RELEVANTE = Decimal("1.00")
 
 
 def _para_decimal(valor: object) -> Decimal:
@@ -169,52 +172,137 @@ def processar_lote_financeiro_job(dados: dict) -> dict[str, object]:
         )
 
 
+def _mediana_decimal(valores: list[Decimal]) -> Decimal:
+    if not valores:
+        return ZERO
+
+    return Decimal(median(sorted(valores))).quantize(ZERO, rounding=ROUND_HALF_UP)
+
+
+def _variacao_percentual_decimal(valor_inicial: Decimal, valor_final: Decimal) -> Decimal:
+    if valor_inicial <= ZERO:
+        return ZERO
+
+    return ((valor_final - valor_inicial) / valor_inicial * Decimal("100")).quantize(
+        Decimal("0.01"),
+        rounding=ROUND_HALF_UP,
+    )
+
+
+def _cagr_percentual_decimal(valor_inicial: Decimal, valor_final: Decimal, periodos: int) -> Decimal:
+    if valor_inicial <= ZERO or valor_final <= ZERO or periodos <= 0:
+        return ZERO
+
+    crescimento = (pow(float(valor_final / valor_inicial), 1 / periodos) - 1) * 100
+    return Decimal(str(crescimento)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+
+calcular_mediana_decimal = _mediana_decimal
+calcular_variacao_percentual_decimal = _variacao_percentual_decimal
+calcular_cagr_percentual_decimal = _cagr_percentual_decimal
+
+
 def calcular_evolucao_salarial_lote(db: Session, batch_id: int) -> dict[str, object]:
     paychecks = obter_paychecks_por_batch_id(db, batch_id)
     if not paychecks:
         raise ValueError("Nenhum contracheque processado foi encontrado para este lote.")
 
-    acumulado_por_ano: dict[int, dict[str, Decimal | int]] = defaultdict(
-        lambda: {"total": ZERO, "quantidade": 0},
-    )
-
+    agrupados_por_ano: dict[int, list[Paycheck]] = defaultdict(list)
     for paycheck in paychecks:
-        ano = int(paycheck.ano)
-        acumulado = acumulado_por_ano[ano]
-        acumulado["total"] = Decimal(acumulado["total"]) + _para_decimal(paycheck.bruto)
-        acumulado["quantidade"] = int(acumulado["quantidade"]) + 1
+        agrupados_por_ano[int(paycheck.ano)].append(paycheck)
 
-    series = []
-    for ano in sorted(acumulado_por_ano):
-        acumulado = acumulado_por_ano[ano]
-        quantidade = max(int(acumulado["quantidade"]), 1)
-        valor_medio = (
-            Decimal(acumulado["total"]) / Decimal(quantidade)
-        ).quantize(ZERO, rounding=ROUND_HALF_UP)
-        series.append(
+    series_intermediarias: list[dict[str, object]] = []
+    for ano in sorted(agrupados_por_ano):
+        paychecks_ano = agrupados_por_ano[ano]
+        bruto_referencia = _mediana_decimal([_para_decimal(item.bruto) for item in paychecks_ano])
+        liquido_referencia = _mediana_decimal([_para_decimal(item.liquido) for item in paychecks_ano])
+        descontos_referencia = _mediana_decimal([_para_decimal(item.descontos) for item in paychecks_ano])
+        series_intermediarias.append(
             {
                 "ano": ano,
-                "valor_bruto_medio": float(valor_medio),
-                "quantidade_contracheques": quantidade,
+                "bruto_referencia": bruto_referencia,
+                "liquido_referencia": liquido_referencia,
+                "descontos_referencia": descontos_referencia,
+                "quantidade_contracheques": len(paychecks_ano),
             }
         )
 
-    primeiro = series[0]
-    ultimo = series[-1]
-    valor_inicial = float(primeiro["valor_bruto_medio"])
-    valor_final = float(ultimo["valor_bruto_medio"])
-    variacao_absoluta = valor_final - valor_inicial
-    variacao_percentual = (
-        (variacao_absoluta / valor_inicial) * 100 if valor_inicial else 0.0
+    anos_sem_crescimento_relevante: list[int] = []
+    for indice, item in enumerate(series_intermediarias):
+        if indice == 0:
+            item["variacao_percentual_bruto_ano_a_ano"] = None
+            item["variacao_percentual_liquido_ano_a_ano"] = None
+            item["crescimento_relevante"] = True
+            continue
+
+        anterior = series_intermediarias[indice - 1]
+        variacao_bruto = _variacao_percentual_decimal(
+            anterior["bruto_referencia"],
+            item["bruto_referencia"],
+        )
+        variacao_liquido = _variacao_percentual_decimal(
+            anterior["liquido_referencia"],
+            item["liquido_referencia"],
+        )
+        item["variacao_percentual_bruto_ano_a_ano"] = float(variacao_bruto)
+        item["variacao_percentual_liquido_ano_a_ano"] = float(variacao_liquido)
+        item["crescimento_relevante"] = abs(variacao_bruto) >= THRESHOLD_CRESCIMENTO_RELEVANTE
+        if not item["crescimento_relevante"]:
+            anos_sem_crescimento_relevante.append(int(item["ano"]))
+
+    primeiro = series_intermediarias[0]
+    ultimo = series_intermediarias[-1]
+    ano_inicial = int(primeiro["ano"])
+    ano_final = int(ultimo["ano"])
+    periodos = max(ano_final - ano_inicial, 0)
+
+    variacao_acumulada_bruto = _variacao_percentual_decimal(
+        primeiro["bruto_referencia"],
+        ultimo["bruto_referencia"],
     )
+    variacao_acumulada_liquido = _variacao_percentual_decimal(
+        primeiro["liquido_referencia"],
+        ultimo["liquido_referencia"],
+    )
+    cagr_bruto = _cagr_percentual_decimal(
+        primeiro["bruto_referencia"],
+        ultimo["bruto_referencia"],
+        periodos,
+    )
+    cagr_liquido = _cagr_percentual_decimal(
+        primeiro["liquido_referencia"],
+        ultimo["liquido_referencia"],
+        periodos,
+    )
+
+    series = [
+        {
+            "ano": int(item["ano"]),
+            "bruto_referencia_anual": float(item["bruto_referencia"]),
+            "liquido_referencia_anual": float(item["liquido_referencia"]),
+            "descontos_referencia_anual": float(item["descontos_referencia"]),
+            "quantidade_contracheques": int(item["quantidade_contracheques"]),
+            "variacao_percentual_bruto_ano_a_ano": item["variacao_percentual_bruto_ano_a_ano"],
+            "variacao_percentual_liquido_ano_a_ano": item["variacao_percentual_liquido_ano_a_ano"],
+            "crescimento_relevante": bool(item["crescimento_relevante"]),
+        }
+        for item in series_intermediarias
+    ]
 
     return {
         "batch_id": batch_id,
-        "ano_inicial": int(primeiro["ano"]),
-        "ano_final": int(ultimo["ano"]),
-        "valor_inicial": valor_inicial,
-        "valor_final": valor_final,
-        "variacao_absoluta": variacao_absoluta,
-        "variacao_percentual": variacao_percentual,
+        "ano_inicial": ano_inicial,
+        "ano_final": ano_final,
+        "bruto_inicial_referencia": float(primeiro["bruto_referencia"]),
+        "bruto_final_referencia": float(ultimo["bruto_referencia"]),
+        "liquido_inicial_referencia": float(primeiro["liquido_referencia"]),
+        "liquido_final_referencia": float(ultimo["liquido_referencia"]),
+        "descontos_inicial_referencia": float(primeiro["descontos_referencia"]),
+        "descontos_final_referencia": float(ultimo["descontos_referencia"]),
+        "variacao_acumulada_bruto_percentual": float(variacao_acumulada_bruto),
+        "variacao_acumulada_liquido_percentual": float(variacao_acumulada_liquido),
+        "cagr_bruto_percentual": float(cagr_bruto),
+        "cagr_liquido_percentual": float(cagr_liquido),
+        "anos_sem_crescimento_relevante": anos_sem_crescimento_relevante,
         "series": series,
     }

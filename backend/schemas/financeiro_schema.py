@@ -30,16 +30,28 @@ class LoteFinanceiroStatusResponse(BaseModel):
 
 class EvolucaoSalarialSerieItemResponse(BaseModel):
     ano: int = Field(gt=0)
-    valor_bruto_medio: float = Field(ge=0)
+    bruto_referencia_anual: float = Field(ge=0)
+    liquido_referencia_anual: float = Field(ge=0)
+    descontos_referencia_anual: float = Field(ge=0)
     quantidade_contracheques: int = Field(ge=0)
+    variacao_percentual_bruto_ano_a_ano: float | None = None
+    variacao_percentual_liquido_ano_a_ano: float | None = None
+    crescimento_relevante: bool = True
 
 
 class EvolucaoSalarialResponse(BaseModel):
     batch_id: int = Field(gt=0)
     ano_inicial: int = Field(gt=0)
     ano_final: int = Field(gt=0)
-    valor_inicial: float
-    valor_final: float
-    variacao_absoluta: float
-    variacao_percentual: float
+    bruto_inicial_referencia: float
+    bruto_final_referencia: float
+    liquido_inicial_referencia: float
+    liquido_final_referencia: float
+    descontos_inicial_referencia: float
+    descontos_final_referencia: float
+    variacao_acumulada_bruto_percentual: float
+    variacao_acumulada_liquido_percentual: float
+    cagr_bruto_percentual: float
+    cagr_liquido_percentual: float
+    anos_sem_crescimento_relevante: list[int] = Field(default_factory=list)
     series: list[EvolucaoSalarialSerieItemResponse] = Field(min_length=1)

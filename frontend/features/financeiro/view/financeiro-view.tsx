@@ -48,6 +48,15 @@ function formatarMoeda(valor: number) {
   return formatadorMoeda.format(valor)
 }
 
+function formatarVariacaoPercentual(valor: number | null) {
+  if (valor === null || !Number.isFinite(valor)) {
+    return "Ano base"
+  }
+
+  const sinal = valor > 0 ? "+" : ""
+  return `${sinal}${valor.toFixed(2)}%`
+}
+
 function mensagemStatusBatch(status: FinanceiroBatchStatusResponse | null, enviando: boolean, monitorando: boolean) {
   if (enviando) {
     return "Uploading batch..."
@@ -83,16 +92,19 @@ function resumoProgressoLote(status: FinanceiroBatchStatusResponse | null, envia
 }
 
 function resumoEvolucaoSalarial(evolucao: FinanceiroEvolucaoSalarialResponse) {
-  const aumento = evolucao.variacao_percentual >= 0
-  const movimento = aumento ? "grew" : "fell"
-  const direcao = aumento ? "increase" : "decrease"
-  const percentual = Math.abs(evolucao.variacao_percentual).toFixed(1)
+  const anosSemCrescimento =
+    evolucao.anos_sem_crescimento_relevante.length > 0
+      ? `Anos sem crescimento relevante: ${evolucao.anos_sem_crescimento_relevante.join(", ")}.`
+      : "Não houve anos sem crescimento relevante."
 
-  if (evolucao.ano_inicial === evolucao.ano_final) {
-    return `The analyzed pay stubs all sit in ${evolucao.ano_inicial}, with an average gross salary of ${formatarMoeda(evolucao.valor_final)} across ${evolucao.series[0]?.quantidade_contracheques ?? 0} PDFs.`
-  }
-
-  return `Between ${evolucao.ano_inicial} and ${evolucao.ano_final}, the average gross salary ${movimento} from ${formatarMoeda(evolucao.valor_inicial)} to ${formatarMoeda(evolucao.valor_final)}, a ${percentual}% ${direcao} across ${evolucao.series.reduce((total, item) => total + item.quantidade_contracheques, 0)} PDFs.`
+  return (
+    `Período analisado: de ${evolucao.ano_inicial} a ${evolucao.ano_final}. ` +
+    `Salário bruto de referência inicial: ${formatarMoeda(evolucao.bruto_inicial_referencia)}. ` +
+    `Salário bruto de referência final: ${formatarMoeda(evolucao.bruto_final_referencia)}. ` +
+    `Evolução acumulada: ${formatarVariacaoPercentual(evolucao.variacao_acumulada_bruto_percentual)}. ` +
+    `Taxa média anual estimada (CAGR): ${formatarVariacaoPercentual(evolucao.cagr_bruto_percentual)}. ` +
+    anosSemCrescimento
+  )
 }
 
 export function FinanceiroView() {
@@ -250,7 +262,11 @@ export function FinanceiroView() {
   const totalSelecionadoArquivos = arquivosSelecionados.length
   const barraIndeterminada = enviando && batchStatus === null
   const serieEvolucao = evolucaoSalarial?.series ?? []
-  const maiorValorSerie = Math.max(...serieEvolucao.map((item) => item.valor_bruto_medio), 0)
+  const maiorValorSerie = serieEvolucao.reduce(
+    (maior, item) =>
+      Math.max(maior, item.bruto_referencia_anual, item.liquido_referencia_anual),
+    0,
+  )
   const totalContrachequesEvolucao = serieEvolucao.reduce(
     (total, item) => total + item.quantidade_contracheques,
     0,
@@ -422,66 +438,106 @@ export function FinanceiroView() {
         {batchStatus && isBatchTerminalStatus(batchStatus.status) ? (
           <section className="salary-panel">
             <div className="analysis-header__title analysis-header__title--compact">
-              <p className="eyebrow eyebrow--title">Salary Evolution</p>
-              <h3>{"Gross salary by year"}</h3>
+              <p className="eyebrow eyebrow--title">Evolução Salarial Anual</p>
+              <h3>{"Bruto e líquido por ano"}</h3>
               <p className="analysis-header__subtitle">
                 {
-                  "This chart uses the pay stubs that were actually processed and groups them by year to show the salary trend."
+                  "O gráfico usa a mediana anual dos contracheques processados para reduzir distorções de 13º, férias, retroativos e outros meses atípicos."
                 }
               </p>
             </div>
 
-            {carregandoEvolucao ? (
-              <p className="helper">Calculating the yearly salary evolution...</p>
-            ) : null}
+            <div className="salary-legend" aria-label="Legenda da evolução salarial">
+              <span className="salary-legend__item salary-legend__item--gross">Bruto</span>
+              <span className="salary-legend__item salary-legend__item--liquid">Líquido</span>
+            </div>
+
+            {carregandoEvolucao ? <p className="helper">Calculando a evolução anual...</p> : null}
 
             {erroEvolucao ? <p className="error-box">{erroEvolucao}</p> : null}
 
             {evolucaoSalarial ? (
               <>
-                <div className="metric-strip metric-strip--hero">
+                <div className="metric-strip metric-strip--hero metric-strip--salary">
                   <div className="metric-line">
-                    <span>Initial year</span>
+                    <span>Ano inicial</span>
                     <strong>{evolucaoSalarial.ano_inicial}</strong>
                   </div>
                   <div className="metric-line">
-                    <span>Initial salary</span>
-                    <strong>{formatarMoeda(evolucaoSalarial.valor_inicial)}</strong>
+                    <span>Bruto inicial</span>
+                    <strong>{formatarMoeda(evolucaoSalarial.bruto_inicial_referencia)}</strong>
                   </div>
                   <div className="metric-line">
-                    <span>Final year</span>
+                    <span>Ano final</span>
                     <strong>{evolucaoSalarial.ano_final}</strong>
                   </div>
                   <div className="metric-line">
-                    <span>Final salary</span>
-                    <strong>{formatarMoeda(evolucaoSalarial.valor_final)}</strong>
+                    <span>Bruto final</span>
+                    <strong>{formatarMoeda(evolucaoSalarial.bruto_final_referencia)}</strong>
                   </div>
                 </div>
 
-                <div className="salary-chart" aria-label="Salary evolution chart">
+                <div className="metric-strip metric-strip--salary">
+                  <div className="metric-line">
+                    <span>Líquido inicial</span>
+                    <strong>{formatarMoeda(evolucaoSalarial.liquido_inicial_referencia)}</strong>
+                  </div>
+                  <div className="metric-line">
+                    <span>Líquido final</span>
+                    <strong>{formatarMoeda(evolucaoSalarial.liquido_final_referencia)}</strong>
+                  </div>
+                  <div className="metric-line">
+                    <span>Evolução acumulada</span>
+                    <strong>{formatarVariacaoPercentual(evolucaoSalarial.variacao_acumulada_bruto_percentual)}</strong>
+                  </div>
+                  <div className="metric-line">
+                    <span>CAGR estimado</span>
+                    <strong>{formatarVariacaoPercentual(evolucaoSalarial.cagr_bruto_percentual)}</strong>
+                  </div>
+                </div>
+
+                <div className="salary-chart" aria-label="Gráfico da evolução salarial anual">
                   {serieEvolucao.map((item, index) => {
                     const altura =
-                      maiorValorSerie > 0 ? Math.max(14, (item.valor_bruto_medio / maiorValorSerie) * 100) : 0
-                    const isInitial = index === 0
-                    const isFinal = index === serieEvolucao.length - 1
+                      maiorValorSerie > 0
+                        ? Math.max(14, (item.bruto_referencia_anual / maiorValorSerie) * 100)
+                        : 0
+                    const alturaLiquida =
+                      maiorValorSerie > 0
+                        ? Math.max(14, (item.liquido_referencia_anual / maiorValorSerie) * 100)
+                        : 0
 
                     return (
-                      <div className="salary-chart__bar" key={item.ano}>
-                        <div className="salary-chart__bar-track">
-                          <div
-                            className={[
-                              "salary-chart__bar-fill",
-                              isInitial ? "salary-chart__bar-fill--start" : "",
-                              isFinal ? "salary-chart__bar-fill--end" : "",
-                            ]
-                              .filter(Boolean)
-                              .join(" ")}
-                            style={{ height: `${altura}%` }}
-                          />
+                      <div className="salary-chart__year" key={item.ano}>
+                        <div className="salary-chart__year-bars">
+                          <div className="salary-chart__bar-block">
+                            <div className="salary-chart__bar-track salary-chart__bar-track--gross">
+                              <div
+                                className="salary-chart__bar-fill salary-chart__bar-fill--gross"
+                                style={{ height: `${altura}%` }}
+                              />
+                            </div>
+                            <span>Bruto</span>
+                          </div>
+                          <div className="salary-chart__bar-block">
+                            <div className="salary-chart__bar-track salary-chart__bar-track--liquid">
+                              <div
+                                className="salary-chart__bar-fill salary-chart__bar-fill--liquid"
+                                style={{ height: `${alturaLiquida}%` }}
+                              />
+                            </div>
+                            <span>Líquido</span>
+                          </div>
                         </div>
                         <strong>{item.ano}</strong>
-                        <span>{formatarMoeda(item.valor_bruto_medio)}</span>
+                        <span>{formatarMoeda(item.bruto_referencia_anual)}</span>
+                        <small>{formatarMoeda(item.liquido_referencia_anual)}</small>
+                        <small>{formatarMoeda(item.descontos_referencia_anual)} de descontos</small>
                         <small>{item.quantidade_contracheques} PDFs</small>
+                        <p className="salary-chart__variation">
+                          {formatarVariacaoPercentual(item.variacao_percentual_bruto_ano_a_ano)}
+                          {item.crescimento_relevante ? "" : " sem crescimento relevante"}
+                        </p>
                       </div>
                     )
                   })}
@@ -492,7 +548,7 @@ export function FinanceiroView() {
                 </p>
 
                 <p className="helper">
-                  {`The chart covers ${totalContrachequesEvolucao} processed pay stubs.`}
+                  {`O gráfico cobre ${totalContrachequesEvolucao} contracheques processados.`}
                 </p>
               </>
             ) : null}
