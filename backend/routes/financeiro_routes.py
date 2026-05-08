@@ -6,7 +6,7 @@ import uuid
 from decimal import Decimal
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
 from sqlalchemy.orm import Session
 
 from backend.database.database import get_db
@@ -17,15 +17,20 @@ from backend.repositories.financeiro_repository import (
     atualizar_lote_financeiro,
     criar_lote_financeiro,
     obter_lote_financeiro_por_id,
+    obter_paychecks_por_usuario_id,
 )
 from backend.schemas.financeiro_schema import (
+    ContrachequeResumoResponse,
     EvolucaoSalarialResponse,
     LoteFinanceiroJobPayload,
     LoteFinanceiroStatusResponse,
     LoteFinanceiroUploadResponse,
 )
 from backend.services.contracheque_parser import parse_contracheque
-from backend.services.financeiro_batch_service import calcular_evolucao_salarial_lote
+from backend.services.financeiro_batch_service import (
+    calcular_evolucao_salarial_lote,
+    calcular_evolucao_salarial_por_usuario,
+)
 
 router = APIRouter(prefix="/financeiro", tags=["financeiro"])
 
@@ -69,6 +74,19 @@ def _carregar_mensagens_erro_lote(valor_bruto: str | None) -> list[str]:
         return []
 
     return [str(mensagem).strip() for mensagem in mensagens if str(mensagem).strip()]
+
+
+def _serializar_paycheck_resumo(paycheck) -> ContrachequeResumoResponse:
+    return ContrachequeResumoResponse(
+        id=paycheck.id,
+        competencia=paycheck.competencia,
+        ano=paycheck.ano,
+        mes=paycheck.mes,
+        salario_base=float(paycheck.vencimento_basico),
+        bruto_total=float(paycheck.bruto),
+        liquido=float(paycheck.liquido),
+        descontos=float(paycheck.descontos),
+    )
 
 
 @router.post("/contracheque/analisar")
@@ -253,6 +271,25 @@ def obter_status_lote_financeiro(
 
 
 @router.get("/evolucao-salarial", response_model=EvolucaoSalarialResponse)
+def obter_evolucao_salarial_persistida(
+    user_id: int | None = Query(default=None, gt=0),
+    batch_id: int | None = Query(default=None, gt=0),
+    db: Session = Depends(get_db),
+) -> EvolucaoSalarialResponse:
+    if user_id is not None:
+        evolucao = calcular_evolucao_salarial_por_usuario(db, user_id)
+        return EvolucaoSalarialResponse.model_validate(evolucao)
+
+    if batch_id is not None:
+        evolucao = calcular_evolucao_salarial_lote(db, batch_id)
+        return EvolucaoSalarialResponse.model_validate(evolucao)
+
+    raise HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail="Informe user_id ou batch_id para consultar a evolucao salarial.",
+    )
+
+
 @router.get("/batch/{batch_id}/evolucao-salarial", response_model=EvolucaoSalarialResponse)
 def obter_evolucao_salarial_lote(
     batch_id: int,
@@ -274,3 +311,12 @@ def obter_evolucao_salarial_lote(
         ) from erro
 
     return EvolucaoSalarialResponse.model_validate(evolucao)
+
+
+@router.get("/contracheques", response_model=list[ContrachequeResumoResponse])
+def listar_contracheques_salvos(
+    user_id: int = Query(..., gt=0),
+    db: Session = Depends(get_db),
+) -> list[ContrachequeResumoResponse]:
+    paychecks = obter_paychecks_por_usuario_id(db, user_id)
+    return [_serializar_paycheck_resumo(paycheck) for paycheck in paychecks]

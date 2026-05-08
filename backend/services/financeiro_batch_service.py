@@ -18,6 +18,7 @@ from backend.repositories.financeiro_repository import (
     existe_paycheck_por_competencia,
     obter_lote_financeiro_por_id,
     obter_paychecks_por_batch_id,
+    obter_paychecks_por_usuario_id,
     salvar_paycheck_com_itens,
 )
 from backend.schemas.financeiro_schema import LoteFinanceiroJobPayload
@@ -301,11 +302,14 @@ calcular_mediana_decimal = _mediana_decimal
 calcular_variacao_percentual_decimal = _variacao_percentual_decimal
 
 
-def calcular_evolucao_salarial_lote(db: Session, batch_id: int) -> dict[str, object]:
-    paychecks = obter_paychecks_por_batch_id(db, batch_id)
+def _calcular_evolucao_salarial_a_partir_de_paychecks(
+    paychecks: list[Paycheck],
+    *,
+    contexto_id: int | None,
+) -> dict[str, object]:
     if not paychecks:
         return {
-            "batch_id": batch_id,
+            "batch_id": contexto_id,
             "ano_inicial": None,
             "ano_final": None,
             "salario_base_inicial_referencia": None,
@@ -441,3 +445,14 @@ def calcular_evolucao_salarial_lote(db: Session, batch_id: int) -> dict[str, obj
         "anos_sem_crescimento_relevante": anos_sem_crescimento_relevante,
         "series": series,
     }
+
+
+def calcular_evolucao_salarial_lote(db: Session, batch_id: int) -> dict[str, object]:
+    paychecks = obter_paychecks_por_batch_id(db, batch_id)
+    return _calcular_evolucao_salarial_a_partir_de_paychecks(paychecks, contexto_id=batch_id)
+
+
+def calcular_evolucao_salarial_por_usuario(db: Session, user_id: int) -> dict[str, object]:
+    paychecks = obter_paychecks_por_usuario_id(db, user_id)
+    contexto_id = int(paychecks[-1].batch_id) if paychecks else None
+    return _calcular_evolucao_salarial_a_partir_de_paychecks(paychecks, contexto_id=contexto_id)

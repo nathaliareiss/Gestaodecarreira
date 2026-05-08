@@ -39,6 +39,20 @@ def obter_paychecks_por_batch_id(db: Session, batch_id: int) -> list[Paycheck]:
     return list(db.scalars(stmt).all())
 
 
+def obter_paychecks_por_usuario_id(db: Session, user_id: int) -> list[Paycheck]:
+    stmt = (
+        select(Paycheck)
+        .options(selectinload(Paycheck.items))
+        .where(Paycheck.user_id == user_id)
+        .order_by(Paycheck.ano.asc(), Paycheck.mes.asc(), Paycheck.created_at.asc(), Paycheck.id.asc())
+    )
+    return list(db.scalars(stmt).all())
+
+
+def listar_contracheques_resumidos_por_usuario_id(db: Session, user_id: int) -> list[Paycheck]:
+    return obter_paychecks_por_usuario_id(db, user_id)
+
+
 def atualizar_lote_financeiro(
     db: Session,
     lote: PayrollBatch,

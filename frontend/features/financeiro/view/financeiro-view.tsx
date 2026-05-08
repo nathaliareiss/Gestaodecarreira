@@ -9,14 +9,17 @@ import {
   isBatchTerminalStatus,
 } from "../model/financeiro-batch.mjs"
 import {
-  obterEvolucaoSalarialLote,
+  obterContrachequesSalvos,
+  obterEvolucaoSalarialPersistida,
   enviarLoteContracheques,
   obterStatusLoteFinanceiro,
 } from "../model/financeiro.repository"
 import type {
+  FinanceiroContrachequeResumo,
   FinanceiroBatchStatusResponse,
   FinanceiroEvolucaoSalarialResponse,
 } from "../model/financeiro.model"
+import { obterUsuarioAutenticadoCache } from "@/shared/auth/session"
 
 const INTERVALO_POLLING_MS = 2000
 
@@ -102,7 +105,7 @@ function resumoEvolucaoSalarial(evolucao: FinanceiroEvolucaoSalarialResponse) {
     evolucao.salario_base_inicial_referencia === null ||
     evolucao.salario_base_final_referencia === null
   ) {
-    return "No valid pay stubs were processed in this batch, so there is no salary evolution to show."
+    return "Você ainda não enviou contracheques."
   }
 
   return `No período analisado, seu salário-base passou de ${formatarMoeda(
@@ -346,10 +349,35 @@ export function FinanceiroView() {
   const [arquivosSelecionados, setArquivosSelecionados] = useState<File[]>([])
   const [batchStatus, setBatchStatus] = useState<FinanceiroBatchStatusResponse | null>(null)
   const [evolucaoSalarial, setEvolucaoSalarial] = useState<FinanceiroEvolucaoSalarialResponse | null>(null)
+  const [contrachequesSalvos, setContrachequesSalvos] = useState<FinanceiroContrachequeResumo[]>([])
   const [batchId, setBatchId] = useState<number | null>(null)
   const [enviando, setEnviando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
   const [erroEvolucao, setErroEvolucao] = useState<string | null>(null)
+  const [carregandoAnalisePersistida, setCarregandoAnalisePersistida] = useState(
+    () => obterUsuarioAutenticadoCache()?.id !== null,
+  )
+
+  async function carregarAnalisePersistida(usuarioId: number) {
+    setCarregandoAnalisePersistida(true)
+    setErroEvolucao(null)
+
+    try {
+      const evolucaoPersistida = await obterEvolucaoSalarialPersistida(usuarioId)
+      const contrachequesPersistidos = await obterContrachequesSalvos(usuarioId).catch(() => [])
+
+      setEvolucaoSalarial(evolucaoPersistida)
+      setContrachequesSalvos(contrachequesPersistidos)
+    } catch (error) {
+      setEvolucaoSalarial(null)
+      setContrachequesSalvos([])
+      setErroEvolucao(
+        error instanceof Error ? error.message : "We could not load the saved salary analysis.",
+      )
+    } finally {
+      setCarregandoAnalisePersistida(false)
+    }
+  }
 
   function selecionarArquivos(evento: ChangeEvent<HTMLInputElement>) {
     const selecionados = Array.from(evento.target.files ?? [])
@@ -362,7 +390,6 @@ export function FinanceiroView() {
     ) {
       setArquivosSelecionados([])
       setBatchStatus(null)
-      setEvolucaoSalarial(null)
       setBatchId(null)
       setErro("Please select PDF files only.")
       setErroEvolucao(null)
@@ -371,7 +398,6 @@ export function FinanceiroView() {
 
     setArquivosSelecionados(selecionados)
     setBatchStatus(null)
-    setEvolucaoSalarial(null)
     setBatchId(null)
     setErro(null)
     setErroEvolucao(null)
@@ -389,11 +415,16 @@ export function FinanceiroView() {
     setErro(null)
     setErroEvolucao(null)
     setBatchStatus(null)
-    setEvolucaoSalarial(null)
     setBatchId(null)
 
     try {
+      const usuarioIdAtual = obterUsuarioAutenticadoCache()?.id ?? null
       const payload = new FormData()
+      if (usuarioIdAtual === null) {
+        throw new Error("We could not identify the current user.")
+      }
+
+      payload.append("user_id", String(usuarioIdAtual))
       for (const arquivo of arquivosSelecionados) {
         payload.append("arquivos", arquivo)
       }
@@ -420,6 +451,19 @@ export function FinanceiroView() {
       setEnviando(false)
     }
   }
+
+  useEffect(() => {
+    const usuario = obterUsuarioAutenticadoCache()
+    const usuarioId = usuario?.id ?? null
+
+    if (usuarioId === null) {
+      return
+    }
+
+    queueMicrotask(() => {
+      void carregarAnalisePersistida(usuarioId)
+    })
+  }, [])
 
   useEffect(() => {
     if (batchId === null) {
@@ -458,42 +502,16 @@ export function FinanceiroView() {
   }, [batchId])
 
   useEffect(() => {
-    if (
-      batchId === null ||
-      !batchStatus ||
-      !isBatchTerminalStatus(batchStatus.status) ||
-      batchStatus.processed === 0
-    ) {
+    const usuarioIdAtual = obterUsuarioAutenticadoCache()?.id ?? null
+
+    if (usuarioIdAtual === null || !batchStatus || !isBatchTerminalStatus(batchStatus.status)) {
       return
     }
 
-    let ativo = true
-
-    void obterEvolucaoSalarialLote(batchId)
-      .then((dados) => {
-        if (!ativo) {
-          return
-        }
-
-        setEvolucaoSalarial(dados)
-      })
-      .catch((error) => {
-        if (!ativo) {
-          return
-        }
-
-        setEvolucaoSalarial(null)
-        setErroEvolucao(
-          error instanceof Error
-            ? error.message
-            : "We could not load the salary evolution yet.",
-        )
-      })
-
-    return () => {
-      ativo = false
-    }
-  }, [batchId, batchStatus])
+    queueMicrotask(() => {
+      void carregarAnalisePersistida(usuarioIdAtual)
+    })
+  }, [batchStatus])
 
   const progresso = calcularProgressoLote(batchStatus)
   const monitorando = Boolean(
@@ -509,19 +527,7 @@ export function FinanceiroView() {
   const serieBruto = serieEvolucao.map((item) => item.bruto_total_referencia_anual)
   const serieLiquido = serieEvolucao.map((item) => item.liquido_referencia_anual)
   const evolucaoSemDados = Boolean(evolucaoSalarial && evolucaoSalarial.series.length === 0)
-  const carregandoEvolucao = Boolean(
-    batchId !== null &&
-      batchStatus &&
-      isBatchTerminalStatus(batchStatus.status) &&
-      batchStatus.processed > 0 &&
-      evolucaoSalarial === null &&
-      erroEvolucao === null,
-  )
-  const loteSemContrachequesValidos = Boolean(
-    batchStatus &&
-      isBatchTerminalStatus(batchStatus.status) &&
-      batchStatus.processed === 0,
-  )
+  const totalContrachequesSalvos = contrachequesSalvos.length
   const mensagensErroLote = batchStatus?.failure_messages ?? []
   const erroPrincipalLote = batchStatus?.last_error_message ?? null
 
@@ -720,145 +726,137 @@ export function FinanceiroView() {
           </section>
         ) : null}
 
-        {batchStatus && isBatchTerminalStatus(batchStatus.status) ? (
-          <section className="salary-panel">
-            <div className="analysis-header__title analysis-header__title--compact">
-              <p className="eyebrow eyebrow--title">Annual Salary Evolution</p>
-              <h3>{"Simple annual charts and aggregated totals"}</h3>
-              <p className="analysis-header__subtitle">
-                {"The screen now keeps only yearly aggregates so it stays fast even with large batches."}
-              </p>
-            </div>
+        <section className="salary-panel">
+          <div className="analysis-header__title analysis-header__title--compact">
+            <p className="eyebrow eyebrow--title">Annual Salary Evolution</p>
+            <h3>{"Saved salary analysis"}</h3>
+            <p className="analysis-header__subtitle">
+              {"This section always loads the saved contracheques from PostgreSQL, so the data survives refresh."}
+            </p>
+          </div>
 
-            {carregandoEvolucao ? <p className="helper">Calculating annual reference values...</p> : null}
+          {carregandoAnalisePersistida ? (
+            <p className="helper">Loading saved analysis from the database...</p>
+          ) : null}
 
-            {loteSemContrachequesValidos ? (
-              <p className="helper">
-                No valid pay stubs were processed in this batch, so there is no salary evolution to show.
-              </p>
-            ) : null}
+          {!carregandoAnalisePersistida && (totalContrachequesSalvos === 0 || evolucaoSemDados) ? (
+            <p className="helper">Você ainda não enviou contracheques.</p>
+          ) : null}
 
-            {evolucaoSemDados ? (
-              <p className="helper">
-                No salary evolution data was generated for this batch, so there is no chart to display.
-              </p>
-            ) : null}
+          {erroEvolucao ? <p className="error-box">{erroEvolucao}</p> : null}
 
-            {erroEvolucao ? <p className="error-box">{erroEvolucao}</p> : null}
+          {evolucaoSalarial && evolucaoSalarial.series.length > 0 ? (
+            <>
+              <div className="metric-strip metric-strip--hero metric-strip--salary">
+                <div className="metric-line">
+                  <span>Analysis period</span>
+                  <strong>{`${evolucaoSalarial.ano_inicial} - ${evolucaoSalarial.ano_final}`}</strong>
+                </div>
+                <div className="metric-line">
+                  <span>Starting salary base</span>
+                  <strong>{formatarMoeda(evolucaoSalarial.salario_base_inicial_referencia)}</strong>
+                </div>
+                <div className="metric-line">
+                  <span>Ending salary base</span>
+                  <strong>{formatarMoeda(evolucaoSalarial.salario_base_final_referencia)}</strong>
+                </div>
+                <div className="metric-line">
+                  <span>Salary base evolution</span>
+                  <strong>{formatarVariacaoPercentual(evolucaoSalarial.variacao_acumulada_salario_base_percentual)}</strong>
+                </div>
+              </div>
 
-            {evolucaoSalarial && evolucaoSalarial.series.length > 0 ? (
-              <>
-                <div className="metric-strip metric-strip--hero metric-strip--salary">
-                  <div className="metric-line">
-                    <span>Analysis period</span>
-                    <strong>{`${evolucaoSalarial.ano_inicial} - ${evolucaoSalarial.ano_final}`}</strong>
-                  </div>
-                  <div className="metric-line">
-                    <span>Starting salary base</span>
-                    <strong>{formatarMoeda(evolucaoSalarial.salario_base_inicial_referencia)}</strong>
-                  </div>
-                  <div className="metric-line">
-                    <span>Ending salary base</span>
-                    <strong>{formatarMoeda(evolucaoSalarial.salario_base_final_referencia)}</strong>
-                  </div>
-                  <div className="metric-line">
-                    <span>Salary base evolution</span>
-                    <strong>{formatarVariacaoPercentual(evolucaoSalarial.variacao_acumulada_salario_base_percentual)}</strong>
-                  </div>
+              <LineChart
+                ariaLabel="Annual salary base evolution"
+                title="Salary base by year"
+                subtitle="A single line keeps the base salary trend clear and easy to scan."
+                years={anosEvolucao}
+                series={[
+                  {
+                    key: SALARY_BASE_SERIE.key,
+                    label: SALARY_BASE_SERIE.label,
+                    color: SALARY_BASE_SERIE.color,
+                    values: serieSalarioBase,
+                  },
+                ]}
+              />
+
+              <LineChart
+                ariaLabel="Annual gross and net pay evolution"
+                title="Gross total and net pay"
+                subtitle="The second line chart keeps gross and liquid values separated without stacking blocks."
+                years={anosEvolucao}
+                series={[
+                  {
+                    key: BRUTO_SERIE.key,
+                    label: BRUTO_SERIE.label,
+                    color: BRUTO_SERIE.color,
+                    values: serieBruto,
+                  },
+                  {
+                    key: LIQUIDO_SERIE.key,
+                    label: LIQUIDO_SERIE.label,
+                    color: LIQUIDO_SERIE.color,
+                    values: serieLiquido,
+                  },
+                ]}
+              />
+
+              <section className="discounts-panel">
+                <div className="analysis-header__title analysis-header__title--compact">
+                  <p className="eyebrow eyebrow--title">Discounts</p>
+                  <h3>{"Annual summary table"}</h3>
+                  <p className="analysis-header__subtitle">
+                    {"The summary keeps deductions readable without adding another heavy chart."}
+                  </p>
                 </div>
 
-                <LineChart
-                  ariaLabel="Annual salary base evolution"
-                  title="Salary base by year"
-                  subtitle="A single line keeps the base salary trend clear and easy to scan."
-                  years={anosEvolucao}
-                  series={[
-                    {
-                      key: SALARY_BASE_SERIE.key,
-                      label: SALARY_BASE_SERIE.label,
-                      color: SALARY_BASE_SERIE.color,
-                      values: serieSalarioBase,
-                    },
-                  ]}
-                />
-
-                <LineChart
-                  ariaLabel="Annual gross and net pay evolution"
-                  title="Gross total and net pay"
-                  subtitle="The second line chart keeps gross and liquid values separated without stacking blocks."
-                  years={anosEvolucao}
-                  series={[
-                    {
-                      key: BRUTO_SERIE.key,
-                      label: BRUTO_SERIE.label,
-                      color: BRUTO_SERIE.color,
-                      values: serieBruto,
-                    },
-                    {
-                      key: LIQUIDO_SERIE.key,
-                      label: LIQUIDO_SERIE.label,
-                      color: LIQUIDO_SERIE.color,
-                      values: serieLiquido,
-                    },
-                  ]}
-                />
-
-                <section className="discounts-panel">
-                  <div className="analysis-header__title analysis-header__title--compact">
-                    <p className="eyebrow eyebrow--title">Discounts</p>
-                    <h3>{"Annual summary table"}</h3>
-                    <p className="analysis-header__subtitle">
-                      {"The summary keeps deductions readable without adding another heavy chart."}
-                    </p>
-                  </div>
-
-                  <div className="table-wrap">
-                    <table className="timeline-table timeline-table--compact">
-                      <thead>
-                        <tr>
-                          <th>Year</th>
-                          <th>Pension</th>
-                          <th>IRRF</th>
-                          <th>Loans</th>
-                          <th>Health</th>
-                          <th>Other discounts</th>
-                          <th>Total</th>
+                <div className="table-wrap">
+                  <table className="timeline-table timeline-table--compact">
+                    <thead>
+                      <tr>
+                        <th>Year</th>
+                        <th>Pension</th>
+                        <th>IRRF</th>
+                        <th>Loans</th>
+                        <th>Health</th>
+                        <th>Other discounts</th>
+                        <th>Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {serieEvolucao.map((item) => (
+                        <tr key={item.ano}>
+                          <td>
+                            <strong>{item.ano}</strong>
+                          </td>
+                          {COLUNAS_DESCONTOS.map((coluna) => (
+                            <td key={`${item.ano}-${coluna.key}`}>
+                              {formatarMoeda(
+                                obterValorDesconto(item.composicao_descontos_referencia_anual, coluna.key),
+                              )}
+                            </td>
+                          ))}
+                          <td>
+                            <strong>{formatarMoeda(item.descontos_referencia_anual)}</strong>
+                          </td>
                         </tr>
-                      </thead>
-                      <tbody>
-                        {serieEvolucao.map((item) => (
-                          <tr key={item.ano}>
-                            <td>
-                              <strong>{item.ano}</strong>
-                            </td>
-                            {COLUNAS_DESCONTOS.map((coluna) => (
-                              <td key={`${item.ano}-${coluna.key}`}>
-                                {formatarMoeda(
-                                  obterValorDesconto(item.composicao_descontos_referencia_anual, coluna.key),
-                                )}
-                              </td>
-                            ))}
-                            <td>
-                              <strong>{formatarMoeda(item.descontos_referencia_anual)}</strong>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </section>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
 
-                {evolucaoSalarial.anos_sem_crescimento_relevante.length > 0 ? (
-                  <p className="helper">
-                    {`Years without relevant growth: ${evolucaoSalarial.anos_sem_crescimento_relevante.join(", ")}.`}
-                  </p>
-                ) : null}
+              {evolucaoSalarial.anos_sem_crescimento_relevante.length > 0 ? (
+                <p className="helper">
+                  {`Years without relevant growth: ${evolucaoSalarial.anos_sem_crescimento_relevante.join(", ")}.`}
+                </p>
+              ) : null}
 
-                <p className="salary-summary">{resumoEvolucaoSalarial(evolucaoSalarial)}</p>
-              </>
-            ) : null}
-          </section>
-        ) : null}
+              <p className="salary-summary">{resumoEvolucaoSalarial(evolucaoSalarial)}</p>
+            </>
+          ) : null}
+        </section>
       </div>
     </section>
   )

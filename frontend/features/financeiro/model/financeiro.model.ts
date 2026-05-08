@@ -31,7 +31,7 @@ export type FinanceiroEvolucaoSalarialSerieItem = {
 }
 
 export type FinanceiroEvolucaoSalarialResponse = {
-  batch_id: number
+  batch_id: number | null
   ano_inicial: number | null
   ano_final: number | null
   salario_base_inicial_referencia: number | null
@@ -47,6 +47,17 @@ export type FinanceiroEvolucaoSalarialResponse = {
   variacao_acumulada_salario_base_percentual: number | null
   anos_sem_crescimento_relevante: number[]
   series: FinanceiroEvolucaoSalarialSerieItem[]
+}
+
+export type FinanceiroContrachequeResumo = {
+  id: number
+  competencia: string
+  ano: number
+  mes: number
+  salario_base: number
+  bruto_total: number
+  liquido: number
+  descontos: number
 }
 
 export type ContrachequeAnalise = {

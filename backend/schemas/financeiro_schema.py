@@ -45,7 +45,7 @@ class EvolucaoSalarialSerieItemResponse(BaseModel):
 
 
 class EvolucaoSalarialResponse(BaseModel):
-    batch_id: int = Field(gt=0)
+    batch_id: int | None = None
     ano_inicial: int | None = None
     ano_final: int | None = None
     salario_base_inicial_referencia: float | None = None
@@ -61,3 +61,14 @@ class EvolucaoSalarialResponse(BaseModel):
     variacao_acumulada_salario_base_percentual: float | None = None
     anos_sem_crescimento_relevante: list[int] = Field(default_factory=list)
     series: list[EvolucaoSalarialSerieItemResponse] = Field(default_factory=list)
+
+
+class ContrachequeResumoResponse(BaseModel):
+    id: int = Field(gt=0)
+    competencia: str = Field(min_length=1)
+    ano: int = Field(gt=0)
+    mes: int = Field(gt=0)
+    salario_base: float
+    bruto_total: float
+    liquido: float
+    descontos: float
