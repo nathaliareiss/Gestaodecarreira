@@ -177,9 +177,17 @@ def _processar_arquivo_individual(
         paycheck.mes,
         paycheck.matricula,
     ):
-        raise ValueError(
-            f"Já existe um contracheque salvo para a competência {paycheck.competencia}."
+        logger.info(
+            "Contracheque financeiro duplicado ignorado por competencia",
+            extra={
+                "batch_id": batch_id,
+                "arquivo_nome": arquivo_nome,
+                "etapa": "duplicado",
+                "competencia": paycheck.competencia,
+                "matricula": paycheck.matricula or None,
+            },
         )
+        return "duplicated"
 
     itens = [_criar_paycheck_item(item) for item in rubricas]
     salvar_paycheck_com_itens(db, paycheck, itens)

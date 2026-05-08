@@ -11,7 +11,7 @@ async function executar() {
   assert.equal(
     calcularProgressoLote({
       total: 5,
-      processed_count: 3,
+      processed_count: 2,
       duplicated_count: 1,
       failed_count: 1,
       status: "processing",
