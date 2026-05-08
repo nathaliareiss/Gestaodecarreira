@@ -51,7 +51,7 @@ export async function obterStatusLoteFinanceiro(
 export async function obterEvolucaoSalarialLote(
   batchId: number,
 ): Promise<FinanceiroEvolucaoSalarialResponse> {
-  const response = await apiFetch(`/api/financeiro/evolucao-salarial?batch_id=${batchId}`, {
+  const response = await apiFetch(`/api/financeiro/batch/${batchId}/evolucao-salarial`, {
     method: "GET",
   })
 
