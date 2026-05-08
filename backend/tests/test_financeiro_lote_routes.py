@@ -69,3 +69,26 @@ def test_upload_lote_financeiro_agenda_job_e_cria_batch(monkeypatch) -> None:
         assert lote is not None
         assert lote.total_files == 2
         assert lote.status == "processing"
+
+
+def test_upload_lote_financeiro_processa_diretamente_quando_fila_ausente(monkeypatch) -> None:
+    monkeypatch.setattr(financeiro_routes, "obter_fila_financeiro", lambda: None)
+
+    client = criar_client()
+    with FIXTURE_PDF.open("rb") as arquivo:
+        resposta = client.post(
+            "/financeiro/upload-lote",
+            data={"user_id": "7"},
+            files=[("arquivos", ("01-2025_Mensal.pdf", arquivo.read(), "application/pdf"))],
+        )
+
+    assert resposta.status_code == 201
+    assert resposta.json() == {"batch_id": 1, "status": "completed"}
+
+    with SessionLocal() as db:
+        lote = db.get(PayrollBatch, 1)
+        assert lote is not None
+        assert lote.total_files == 1
+        assert lote.status == "completed"
+        assert lote.processed_files == 1
+        assert lote.failed_files == 0

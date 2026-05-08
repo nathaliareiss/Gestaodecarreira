@@ -124,12 +124,6 @@ async def upload_lote_financeiro(
 
     lote = criar_lote_financeiro(db, user_id, len(arquivos_em_memoria))
     fila = obter_fila_financeiro()
-    if fila is None:
-        atualizar_lote_financeiro(db, lote, status="failed")
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="A fila financeira nao esta disponivel no momento.",
-        )
 
     diretorio_temporario = _diretorio_temporario_financeiro() / f"batch_{lote.id}_{uuid.uuid4().hex}"
     diretorio_temporario.mkdir(parents=True, exist_ok=True)
@@ -153,36 +147,57 @@ async def upload_lote_financeiro(
             user_id=user_id,
             arquivos=arquivos_job,
         )
-        job = fila.enqueue(
-            processar_lote_financeiro_job,
-            payload.model_dump(mode="json"),
-            job_timeout=3600,
-        )
-        agendado = True
-        logger.info(
-            "Lote financeiro agendado",
-            extra={"batch_id": lote.id, "job_id": job.id, "total_files": lote.total_files},
-        )
-        try:
-            atualizar_lote_financeiro(db, lote, status="processing")
-        except Exception as erro_status:
+        payload_json = payload.model_dump(mode="json")
+
+        if fila is not None:
+            try:
+                job = fila.enqueue(
+                    processar_lote_financeiro_job,
+                    payload_json,
+                    job_timeout=3600,
+                )
+                agendado = True
+                logger.info(
+                    "Lote financeiro agendado",
+                    extra={"batch_id": lote.id, "job_id": job.id, "total_files": lote.total_files},
+                )
+                try:
+                    atualizar_lote_financeiro(db, lote, status="processing")
+                except Exception as erro_status:
+                    logger.warning(
+                        "Nao foi possivel atualizar o status do lote financeiro",
+                        extra={"batch_id": lote.id, "erro": str(erro_status)},
+                    )
+                return LoteFinanceiroUploadResponse(batch_id=lote.id, status="processing")
+            except Exception as erro_fila:
+                logger.warning(
+                    "Fila indisponivel, processando lote financeiro diretamente",
+                    extra={"batch_id": lote.id, "erro": str(erro_fila)},
+                )
+
+        else:
             logger.warning(
-                "Nao foi possivel atualizar o status do lote financeiro",
-                extra={"batch_id": lote.id, "erro": str(erro_status)},
+                "Fila financeira indisponivel, processando lote financeiro diretamente",
+                extra={"batch_id": lote.id, "total_files": lote.total_files},
             )
-        return LoteFinanceiroUploadResponse(batch_id=lote.id, status="processing")
+
+        resultado_direto = processar_lote_financeiro_job(payload_json)
+        return LoteFinanceiroUploadResponse(
+            batch_id=int(resultado_direto["batch_id"]),
+            status=str(resultado_direto["status"]),
+        )
     except HTTPException:
         atualizar_lote_financeiro(db, lote, status="failed")
         raise
     except Exception as erro:
         atualizar_lote_financeiro(db, lote, status="failed")
         logger.exception(
-            "Falha ao agendar lote financeiro",
+            "Falha ao agendar ou processar lote financeiro",
             extra={"batch_id": lote.id, "erro": str(erro)},
         )
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Nao foi possivel agendar o lote financeiro no momento.",
+            detail="Nao foi possivel agendar ou processar o lote financeiro no momento.",
         ) from erro
     finally:
         if not agendado:

@@ -4,7 +4,7 @@ export type FinanceiroBatchStatus = "pending" | "processing" | "completed" | "fa
 
 export type FinanceiroBatchUploadResponse = {
   batch_id: number
-  status: "processing"
+  status: FinanceiroBatchStatus
 }
 
 export type FinanceiroBatchStatusResponse = {

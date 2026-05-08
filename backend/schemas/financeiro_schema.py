@@ -18,7 +18,7 @@ class LoteFinanceiroJobPayload(BaseModel):
 
 class LoteFinanceiroUploadResponse(BaseModel):
     batch_id: int = Field(gt=0)
-    status: Literal["processing"]
+    status: Literal["processing", "completed", "failed"]
 
 
 class LoteFinanceiroStatusResponse(BaseModel):
