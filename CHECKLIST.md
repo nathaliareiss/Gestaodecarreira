@@ -65,3 +65,4 @@
 - [x] Padronizada a rota de evolucao salarial em GET /api/financeiro/evolucao-salarial e melhorado o erro para mostrar a URL chamada.
 - [x] Mantida compatibilidade temporaria da evolucao salarial nos caminhos novo e legado para evitar 404 em deploys defasados.
 - [x] Diagnosticada e registrada no startup a rota financeira de evolucao salarial, com compatibilidade da rota legada e rota final em GET /api/financeiro/evolucao-salarial.
+- [x] Expostas mensagens de erro importantes do lote financeiro no status e na tela para substituir o erro genérico failed.
