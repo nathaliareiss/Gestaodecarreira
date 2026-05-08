@@ -68,7 +68,7 @@ export async function acompanharLoteFinanceiro({
   delayMs = 2000,
   signal,
   onUpdate,
-  wait,
+  wait = esperar,
 }) {
   let statusAtual = await fetchStatus(batchId)
   onUpdate?.(statusAtual)

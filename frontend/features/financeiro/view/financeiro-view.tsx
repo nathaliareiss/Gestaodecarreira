@@ -405,6 +405,8 @@ export function FinanceiroView() {
         processed: 0,
         failed: 0,
         status: resposta.status,
+        last_error_message: null,
+        failure_messages: [],
       })
     } catch (error) {
       setBatchStatus(null)
@@ -431,7 +433,7 @@ export function FinanceiroView() {
       fetchStatus: obterStatusLoteFinanceiro,
       delayMs: INTERVALO_POLLING_MS,
       signal: controller.signal,
-      onUpdate: (statusAtual) => {
+      onUpdate: (statusAtual: FinanceiroBatchStatusResponse) => {
         setBatchStatus(statusAtual)
       },
     })
