@@ -38,7 +38,7 @@ export function useUsuarioController() {
     setErro(null)
     setEntrandoDemo(true)
     try {
-      salvarSessaoDemo(DEMO_USUARIO)
+      salvarSessaoDemo(DEMO_USUARIO.id)
       router.replace("/usuario")
     } finally {
       setEntrandoDemo(false)

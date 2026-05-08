@@ -49,14 +49,13 @@ def test_login_com_credenciais_corretas_retorna_200(monkeypatch) -> None:
 
     assert resposta.status_code == 200
     corpo = resposta.json()
-    assert corpo["access_token"] == "token-123"
-    assert corpo["token_type"] == "bearer"
     assert corpo["usuario"]["id"] == 1
     assert corpo["usuario"]["nome"] == "Maria Silva"
     assert corpo["usuario"]["email"] == "maria@example.com"
     assert corpo["usuario"]["login"] == "maria"
     assert corpo["usuario"]["senha_cadastrada"] is True
     assert corpo["usuario"]["email_confirmado"] is True
+    assert "gc_auth_token=" in resposta.headers.get("set-cookie", "")
 
 
 def test_login_com_senha_errada_retorna_401(monkeypatch) -> None:

@@ -2,10 +2,11 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 
-from fastapi import HTTPException, Request, status
+from fastapi import Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from backend.logger import logger
+from backend.database.database import get_db
 from backend.database.models import Usuario
 from backend.repositories.usuario_repository import (
     atualizar_usuario,
@@ -92,7 +93,10 @@ def obter_usuario_autenticado_por_token(
     return obter_usuario_por_sessao_token_hash(db, _hash_token(token))
 
 
-def obter_usuario_autenticado(request: Request, db: Session) -> Usuario:
+def obter_usuario_autenticado(
+    request: Request,
+    db: Session = Depends(get_db),
+) -> Usuario:
     token = extrair_token_autenticacao(request)
     usuario = obter_usuario_autenticado_por_token(db, token)
     if usuario is None:

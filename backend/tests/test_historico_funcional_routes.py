@@ -28,6 +28,7 @@ def criar_client() -> TestClient:
     app = FastAPI()
     app.include_router(historico_funcional_routes.router)
     app.dependency_overrides[historico_funcional_routes.get_db] = lambda: object()
+    app.dependency_overrides[historico_funcional_routes.obter_usuario_autenticado] = lambda: SimpleNamespace(id=7)
     return TestClient(app)
 
 
@@ -65,7 +66,7 @@ def test_upload_pdf_valido_eh_aceito(monkeypatch) -> None:
         data={
             "data_nascimento": "1980-01-01",
             "anos_clt_averbados": "2",
-            "usuario_id": "7",
+            "usuario_id": "999",
         },
         files={
             "arquivo": (
@@ -88,3 +89,9 @@ def test_upload_pdf_valido_eh_aceito(monkeypatch) -> None:
     assert chamadas["upload"][2] == "application/pdf"
     assert fila_falsa.chamadas[0]["funcao"] == "processar_historico_funcional_job"
 
+
+def test_historico_funcional_de_outro_usuario_e_bloqueado() -> None:
+    client = criar_client()
+    resposta = client.get("/historicos-funcionais/usuario/8/ultimo")
+
+    assert resposta.status_code == 403

@@ -43,6 +43,7 @@ def criar_client() -> TestClient:
     app = FastAPI()
     app.include_router(financeiro_routes.router)
     app.dependency_overrides[financeiro_routes.get_db] = get_db_teste
+    app.dependency_overrides[financeiro_routes.obter_usuario_autenticado] = lambda: SimpleNamespace(id=7)
     return TestClient(app)
 
 
@@ -54,7 +55,6 @@ def test_upload_lote_financeiro_agenda_job_e_cria_batch(monkeypatch) -> None:
     with FIXTURE_PDF.open("rb") as arquivo1, FIXTURE_PDF.open("rb") as arquivo2:
         resposta = client.post(
             "/financeiro/upload-lote",
-            data={"user_id": "7"},
             files=[
                 ("arquivos", ("01-2025_Mensal.pdf", arquivo1.read(), "application/pdf")),
                 ("arquivos", ("02-2025_Mensal.pdf", arquivo2.read(), "application/pdf")),
@@ -80,7 +80,6 @@ def test_upload_lote_financeiro_processa_diretamente_quando_fila_ausente(monkeyp
     with FIXTURE_PDF.open("rb") as arquivo:
         resposta = client.post(
             "/financeiro/upload-lote",
-            data={"user_id": "7"},
             files=[("arquivos", ("01-2025_Mensal.pdf", arquivo.read(), "application/pdf"))],
         )
 
@@ -94,6 +93,43 @@ def test_upload_lote_financeiro_processa_diretamente_quando_fila_ausente(monkeyp
         assert lote.status == "completed"
         assert lote.processed_files == 1
         assert lote.failed_files == 0
+
+
+def test_upload_lote_financeiro_ignora_user_id_manual(monkeypatch) -> None:
+    monkeypatch.setattr(financeiro_routes, "obter_fila_financeiro", lambda: None)
+
+    client = criar_client()
+    with FIXTURE_PDF.open("rb") as arquivo:
+        resposta = client.post(
+            "/financeiro/upload-lote",
+            data={"user_id": "999"},
+            files=[("arquivos", ("01-2025_Mensal.pdf", arquivo.read(), "application/pdf"))],
+        )
+
+    assert resposta.status_code == 201
+
+    with SessionLocal() as db:
+        lote = db.get(PayrollBatch, resposta.json()["batch_id"])
+        assert lote is not None
+        assert lote.user_id == 7
+
+
+def test_status_lote_financeiro_bloqueia_lote_de_outro_usuario() -> None:
+    with SessionLocal() as db:
+        lote = PayrollBatch(
+            user_id=8,
+            total_files=1,
+            processed_files=1,
+            failed_files=0,
+            status="completed",
+        )
+        db.add(lote)
+        db.commit()
+
+    client = criar_client()
+    resposta = client.get(f"/financeiro/batch/{lote.id}")
+
+    assert resposta.status_code == 403
 
 
 def test_status_lote_financeiro_expoe_mensagens_de_erro() -> None:
@@ -149,8 +185,7 @@ def test_evolucao_salarial_por_lote_sem_contracheques_retorna_resposta_vazia() -
         "/financeiro/evolucao-salarial",
         f"/financeiro/batch/{lote.id}/evolucao-salarial",
     ):
-        kwargs = {"params": {"batch_id": lote.id}} if caminho.endswith("/evolucao-salarial") and "batch/" not in caminho else {}
-        resposta = client.get(caminho, **kwargs)
+        resposta = client.get(caminho)
 
         assert resposta.status_code == 200
         assert resposta.json() == {
@@ -176,7 +211,7 @@ def test_evolucao_salarial_por_lote_sem_contracheques_retorna_resposta_vazia() -
 def test_evolucao_salarial_por_lote_com_contracheques_retorna_series() -> None:
     with SessionLocal() as db:
         lote = PayrollBatch(
-            user_id=None,
+            user_id=7,
             total_files=2,
             processed_files=2,
             failed_files=0,
@@ -189,7 +224,7 @@ def test_evolucao_salarial_por_lote_com_contracheques_retorna_series() -> None:
             salario_base_decimal = Decimal(salario_base)
             paycheck = Paycheck(
                 batch_id=lote.id,
-                user_id=None,
+                user_id=7,
                 competencia=competencia,
                 ano=2024,
                 mes=1 if competencia.startswith("Janeiro") else 2,
@@ -222,8 +257,7 @@ def test_evolucao_salarial_por_lote_com_contracheques_retorna_series() -> None:
         "/financeiro/evolucao-salarial",
         f"/financeiro/batch/{lote.id}/evolucao-salarial",
     ):
-        kwargs = {"params": {"batch_id": lote.id}} if caminho.endswith("/evolucao-salarial") and "batch/" not in caminho else {}
-        resposta = client.get(caminho, **kwargs)
+        resposta = client.get(caminho)
 
         assert resposta.status_code == 200
         payload = resposta.json()

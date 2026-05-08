@@ -136,7 +136,7 @@ export function useLoginController() {
 
     try {
       removerSessaoDemo()
-      salvarSessaoDemo(DEMO_USUARIO)
+      salvarSessaoDemo(DEMO_USUARIO.id)
       router.replace("/usuario")
     } finally {
       setEntrandoDemo(false)
