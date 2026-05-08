@@ -270,7 +270,7 @@ def _classificar_rubrica(tipo: str, descricao_original: str) -> str:
 
     if "PREVID" in descricao_busca or "CONTRIB PREV" in descricao_busca:
         return "previdencia"
-    if "IRRF" in descricao_busca or "IMPOSTO DE RENDA" in descricao_busca:
+    if "IRRF" in descricao_busca or "IMPOSTO DE RENDA" in descricao_busca or "IMP RENDA" in descricao_busca:
         return "irrf"
     if "EMPREST" in descricao_busca or "B PAN" in descricao_busca:
         return "emprestimo"

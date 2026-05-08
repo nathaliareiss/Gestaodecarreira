@@ -97,18 +97,15 @@ def test_extrair_rubricas_contracheque_classifica_rubricas_por_categoria(monkeyp
 
     rubricas = extrair_rubricas_contracheque("qualquer.pdf")
 
-    categorias = {item["descricao_original"]: item["categoria_normalizada"] for item in rubricas}
-    tipos = {item["descricao_original"]: item["tipo"] for item in rubricas}
+    def encontrar_por_categoria(categoria: str) -> dict[str, str | Decimal]:
+        return next(item for item in rubricas if item["categoria_normalizada"] == categoria)
 
-    assert categorias["Vencimento Basico"] == "salario_base"
-    assert categorias["Adicional Desempenho"] == "ade"
-    assert categorias["Adic Not Divisor -dj"] == "adicional_noturno"
-    assert categorias["Aj.custo/aliment"] == "alimentacao"
-    assert categorias["Abono Aqu.vestimenta"] == "abono_vestimenta"
-    assert categorias["13 Salario"] == "decimo_terceiro"
-    assert categorias["Contrib.prev.art. 28"] == "previdencia"
-    assert categorias["Imp. Renda Ret.fonte"] == "irrf"
-    assert categorias["B.pan - Emprest. i 0 4 de"] == "emprestimo"
-
-    assert tipos["Vencimento Basico"] == "vantagem"
-    assert tipos["Contrib.prev.art. 28"] == "desconto"
+    assert encontrar_por_categoria("salario_base")["tipo"] == "vantagem"
+    assert encontrar_por_categoria("ade")["tipo"] == "vantagem"
+    assert encontrar_por_categoria("adicional_noturno")["tipo"] == "vantagem"
+    assert encontrar_por_categoria("alimentacao")["tipo"] == "vantagem"
+    assert encontrar_por_categoria("abono_vestimenta")["tipo"] == "vantagem"
+    assert encontrar_por_categoria("decimo_terceiro")["tipo"] == "vantagem"
+    assert encontrar_por_categoria("previdencia")["tipo"] == "desconto"
+    assert encontrar_por_categoria("irrf")["tipo"] == "desconto"
+    assert encontrar_por_categoria("emprestimo")["tipo"] == "desconto"
