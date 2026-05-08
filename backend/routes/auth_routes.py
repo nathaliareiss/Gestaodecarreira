@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, BackgroundTasks, Depends, Header, HTTPException, status
+from uuid import uuid4
+
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, Response, status
 from sqlalchemy.orm import Session
 
 from backend.database.database import get_db
@@ -14,8 +16,12 @@ from backend.schemas.auth_schema import (
 )
 from backend.schemas.usuario_schema import UsuarioResponse
 from backend.services.auth_service import (
+    AUTH_COOKIE_MAX_AGE_SEGUNDOS,
+    AUTH_COOKIE_NAME,
     autenticar_usuario,
     encerrar_sessao_usuario,
+    extrair_token_autenticacao_opcional,
+    obter_usuario_autenticado,
     obter_usuario_autenticado_por_token,
     redefinir_senha_usuario,
     reenviar_confirmacao_email,
@@ -49,74 +55,75 @@ def _enviar_email_recuperacao_com_erro_isolado(destinatario: str, nome: str, tok
         )
 
 
-def _extrair_token_bearer(authorization: str | None) -> str:
-    if not authorization:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Nao autenticado.")
-
-    esquema, _, token = authorization.partition(" ")
-    if esquema.lower() != "bearer" or not token.strip():
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Nao autenticado.")
-
-    return token.strip()
+def _obter_request_id(request: Request) -> str:
+    return request.headers.get("x-request-id") or uuid4().hex
 
 
 @router.post("/login", response_model=UsuarioAuthResponse)
 def login(
     dados: UsuarioLoginRequest,
+    response: Response,
+    request: Request,
     db: Session = Depends(get_db),
 ) -> UsuarioAuthResponse:
-    identificador = dados.login.strip()
-    logger.info("Recebida solicitacao de login", extra={"identificador": identificador})
+    request_id = _obter_request_id(request)
+    logger.info("Recebida solicitacao de login", extra={"request_id": request_id})
     try:
         usuario, token_sessao = autenticar_usuario(db, dados)
     except ValueError as erro:
         logger.warning(
             "Login recusado",
-            extra={"identificador": identificador, "motivo": str(erro)},
+            extra={"request_id": request_id, "motivo": str(erro)},
         )
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(erro)) from erro
 
+    response.set_cookie(
+        key=AUTH_COOKIE_NAME,
+        value=token_sessao,
+        max_age=AUTH_COOKIE_MAX_AGE_SEGUNDOS,
+        path="/",
+        httponly=True,
+        secure=True,
+        samesite="lax",
+    )
     logger.info(
         "Login concluido",
-        extra={"usuario_id": usuario.id, "email": usuario.email},
+        extra={"request_id": request_id, "usuario_id": usuario.id},
     )
     return UsuarioAuthResponse(
-        access_token=token_sessao,
         usuario=UsuarioResponse.model_validate(usuario),
     )
 
 
 @router.get("/me", response_model=UsuarioResponse)
 def me(
-    authorization: str | None = Header(default=None),
+    request: Request,
     db: Session = Depends(get_db),
 ) -> UsuarioResponse:
-    token = _extrair_token_bearer(authorization)
-    usuario = obter_usuario_autenticado_por_token(db, token)
-    if usuario is None:
-        logger.warning("Sessao expirada ou invalida", extra={"rota": "/auth/me"})
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Sessao expirada.")
-
+    usuario = obter_usuario_autenticado(request, db)
     logger.debug(
         "Usuario autenticado consultado",
-        extra={"usuario_id": usuario.id, "email": usuario.email},
+        extra={"usuario_id": usuario.id},
     )
     return UsuarioResponse.model_validate(usuario)
 
 
 @router.post("/logout")
 def logout(
-    authorization: str | None = Header(default=None),
+    request: Request,
+    response: Response,
     db: Session = Depends(get_db),
 ) -> dict[str, str]:
-    token = _extrair_token_bearer(authorization)
-    usuario = obter_usuario_autenticado_por_token(db, token)
-    encerrar_sessao_usuario(db, token)
+    token = extrair_token_autenticacao_opcional(request)
+    usuario = obter_usuario_autenticado_por_token(db, token) if token else None
+    if token:
+        encerrar_sessao_usuario(db, token)
+
+    response.delete_cookie(key=AUTH_COOKIE_NAME, path="/")
     logger.info(
         "Sessao encerrada",
         extra={
             "usuario_id": usuario.id if usuario else None,
-            "email": usuario.email if usuario else None,
         },
     )
     return {"status": "ok"}
@@ -128,20 +135,13 @@ def solicitar_recuperacao(
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
 ) -> dict[str, str]:
-    email = dados.email.strip().lower()
-    logger.info("Recebida solicitacao de recuperacao de senha", extra={"email": email})
+    logger.info("Recebida solicitacao de recuperacao de senha")
     try:
         usuario, token = solicitar_recuperacao_senha(db, dados)
     except ValueError:
-        logger.info(
-            "Solicitacao de recuperacao ignorada porque o email nao esta cadastrado",
-            extra={"email": email},
-        )
+        logger.info("Solicitacao de recuperacao ignorada porque o email nao esta cadastrado")
     except RuntimeError as erro:
-        logger.exception(
-            "Falha ao solicitar recuperacao de senha",
-            extra={"email": email},
-        )
+        logger.exception("Falha ao solicitar recuperacao de senha")
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Nao foi possivel enviar o email de recuperacao agora. Tente novamente mais tarde.",
@@ -154,7 +154,7 @@ def solicitar_recuperacao(
             token=token,
         )
 
-    logger.info("Solicitacao de recuperacao processada", extra={"email": email})
+    logger.info("Solicitacao de recuperacao processada")
     return {
         "status": "ok",
         "message": "Se o email estiver cadastrado, voce vai receber o link de redefinicao.",
@@ -167,17 +167,13 @@ def reenviar_confirmacao(
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
 ) -> dict[str, str]:
-    identificador = dados.identificador.strip()
-    logger.info(
-        "Recebida solicitacao de reenvio de confirmacao",
-        extra={"identificador": identificador},
-    )
+    logger.info("Recebida solicitacao de reenvio de confirmacao")
     try:
         usuario, token = reenviar_confirmacao_email(db, dados)
     except ValueError as erro:
         logger.warning(
             "Reenvio de confirmacao recusado",
-            extra={"identificador": identificador, "motivo": str(erro)},
+            extra={"motivo": str(erro)},
         )
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(erro)) from erro
 
@@ -189,7 +185,7 @@ def reenviar_confirmacao(
     )
     logger.info(
         "Email de confirmacao agendado para reenvio",
-        extra={"usuario_id": usuario.id, "email": usuario.email},
+        extra={"usuario_id": usuario.id},
     )
     return {
         "status": "ok",
@@ -214,6 +210,6 @@ def redefinir_senha(
 
     logger.info(
         "Senha redefinida com sucesso",
-        extra={"usuario_id": usuario.id, "email": usuario.email},
+        extra={"usuario_id": usuario.id},
     )
     return {"status": "ok", "message": "Senha atualizada com sucesso."}

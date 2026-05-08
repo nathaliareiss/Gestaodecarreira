@@ -20,11 +20,11 @@ def criar_app() -> FastAPI:
         version="0.1.0",
     )
 
-    origens_cors = CORS_ORIGINS or ([FRONTEND_BASE_URL] if FRONTEND_BASE_URL else ["*"])
+    origens_cors = CORS_ORIGINS or ([FRONTEND_BASE_URL] if FRONTEND_BASE_URL else ["http://localhost:3000"])
     app.add_middleware(
         CORSMiddleware,
         allow_origins=origens_cors,
-        allow_credentials=False,
+        allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
     )

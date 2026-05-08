@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-import json
 import hashlib
+import json
 import os
 import uuid
 from decimal import Decimal
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
 
 from backend.database.database import get_db
@@ -32,6 +32,7 @@ from backend.services.financeiro_batch_service import (
     calcular_evolucao_salarial_lote,
     calcular_evolucao_salarial_por_usuario,
 )
+from backend.services.auth_service import obter_usuario_autenticado
 
 router = APIRouter(prefix="/financeiro", tags=["financeiro"])
 
@@ -138,7 +139,7 @@ async def analisar_contracheque(arquivo: UploadFile = File(...)) -> dict[str, ob
 )
 async def upload_lote_financeiro(
     arquivos: list[UploadFile] = File(...),
-    user_id: int | None = Form(None),
+    current_user=Depends(obter_usuario_autenticado),
     db: Session = Depends(get_db),
 ) -> LoteFinanceiroUploadResponse:
     if not arquivos:
@@ -163,7 +164,7 @@ async def upload_lote_financeiro(
             )
         )
 
-    lote = criar_lote_financeiro(db, user_id, len(arquivos_em_memoria))
+    lote = criar_lote_financeiro(db, current_user.id, len(arquivos_em_memoria))
     fila = obter_fila_financeiro()
 
     diretorio_temporario = _diretorio_temporario_financeiro() / f"batch_{lote.id}_{uuid.uuid4().hex}"
@@ -186,7 +187,7 @@ async def upload_lote_financeiro(
 
         payload = LoteFinanceiroJobPayload(
             batch_id=lote.id,
-            user_id=user_id,
+            user_id=current_user.id,
             arquivos=arquivos_job,
         )
         payload_json = payload.model_dump(mode="json")
