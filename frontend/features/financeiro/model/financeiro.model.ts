@@ -9,11 +9,15 @@ export type FinanceiroBatchUploadResponse = {
 
 export type FinanceiroBatchStatusResponse = {
   total: number
-  processed: number
-  failed: number
+  processed_count: number
+  duplicated_count: number
+  failed_count: number
   status: FinanceiroBatchStatus
   last_error_message: string | null
   failure_messages: string[]
+  processed?: number
+  duplicated?: number
+  failed?: number
 }
 
 export type FinanceiroEvolucaoSalarialSerieItem = {

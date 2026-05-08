@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import os
 import uuid
 from decimal import Decimal
@@ -44,6 +45,10 @@ def _serializar_valor(valor):
 
 def _serializar_contracheque(dados: dict[str, object]) -> dict[str, object]:
     return {chave: _serializar_valor(valor) for chave, valor in dados.items()}
+
+
+def _gerar_hash_conteudo(conteudo: bytes) -> str:
+    return hashlib.sha256(conteudo).hexdigest()
 
 
 def _arquivo_pdf_valido(conteudo: bytes) -> bool:
@@ -175,6 +180,7 @@ async def upload_lote_financeiro(
                 {
                     "arquivo_nome": nome_arquivo,
                     "arquivo_temporario_path": str(caminho),
+                    "file_hash": _gerar_hash_conteudo(conteudo),
                 }
             )
 
@@ -262,11 +268,15 @@ def obter_status_lote_financeiro(
 
     return LoteFinanceiroStatusResponse(
         total=lote.total_files,
-        processed=lote.processed_files,
-        failed=lote.failed_files,
+        processed_count=lote.processed_files,
+        duplicated_count=lote.duplicated_files,
+        failed_count=lote.failed_files,
         status=lote.status,
         last_error_message=lote.last_error_message or None,
         failure_messages=_carregar_mensagens_erro_lote(lote.failure_messages),
+        processed=lote.processed_files,
+        duplicated=lote.duplicated_files,
+        failed=lote.failed_files,
     )
 
 

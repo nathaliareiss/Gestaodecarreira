@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 class ArquivoLoteFinanceiroPayload(BaseModel):
     arquivo_nome: str = Field(min_length=1)
     arquivo_temporario_path: str = Field(min_length=1)
+    file_hash: str | None = None
 
 
 class LoteFinanceiroJobPayload(BaseModel):
@@ -23,11 +24,15 @@ class LoteFinanceiroUploadResponse(BaseModel):
 
 class LoteFinanceiroStatusResponse(BaseModel):
     total: int = Field(ge=0)
-    processed: int = Field(ge=0)
-    failed: int = Field(ge=0)
+    processed_count: int = Field(ge=0, default=0)
+    duplicated_count: int = Field(ge=0, default=0)
+    failed_count: int = Field(ge=0, default=0)
     status: Literal["pending", "processing", "completed", "failed"]
     last_error_message: str | None = None
     failure_messages: list[str] = Field(default_factory=list)
+    processed: int = Field(ge=0, default=0)
+    duplicated: int = Field(ge=0, default=0)
+    failed: int = Field(ge=0, default=0)
 
 
 class EvolucaoSalarialSerieItemResponse(BaseModel):

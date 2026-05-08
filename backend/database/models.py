@@ -90,6 +90,7 @@ class PayrollBatch(Base):
     user_id = Column(Integer, ForeignKey("usuarios.id"), nullable=True, index=True)
     total_files = Column(Integer, nullable=False, default=0)
     processed_files = Column(Integer, nullable=False, default=0)
+    duplicated_files = Column(Integer, nullable=False, default=0)
     failed_files = Column(Integer, nullable=False, default=0)
     last_error_message = Column(String, nullable=False, default="")
     failure_messages = Column(Text, nullable=False, default="[]")
@@ -123,6 +124,8 @@ class Paycheck(Base):
     id = Column(Integer, primary_key=True, index=True)
     batch_id = Column(Integer, ForeignKey("payroll_batches.id"), nullable=False, index=True)
     user_id = Column(Integer, ForeignKey("usuarios.id"), nullable=True, index=True)
+    file_hash = Column(String, nullable=False, default="")
+    matricula = Column(String, nullable=False, default="")
     competencia = Column(String, nullable=False)
     ano = Column(Integer, nullable=False)
     mes = Column(Integer, nullable=False)
@@ -148,9 +151,10 @@ class Paycheck(Base):
     )
 
     __table_args__ = (
-        UniqueConstraint("user_id", "competencia", name="uq_paychecks_user_competencia"),
         Index("ix_paychecks_batch_id_created_at", "batch_id", "created_at"),
         Index("ix_paychecks_user_id_ano_mes", "user_id", "ano", "mes"),
+        Index("ix_paychecks_user_id_file_hash", "user_id", "file_hash"),
+        Index("ix_paychecks_user_id_ano_mes_matricula", "user_id", "ano", "mes", "matricula"),
     )
 
 

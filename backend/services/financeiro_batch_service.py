@@ -1,9 +1,11 @@
 from __future__ import annotations
 
-import os
+import hashlib
 import json
+import os
 from collections import defaultdict
 from decimal import Decimal, ROUND_HALF_UP
+from pathlib import Path
 from time import perf_counter
 from statistics import median
 
@@ -15,7 +17,8 @@ from backend.logger import logger
 from backend.metrics import registrar_job_execucao
 from backend.repositories.financeiro_repository import (
     atualizar_lote_financeiro,
-    existe_paycheck_por_competencia,
+    existe_paycheck_por_chave_negocio,
+    existe_paycheck_por_file_hash,
     obter_lote_financeiro_por_id,
     obter_paychecks_por_batch_id,
     obter_paychecks_por_usuario_id,
@@ -51,6 +54,10 @@ def _criar_paycheck_item(payload: dict[str, object]) -> PaycheckItem:
         descricao=str(payload["descricao"]),
         valor=_para_decimal(payload["valor"]),
     )
+
+
+def _hash_sha256_conteudo(conteudo: bytes) -> str:
+    return hashlib.sha256(conteudo).hexdigest()
 
 
 def _ler_mensagens_erro_lote(valor_bruto: str | None) -> list[str]:
@@ -107,10 +114,13 @@ def _criar_paycheck_model(
     batch_id: int,
     user_id: int | None,
     dados: dict[str, object],
+    *,
+    file_hash: str,
 ) -> Paycheck:
     competencia = str(dados.get("competencia") or "").strip()
     ano = int(dados.get("ano") or 0)
     mes = int(dados.get("mes") or 0)
+    matricula = str(dados.get("matricula") or "").strip()
 
     if not competencia or ano <= 0 or mes <= 0:
         raise ValueError("Nao foi possivel identificar a competencia do contracheque.")
@@ -118,6 +128,8 @@ def _criar_paycheck_model(
     return Paycheck(
         batch_id=batch_id,
         user_id=user_id,
+        file_hash=file_hash,
+        matricula=matricula,
         competencia=competencia,
         ano=ano,
         mes=mes,
@@ -138,12 +150,33 @@ def _processar_arquivo_individual(
     user_id: int | None,
     arquivo_nome: str,
     caminho_temporario: str,
-) -> None:
+    arquivo_hash: str | None = None,
+) -> str:
+    file_hash = arquivo_hash or _hash_sha256_conteudo(Path(caminho_temporario).read_bytes())
+
+    if existe_paycheck_por_file_hash(db, user_id, file_hash):
+        logger.info(
+            "Contracheque financeiro duplicado ignorado por hash",
+            extra={
+                "batch_id": batch_id,
+                "arquivo_nome": arquivo_nome,
+                "etapa": "duplicado",
+                "file_hash": file_hash,
+            },
+        )
+        return "duplicated"
+
     dados = parse_contracheque(caminho_temporario)
     rubricas = extrair_rubricas_contracheque(caminho_temporario)
-    paycheck = _criar_paycheck_model(batch_id, user_id, dados)
+    paycheck = _criar_paycheck_model(batch_id, user_id, dados, file_hash=file_hash)
 
-    if user_id is not None and existe_paycheck_por_competencia(db, user_id, paycheck.competencia):
+    if existe_paycheck_por_chave_negocio(
+        db,
+        user_id,
+        paycheck.ano,
+        paycheck.mes,
+        paycheck.matricula,
+    ):
         raise ValueError(
             f"Já existe um contracheque salvo para a competência {paycheck.competencia}."
         )
@@ -156,8 +189,11 @@ def _processar_arquivo_individual(
             "batch_id": batch_id,
             "arquivo_nome": arquivo_nome,
             "competencia": paycheck.competencia,
+            "file_hash": file_hash,
+            "matricula": paycheck.matricula or None,
         },
     )
+    return "processed"
 
 
 def processar_lote_financeiro_job(dados: dict) -> dict[str, object]:
@@ -191,14 +227,18 @@ def processar_lote_financeiro_job(dados: dict) -> dict[str, object]:
                             "etapa": "processar_arquivo",
                         },
                     )
-                    _processar_arquivo_individual(
+                    resultado_arquivo = _processar_arquivo_individual(
                         db=db,
                         batch_id=payload.batch_id,
                         user_id=payload.user_id,
                         arquivo_nome=arquivo.arquivo_nome,
                         caminho_temporario=arquivo.arquivo_temporario_path,
+                        arquivo_hash=arquivo.file_hash,
                     )
-                    atualizar_lote_financeiro(db, lote, processed_delta=1)
+                    if resultado_arquivo == "duplicated":
+                        atualizar_lote_financeiro(db, lote, duplicated_delta=1)
+                    else:
+                        atualizar_lote_financeiro(db, lote, processed_delta=1)
                 except Exception as erro_arquivo:
                     db.rollback()
                     mensagem_erro = _normalizar_mensagem_erro_processamento(
@@ -227,7 +267,11 @@ def processar_lote_financeiro_job(dados: dict) -> dict[str, object]:
 
             lote_atualizado = obter_lote_financeiro_por_id(db, payload.batch_id)
             if lote_atualizado is not None:
-                status_final = "failed" if lote_atualizado.processed_files == 0 else "completed"
+                status_final = (
+                    "failed"
+                    if lote_atualizado.processed_files == 0 and lote_atualizado.duplicated_files == 0
+                    else "completed"
+                )
                 atualizar_lote_financeiro(db, lote_atualizado, status=status_final)
 
             lote_final = obter_lote_financeiro_por_id(db, payload.batch_id)
@@ -238,7 +282,11 @@ def processar_lote_financeiro_job(dados: dict) -> dict[str, object]:
                 "batch_id": lote_final.id,
                 "total": lote_final.total_files,
                 "processed": lote_final.processed_files,
+                "duplicated": lote_final.duplicated_files,
                 "failed": lote_final.failed_files,
+                "processed_count": lote_final.processed_files,
+                "duplicated_count": lote_final.duplicated_files,
+                "failed_count": lote_final.failed_files,
                 "status": lote_final.status,
             }
     except Exception:

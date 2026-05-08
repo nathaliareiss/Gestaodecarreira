@@ -16,6 +16,7 @@ def criar_lote_financeiro(
         user_id=user_id,
         total_files=total_files,
         processed_files=0,
+        duplicated_files=0,
         failed_files=0,
         status="pending",
     )
@@ -58,10 +59,12 @@ def atualizar_lote_financeiro(
     lote: PayrollBatch,
     *,
     processed_delta: int = 0,
+    duplicated_delta: int = 0,
     failed_delta: int = 0,
     status: str | None = None,
 ) -> PayrollBatch:
     lote.processed_files += processed_delta
+    lote.duplicated_files += duplicated_delta
     lote.failed_files += failed_delta
     if status is not None:
         lote.status = status
@@ -79,6 +82,38 @@ def existe_paycheck_por_competencia(
     stmt = select(Paycheck.id).where(
         Paycheck.user_id == user_id,
         Paycheck.competencia == competencia,
+    )
+    return db.scalar(stmt) is not None
+
+
+def existe_paycheck_por_file_hash(
+    db: Session,
+    user_id: int | None,
+    file_hash: str,
+) -> bool:
+    if not file_hash:
+        return False
+
+    stmt = select(Paycheck.id).where(
+        Paycheck.user_id == user_id,
+        Paycheck.file_hash == file_hash,
+    )
+    return db.scalar(stmt) is not None
+
+
+def existe_paycheck_por_chave_negocio(
+    db: Session,
+    user_id: int | None,
+    ano: int,
+    mes: int,
+    matricula: str,
+) -> bool:
+    matricula_normalizada = (matricula or "").strip()
+    stmt = select(Paycheck.id).where(
+        Paycheck.user_id == user_id,
+        Paycheck.ano == ano,
+        Paycheck.mes == mes,
+        Paycheck.matricula == matricula_normalizada,
     )
     return db.scalar(stmt) is not None
 

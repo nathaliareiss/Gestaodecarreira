@@ -96,6 +96,17 @@ PADROES_VALORES = {
     ],
 }
 
+PADROES_MATRICULA = [
+    re.compile(
+        r"\bMATRICULA\b\s*[:\-]?\s*(?P<matricula>[A-Z0-9./-]+)",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"\bMATRICULA\b.*?(?P<matricula>\d{3,})",
+        re.IGNORECASE | re.DOTALL,
+    ),
+]
+
 CATEGORIAS_VANTAGEM = (
     "salario_base",
     "ade",
@@ -346,6 +357,15 @@ def _extrair_competencia(texto: str) -> tuple[str, int, int]:
     return "", 0, 0
 
 
+def _extrair_matricula(texto: str) -> str:
+    for padrao in PADROES_MATRICULA:
+        correspondencia = padrao.search(texto)
+        if correspondencia:
+            return correspondencia.group("matricula").strip()
+
+    return ""
+
+
 def _extrair_dados_por_linhas(texto: str) -> dict[str, Decimal]:
     dados = {
         "bruto": ZERO,
@@ -431,6 +451,7 @@ def parse_contracheque(pdf_path: str) -> dict[str, Decimal | int | str]:
     texto = _extrair_texto_pdf(pdf_path)
     texto_busca = _normalizar_para_busca(texto)
     competencia, ano, mes = _extrair_competencia(texto_busca)
+    matricula = _extrair_matricula(texto_busca)
     dados_linhas = _extrair_dados_por_linhas(texto)
 
     # Cada campo monetario usa um conjunto pequeno de padroes para continuar
@@ -439,6 +460,7 @@ def parse_contracheque(pdf_path: str) -> dict[str, Decimal | int | str]:
         "competencia": competencia,
         "ano": ano,
         "mes": mes,
+        "matricula": matricula,
         "bruto": _extrair_por_padroes(texto_busca, PADROES_VALORES["bruto"])
         or dados_linhas["bruto"],
         "descontos": _extrair_por_padroes(texto_busca, PADROES_VALORES["descontos"])

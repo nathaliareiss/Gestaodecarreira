@@ -61,6 +61,9 @@ def sincronizar_usuario_table() -> None:
         "ALTER TABLE IF EXISTS usuarios ADD COLUMN IF NOT EXISTS confirmado_em TIMESTAMP WITH TIME ZONE",
         "ALTER TABLE IF EXISTS payroll_batches ADD COLUMN IF NOT EXISTS last_error_message VARCHAR NOT NULL DEFAULT ''",
         "ALTER TABLE IF EXISTS payroll_batches ADD COLUMN IF NOT EXISTS failure_messages TEXT NOT NULL DEFAULT '[]'",
+        "ALTER TABLE IF EXISTS payroll_batches ADD COLUMN IF NOT EXISTS duplicated_files INTEGER NOT NULL DEFAULT 0",
+        "ALTER TABLE IF EXISTS paychecks ADD COLUMN IF NOT EXISTS file_hash VARCHAR NOT NULL DEFAULT ''",
+        "ALTER TABLE IF EXISTS paychecks ADD COLUMN IF NOT EXISTS matricula VARCHAR NOT NULL DEFAULT ''",
         "ALTER TABLE IF EXISTS paycheck_items ADD COLUMN IF NOT EXISTS categoria_normalizada VARCHAR NOT NULL DEFAULT 'outros_vantagens'",
         "ALTER TABLE IF EXISTS paycheck_items ADD COLUMN IF NOT EXISTS descricao_original VARCHAR NOT NULL DEFAULT ''",
         "UPDATE usuarios SET apelido = COALESCE(apelido, '') WHERE apelido IS NULL",
@@ -71,6 +74,10 @@ def sincronizar_usuario_table() -> None:
         "UPDATE usuarios SET criado_em = COALESCE(criado_em, NOW()) WHERE criado_em IS NULL",
         "UPDATE payroll_batches SET last_error_message = COALESCE(last_error_message, '') WHERE last_error_message IS NULL",
         "UPDATE payroll_batches SET failure_messages = COALESCE(failure_messages, '[]') WHERE failure_messages IS NULL",
+        "UPDATE payroll_batches SET duplicated_files = COALESCE(duplicated_files, 0) WHERE duplicated_files IS NULL",
+        "UPDATE paychecks SET file_hash = COALESCE(file_hash, '') WHERE file_hash IS NULL",
+        "UPDATE paychecks SET matricula = COALESCE(matricula, '') WHERE matricula IS NULL",
+        "ALTER TABLE IF EXISTS paychecks DROP CONSTRAINT IF EXISTS uq_paychecks_user_competencia",
     ]
     comandos.extend(
         [
@@ -79,6 +86,8 @@ def sincronizar_usuario_table() -> None:
             "CREATE INDEX IF NOT EXISTS ix_usuarios_sessao_token_hash ON usuarios (sessao_token_hash)",
             "CREATE INDEX IF NOT EXISTS ix_usuarios_redefinir_senha_token_hash ON usuarios (redefinir_senha_token_hash)",
             "CREATE INDEX IF NOT EXISTS ix_historicos_funcionais_usuario_criado_em_id ON historicos_funcionais (usuario_id, criado_em DESC, id DESC)",
+            "CREATE INDEX IF NOT EXISTS ix_paychecks_user_id_file_hash ON paychecks (user_id, file_hash)",
+            "CREATE INDEX IF NOT EXISTS ix_paychecks_user_id_ano_mes_matricula ON paychecks (user_id, ano, mes, matricula)",
         ]
     )
 

@@ -85,17 +85,19 @@ function resumoProgressoLote(status: FinanceiroBatchStatusResponse | null, envia
     return "Waiting for the batch to start..."
   }
 
-  const concluidos = status.processed + status.failed
+  const processados = Math.max(0, Number(status.processed_count ?? status.processed ?? 0))
+  const duplicados = Math.max(0, Number(status.duplicated_count ?? status.duplicated ?? 0))
+  const falhas = Math.max(0, Number(status.failed_count ?? status.failed ?? 0))
 
   if (status.status === "completed") {
-    return `Finished ${concluidos}/${status.total} PDFs.`
+    return `${processados} processados, ${duplicados} duplicados, ${falhas} falharam.`
   }
 
   if (status.status === "failed") {
-    return `${concluidos}/${status.total} PDFs handled, with ${status.failed} failed.`
+    return `${processados} processados, ${duplicados} duplicados, ${falhas} falharam.`
   }
 
-  return `${concluidos}/${status.total} PDFs processed so far.`
+  return `${processados} processados, ${duplicados} duplicados, ${falhas} falharam.`
 }
 
 function resumoEvolucaoSalarial(evolucao: FinanceiroEvolucaoSalarialResponse) {
@@ -433,7 +435,11 @@ export function FinanceiroView() {
       setBatchId(resposta.batch_id)
       setBatchStatus({
         total: arquivosSelecionados.length,
+        processed_count: 0,
+        duplicated_count: 0,
+        failed_count: 0,
         processed: 0,
+        duplicated: 0,
         failed: 0,
         status: resposta.status,
         last_error_message: null,
@@ -662,19 +668,23 @@ export function FinanceiroView() {
 
             <div className="metric-strip metric-strip--hero">
               <div className="metric-line">
-                <span>Batch Status</span>
+                <span>Status</span>
                 <strong>{formatarStatusLote(batchStatus.status)}</strong>
               </div>
               <div className="metric-line">
-                <span>Processed</span>
-                <strong>{batchStatus.processed}</strong>
+                <span>Processados</span>
+                <strong>{batchStatus.processed_count ?? batchStatus.processed ?? 0}</strong>
               </div>
               <div className="metric-line">
-                <span>Failed</span>
-                <strong>{batchStatus.failed}</strong>
+                <span>Duplicados</span>
+                <strong>{batchStatus.duplicated_count ?? batchStatus.duplicated ?? 0}</strong>
               </div>
               <div className="metric-line">
-                <span>Total Files</span>
+                <span>Falharam</span>
+                <strong>{batchStatus.failed_count ?? batchStatus.failed ?? 0}</strong>
+              </div>
+              <div className="metric-line">
+                <span>Total</span>
                 <strong>{batchStatus.total}</strong>
               </div>
             </div>
@@ -703,13 +713,17 @@ export function FinanceiroView() {
               </div>
             </div>
 
-            {batchStatus.failed > 0 ? (
+            {(batchStatus.duplicated_count ?? batchStatus.duplicated ?? 0) > 0 ? (
+              <p className="helper">Alguns contracheques já existiam e foram ignorados.</p>
+            ) : null}
+
+            {(batchStatus.failed_count ?? batchStatus.failed ?? 0) > 0 ? (
               <p className="helper">
                 The worker kept going after failures, so the batch can still finish with partial results.
               </p>
             ) : null}
 
-            {batchStatus && batchStatus.failed > 0 ? (
+            {batchStatus && (batchStatus.failed_count ?? batchStatus.failed ?? 0) > 0 ? (
               <div className="error-box">
                 <p className="error-box__title">
                   {erroPrincipalLote ? `Primary issue: ${erroPrincipalLote}` : "Primary issue not available."}

@@ -14,9 +14,10 @@ export function calcularProgressoLote(status) {
     return 0
   }
 
-  const processed = Math.max(0, Number(status?.processed ?? 0))
-  const failed = Math.max(0, Number(status?.failed ?? 0))
-  const completo = Math.min(total, processed + failed)
+  const processed = Math.max(0, Number(status?.processed_count ?? status?.processed ?? 0))
+  const duplicated = Math.max(0, Number(status?.duplicated_count ?? status?.duplicated ?? 0))
+  const failed = Math.max(0, Number(status?.failed_count ?? status?.failed ?? 0))
+  const completo = Math.min(total, processed + duplicated + failed)
 
   return Math.min(100, Math.round((completo / total) * 100))
 }
