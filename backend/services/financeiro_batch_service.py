@@ -428,7 +428,7 @@ def _calcular_evolucao_salarial_a_partir_de_paychecks(
     ]
 
     return {
-        "batch_id": batch_id,
+        "batch_id": contexto_id,
         "ano_inicial": ano_inicial,
         "ano_final": ano_final,
         "salario_base_inicial_referencia": float(primeiro["salario_base_referencia"]),

@@ -68,3 +68,5 @@
 - [x] Expostas mensagens de erro importantes do lote financeiro no status e na tela para substituir o erro genérico failed.
 - [x] Diagnosticada a falha do upload-lote: o schema de payroll_batches em producao nao tinha last_error_message/failure_messages e o insert quebrava antes do worker.
 - [x] Simplified the Financeiro screen to use lightweight annual line charts, a compact discounts table, and a collapsed Ver detalhes file list.
+
+- [x] Financeiro now reloads saved contracheques from PostgreSQL on refresh using user-scoped endpoints.
