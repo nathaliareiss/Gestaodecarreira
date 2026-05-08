@@ -7,12 +7,6 @@ from sqlalchemy.orm import Session
 
 from backend.database.database import get_db
 from backend.logger import logger
-from backend.cache.redis_cache import (
-    CACHE_TTL_USUARIO_ULTIMO_SEGUNDOS,
-    chave_usuario_ultimo,
-    definir_json_cache,
-    obter_json_cache,
-)
 from backend.schemas.usuario_schema import (
     UsuarioConfirmarRequest,
     UsuarioCreateRequest,
@@ -77,7 +71,6 @@ def criar_usuario(
 @router.get("", response_model=list[UsuarioResponse])
 def listar_todos_os_usuarios(
     current_user=Depends(obter_usuario_autenticado),
-    db: Session = Depends(get_db),
 ) -> list[UsuarioResponse]:
     logger.debug("Listagem de usuarios consultada", extra={"usuario_id": current_user.id})
     return [UsuarioResponse.model_validate(current_user)]
@@ -86,20 +79,9 @@ def listar_todos_os_usuarios(
 @router.get("/ultimo", response_model=UsuarioResponse)
 def obter_ultimo_usuario(
     current_user=Depends(obter_usuario_autenticado),
-    db: Session = Depends(get_db),
 ) -> UsuarioResponse:
-    cache = obter_json_cache(chave_usuario_ultimo())
-    if cache is not None:
-        logger.debug("Ultimo usuario carregado do cache", extra={"usuario_id": current_user.id})
-        return UsuarioResponse.model_validate(cache)
-
-    resposta = UsuarioResponse.model_validate(current_user)
-    definir_json_cache(
-        chave_usuario_ultimo(),
-        resposta.model_dump(mode="json"),
-        CACHE_TTL_USUARIO_ULTIMO_SEGUNDOS,
-    )
-    return resposta
+    logger.debug("Ultimo usuario consultado", extra={"usuario_id": current_user.id})
+    return UsuarioResponse.model_validate(current_user)
 
 
 @router.post("/confirmar", response_model=UsuarioResponse)
