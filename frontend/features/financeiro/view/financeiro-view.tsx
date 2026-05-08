@@ -19,7 +19,6 @@ import type {
   FinanceiroBatchStatusResponse,
   FinanceiroEvolucaoSalarialResponse,
 } from "../model/financeiro.model"
-import { obterUsuarioAutenticadoCache } from "@/shared/auth/session"
 
 const INTERVALO_POLLING_MS = 2000
 
@@ -356,17 +355,15 @@ export function FinanceiroView() {
   const [enviando, setEnviando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
   const [erroEvolucao, setErroEvolucao] = useState<string | null>(null)
-  const [carregandoAnalisePersistida, setCarregandoAnalisePersistida] = useState(
-    () => obterUsuarioAutenticadoCache()?.id !== null,
-  )
+  const [carregandoAnalisePersistida, setCarregandoAnalisePersistida] = useState(true)
 
-  async function carregarAnalisePersistida(usuarioId: number) {
+  async function carregarAnalisePersistida() {
     setCarregandoAnalisePersistida(true)
     setErroEvolucao(null)
 
     try {
-      const evolucaoPersistida = await obterEvolucaoSalarialPersistida(usuarioId)
-      const contrachequesPersistidos = await obterContrachequesSalvos(usuarioId).catch(() => [])
+      const evolucaoPersistida = await obterEvolucaoSalarialPersistida()
+      const contrachequesPersistidos = await obterContrachequesSalvos().catch(() => [])
 
       setEvolucaoSalarial(evolucaoPersistida)
       setContrachequesSalvos(contrachequesPersistidos)
@@ -420,13 +417,7 @@ export function FinanceiroView() {
     setBatchId(null)
 
     try {
-      const usuarioIdAtual = obterUsuarioAutenticadoCache()?.id ?? null
       const payload = new FormData()
-      if (usuarioIdAtual === null) {
-        throw new Error("We could not identify the current user.")
-      }
-
-      payload.append("user_id", String(usuarioIdAtual))
       for (const arquivo of arquivosSelecionados) {
         payload.append("arquivos", arquivo)
       }
@@ -459,15 +450,8 @@ export function FinanceiroView() {
   }
 
   useEffect(() => {
-    const usuario = obterUsuarioAutenticadoCache()
-    const usuarioId = usuario?.id ?? null
-
-    if (usuarioId === null) {
-      return
-    }
-
     queueMicrotask(() => {
-      void carregarAnalisePersistida(usuarioId)
+      void carregarAnalisePersistida()
     })
   }, [])
 
@@ -508,14 +492,12 @@ export function FinanceiroView() {
   }, [batchId])
 
   useEffect(() => {
-    const usuarioIdAtual = obterUsuarioAutenticadoCache()?.id ?? null
-
-    if (usuarioIdAtual === null || !batchStatus || !isBatchTerminalStatus(batchStatus.status)) {
+    if (!batchStatus || !isBatchTerminalStatus(batchStatus.status)) {
       return
     }
 
     queueMicrotask(() => {
-      void carregarAnalisePersistida(usuarioIdAtual)
+      void carregarAnalisePersistida()
     })
   }, [batchStatus])
 

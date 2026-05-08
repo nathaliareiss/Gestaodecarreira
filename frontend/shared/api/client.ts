@@ -18,7 +18,10 @@ function montarUrlApi(path: string) {
 export async function apiFetch(path: string, init: RequestInit = {}) {
   const url = montarUrlApi(path)
   try {
-    return await fetch(url, init)
+    return await fetch(url, {
+      ...init,
+      credentials: init.credentials ?? "include",
+    })
   } catch (error) {
     if (error instanceof Error && error.name === "AbortError") {
       throw error

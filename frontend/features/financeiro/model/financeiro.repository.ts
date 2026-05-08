@@ -49,10 +49,8 @@ export async function obterStatusLoteFinanceiro(
   )
 }
 
-export async function obterEvolucaoSalarialPersistida(
-  userId: number,
-): Promise<FinanceiroEvolucaoSalarialResponse> {
-  const response = await apiFetch(`/api/financeiro/evolucao-salarial?user_id=${userId}`, {
+export async function obterEvolucaoSalarialPersistida(): Promise<FinanceiroEvolucaoSalarialResponse> {
+  const response = await apiFetch("/api/financeiro/evolucao-salarial", {
     method: "GET",
   })
 
@@ -62,10 +60,8 @@ export async function obterEvolucaoSalarialPersistida(
   )
 }
 
-export async function obterContrachequesSalvos(
-  userId: number,
-): Promise<FinanceiroContrachequeResumo[]> {
-  const response = await apiFetch(`/api/financeiro/contracheques?user_id=${userId}`, {
+export async function obterContrachequesSalvos(): Promise<FinanceiroContrachequeResumo[]> {
+  const response = await apiFetch("/api/financeiro/contracheques", {
     method: "GET",
   })
 

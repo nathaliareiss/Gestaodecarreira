@@ -15,9 +15,7 @@ import { type UsuarioConta } from "@/features/usuario/model/usuario.model"
 import { removerUsuarioMaisRecente } from "@/features/usuario/model/usuario.repository"
 import {
   removerSessaoDemo,
-  obterTokenAutenticacao,
-  removerTokenAutenticacao,
-  removerUsuarioAutenticadoCache,
+  removerUsuarioAutenticadoId,
 } from "@/shared/auth/session"
 
 function formatarDataCurta(valor: string | null) {
@@ -105,17 +103,11 @@ export function UsuarioPageController({
   ] : []
 
   async function recarregarUsuario() {
-    const token = obterTokenAutenticacao()
-    if (!token) {
-      router.push("/login")
-      return
-    }
-
     setCarregando(true)
     setErro(null)
 
     try {
-      const dados = await carregarUsuarioAutenticado(token)
+      const dados = await carregarUsuarioAutenticado()
       setUsuario(dados)
     } catch (error) {
       setErro(error instanceof Error ? error.message : "Falha inesperada ao carregar.")
@@ -146,16 +138,12 @@ export function UsuarioPageController({
       if (modoDemo) {
         removerSessaoDemo()
       } else {
-        const token = obterTokenAutenticacao()
-        if (token) {
-          await encerrarSessao(token)
-        }
+        await encerrarSessao()
       }
     } catch {
       // Se a chamada remota falhar, a sessao local ainda pode ser encerrada.
     } finally {
-      removerTokenAutenticacao()
-      removerUsuarioAutenticadoCache()
+      removerUsuarioAutenticadoId()
       setSaindo(false)
       router.push("/login")
     }
@@ -172,8 +160,7 @@ export function UsuarioPageController({
     } catch {
       // Se a limpeza local falhar, seguimos para a tela de cadastro.
     } finally {
-      removerTokenAutenticacao()
-      removerUsuarioAutenticadoCache()
+      removerUsuarioAutenticadoId()
       setIndoParaCadastro(false)
       router.push("/")
     }

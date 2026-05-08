@@ -185,7 +185,6 @@ export function useHistoricoFuncionalController({
 
       try {
         const payload = new FormData()
-        payload.append("usuario_id", String(usuarioId))
         payload.append("arquivo", arquivo)
         payload.append("data_nascimento", dataNascimento)
         payload.append("anos_clt_averbados", String(Math.min(Math.max(anosCltAverbados, 0), 10)))
