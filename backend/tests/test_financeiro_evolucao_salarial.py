@@ -85,6 +85,9 @@ def _criar_lote_com_paychecks(registros: list[dict[str, object]]) -> int:
         db.flush()
 
         for registro in registros:
+            itens = list(registro.get("itens", [])) + list(
+                registro.get("itens_desconto", _descontos_padrao())
+            )
             paycheck = Paycheck(
                 batch_id=lote.id,
                 user_id=7,
@@ -103,7 +106,7 @@ def _criar_lote_com_paychecks(registros: list[dict[str, object]]) -> int:
             db.add(paycheck)
             db.flush()
 
-            for item in registro["itens"]:  # type: ignore[index]
+            for item in itens:
                 db.add(
                     PaycheckItem(
                         paycheck_id=paycheck.id,
