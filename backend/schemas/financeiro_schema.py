@@ -44,18 +44,18 @@ class EvolucaoSalarialSerieItemResponse(BaseModel):
 
 class EvolucaoSalarialResponse(BaseModel):
     batch_id: int = Field(gt=0)
-    ano_inicial: int = Field(gt=0)
-    ano_final: int = Field(gt=0)
-    salario_base_inicial_referencia: float
-    salario_base_final_referencia: float
-    bruto_total_inicial_referencia: float
-    bruto_total_final_referencia: float
-    liquido_inicial_referencia: float
-    liquido_final_referencia: float
-    descontos_inicial_referencia: float
-    descontos_final_referencia: float
-    vantagens_adicionais_inicial_referencia: float
-    vantagens_adicionais_final_referencia: float
-    variacao_acumulada_salario_base_percentual: float
+    ano_inicial: int | None = None
+    ano_final: int | None = None
+    salario_base_inicial_referencia: float | None = None
+    salario_base_final_referencia: float | None = None
+    bruto_total_inicial_referencia: float | None = None
+    bruto_total_final_referencia: float | None = None
+    liquido_inicial_referencia: float | None = None
+    liquido_final_referencia: float | None = None
+    descontos_inicial_referencia: float | None = None
+    descontos_final_referencia: float | None = None
+    vantagens_adicionais_inicial_referencia: float | None = None
+    vantagens_adicionais_final_referencia: float | None = None
+    variacao_acumulada_salario_base_percentual: float | None = None
     anos_sem_crescimento_relevante: list[int] = Field(default_factory=list)
-    series: list[EvolucaoSalarialSerieItemResponse] = Field(min_length=1)
+    series: list[EvolucaoSalarialSerieItemResponse] = Field(default_factory=list)

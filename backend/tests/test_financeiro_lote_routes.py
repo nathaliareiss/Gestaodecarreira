@@ -95,7 +95,7 @@ def test_upload_lote_financeiro_processa_diretamente_quando_fila_ausente(monkeyp
         assert lote.failed_files == 0
 
 
-def test_evolucao_salarial_por_lote_sem_contracheques_retorna_404() -> None:
+def test_evolucao_salarial_por_lote_sem_contracheques_retorna_resposta_vazia() -> None:
     with SessionLocal() as db:
         lote = PayrollBatch(
             user_id=7,
@@ -110,9 +110,24 @@ def test_evolucao_salarial_por_lote_sem_contracheques_retorna_404() -> None:
     client = criar_client()
     resposta = client.get(f"/financeiro/batch/{lote.id}/evolucao-salarial")
 
-    assert resposta.status_code == 404
+    assert resposta.status_code == 200
     assert resposta.json() == {
-        "detail": "Nenhum contracheque processado foi encontrado para este lote."
+        "batch_id": lote.id,
+        "ano_inicial": None,
+        "ano_final": None,
+        "salario_base_inicial_referencia": None,
+        "salario_base_final_referencia": None,
+        "bruto_total_inicial_referencia": None,
+        "bruto_total_final_referencia": None,
+        "liquido_inicial_referencia": None,
+        "liquido_final_referencia": None,
+        "descontos_inicial_referencia": None,
+        "descontos_final_referencia": None,
+        "vantagens_adicionais_inicial_referencia": None,
+        "vantagens_adicionais_final_referencia": None,
+        "variacao_acumulada_salario_base_percentual": None,
+        "anos_sem_crescimento_relevante": [],
+        "series": [],
     }
 
 

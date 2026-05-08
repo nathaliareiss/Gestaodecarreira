@@ -228,7 +228,24 @@ calcular_variacao_percentual_decimal = _variacao_percentual_decimal
 def calcular_evolucao_salarial_lote(db: Session, batch_id: int) -> dict[str, object]:
     paychecks = obter_paychecks_por_batch_id(db, batch_id)
     if not paychecks:
-        raise ValueError("Nenhum contracheque processado foi encontrado para este lote.")
+        return {
+            "batch_id": batch_id,
+            "ano_inicial": None,
+            "ano_final": None,
+            "salario_base_inicial_referencia": None,
+            "salario_base_final_referencia": None,
+            "bruto_total_inicial_referencia": None,
+            "bruto_total_final_referencia": None,
+            "liquido_inicial_referencia": None,
+            "liquido_final_referencia": None,
+            "descontos_inicial_referencia": None,
+            "descontos_final_referencia": None,
+            "vantagens_adicionais_inicial_referencia": None,
+            "vantagens_adicionais_final_referencia": None,
+            "variacao_acumulada_salario_base_percentual": None,
+            "anos_sem_crescimento_relevante": [],
+            "series": [],
+        }
 
     agrupados_por_ano: dict[int, list[Paycheck]] = defaultdict(list)
     for paycheck in paychecks:

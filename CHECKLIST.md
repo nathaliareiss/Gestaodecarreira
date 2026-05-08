@@ -61,3 +61,4 @@
 - A ideia é manter o histórico curto, objetivo e fácil de retomar depois.
 
 - [x] Refatorada a análise financeira para separar salário-base, vantagens e descontos com composição anual por categoria.
+- [x] A rota de evolução salarial passou a responder estado vazio sem 404 quando o lote não tiver contracheques processados.

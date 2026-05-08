@@ -44,7 +44,11 @@ const formatadorMoeda = new Intl.NumberFormat("pt-BR", {
   maximumFractionDigits: 2,
 })
 
-function formatarMoeda(valor: number) {
+function formatarMoeda(valor: number | null) {
+  if (valor === null || !Number.isFinite(valor)) {
+    return "-"
+  }
+
   return formatadorMoeda.format(valor)
 }
 
@@ -92,6 +96,15 @@ function resumoProgressoLote(status: FinanceiroBatchStatusResponse | null, envia
 }
 
 function resumoEvolucaoSalarial(evolucao: FinanceiroEvolucaoSalarialResponse) {
+  if (
+    evolucao.ano_inicial === null ||
+    evolucao.ano_final === null ||
+    evolucao.salario_base_inicial_referencia === null ||
+    evolucao.salario_base_final_referencia === null
+  ) {
+    return "No valid pay stubs were processed in this batch, so there is no salary evolution to show."
+  }
+
   return `No período analisado, seu salário-base passou de ${formatarMoeda(
     evolucao.salario_base_inicial_referencia,
   )} para ${formatarMoeda(evolucao.salario_base_final_referencia)}. A remuneração bruta total também variou por causa de adicionais, auxílios e outras vantagens.`
@@ -306,6 +319,7 @@ export function FinanceiroView() {
   const totalSelecionadoArquivos = arquivosSelecionados.length
   const barraIndeterminada = enviando && batchStatus === null
   const serieEvolucao = evolucaoSalarial?.series ?? []
+  const evolucaoSemDados = Boolean(evolucaoSalarial && evolucaoSalarial.series.length === 0)
   const maiorValorSerie = serieEvolucao.reduce(
     (maior, item) =>
       Math.max(maior, item.salario_base_referencia_anual),
@@ -501,9 +515,15 @@ export function FinanceiroView() {
               </p>
             ) : null}
 
+            {evolucaoSemDados ? (
+              <p className="helper">
+                No salary evolution data was generated for this batch, so there is no chart to display.
+              </p>
+            ) : null}
+
             {erroEvolucao ? <p className="error-box">{erroEvolucao}</p> : null}
 
-            {evolucaoSalarial ? (
+            {evolucaoSalarial && evolucaoSalarial.series.length > 0 ? (
               <>
                 <div className="metric-strip metric-strip--hero metric-strip--salary">
                   <div className="metric-line">

@@ -30,19 +30,19 @@ export type FinanceiroEvolucaoSalarialSerieItem = {
 
 export type FinanceiroEvolucaoSalarialResponse = {
   batch_id: number
-  ano_inicial: number
-  ano_final: number
-  salario_base_inicial_referencia: number
-  salario_base_final_referencia: number
-  bruto_total_inicial_referencia: number
-  bruto_total_final_referencia: number
-  liquido_inicial_referencia: number
-  liquido_final_referencia: number
-  descontos_inicial_referencia: number
-  descontos_final_referencia: number
-  vantagens_adicionais_inicial_referencia: number
-  vantagens_adicionais_final_referencia: number
-  variacao_acumulada_salario_base_percentual: number
+  ano_inicial: number | null
+  ano_final: number | null
+  salario_base_inicial_referencia: number | null
+  salario_base_final_referencia: number | null
+  bruto_total_inicial_referencia: number | null
+  bruto_total_final_referencia: number | null
+  liquido_inicial_referencia: number | null
+  liquido_final_referencia: number | null
+  descontos_inicial_referencia: number | null
+  descontos_final_referencia: number | null
+  vantagens_adicionais_inicial_referencia: number | null
+  vantagens_adicionais_final_referencia: number | null
+  variacao_acumulada_salario_base_percentual: number | null
   anos_sem_crescimento_relevante: number[]
   series: FinanceiroEvolucaoSalarialSerieItem[]
 }
