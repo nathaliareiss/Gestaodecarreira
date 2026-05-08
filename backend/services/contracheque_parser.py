@@ -143,7 +143,7 @@ PADROES_RUBRICAS = [
         [
             rf"AJ\.?\s*CUSTO\s*/\s*ALIMENT.*?{PADRAO_VALOR}",
             rf"AJUDA\s+DE\s+CUSTO.*?ALIMENT.*?{PADRAO_VALOR}",
-            rf"ALIMENTA(?:CAO|ÇÃO).*?{PADRAO_VALOR}",
+            rf"ALIMENTACAO.*?{PADRAO_VALOR}",
         ],
     ),
     (

@@ -92,19 +92,58 @@ function resumoProgressoLote(status: FinanceiroBatchStatusResponse | null, envia
 }
 
 function resumoEvolucaoSalarial(evolucao: FinanceiroEvolucaoSalarialResponse) {
-  const anosSemCrescimento =
-    evolucao.anos_sem_crescimento_relevante.length > 0
-      ? `Years without relevant growth: ${evolucao.anos_sem_crescimento_relevante.join(", ")}.`
-      : "There were no years without relevant growth."
+  return `No período analisado, seu salário-base passou de ${formatarMoeda(
+    evolucao.salario_base_inicial_referencia,
+  )} para ${formatarMoeda(evolucao.salario_base_final_referencia)}. A remuneração bruta total também variou por causa de adicionais, auxílios e outras vantagens.`
+}
 
-  return (
-    `Analysis period: from ${evolucao.ano_inicial} to ${evolucao.ano_final}. ` +
-    `Starting gross reference salary: ${formatarMoeda(evolucao.bruto_inicial_referencia)}. ` +
-    `Ending gross reference salary: ${formatarMoeda(evolucao.bruto_final_referencia)}. ` +
-    `Accumulated evolution: ${formatarVariacaoPercentual(evolucao.variacao_acumulada_bruto_percentual)}. ` +
-    `Estimated average annual rate (CAGR): ${formatarVariacaoPercentual(evolucao.cagr_bruto_percentual)}. ` +
-    anosSemCrescimento
-  )
+type ComposicaoLegendaItem = {
+  key: string
+  label: string
+  color: string
+  keys?: string[]
+}
+
+const COMPOSICAO_VANTAGENS: ComposicaoLegendaItem[] = [
+  { key: "salario_base", label: "Salary base", color: "#14b8a6" },
+  { key: "ade", label: "ADE", color: "#0f766e" },
+  { key: "adicional_noturno", label: "Night bonus", color: "#06b6d4" },
+  { key: "alimentacao", label: "Meals", color: "#3b82f6" },
+  { key: "abono_vestimenta", label: "Wardrobe allowance", color: "#8b5cf6" },
+  {
+    key: "outros_vantagens",
+    label: "Other benefits",
+    color: "#64748b",
+    keys: ["outros_vantagens", "decimo_terceiro", "ferias", "retroativo"],
+  },
+]
+
+const COMPOSICAO_DESCONTOS: ComposicaoLegendaItem[] = [
+  { key: "previdencia", label: "Pension", color: "#f97316" },
+  { key: "irrf", label: "IRRF", color: "#ef4444" },
+  { key: "emprestimo", label: "Loans", color: "#f59e0b" },
+  { key: "saude", label: "Health", color: "#14b8a6" },
+  {
+    key: "outros_descontos",
+    label: "Other discounts",
+    color: "#64748b",
+    keys: ["outros_descontos", "associacao"],
+  },
+]
+
+function obterValorComposicao(
+  composicao: Record<string, number>,
+  item: ComposicaoLegendaItem,
+): number {
+  const chaves = item.keys ?? [item.key]
+  return chaves.reduce((total, chave) => total + (composicao[chave] ?? 0), 0)
+}
+
+function totalComposicao(
+  composicao: Record<string, number>,
+  itens: ComposicaoLegendaItem[],
+): number {
+  return itens.reduce((total, item) => total + obterValorComposicao(composicao, item), 0)
 }
 
 export function FinanceiroView() {
@@ -264,11 +303,7 @@ export function FinanceiroView() {
   const serieEvolucao = evolucaoSalarial?.series ?? []
   const maiorValorSerie = serieEvolucao.reduce(
     (maior, item) =>
-      Math.max(maior, item.bruto_referencia_anual, item.liquido_referencia_anual),
-    0,
-  )
-  const totalContrachequesEvolucao = serieEvolucao.reduce(
-    (total, item) => total + item.quantidade_contracheques,
+      Math.max(maior, item.salario_base_referencia_anual),
     0,
   )
   const carregandoEvolucao = Boolean(
@@ -439,20 +474,15 @@ export function FinanceiroView() {
           <section className="salary-panel">
             <div className="analysis-header__title analysis-header__title--compact">
               <p className="eyebrow eyebrow--title">Annual Salary Evolution</p>
-              <h3>{"Gross and net by year"}</h3>
+              <h3>{"Salary base and remuneration composition"}</h3>
               <p className="analysis-header__subtitle">
                 {
-                  "The chart uses the annual median of processed pay stubs to reduce distortions from 13th salary, vacation pay, retroactive adjustments, and other atypical months."
+                  "The analysis now separates salary base, additional benefits, and deductions to keep the contracheque composition clear."
                 }
               </p>
             </div>
 
-            <div className="salary-legend" aria-label="Salary evolution legend">
-              <span className="salary-legend__item salary-legend__item--gross">Gross</span>
-              <span className="salary-legend__item salary-legend__item--liquid">Net</span>
-            </div>
-
-            {carregandoEvolucao ? <p className="helper">Calculating annual evolution...</p> : null}
+            {carregandoEvolucao ? <p className="helper">Calculating annual reference values...</p> : null}
 
             {erroEvolucao ? <p className="error-box">{erroEvolucao}</p> : null}
 
@@ -460,96 +490,169 @@ export function FinanceiroView() {
               <>
                 <div className="metric-strip metric-strip--hero metric-strip--salary">
                   <div className="metric-line">
-                    <span>Starting year</span>
-                    <strong>{evolucaoSalarial.ano_inicial}</strong>
+                    <span>Analysis period</span>
+                    <strong>{`${evolucaoSalarial.ano_inicial} - ${evolucaoSalarial.ano_final}`}</strong>
                   </div>
                   <div className="metric-line">
-                    <span>Starting gross</span>
-                    <strong>{formatarMoeda(evolucaoSalarial.bruto_inicial_referencia)}</strong>
+                    <span>Starting salary base</span>
+                    <strong>{formatarMoeda(evolucaoSalarial.salario_base_inicial_referencia)}</strong>
                   </div>
                   <div className="metric-line">
-                    <span>Ending year</span>
-                    <strong>{evolucaoSalarial.ano_final}</strong>
+                    <span>Ending salary base</span>
+                    <strong>{formatarMoeda(evolucaoSalarial.salario_base_final_referencia)}</strong>
                   </div>
                   <div className="metric-line">
-                    <span>Ending gross</span>
-                    <strong>{formatarMoeda(evolucaoSalarial.bruto_final_referencia)}</strong>
+                    <span>Salary base evolution</span>
+                    <strong>{formatarVariacaoPercentual(evolucaoSalarial.variacao_acumulada_salario_base_percentual)}</strong>
                   </div>
                 </div>
 
-                <div className="metric-strip metric-strip--salary">
-                  <div className="metric-line">
-                    <span>Starting net</span>
-                    <strong>{formatarMoeda(evolucaoSalarial.liquido_inicial_referencia)}</strong>
-                  </div>
-                  <div className="metric-line">
-                    <span>Ending net</span>
-                    <strong>{formatarMoeda(evolucaoSalarial.liquido_final_referencia)}</strong>
-                  </div>
-                  <div className="metric-line">
-                    <span>Accumulated evolution</span>
-                    <strong>{formatarVariacaoPercentual(evolucaoSalarial.variacao_acumulada_bruto_percentual)}</strong>
-                  </div>
-                  <div className="metric-line">
-                    <span>Estimated CAGR</span>
-                    <strong>{formatarVariacaoPercentual(evolucaoSalarial.cagr_bruto_percentual)}</strong>
-                  </div>
-                </div>
-
-                <div className="salary-chart" aria-label="Annual salary evolution chart">
+                <div className="salary-base-chart" aria-label="Annual salary base chart">
                   {serieEvolucao.map((item) => {
                     const altura =
                       maiorValorSerie > 0
-                        ? Math.max(14, (item.bruto_referencia_anual / maiorValorSerie) * 100)
-                        : 0
-                    const alturaLiquida =
-                      maiorValorSerie > 0
-                        ? Math.max(14, (item.liquido_referencia_anual / maiorValorSerie) * 100)
+                        ? Math.max(12, (item.salario_base_referencia_anual / maiorValorSerie) * 100)
                         : 0
 
                     return (
-                      <div className="salary-chart__year" key={item.ano}>
-                        <div className="salary-chart__year-bars">
-                          <div className="salary-chart__bar-block">
-                            <div className="salary-chart__bar-track salary-chart__bar-track--gross">
-                              <div
-                                className="salary-chart__bar-fill salary-chart__bar-fill--gross"
-                                style={{ height: `${altura}%` }}
-                              />
-                            </div>
-                            <span>Gross</span>
-                          </div>
-                          <div className="salary-chart__bar-block">
-                            <div className="salary-chart__bar-track salary-chart__bar-track--liquid">
-                              <div
-                                className="salary-chart__bar-fill salary-chart__bar-fill--liquid"
-                                style={{ height: `${alturaLiquida}%` }}
-                              />
-                            </div>
-                            <span>Net</span>
-                          </div>
+                      <div className="salary-base-chart__year" key={item.ano}>
+                        <div className="salary-base-chart__bar-track">
+                          <div
+                            className="salary-base-chart__bar-fill"
+                            style={{ height: `${altura}%` }}
+                          />
                         </div>
                         <strong>{item.ano}</strong>
-                        <span>{formatarMoeda(item.bruto_referencia_anual)}</span>
-                        <small>{formatarMoeda(item.liquido_referencia_anual)}</small>
-                        <small>{formatarMoeda(item.descontos_referencia_anual)} in deductions</small>
-                        <small>{item.quantidade_contracheques} PDFs</small>
-                        <p className="salary-chart__variation">
-                          {formatarVariacaoPercentual(item.variacao_percentual_bruto_ano_a_ano)}
-                          {item.crescimento_relevante ? "" : " no relevant growth"}
-                        </p>
+                        <span>{formatarMoeda(item.salario_base_referencia_anual)}</span>
+                        <small>{formatarVariacaoPercentual(item.variacao_percentual_salario_base_ano_a_ano)}</small>
                       </div>
                     )
                   })}
                 </div>
 
-                <p className="salary-summary">
-                  {resumoEvolucaoSalarial(evolucaoSalarial)}
-                </p>
+                <div className="composition-grid">
+                  <section className="composition-panel">
+                    <div className="analysis-header__title analysis-header__title--compact">
+                      <p className="eyebrow eyebrow--title">Remuneration composition</p>
+                      <h3>{"Median reference by year"}</h3>
+                      <p className="analysis-header__subtitle">
+                        {
+                          "Stacked bars show the salary base and the main additional benefits tracked in the contracheque."
+                        }
+                      </p>
+                    </div>
 
-                <p className="helper">
-                  {`The chart covers ${totalContrachequesEvolucao} processed PDFs.`}
-                </p>
+                    <div className="salary-legend salary-legend--composition" aria-label="Remuneration composition legend">
+                      {COMPOSICAO_VANTAGENS.map((item) => (
+                        <span
+                          className="salary-legend__item"
+                          key={item.key}
+                          style={{ borderColor: item.color, boxShadow: `inset 0 0 0 1px ${item.color}33` }}
+                        >
+                          <span
+                            className="salary-legend__swatch"
+                            style={{ background: item.color }}
+                          />
+                          {item.label}
+                        </span>
+                      ))}
+                    </div>
+
+                    <div className="composition-chart" aria-label="Remuneration composition chart">
+                      {serieEvolucao.map((item) => {
+                        const composicao = item.composicao_vantagens_referencia_anual
+                        const total = totalComposicao(composicao, COMPOSICAO_VANTAGENS)
+
+                        return (
+                          <div className="composition-chart__year" key={item.ano}>
+                            <div className="composition-chart__stack">
+                              {COMPOSICAO_VANTAGENS.map((segmento) => {
+                                const valor = obterValorComposicao(composicao, segmento)
+                                const altura = total > 0 ? Math.max(4, (valor / total) * 100) : 0
+
+                                return (
+                                  <div
+                                    className="composition-chart__segment"
+                                    key={segmento.key}
+                                    style={{ height: `${altura}%`, background: segmento.color }}
+                                    title={`${segmento.label}: ${formatarMoeda(valor)}`}
+                                  />
+                                )
+                              })}
+                            </div>
+                            <strong>{item.ano}</strong>
+                            <span>{formatarMoeda(total)}</span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </section>
+
+                  <section className="composition-panel">
+                    <div className="analysis-header__title analysis-header__title--compact">
+                      <p className="eyebrow eyebrow--title">Discounts</p>
+                      <h3>{"Median reference by year"}</h3>
+                      <p className="analysis-header__subtitle">
+                        {
+                          "Here we keep the discount block separate so pension, tax, loans, and health deductions stay easy to read."
+                        }
+                      </p>
+                    </div>
+
+                    <div className="salary-legend salary-legend--composition" aria-label="Discount legend">
+                      {COMPOSICAO_DESCONTOS.map((item) => (
+                        <span
+                          className="salary-legend__item"
+                          key={item.key}
+                          style={{ borderColor: item.color, boxShadow: `inset 0 0 0 1px ${item.color}33` }}
+                        >
+                          <span
+                            className="salary-legend__swatch"
+                            style={{ background: item.color }}
+                          />
+                          {item.label}
+                        </span>
+                      ))}
+                    </div>
+
+                    <div className="composition-chart" aria-label="Discount composition chart">
+                      {serieEvolucao.map((item) => {
+                        const composicao = item.composicao_descontos_referencia_anual
+                        const total = totalComposicao(composicao, COMPOSICAO_DESCONTOS)
+
+                        return (
+                          <div className="composition-chart__year" key={item.ano}>
+                            <div className="composition-chart__stack">
+                              {COMPOSICAO_DESCONTOS.map((segmento) => {
+                                const valor = obterValorComposicao(composicao, segmento)
+                                const altura = total > 0 ? Math.max(4, (valor / total) * 100) : 0
+
+                                return (
+                                  <div
+                                    className="composition-chart__segment"
+                                    key={segmento.key}
+                                    style={{ height: `${altura}%`, background: segmento.color }}
+                                    title={`${segmento.label}: ${formatarMoeda(valor)}`}
+                                  />
+                                )
+                              })}
+                            </div>
+                            <strong>{item.ano}</strong>
+                            <span>{formatarMoeda(total)}</span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </section>
+                </div>
+
+                {evolucaoSalarial.anos_sem_crescimento_relevante.length > 0 ? (
+                  <p className="helper">
+                    {`Years without relevant growth: ${evolucaoSalarial.anos_sem_crescimento_relevante.join(", ")}.`}
+                  </p>
+                ) : null}
+
+                <p className="salary-summary">{resumoEvolucaoSalarial(evolucaoSalarial)}</p>
               </>
             ) : null}
           </section>

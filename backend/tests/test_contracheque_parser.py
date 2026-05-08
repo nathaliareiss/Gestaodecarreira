@@ -2,7 +2,10 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from backend.services.contracheque_parser import parse_contracheque
+from backend.services.contracheque_parser import (
+    extrair_rubricas_contracheque,
+    parse_contracheque,
+)
 
 
 def test_parse_contracheque_lido_do_layout_real(monkeypatch) -> None:
@@ -67,3 +70,45 @@ def test_parse_contracheque_preenche_campos_ausentes_com_zero(monkeypatch) -> No
     assert dados["adicional_noturno"] == Decimal("0.00")
     assert dados["irrf"] == Decimal("0.00")
     assert dados["previdencia"] == Decimal("0.00")
+
+
+def test_extrair_rubricas_contracheque_classifica_rubricas_por_categoria(monkeypatch) -> None:
+    from backend.services import contracheque_parser as parser
+
+    texto_simulado = """
+    DEMONSTRATIVO DE PAGAMENTO - JANEIRO/2025
+    Vantagens
+    1 Normal Vencimento Basico 0 - 5.910,41
+    1 Normal Adicional Desempenho 10 - 591,04
+    1 Normal Adic Not Divisor -dj 28 - 182,04
+    1 Normal Aj.custo/aliment 0 - 250,00
+    1 Normal Abono Aqu.vestimenta 0 - 75,00
+    1 Normal 13 Salario 0 - 500,00
+    Total: R$ 7.508,49
+    Descontos
+    1 Normal Contrib.prev.art. 28 0 - 842,08
+    1 Normal Imp. Renda Ret.fonte 0 - 710,39
+    1 Normal B.pan - Emprest. i 0 4 de 120 360,19
+    Total: R$ 1.912,66
+    Valor a receber R$ 6.903,88
+    """
+
+    monkeypatch.setattr(parser, "_extrair_texto_pdf", lambda _pdf_path: texto_simulado)
+
+    rubricas = extrair_rubricas_contracheque("qualquer.pdf")
+
+    categorias = {item["descricao_original"]: item["categoria_normalizada"] for item in rubricas}
+    tipos = {item["descricao_original"]: item["tipo"] for item in rubricas}
+
+    assert categorias["Vencimento Basico"] == "salario_base"
+    assert categorias["Adicional Desempenho"] == "ade"
+    assert categorias["Adic Not Divisor -dj"] == "adicional_noturno"
+    assert categorias["Aj.custo/aliment"] == "alimentacao"
+    assert categorias["Abono Aqu.vestimenta"] == "abono_vestimenta"
+    assert categorias["13 Salario"] == "decimo_terceiro"
+    assert categorias["Contrib.prev.art. 28"] == "previdencia"
+    assert categorias["Imp. Renda Ret.fonte"] == "irrf"
+    assert categorias["B.pan - Emprest. i 0 4 de"] == "emprestimo"
+
+    assert tipos["Vencimento Basico"] == "vantagem"
+    assert tipos["Contrib.prev.art. 28"] == "desconto"

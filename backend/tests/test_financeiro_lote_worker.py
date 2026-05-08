@@ -62,6 +62,8 @@ def test_processamento_assincrono_persiste_paycheck_e_itens() -> None:
         assert len(itens) >= 4
         assert any(item.tipo == "vantagem" for item in itens)
         assert any(item.tipo == "desconto" for item in itens)
+        assert any(item.categoria_normalizada == "salario_base" for item in itens)
+        assert any(item.descricao_original for item in itens)
 
 
 def test_duplicidade_de_competencia_marca_falha_sem_parar_lote() -> None:

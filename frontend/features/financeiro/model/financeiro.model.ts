@@ -16,12 +16,15 @@ export type FinanceiroBatchStatusResponse = {
 
 export type FinanceiroEvolucaoSalarialSerieItem = {
   ano: number
-  bruto_referencia_anual: number
+  salario_base_referencia_anual: number
+  bruto_total_referencia_anual: number
   liquido_referencia_anual: number
   descontos_referencia_anual: number
+  vantagens_adicionais_referencia_anual: number
+  composicao_vantagens_referencia_anual: Record<string, number>
+  composicao_descontos_referencia_anual: Record<string, number>
   quantidade_contracheques: number
-  variacao_percentual_bruto_ano_a_ano: number | null
-  variacao_percentual_liquido_ano_a_ano: number | null
+  variacao_percentual_salario_base_ano_a_ano: number | null
   crescimento_relevante: boolean
 }
 
@@ -29,16 +32,17 @@ export type FinanceiroEvolucaoSalarialResponse = {
   batch_id: number
   ano_inicial: number
   ano_final: number
-  bruto_inicial_referencia: number
-  bruto_final_referencia: number
+  salario_base_inicial_referencia: number
+  salario_base_final_referencia: number
+  bruto_total_inicial_referencia: number
+  bruto_total_final_referencia: number
   liquido_inicial_referencia: number
   liquido_final_referencia: number
   descontos_inicial_referencia: number
   descontos_final_referencia: number
-  variacao_acumulada_bruto_percentual: number
-  variacao_acumulada_liquido_percentual: number
-  cagr_bruto_percentual: number
-  cagr_liquido_percentual: number
+  vantagens_adicionais_inicial_referencia: number
+  vantagens_adicionais_final_referencia: number
+  variacao_acumulada_salario_base_percentual: number
   anos_sem_crescimento_relevante: number[]
   series: FinanceiroEvolucaoSalarialSerieItem[]
 }

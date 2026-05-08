@@ -1300,11 +1300,23 @@ html[data-theme="light"] .upload-shell__collapsed--compact {
   background: rgba(96, 165, 250, 0.08);
 }
 
+.salary-legend--composition {
+  gap: 0.5rem;
+}
+
+.salary-legend__swatch {
+  width: 0.72rem;
+  height: 0.72rem;
+  border-radius: 999px;
+  display: inline-block;
+  flex: 0 0 auto;
+}
+
 .metric-strip--salary {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
-.salary-chart {
+.salary-base-chart {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
   gap: 0.9rem;
@@ -1312,26 +1324,14 @@ html[data-theme="light"] .upload-shell__collapsed--compact {
   margin-top: 0.25rem;
 }
 
-.salary-chart__year {
+.salary-base-chart__year {
   display: grid;
   gap: 0.45rem;
   text-align: center;
   align-content: start;
 }
 
-.salary-chart__year-bars {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.55rem;
-  align-items: end;
-}
-
-.salary-chart__bar-block {
-  display: grid;
-  gap: 0.35rem;
-}
-
-.salary-chart__bar-track {
+.salary-base-chart__bar-track {
   min-height: 13rem;
   display: flex;
   align-items: flex-end;
@@ -1342,26 +1342,20 @@ html[data-theme="light"] .upload-shell__collapsed--compact {
   overflow: hidden;
 }
 
-.salary-chart__bar-track--gross {
+.salary-base-chart__bar-track {
   background:
     linear-gradient(180deg, rgba(8, 16, 30, 0.22), rgba(8, 16, 30, 0.5)),
     radial-gradient(circle at top, rgba(94, 234, 212, 0.08), transparent 65%);
 }
 
-.salary-chart__bar-track--liquid {
-  background:
-    linear-gradient(180deg, rgba(8, 16, 30, 0.22), rgba(8, 16, 30, 0.5)),
-    radial-gradient(circle at top, rgba(96, 165, 250, 0.08), transparent 65%);
-}
-
-html[data-theme="light"] .salary-chart__bar-track {
+html[data-theme="light"] .salary-base-chart__bar-track {
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.52)),
     radial-gradient(circle at top, rgba(15, 118, 110, 0.08), transparent 65%);
   border-color: rgba(15, 23, 42, 0.08);
 }
 
-.salary-chart__bar-fill {
+.salary-base-chart__bar-fill {
   width: 100%;
   min-height: 0.9rem;
   border-radius: 18px 18px 10px 10px;
@@ -1369,40 +1363,90 @@ html[data-theme="light"] .salary-chart__bar-track {
   box-shadow: 0 18px 30px rgba(94, 234, 212, 0.18);
 }
 
-.salary-chart__bar-fill--gross {
-  background: linear-gradient(180deg, var(--accent), #7dd3fc);
-}
-
-.salary-chart__bar-fill--liquid {
-  background: linear-gradient(180deg, #60a5fa, #818cf8);
-}
-
-.salary-chart__year strong {
+.salary-base-chart__year strong {
   font-size: 1rem;
 }
 
-.salary-chart__year span,
-.salary-chart__year small,
-.salary-chart__variation,
+.salary-base-chart__year span,
+.salary-base-chart__year small,
 .salary-summary {
   color: var(--muted);
 }
 
-.salary-chart__year span,
-.salary-chart__year small,
-.salary-chart__variation {
+.salary-base-chart__year span,
+.salary-base-chart__year small {
   font-size: 0.84rem;
-}
-
-.salary-chart__variation {
-  margin: 0;
-  line-height: 1.45;
 }
 
 .salary-summary {
   margin: 0;
   line-height: 1.7;
   font-size: 0.95rem;
+}
+
+.composition-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.composition-panel {
+  display: grid;
+  gap: 0.9rem;
+  padding: 1rem;
+  border-radius: 20px;
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  background: rgba(8, 16, 30, 0.26);
+}
+
+.composition-chart {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+  gap: 0.75rem;
+  align-items: end;
+}
+
+.composition-chart__year {
+  display: grid;
+  gap: 0.45rem;
+  text-align: center;
+}
+
+.composition-chart__stack {
+  min-height: 12.5rem;
+  display: flex;
+  flex-direction: column-reverse;
+  justify-content: flex-start;
+  gap: 0.2rem;
+  padding: 0.55rem;
+  border-radius: 20px;
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  background:
+    linear-gradient(180deg, rgba(8, 16, 30, 0.2), rgba(8, 16, 30, 0.45)),
+    radial-gradient(circle at top, rgba(148, 163, 184, 0.08), transparent 65%);
+  overflow: hidden;
+}
+
+.composition-chart__segment {
+  width: 100%;
+  min-height: 0.75rem;
+  border-radius: 12px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.composition-chart__year strong {
+  font-size: 1rem;
+}
+
+.composition-chart__year span {
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+@media (max-width: 900px) {
+  .composition-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .upload-actions {
