@@ -88,7 +88,7 @@ export function UsuarioAccessGate() {
           modoDemo: false,
         })
       } catch {
-        router.replace("/")
+        router.replace("/login")
       }
     }
 

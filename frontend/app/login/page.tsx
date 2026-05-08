@@ -1,7 +1,7 @@
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 
-import { AUTH_USER_COOKIE_NAME, DEMO_MODE_COOKIE_NAME } from "@/shared/auth/session"
+import { AUTH_TOKEN_COOKIE_NAME, DEMO_MODE_COOKIE_NAME } from "@/shared/auth/session"
 import { LoginController } from "@/features/auth/controller/login-controller"
 
 export const dynamic = "force-dynamic"
@@ -13,12 +13,7 @@ async function usuarioJaAutenticado(): Promise<boolean> {
     return true
   }
 
-  const usuarioId = cookieStore.get(AUTH_USER_COOKIE_NAME)?.value
-  if (!usuarioId) {
-    return false
-  }
-
-  return Number.isFinite(Number(usuarioId)) && Number(usuarioId) > 0
+  return Boolean(cookieStore.get(AUTH_TOKEN_COOKIE_NAME)?.value)
 }
 
 export default async function LoginPage() {

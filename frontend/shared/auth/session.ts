@@ -1,4 +1,5 @@
 export const AUTH_USER_COOKIE_NAME = "gc_auth_user"
+export const AUTH_TOKEN_COOKIE_NAME = "gc_auth_token"
 export const DEMO_MODE_COOKIE_NAME = "gc_demo_mode"
 const AUTH_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
 
