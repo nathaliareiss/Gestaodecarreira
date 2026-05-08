@@ -307,7 +307,7 @@ export function UsuarioPageController({
               criandoConta={indoParaCadastro}
             />
           ) : (
-            <FinanceiroView />
+            <FinanceiroView modoDemo={modoDemo} />
           )}
         </section>
       </section>

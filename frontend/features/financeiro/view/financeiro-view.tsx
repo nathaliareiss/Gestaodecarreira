@@ -19,8 +19,16 @@ import type {
   FinanceiroBatchStatusResponse,
   FinanceiroEvolucaoSalarialResponse,
 } from "../model/financeiro.model"
+import {
+  DEMO_FINANCEIRO_CONTRACHEQUES,
+  DEMO_FINANCEIRO_EVOLUCAO,
+} from "@/shared/demo/demo-data"
 
 const INTERVALO_POLLING_MS = 2000
+
+type FinanceiroViewProps = {
+  modoDemo: boolean
+}
 
 function formatarTamanhoArquivo(bytes: number) {
   if (!Number.isFinite(bytes) || bytes <= 0) {
@@ -346,18 +354,30 @@ function obterValorDesconto(
   return composicao[chave] ?? 0
 }
 
-export function FinanceiroView() {
+export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
   const [arquivosSelecionados, setArquivosSelecionados] = useState<File[]>([])
   const [batchStatus, setBatchStatus] = useState<FinanceiroBatchStatusResponse | null>(null)
-  const [evolucaoSalarial, setEvolucaoSalarial] = useState<FinanceiroEvolucaoSalarialResponse | null>(null)
-  const [contrachequesSalvos, setContrachequesSalvos] = useState<FinanceiroContrachequeResumo[]>([])
+  const [evolucaoSalarial, setEvolucaoSalarial] = useState<FinanceiroEvolucaoSalarialResponse | null>(
+    () => (modoDemo ? DEMO_FINANCEIRO_EVOLUCAO : null),
+  )
+  const [contrachequesSalvos, setContrachequesSalvos] = useState<FinanceiroContrachequeResumo[]>(
+    () => (modoDemo ? DEMO_FINANCEIRO_CONTRACHEQUES : []),
+  )
   const [batchId, setBatchId] = useState<number | null>(null)
   const [enviando, setEnviando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
   const [erroEvolucao, setErroEvolucao] = useState<string | null>(null)
-  const [carregandoAnalisePersistida, setCarregandoAnalisePersistida] = useState(true)
+  const [carregandoAnalisePersistida, setCarregandoAnalisePersistida] = useState(!modoDemo)
 
   async function carregarAnalisePersistida() {
+    if (modoDemo) {
+      setEvolucaoSalarial(DEMO_FINANCEIRO_EVOLUCAO)
+      setContrachequesSalvos(DEMO_FINANCEIRO_CONTRACHEQUES)
+      setErroEvolucao(null)
+      setCarregandoAnalisePersistida(false)
+      return
+    }
+
     setCarregandoAnalisePersistida(true)
     setErroEvolucao(null)
 
@@ -404,6 +424,11 @@ export function FinanceiroView() {
 
   async function enviarFormulario(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault()
+
+    if (modoDemo) {
+      setErro("Demo mode uses sample data and does not accept uploads.")
+      return
+    }
 
     if (arquivosSelecionados.length === 0) {
       setErro("Select at least one PDF before continuing.")
@@ -453,7 +478,7 @@ export function FinanceiroView() {
     queueMicrotask(() => {
       void carregarAnalisePersistida()
     })
-  }, [])
+  }, [modoDemo])
 
   useEffect(() => {
     if (batchId === null) {
@@ -540,7 +565,7 @@ export function FinanceiroView() {
               <p className="eyebrow">Pay Stub Batch</p>
               <h3>Upload PDFs</h3>
             </div>
-            <span className="status-pill">{statusAtual}</span>
+            <span className="status-pill">{modoDemo ? "Demo data only" : statusAtual}</span>
           </div>
 
           <div className="upload-shell__collapsed">
@@ -550,6 +575,7 @@ export function FinanceiroView() {
                 accept=".pdf,application/pdf"
                 multiple
                 type="file"
+                disabled={modoDemo}
                 onChange={selecionarArquivos}
               />
             </label>
@@ -557,6 +583,11 @@ export function FinanceiroView() {
             <p className="helper">
               Select one or more PDFs. The batch monitor will poll the backend every 2 seconds.
             </p>
+            {modoDemo ? (
+              <p className="helper">
+                Demo mode keeps this section read-only because the financial analysis is already loaded.
+              </p>
+            ) : null}
             <p className="helper">
               Large batches can take a few minutes. The worker keeps processing in the background.
             </p>
@@ -630,8 +661,8 @@ export function FinanceiroView() {
             </div>
 
             <div className="actions-row">
-              <button className="primary-button" type="submit" disabled={enviando || monitorando}>
-                {enviando ? "Sending batch..." : "Analyze batch"}
+              <button className="primary-button" type="submit" disabled={modoDemo || enviando || monitorando}>
+                {modoDemo ? "Demo mode" : enviando ? "Sending batch..." : "Analyze batch"}
               </button>
             </div>
 
@@ -732,6 +763,12 @@ export function FinanceiroView() {
             <p className="analysis-header__subtitle">
               {"This section always loads the saved contracheques from PostgreSQL, so the data survives refresh."}
             </p>
+            {modoDemo ? (
+              <p className="helper">
+                Demo figures are estimated from the 2015 and 2026 pay stubs you shared, so you can explore the
+                salary trend without uploading files.
+              </p>
+            ) : null}
           </div>
 
           {carregandoAnalisePersistida ? (
