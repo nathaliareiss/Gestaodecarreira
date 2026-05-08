@@ -153,6 +153,12 @@ def test_arquivo_com_mesmo_hash_e_nome_diferente_e_duplicado() -> None:
     assert resultado["failed_count"] == 0
 
     with SessionLocal() as db:
+        total_paychecks = db.scalar(
+            select(func.count()).select_from(Paycheck).where(Paycheck.batch_id == lote.id)
+        )
+        assert total_paychecks == 1
+
+    with SessionLocal() as db:
         lote_salvo = db.get(PayrollBatch, lote.id)
         assert lote_salvo is not None
         assert lote_salvo.processed_files == 1
@@ -304,6 +310,16 @@ def test_usuarios_diferentes_mesma_competencia_nao_colidem(monkeypatch) -> None:
     assert resultado_2["status"] == "completed"
     assert resultado_1["processed_count"] == 1
     assert resultado_2["processed_count"] == 1
+
+    with SessionLocal() as db:
+        total_usuario_7 = db.scalar(
+            select(func.count()).select_from(Paycheck).where(Paycheck.user_id == 7)
+        )
+        total_usuario_8 = db.scalar(
+            select(func.count()).select_from(Paycheck).where(Paycheck.user_id == 8)
+        )
+        assert total_usuario_7 == 1
+        assert total_usuario_8 == 1
 
 
 def test_pdf_invalido_marca_falha_e_continua_processamento() -> None:
