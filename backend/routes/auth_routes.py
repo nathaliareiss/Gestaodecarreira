@@ -6,6 +6,7 @@ from urllib.parse import urlparse
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, Response, status
 from sqlalchemy.orm import Session
 
+from backend.config import FRONTEND_BASE_URL
 from backend.database.database import get_db
 from backend.logger import logger
 from backend.schemas.auth_schema import (
