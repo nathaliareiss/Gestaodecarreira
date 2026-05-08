@@ -59,3 +59,5 @@
 
 - Este checklist cobre só o estado atual do projeto.
 - A ideia é manter o histórico curto, objetivo e fácil de retomar depois.
+
+- [x] Refatorada a análise financeira para separar salário-base, vantagens e descontos com composição anual por categoria.
