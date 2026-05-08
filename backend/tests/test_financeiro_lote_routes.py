@@ -188,8 +188,9 @@ def test_evolucao_salarial_por_lote_sem_contracheques_retorna_resposta_vazia() -
         resposta = client.get(caminho)
 
         assert resposta.status_code == 200
+        esperado_batch_id = None if caminho == "/financeiro/evolucao-salarial" else lote.id
         assert resposta.json() == {
-            "batch_id": lote.id,
+            "batch_id": esperado_batch_id,
             "ano_inicial": None,
             "ano_final": None,
             "salario_base_inicial_referencia": None,

@@ -2,13 +2,14 @@ from __future__ import annotations
 
 from decimal import Decimal
 from pathlib import Path
+from types import SimpleNamespace
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from backend.database.database import SessionLocal
 from backend.database.models import PayrollBatch, Paycheck, PaycheckItem
-from backend.routes.financeiro_routes import router as financeiro_router
+from backend.routes import financeiro_routes
 
 
 FIXTURE_PDF = Path(__file__).parent / "fixtures" / "contracheque_exemplo.pdf"
@@ -16,7 +17,8 @@ FIXTURE_PDF = Path(__file__).parent / "fixtures" / "contracheque_exemplo.pdf"
 
 def criar_client() -> TestClient:
     app = FastAPI()
-    app.include_router(financeiro_router)
+    app.include_router(financeiro_routes.router)
+    app.dependency_overrides[financeiro_routes.obter_usuario_autenticado] = lambda: SimpleNamespace(id=7)
     return TestClient(app)
 
 
@@ -139,7 +141,7 @@ def test_evolucao_salarial_persistida_busca_dados_salvos_do_usuario() -> None:
     _criar_batch_vazio(7, status="processing")
 
     client = criar_client()
-    resposta = client.get("/financeiro/evolucao-salarial", params={"user_id": 7})
+    resposta = client.get("/financeiro/evolucao-salarial")
 
     assert resposta.status_code == 200
     payload = resposta.json()
@@ -181,7 +183,7 @@ def test_contracheques_salvos_isolados_por_usuario() -> None:
     )
 
     client = criar_client()
-    resposta = client.get("/financeiro/contracheques", params={"user_id": 7})
+    resposta = client.get("/financeiro/contracheques")
 
     assert resposta.status_code == 200
     payload = resposta.json()
@@ -209,7 +211,7 @@ def test_evolucao_salarial_persistida_nao_depende_do_batch_atual() -> None:
     _criar_batch_vazio(7, status="failed")
 
     client = criar_client()
-    resposta = client.get("/financeiro/evolucao-salarial", params={"user_id": 7})
+    resposta = client.get("/financeiro/evolucao-salarial")
 
     assert resposta.status_code == 200
     payload = resposta.json()
