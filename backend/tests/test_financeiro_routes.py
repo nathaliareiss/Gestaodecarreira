@@ -40,6 +40,7 @@ def test_analisar_contracheque_retorna_json_estruturado() -> None:
         "competencia": "Janeiro/2022",
         "ano": 2022,
         "mes": 1,
+        "matricula": "",
         "bruto": "5375.07",
         "descontos": "550.00",
         "liquido": "4825.07",
