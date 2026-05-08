@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from decimal import Decimal
 from pathlib import Path
 from types import SimpleNamespace
@@ -93,6 +94,38 @@ def test_upload_lote_financeiro_processa_diretamente_quando_fila_ausente(monkeyp
         assert lote.status == "completed"
         assert lote.processed_files == 1
         assert lote.failed_files == 0
+
+
+def test_status_lote_financeiro_expoe_mensagens_de_erro() -> None:
+    with SessionLocal() as db:
+        lote = PayrollBatch(
+            user_id=7,
+            total_files=2,
+            processed_files=0,
+            failed_files=2,
+            status="failed",
+            last_error_message="O arquivo contracheque-2.pdf parece estar inválido ou corrompido.",
+            failure_messages=json.dumps(
+                [
+                    "Já existe um contracheque salvo para esta competência.",
+                    "O arquivo contracheque-2.pdf parece estar inválido ou corrompido.",
+                ],
+                ensure_ascii=False,
+            ),
+        )
+        db.add(lote)
+        db.commit()
+
+    client = criar_client()
+    resposta = client.get(f"/financeiro/batch/{lote.id}")
+
+    assert resposta.status_code == 200
+    assert resposta.json()["status"] == "failed"
+    assert resposta.json()["last_error_message"] == "O arquivo contracheque-2.pdf parece estar inválido ou corrompido."
+    assert resposta.json()["failure_messages"] == [
+        "Já existe um contracheque salvo para esta competência.",
+        "O arquivo contracheque-2.pdf parece estar inválido ou corrompido.",
+    ]
 
 
 def test_evolucao_salarial_por_lote_sem_contracheques_retorna_resposta_vazia() -> None:

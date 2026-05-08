@@ -338,6 +338,8 @@ export function FinanceiroView() {
       isBatchTerminalStatus(batchStatus.status) &&
       batchStatus.processed === 0,
   )
+  const mensagensErroLote = batchStatus?.failure_messages ?? []
+  const erroPrincipalLote = batchStatus?.last_error_message ?? null
 
   return (
     <section className="analysis-card card">
@@ -491,6 +493,21 @@ export function FinanceiroView() {
               <p className="helper">
                 The worker kept going after failures, so the batch can still finish with partial results.
               </p>
+            ) : null}
+
+            {batchStatus && batchStatus.failed > 0 ? (
+              <div className="error-box">
+                <p className="error-box__title">
+                  {erroPrincipalLote ? `Primary issue: ${erroPrincipalLote}` : "Primary issue not available."}
+                </p>
+                {mensagensErroLote.length > 0 ? (
+                  <ul className="error-list">
+                    {mensagensErroLote.map((mensagem, indice) => (
+                      <li key={`${mensagem}-${indice}`}>{mensagem}</li>
+                    ))}
+                  </ul>
+                ) : null}
+              </div>
             ) : null}
           </section>
         ) : null}

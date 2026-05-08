@@ -149,3 +149,5 @@ def test_pdf_invalido_marca_falha_e_continua_processamento() -> None:
         assert lote_salvo.status == "failed"
         assert lote_salvo.processed_files == 0
         assert lote_salvo.failed_files == 1
+        assert lote_salvo.last_error_message == "O arquivo contracheque-invalido.pdf parece estar inválido ou corrompido."
+        assert "O arquivo contracheque-invalido.pdf parece estar inválido ou corrompido." in lote_salvo.failure_messages
