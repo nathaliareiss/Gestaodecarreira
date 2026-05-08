@@ -16,12 +16,6 @@ import type { FinanceiroBatchStatusResponse } from "../model/financeiro.model"
 
 const INTERVALO_POLLING_MS = 2000
 
-type ArquivoLoteExibido = {
-  id: string
-  nome: string
-  tamanho: number
-}
-
 function formatarTamanhoArquivo(bytes: number) {
   if (!Number.isFinite(bytes) || bytes <= 0) {
     return "-"
@@ -39,22 +33,6 @@ function formatarTamanhoArquivo(bytes: number) {
   return `${(kilobytes / 1024).toFixed(1)} MB`
 }
 
-function statusArquivoBatch(status: FinanceiroBatchStatusResponse | null) {
-  if (!status) {
-    return "Queued"
-  }
-
-  if (status.status === "processing") {
-    return "Processing"
-  }
-
-  if (status.status === "failed") {
-    return "Failed"
-  }
-
-  return "Processed"
-}
-
 function mensagemStatusBatch(status: FinanceiroBatchStatusResponse | null, enviando: boolean, monitorando: boolean) {
   if (enviando) {
     return "Uploading batch..."
@@ -69,6 +47,24 @@ function mensagemStatusBatch(status: FinanceiroBatchStatusResponse | null, envia
   }
 
   return "Ready"
+}
+
+function resumoProgressoLote(status: FinanceiroBatchStatusResponse | null, enviando: boolean) {
+  if (enviando || !status) {
+    return "Waiting for the batch to start..."
+  }
+
+  const concluidos = status.processed + status.failed
+
+  if (status.status === "completed") {
+    return `Finished ${concluidos}/${status.total} PDFs.`
+  }
+
+  if (status.status === "failed") {
+    return `${concluidos}/${status.total} PDFs handled, with ${status.failed} failed.`
+  }
+
+  return `${concluidos}/${status.total} PDFs processed so far.`
 }
 
 export function FinanceiroView() {
@@ -181,12 +177,9 @@ export function FinanceiroView() {
     batchId !== null && batchStatus && !isBatchTerminalStatus(batchStatus.status) && !enviando,
   )
   const statusAtual = mensagemStatusBatch(batchStatus, enviando, monitorando)
-  const badgeArquivos = statusArquivoBatch(batchStatus)
-  const arquivosExibidos: ArquivoLoteExibido[] = arquivosSelecionados.map((arquivo, indice) => ({
-    id: `${arquivo.name}-${arquivo.lastModified}-${indice}`,
-    nome: arquivo.name,
-    tamanho: arquivo.size,
-  }))
+  const totalSelecionadoBytes = arquivosSelecionados.reduce((total, arquivo) => total + arquivo.size, 0)
+  const totalSelecionadoArquivos = arquivosSelecionados.length
+  const barraIndeterminada = enviando && batchStatus === null
 
   return (
     <section className="analysis-card card">
@@ -227,25 +220,49 @@ export function FinanceiroView() {
               Select one or more PDFs. The batch monitor will poll the backend every 2 seconds.
             </p>
 
-            {arquivosExibidos.length > 0 ? (
-              <div className="progress-list">
-                {arquivosExibidos.map((arquivo) => (
-                  <div className="metric-card" key={arquivo.id}>
-                    <div className="progress-row-header">
-                      <div>
-                        <strong>{arquivo.nome}</strong>
-                        <p className="helper" style={{ margin: "0.3rem 0 0" }}>
-                          {formatarTamanhoArquivo(arquivo.tamanho)}
-                        </p>
-                      </div>
-                      <span className="timeline-badge timeline-badge--neutral">{badgeArquivos}</span>
-                    </div>
-                  </div>
-                ))}
+            <div className="metric-strip metric-strip--selection">
+              <div className="metric-line">
+                <span>Selected PDFs</span>
+                <strong>{totalSelecionadoArquivos}</strong>
               </div>
-            ) : (
-              <p className="helper">No PDF selected yet.</p>
-            )}
+              <div className="metric-line">
+                <span>Total size</span>
+                <strong>{formatarTamanhoArquivo(totalSelecionadoBytes)}</strong>
+              </div>
+            </div>
+
+            <div className="progress-list">
+              <div className="progress-row">
+                <div className="progress-row-header">
+                  <span className="helper">{statusAtual}</span>
+                  <strong>{barraIndeterminada ? "..." : `${progresso}%`}</strong>
+                </div>
+                <div
+                  className={
+                    barraIndeterminada
+                      ? "progress-track progress-track--indeterminate"
+                      : "progress-track"
+                  }
+                  aria-label="Batch processing progress"
+                  aria-busy={barraIndeterminada || monitorando}
+                  role="progressbar"
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={barraIndeterminada ? undefined : progresso}
+                >
+                  <div
+                    className={
+                      batchStatus?.status === "failed"
+                        ? "progress-fill progress-fill--accent"
+                        : "progress-fill"
+                    }
+                    style={{
+                      width: barraIndeterminada ? "100%" : `${progresso}%`,
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
 
             <div className="actions-row">
               <button className="primary-button" type="submit" disabled={enviando || monitorando}>
@@ -264,7 +281,7 @@ export function FinanceiroView() {
               <h3>{"Processing status"}</h3>
               <p className="analysis-header__subtitle">
                 {
-                  "The cards below update automatically while the worker processes each uploaded PDF."
+                  "A compact progress bar updates automatically while the worker processes each uploaded PDF."
                 }
               </p>
             </div>
@@ -291,10 +308,17 @@ export function FinanceiroView() {
             <div className="progress-list">
               <div className="progress-row">
                 <div className="progress-row-header">
-                  <span className="helper">Completion</span>
+                  <span className="helper">{resumoProgressoLote(batchStatus, enviando)}</span>
                   <strong>{progresso}%</strong>
                 </div>
-                <div className="progress-track" aria-label="Batch completion progress">
+                <div
+                  className="progress-track"
+                  aria-label="Batch completion progress"
+                  role="progressbar"
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={progresso}
+                >
                   <div
                     className={
                       batchStatus.status === "failed" ? "progress-fill progress-fill--accent" : "progress-fill"
@@ -305,51 +329,11 @@ export function FinanceiroView() {
               </div>
             </div>
 
-            <div className="progress-list">
-              {arquivosExibidos.map((arquivo) => (
-                <div className="metric-card" key={`processed-${arquivo.id}`}>
-                  <div className="progress-row-header">
-                    <div>
-                      <strong>{arquivo.nome}</strong>
-                      <p className="helper" style={{ margin: "0.3rem 0 0" }}>
-                        {formatarTamanhoArquivo(arquivo.tamanho)}
-                      </p>
-                    </div>
-                    <span className="timeline-badge timeline-badge--success">
-                      {isBatchTerminalStatus(batchStatus.status) ? "Processed" : "Processing"}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-
             {batchStatus.failed > 0 ? (
               <p className="helper">
                 The worker kept going after failures, so the batch can still finish with partial results.
               </p>
             ) : null}
-
-            <details className="upload-shell__collapsed upload-shell__collapsed--compact">
-              <summary className="helper">Raw batch JSON</summary>
-              <pre
-                className="helper"
-                style={{
-                  marginTop: "0.75rem",
-                  whiteSpace: "pre-wrap",
-                  overflowX: "auto",
-                }}
-              >
-                {JSON.stringify(
-                  {
-                    batch_id: batchId,
-                    ...batchStatus,
-                    arquivos: arquivosExibidos.map((arquivo) => arquivo.nome),
-                  },
-                  null,
-                  2,
-                )}
-              </pre>
-            </details>
           </section>
         ) : null}
       </div>
