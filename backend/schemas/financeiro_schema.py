@@ -11,6 +11,12 @@ class ArquivoLoteFinanceiroPayload(BaseModel):
     file_hash: str | None = None
 
 
+class ArquivoFinanceiroJobPayload(BaseModel):
+    batch_id: int = Field(gt=0)
+    user_id: int | None = Field(default=None, gt=0)
+    arquivo: ArquivoLoteFinanceiroPayload
+
+
 class LoteFinanceiroJobPayload(BaseModel):
     batch_id: int = Field(gt=0)
     user_id: int | None = Field(default=None, gt=0)

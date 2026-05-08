@@ -4,6 +4,7 @@ import hashlib
 import json
 import os
 from collections import defaultdict
+from datetime import datetime, timezone
 from decimal import Decimal, ROUND_HALF_UP
 from pathlib import Path
 from time import perf_counter
@@ -24,7 +25,7 @@ from backend.repositories.financeiro_repository import (
     obter_paychecks_por_usuario_id,
     salvar_paycheck_com_itens,
 )
-from backend.schemas.financeiro_schema import LoteFinanceiroJobPayload
+from backend.schemas.financeiro_schema import ArquivoFinanceiroJobPayload, LoteFinanceiroJobPayload
 from backend.services.contracheque_parser import (
     CATEGORIAS_DESCONTO,
     CATEGORIAS_VANTAGEM,
@@ -108,6 +109,111 @@ def _registrar_erro_lote(db: Session, lote: PayrollBatch, mensagem_erro: str) ->
     db.add(lote)
     db.commit()
     db.refresh(lote)
+
+
+def _registrar_metricas_finais_lote(lote: PayrollBatch) -> None:
+    total_tratados = lote.processed_files + lote.duplicated_files + lote.failed_files
+    if total_tratados <= 0:
+        return
+
+    created_at = lote.created_at
+    if created_at.tzinfo is None:
+        created_at = created_at.replace(tzinfo=timezone.utc)
+
+    duracao_total_lote_segundos = max(
+        (datetime.now(timezone.utc) - created_at).total_seconds(),
+        0.0,
+    )
+    tempo_total_processamento = _para_decimal(getattr(lote, "processing_seconds_total", ZERO))
+    tempo_medio_por_pdf_segundos = (
+        (tempo_total_processamento / Decimal(total_tratados)).quantize(
+            Decimal("0.001"),
+            rounding=ROUND_HALF_UP,
+        )
+        if total_tratados > 0
+        else ZERO
+    )
+    pdfs_por_minuto = (
+        (Decimal(total_tratados) / Decimal(max(duracao_total_lote_segundos, 0.001)) * Decimal("60")).quantize(
+            Decimal("0.01"),
+            rounding=ROUND_HALF_UP,
+        )
+        if duracao_total_lote_segundos > 0
+        else ZERO
+    )
+
+    logger.info(
+        "Lote financeiro finalizado",
+        extra={
+            "batch_id": lote.id,
+            "total_pdfs": lote.total_files,
+            "total_tratados": total_tratados,
+            "total_processados": lote.processed_files,
+            "total_duplicados": lote.duplicated_files,
+            "total_falhas": lote.failed_files,
+            "tempo_total_lote_segundos": round(duracao_total_lote_segundos, 3),
+            "tempo_total_processamento_segundos": float(tempo_total_processamento),
+            "tempo_medio_por_pdf_segundos": float(tempo_medio_por_pdf_segundos),
+            "pdfs_por_minuto": float(pdfs_por_minuto),
+        },
+    )
+
+
+def _processar_arquivo_e_atualizar_lote(
+    db: Session,
+    *,
+    batch_id: int,
+    user_id: int | None,
+    arquivo_nome: str,
+    caminho_temporario: str,
+    arquivo_hash: str | None = None,
+) -> tuple[str, PayrollBatch, float]:
+    inicio = perf_counter()
+    lote = obter_lote_financeiro_por_id(db, batch_id)
+    if lote is None:
+        raise ValueError("Lote financeiro nao encontrado.")
+
+    resultado = _processar_arquivo_individual(
+        db=db,
+        batch_id=batch_id,
+        user_id=user_id,
+        arquivo_nome=arquivo_nome,
+        caminho_temporario=caminho_temporario,
+        arquivo_hash=arquivo_hash,
+    )
+    duracao_segundos = perf_counter() - inicio
+
+    if resultado == "duplicated":
+        lote_atualizado = atualizar_lote_financeiro(
+            db,
+            lote,
+            duplicated_delta=1,
+            processing_seconds_delta=duracao_segundos,
+        )
+    elif resultado == "processed":
+        lote_atualizado = atualizar_lote_financeiro(
+            db,
+            lote,
+            processed_delta=1,
+            processing_seconds_delta=duracao_segundos,
+        )
+    else:
+        lote_atualizado = atualizar_lote_financeiro(
+            db,
+            lote,
+            failed_delta=1,
+            processing_seconds_delta=duracao_segundos,
+        )
+
+    total_tratados = (
+        lote_atualizado.processed_files
+        + lote_atualizado.duplicated_files
+        + lote_atualizado.failed_files
+    )
+    if lote_atualizado.total_files > 0 and total_tratados >= lote_atualizado.total_files:
+        _registrar_metricas_finais_lote(lote_atualizado)
+
+    return resultado, lote_atualizado, duracao_segundos
 
 
 def _criar_paycheck_model(
@@ -204,6 +310,176 @@ def _processar_arquivo_individual(
     return "processed"
 
 
+def _processar_arquivo_financeiro_job_em_db(
+    db: Session,
+    *,
+    batch_id: int,
+    user_id: int | None,
+    arquivo_nome: str,
+    caminho_temporario: str,
+    arquivo_hash: str | None = None,
+) -> dict[str, object]:
+    logger.info(
+        "Processando arquivo do lote financeiro",
+        extra={
+            "batch_id": batch_id,
+            "arquivo_nome": arquivo_nome,
+            "etapa": "processar_arquivo",
+        },
+    )
+
+    inicio = perf_counter()
+    try:
+        resultado_arquivo, lote_atualizado, duracao_segundos = _processar_arquivo_e_atualizar_lote(
+            db,
+            batch_id=batch_id,
+            user_id=user_id,
+            arquivo_nome=arquivo_nome,
+            caminho_temporario=caminho_temporario,
+            arquivo_hash=arquivo_hash,
+        )
+    except Exception as erro_arquivo:
+        db.rollback()
+        mensagem_erro = _normalizar_mensagem_erro_processamento(erro_arquivo, arquivo_nome)
+        logger.exception(
+            "Falha ao processar contracheque do lote",
+            extra={
+                "batch_id": batch_id,
+                "arquivo_nome": arquivo_nome,
+                "etapa": "processar_arquivo",
+                "erro": str(erro_arquivo),
+                "mensagem_erro": mensagem_erro,
+            },
+        )
+        lote_atual = obter_lote_financeiro_por_id(db, batch_id)
+        if lote_atual is None:
+            raise ValueError("Lote financeiro nao encontrado.") from erro_arquivo
+
+        _registrar_erro_lote(db, lote_atual, mensagem_erro)
+        lote_atualizado = atualizar_lote_financeiro(
+            db,
+            lote_atual,
+            failed_delta=1,
+            processing_seconds_delta=perf_counter() - inicio,
+        )
+
+        total_tratados = (
+            lote_atualizado.processed_files
+            + lote_atualizado.duplicated_files
+            + lote_atualizado.failed_files
+        )
+        if lote_atualizado.total_files > 0 and total_tratados >= lote_atualizado.total_files:
+            _registrar_metricas_finais_lote(lote_atualizado)
+
+        logger.info(
+            "Arquivo financeiro processado",
+            extra={
+                "batch_id": batch_id,
+                "arquivo_nome": arquivo_nome,
+                "etapa": "arquivo_concluido",
+                "resultado": "failed",
+                "duracao_segundos": round(perf_counter() - inicio, 3),
+                "processados": lote_atualizado.processed_files,
+                "duplicados": lote_atualizado.duplicated_files,
+                "falhas": lote_atualizado.failed_files,
+                "status_lote": lote_atualizado.status,
+            },
+        )
+
+        return {
+            "batch_id": lote_atualizado.id,
+            "total": lote_atualizado.total_files,
+            "processed": lote_atualizado.processed_files,
+            "duplicated": lote_atualizado.duplicated_files,
+            "failed": lote_atualizado.failed_files,
+            "processed_count": lote_atualizado.processed_files,
+            "duplicated_count": lote_atualizado.duplicated_files,
+            "failed_count": lote_atualizado.failed_files,
+            "status": lote_atualizado.status,
+            "resultado_arquivo": "failed",
+            "duracao_segundos": round(perf_counter() - inicio, 3),
+        }
+
+    logger.info(
+        "Arquivo financeiro processado",
+        extra={
+            "batch_id": batch_id,
+            "arquivo_nome": arquivo_nome,
+            "etapa": "arquivo_concluido",
+            "resultado": resultado_arquivo,
+            "duracao_segundos": round(duracao_segundos, 3),
+            "processados": lote_atualizado.processed_files,
+            "duplicados": lote_atualizado.duplicated_files,
+            "falhas": lote_atualizado.failed_files,
+            "status_lote": lote_atualizado.status,
+        },
+    )
+
+    return {
+        "batch_id": lote_atualizado.id,
+        "total": lote_atualizado.total_files,
+        "processed": lote_atualizado.processed_files,
+        "duplicated": lote_atualizado.duplicated_files,
+        "failed": lote_atualizado.failed_files,
+        "processed_count": lote_atualizado.processed_files,
+        "duplicated_count": lote_atualizado.duplicated_files,
+        "failed_count": lote_atualizado.failed_files,
+        "status": lote_atualizado.status,
+        "resultado_arquivo": resultado_arquivo,
+        "duracao_segundos": round(duracao_segundos, 3),
+    }
+
+
+def processar_arquivo_financeiro_job(dados: dict) -> dict[str, object]:
+    inicio = perf_counter()
+    payload = ArquivoFinanceiroJobPayload.model_validate(dados)
+    status_job = "finished"
+
+    try:
+        with SessionLocal() as db:
+            lote = obter_lote_financeiro_por_id(db, payload.batch_id)
+            if lote is None:
+                raise ValueError("Lote financeiro nao encontrado.")
+
+            logger.info(
+                "Iniciando processamento de arquivo financeiro",
+                extra={
+                    "batch_id": payload.batch_id,
+                    "arquivo_nome": payload.arquivo.arquivo_nome,
+                    "etapa": "inicio_arquivo",
+                    "total_arquivos": lote.total_files,
+                },
+            )
+            resultado = _processar_arquivo_financeiro_job_em_db(
+                db,
+                batch_id=payload.batch_id,
+                user_id=payload.user_id,
+                arquivo_nome=payload.arquivo.arquivo_nome,
+                caminho_temporario=payload.arquivo.arquivo_temporario_path,
+                arquivo_hash=payload.arquivo.file_hash,
+            )
+
+            return resultado
+    except Exception:
+        status_job = "failed"
+        raise
+    finally:
+        arquivo_temporario = Path(payload.arquivo.arquivo_temporario_path)
+        try:
+            os.unlink(arquivo_temporario)
+        except FileNotFoundError:
+            pass
+        try:
+            arquivo_temporario.parent.rmdir()
+        except OSError:
+            pass
+        registrar_job_execucao(
+            "financeiro_pdf",
+            status_job,
+            perf_counter() - inicio,
+        )
+
+
 def processar_lote_financeiro_job(dados: dict) -> dict[str, object]:
     inicio = perf_counter()
     payload = LoteFinanceiroJobPayload.model_validate(dados)
@@ -226,61 +502,18 @@ def processar_lote_financeiro_job(dados: dict) -> dict[str, object]:
             atualizar_lote_financeiro(db, lote, status="processing")
 
             for arquivo in payload.arquivos:
-                try:
-                    logger.info(
-                        "Processando arquivo do lote financeiro",
-                        extra={
-                            "batch_id": payload.batch_id,
-                            "arquivo_nome": arquivo.arquivo_nome,
-                            "etapa": "processar_arquivo",
-                        },
-                    )
-                    resultado_arquivo = _processar_arquivo_individual(
-                        db=db,
-                        batch_id=payload.batch_id,
-                        user_id=payload.user_id,
-                        arquivo_nome=arquivo.arquivo_nome,
-                        caminho_temporario=arquivo.arquivo_temporario_path,
-                        arquivo_hash=arquivo.file_hash,
-                    )
-                    if resultado_arquivo == "duplicated":
-                        atualizar_lote_financeiro(db, lote, duplicated_delta=1)
-                    else:
-                        atualizar_lote_financeiro(db, lote, processed_delta=1)
-                except Exception as erro_arquivo:
-                    db.rollback()
-                    mensagem_erro = _normalizar_mensagem_erro_processamento(
-                        erro_arquivo,
-                        arquivo.arquivo_nome,
-                    )
-                    logger.exception(
-                        "Falha ao processar contracheque do lote",
-                        extra={
-                            "batch_id": payload.batch_id,
-                            "arquivo_nome": arquivo.arquivo_nome,
-                            "etapa": "processar_arquivo",
-                            "erro": str(erro_arquivo),
-                            "mensagem_erro": mensagem_erro,
-                        },
-                    )
-                    lote_atual = obter_lote_financeiro_por_id(db, payload.batch_id)
-                    if lote_atual is not None:
-                        _registrar_erro_lote(db, lote_atual, mensagem_erro)
-                    atualizar_lote_financeiro(db, lote, failed_delta=1)
-                finally:
-                    try:
-                        os.unlink(arquivo.arquivo_temporario_path)
-                    except FileNotFoundError:
-                        pass
-
-            lote_atualizado = obter_lote_financeiro_por_id(db, payload.batch_id)
-            if lote_atualizado is not None:
-                status_final = (
-                    "failed"
-                    if lote_atualizado.processed_files == 0 and lote_atualizado.duplicated_files == 0
-                    else "completed"
+                _processar_arquivo_financeiro_job_em_db(
+                    db,
+                    batch_id=payload.batch_id,
+                    user_id=payload.user_id,
+                    arquivo_nome=arquivo.arquivo_nome,
+                    caminho_temporario=arquivo.arquivo_temporario_path,
+                    arquivo_hash=arquivo.file_hash,
                 )
-                atualizar_lote_financeiro(db, lote_atualizado, status=status_final)
+                try:
+                    os.unlink(arquivo.arquivo_temporario_path)
+                except FileNotFoundError:
+                    pass
 
             lote_final = obter_lote_financeiro_por_id(db, payload.batch_id)
             if lote_final is None:

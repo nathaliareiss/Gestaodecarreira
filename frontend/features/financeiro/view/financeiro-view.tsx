@@ -525,12 +525,12 @@ export function FinanceiroView() {
         <div className="analysis-header__title">
           <p className="eyebrow eyebrow--title">Finance</p>
           <h2>{"Batch Financial Analysis"}</h2>
-          <p className="analysis-header__subtitle">
-            {
-              "Upload one or more pay stubs, then follow the batch progress in real time until the worker finishes."
-            }
-          </p>
-        </div>
+            <p className="analysis-header__subtitle">
+              {
+                "Upload one or more pay stubs, then follow the batch progress in real time until the worker finishes."
+              }
+            </p>
+          </div>
       </div>
 
       <div className="analysis-stack">
@@ -556,6 +556,9 @@ export function FinanceiroView() {
 
             <p className="helper">
               Select one or more PDFs. The batch monitor will poll the backend every 2 seconds.
+            </p>
+            <p className="helper">
+              Large batches can take a few minutes. The worker keeps processing in the background.
             </p>
 
             <div className="metric-strip metric-strip--selection">

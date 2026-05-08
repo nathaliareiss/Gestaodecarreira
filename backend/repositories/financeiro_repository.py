@@ -1,10 +1,22 @@
 from __future__ import annotations
 
+from decimal import Decimal
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from sqlalchemy.orm import selectinload
 
 from backend.database.models import PayrollBatch, Paycheck, PaycheckItem
+
+
+def _para_decimal(valor: int | float | Decimal | None) -> Decimal:
+    if isinstance(valor, Decimal):
+        return valor
+
+    if valor is None:
+        return Decimal("0")
+
+    return Decimal(str(valor))
 
 
 def criar_lote_financeiro(
@@ -18,6 +30,7 @@ def criar_lote_financeiro(
         processed_files=0,
         duplicated_files=0,
         failed_files=0,
+        processing_seconds_total=0,
         status="pending",
     )
     db.add(lote)
@@ -61,17 +74,37 @@ def atualizar_lote_financeiro(
     processed_delta: int = 0,
     duplicated_delta: int = 0,
     failed_delta: int = 0,
+    processing_seconds_delta: int | float | Decimal = 0,
     status: str | None = None,
 ) -> PayrollBatch:
-    lote.processed_files += processed_delta
-    lote.duplicated_files += duplicated_delta
-    lote.failed_files += failed_delta
+    lote_atual = db.scalar(
+        select(PayrollBatch).where(PayrollBatch.id == lote.id).with_for_update()
+    )
+    if lote_atual is None:
+        raise ValueError("Lote financeiro nao encontrado.")
+
+    lote_atual.processed_files += processed_delta
+    lote_atual.duplicated_files += duplicated_delta
+    lote_atual.failed_files += failed_delta
+    lote_atual.processing_seconds_total = _para_decimal(lote_atual.processing_seconds_total) + _para_decimal(
+        processing_seconds_delta
+    )
+
+    total_tratados = (
+        lote_atual.processed_files + lote_atual.duplicated_files + lote_atual.failed_files
+    )
+
     if status is not None:
-        lote.status = status
-    db.add(lote)
+        lote_atual.status = status
+    elif lote_atual.total_files > 0 and total_tratados >= lote_atual.total_files:
+        lote_atual.status = "failed" if lote_atual.processed_files == 0 and lote_atual.duplicated_files == 0 else "completed"
+    else:
+        lote_atual.status = "processing"
+
+    db.add(lote_atual)
     db.commit()
-    db.refresh(lote)
-    return lote
+    db.refresh(lote_atual)
+    return lote_atual
 
 
 def existe_paycheck_por_competencia(

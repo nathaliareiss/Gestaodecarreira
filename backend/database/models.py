@@ -91,6 +91,7 @@ class PayrollBatch(Base):
     processed_files = Column(Integer, nullable=False, default=0)
     duplicated_files = Column(Integer, nullable=False, default=0)
     failed_files = Column(Integer, nullable=False, default=0)
+    processing_seconds_total = Column(Numeric(14, 3, asdecimal=True), nullable=False, default=0)
     last_error_message = Column(String, nullable=False, default="")
     failure_messages = Column(Text, nullable=False, default="[]")
     status = Column(String, nullable=False, default="pending")

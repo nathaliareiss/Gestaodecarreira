@@ -72,6 +72,7 @@
 - [x] Financeiro now reloads saved contracheques from PostgreSQL on refresh using user-scoped endpoints.
 
 - [x] Adicionado hash SHA-256 e chave de negocio para deduplicar contracheques por usuario, competencia e matricula, com batch contabilizando processados, duplicados e falhas.
+- [x] Financeiro agora agenda 1 job por PDF, registra tempos por arquivo e fecha o lote com contadores atomicos para suportar filas paralelas.
 - [x] Endurecida a autenticacao com token HttpOnly no backend, cookie de usuario minimalista no front e CORS com credenciais.
 - [x] Financeiro passou a ignorar `user_id` do cliente e a buscar tudo a partir do usuario autenticado.
 - [x] Historico funcional passou a usar o usuario autenticado para salvar e consultar, bloqueando acesso por `usuario_id` manual.

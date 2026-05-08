@@ -63,8 +63,10 @@ def test_upload_lote_financeiro_agenda_job_e_cria_batch(monkeypatch) -> None:
 
     assert resposta.status_code == 201
     assert resposta.json() == {"batch_id": 1, "status": "processing"}
-    assert fila_falsa.chamadas[0]["funcao"] == "processar_lote_financeiro_job"
-    assert len(fila_falsa.chamadas[0]["dados"]["arquivos"]) == 2
+    assert len(fila_falsa.chamadas) == 2
+    assert all(chamada["funcao"] == "processar_arquivo_financeiro_job" for chamada in fila_falsa.chamadas)
+    assert fila_falsa.chamadas[0]["dados"]["arquivo"]["arquivo_nome"] == "01-2025_Mensal.pdf"
+    assert fila_falsa.chamadas[1]["dados"]["arquivo"]["arquivo_nome"] == "02-2025_Mensal.pdf"
 
     with SessionLocal() as db:
         lote = db.get(PayrollBatch, 1)

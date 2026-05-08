@@ -13,7 +13,10 @@ from sqlalchemy.orm import Session
 from backend.database.database import get_db
 from backend.logger import logger
 from backend.queue.queue_config import obter_fila_financeiro
-from backend.queue.tasks.financeiro_tasks import processar_lote_financeiro_job
+from backend.queue.tasks.financeiro_tasks import (
+    processar_arquivo_financeiro_job,
+    processar_lote_financeiro_job,
+)
 from backend.repositories.financeiro_repository import (
     atualizar_lote_financeiro,
     criar_lote_financeiro,
@@ -21,6 +24,7 @@ from backend.repositories.financeiro_repository import (
     obter_paychecks_por_usuario_id,
 )
 from backend.schemas.financeiro_schema import (
+    ArquivoFinanceiroJobPayload,
     ContrachequeResumoResponse,
     EvolucaoSalarialResponse,
     LoteFinanceiroJobPayload,
@@ -148,35 +152,24 @@ async def upload_lote_financeiro(
             detail="Envie ao menos um PDF valido.",
         )
 
-    arquivos_em_memoria: list[tuple[str, bytes]] = []
-    for indice, arquivo in enumerate(arquivos, start=1):
-        conteudo = await arquivo.read()
-        if not _arquivo_pdf_valido(conteudo):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Envie apenas arquivos PDF validos.",
-            )
-
-        arquivos_em_memoria.append(
-            (
-                _nome_arquivo_seguro(arquivo.filename, f"contracheque-{indice}.pdf"),
-                conteudo,
-            )
-        )
-
-    lote = criar_lote_financeiro(db, current_user.id, len(arquivos_em_memoria))
-    fila = obter_fila_financeiro()
-
-    diretorio_temporario = _diretorio_temporario_financeiro() / f"batch_{lote.id}_{uuid.uuid4().hex}"
+    lote = None
+    diretorio_temporario = _diretorio_temporario_financeiro() / f"batch_{uuid.uuid4().hex}"
     diretorio_temporario.mkdir(parents=True, exist_ok=True)
     arquivos_job: list[dict[str, str]] = []
     agendado = False
 
     try:
-        for indice, (nome_arquivo, conteudo) in enumerate(arquivos_em_memoria, start=1):
+        for indice, arquivo in enumerate(arquivos, start=1):
+            conteudo = await arquivo.read()
+            if not _arquivo_pdf_valido(conteudo):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Envie apenas arquivos PDF validos.",
+                )
+
+            nome_arquivo = _nome_arquivo_seguro(arquivo.filename, f"contracheque-{indice}.pdf")
             caminho = diretorio_temporario / f"{indice:03d}_{nome_arquivo}"
-            with caminho.open("wb") as arquivo_saida:
-                arquivo_saida.write(conteudo)
+            caminho.write_bytes(conteudo)
             arquivos_job.append(
                 {
                     "arquivo_nome": nome_arquivo,
@@ -185,6 +178,8 @@ async def upload_lote_financeiro(
                 }
             )
 
+        lote = criar_lote_financeiro(db, current_user.id, len(arquivos_job))
+        fila = obter_fila_financeiro()
         payload = LoteFinanceiroJobPayload(
             batch_id=lote.id,
             user_id=current_user.id,
@@ -194,15 +189,29 @@ async def upload_lote_financeiro(
 
         if fila is not None:
             try:
-                job = fila.enqueue(
-                    processar_lote_financeiro_job,
-                    payload_json,
-                    job_timeout=3600,
-                )
+                job_ids: list[str] = []
+                for arquivo_job in arquivos_job:
+                    payload_arquivo = ArquivoFinanceiroJobPayload(
+                        batch_id=lote.id,
+                        user_id=current_user.id,
+                        arquivo=arquivo_job,
+                    )
+                    job = fila.enqueue(
+                        processar_arquivo_financeiro_job,
+                        payload_arquivo.model_dump(mode="json"),
+                        job_timeout=1800,
+                    )
+                    job_ids.append(job.id)
                 agendado = True
                 logger.info(
                     "Lote financeiro agendado",
-                    extra={"batch_id": lote.id, "job_id": job.id, "total_files": lote.total_files},
+                    extra={
+                        "batch_id": lote.id,
+                        "job_ids": job_ids,
+                        "total_files": lote.total_files,
+                        "jobs_enfileirados": len(job_ids),
+                        "estrategia": "um_job_por_pdf",
+                    },
                 )
                 try:
                     atualizar_lote_financeiro(db, lote, status="processing")
@@ -213,30 +222,42 @@ async def upload_lote_financeiro(
                     )
                 return LoteFinanceiroUploadResponse(batch_id=lote.id, status="processing")
             except Exception as erro_fila:
-                logger.warning(
-                    "Fila indisponivel, processando lote financeiro diretamente",
-                    extra={"batch_id": lote.id, "erro": str(erro_fila)},
+                atualizar_lote_financeiro(db, lote, status="failed")
+                logger.exception(
+                    "Falha ao agendar os arquivos do lote financeiro",
+                    extra={
+                        "batch_id": lote.id,
+                        "total_files": lote.total_files,
+                        "estrategia": "um_job_por_pdf",
+                        "erro": str(erro_fila),
+                    },
                 )
+                raise HTTPException(
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    detail="Nao foi possivel agendar os arquivos do lote financeiro no momento.",
+                ) from erro_fila
 
-        else:
-            logger.warning(
-                "Fila financeira indisponivel, processando lote financeiro diretamente",
-                extra={"batch_id": lote.id, "total_files": lote.total_files},
-            )
+        logger.warning(
+            "Fila financeira indisponivel, processando lote financeiro diretamente",
+            extra={
+                "batch_id": lote.id,
+                "total_files": lote.total_files,
+                "estrategia": "um_job_por_pdf",
+            },
+        )
 
         resultado_direto = processar_lote_financeiro_job(payload_json)
-        return LoteFinanceiroUploadResponse(
-            batch_id=int(resultado_direto["batch_id"]),
-            status=str(resultado_direto["status"]),
-        )
+        return LoteFinanceiroUploadResponse(batch_id=int(resultado_direto["batch_id"]), status=str(resultado_direto["status"]))
     except HTTPException:
-        atualizar_lote_financeiro(db, lote, status="failed")
+        if lote is not None:
+            atualizar_lote_financeiro(db, lote, status="failed")
         raise
     except Exception as erro:
-        atualizar_lote_financeiro(db, lote, status="failed")
+        if lote is not None:
+            atualizar_lote_financeiro(db, lote, status="failed")
         logger.exception(
             "Falha ao agendar ou processar lote financeiro",
-            extra={"batch_id": lote.id, "erro": str(erro)},
+            extra={"batch_id": getattr(lote, "id", None), "erro": str(erro)},
         )
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,

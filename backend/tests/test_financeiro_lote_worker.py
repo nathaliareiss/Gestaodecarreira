@@ -8,7 +8,10 @@ from sqlalchemy import func, select
 from backend.database.database import SessionLocal
 from backend.database.models import PayrollBatch, Paycheck, PaycheckItem
 from backend.repositories.financeiro_repository import criar_lote_financeiro
-from backend.queue.tasks.financeiro_tasks import processar_lote_financeiro_job
+from backend.queue.tasks.financeiro_tasks import (
+    processar_arquivo_financeiro_job,
+    processar_lote_financeiro_job,
+)
 
 
 FIXTURE_PDF = Path(__file__).parent / "fixtures" / "contracheque_exemplo.pdf"
@@ -59,11 +62,54 @@ def test_processamento_assincrono_persiste_paycheck_e_itens() -> None:
         assert paycheck.bruto == Decimal("5375.07")
 
         itens = db.scalars(select(PaycheckItem).where(PaycheckItem.paycheck_id == paycheck.id)).all()
-        assert len(itens) >= 4
-        assert any(item.tipo == "vantagem" for item in itens)
-        assert any(item.tipo == "desconto" for item in itens)
-        assert any(item.categoria_normalizada == "salario_base" for item in itens)
-        assert any(item.descricao_original for item in itens)
+    assert len(itens) >= 4
+    assert any(item.tipo == "vantagem" for item in itens)
+    assert any(item.tipo == "desconto" for item in itens)
+    assert any(item.categoria_normalizada == "salario_base" for item in itens)
+    assert any(item.descricao_original for item in itens)
+
+
+def test_processamento_por_pdf_atualiza_contadores_progressivamente() -> None:
+    with SessionLocal() as db:
+        lote = criar_lote_financeiro(db, user_id=7, total_files=2)
+
+    arquivo_1 = _criar_copia_pdf("contracheque-progressivo-1.pdf")
+    arquivo_2 = _criar_copia_pdf("contracheque-progressivo-2.pdf")
+
+    resultado_1 = processar_arquivo_financeiro_job(
+        {
+            "batch_id": lote.id,
+            "user_id": 7,
+            "arquivo": {
+                "arquivo_nome": arquivo_1.name,
+                "arquivo_temporario_path": str(arquivo_1),
+                "file_hash": None,
+            },
+        }
+    )
+    assert resultado_1["processed_count"] == 1
+    assert resultado_1["failed_count"] == 0
+    assert resultado_1["status"] in {"processing", "completed"}
+
+    resultado_2 = processar_arquivo_financeiro_job(
+        {
+            "batch_id": lote.id,
+            "user_id": 7,
+            "arquivo": {
+                "arquivo_nome": arquivo_2.name,
+                "arquivo_temporario_path": str(arquivo_2),
+                "file_hash": None,
+            },
+        }
+    )
+    assert resultado_2["processed_count"] + resultado_2["duplicated_count"] + resultado_2["failed_count"] == 2
+    assert resultado_2["status"] == "completed"
+
+    with SessionLocal() as db:
+        lote_salvo = db.get(PayrollBatch, lote.id)
+        assert lote_salvo is not None
+        assert lote_salvo.processed_files + lote_salvo.duplicated_files + lote_salvo.failed_files == 2
+        assert lote_salvo.processing_seconds_total > 0
 
 
 def test_duplicidade_de_competencia_conta_como_duplicado_sem_parar_lote() -> None:
