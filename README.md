@@ -21,6 +21,35 @@ The system helps users visualize their professional journey with:
 - timeline of career events
 - light and dark theme toggle
 
+## Demo
+
+Live frontend:
+
+- [https://gestaodecarreira.vercel.app/](https://gestaodecarreira.vercel.app/)
+
+## Screenshots
+
+### Login
+
+<img src="docs/screenshots/login.png" alt="Login screen" width="240" />
+
+### Signup in light theme
+
+<img src="docs/screenshots/tema-claro.png" alt="Signup screen in light theme" width="240" />
+
+### Signup in dark theme
+
+<img src="docs/screenshots/tema-escuro.png" alt="Signup screen in dark theme" width="240" />
+
+### Charts and functional summary
+
+<img src="docs/screenshots/graficos.png" alt="Charts and indicators screen" width="240" />
+
+### Career history
+
+<img src="docs/screenshots/pagina-historico.png" alt="Career history screen" width="240" />
+
+
 ## Structure
 
 - `backend/`: Python FastAPI API
@@ -258,33 +287,6 @@ This starts:
 
 More details in [observability/README.md](observability/README.md).
 
-## Demo
-
-Live frontend:
-
-- [https://gestaodecarreira.vercel.app/](https://gestaodecarreira.vercel.app/)
-
-## Screenshots
-
-### Login
-
-<img src="docs/screenshots/login.png" alt="Login screen" width="240" />
-
-### Signup in light theme
-
-<img src="docs/screenshots/tema-claro.png" alt="Signup screen in light theme" width="240" />
-
-### Signup in dark theme
-
-<img src="docs/screenshots/tema-escuro.png" alt="Signup screen in dark theme" width="240" />
-
-### Charts and functional summary
-
-<img src="docs/screenshots/graficos.png" alt="Charts and indicators screen" width="240" />
-
-### Career history
-
-<img src="docs/screenshots/pagina-historico.png" alt="Career history screen" width="240" />
 
 ## Recent Update
 
