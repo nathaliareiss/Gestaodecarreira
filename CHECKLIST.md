@@ -1,6 +1,6 @@
 # Gestão de Carreira - Checklist
 
-Última atualização: 2026-05-06
+Última atualização: 2026-05-08
 
 ## Hoje
 
@@ -29,6 +29,8 @@
 - [x] Implementada a experiência visual de upload em lote no frontend do Financeiro.
 - [x] Adicionado polling automático do batch a cada 2 segundos.
 - [x] Criados testes do frontend para o polling do lote.
+- [x] Simplificada a tela do lote financeiro para ocultar a lista pesada de PDFs e mostrar barra de progresso.
+- [x] Criado workflow de CI para o frontend com `lint`, `test` e `build`.
 
 ### Em andamento
 
@@ -42,7 +44,7 @@
 - [ ] Testar `GET /api/financeiro/batch/{batch_id}` durante o processamento.
 - [ ] Revisar a experiência demo do Financeiro para ficar mais clara para recrutadores.
 - [ ] Confirmar se `/login` e `/usuario` continuam estáveis no deploy da Vercel.
-- [ ] Decidir se o lote financeiro vai ganhar tela de progresso no frontend.
+- [ ] Validar o novo layout da barra de progresso no mobile.
 
 ## Como usar este checklist
 
