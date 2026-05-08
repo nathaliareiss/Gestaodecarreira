@@ -15,10 +15,10 @@ def executar_worker() -> None:
 
     logger.info(
         "Iniciando worker da fila",
-        extra={"filas": ["historicos"]},
+        extra={"filas": ["historicos", "financeiro"]},
     )
     with Connection(conexao):
-        worker = Worker(["historicos"])
+        worker = Worker(["historicos", "financeiro"])
         worker.work(with_scheduler=True)
 
 
