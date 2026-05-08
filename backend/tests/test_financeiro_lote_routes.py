@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from decimal import Decimal
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -7,7 +8,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from backend.database.database import SessionLocal
-from backend.database.models import PayrollBatch
+from backend.database.models import PayrollBatch, Paycheck, PaycheckItem
 from backend.routes import financeiro_routes
 
 
@@ -113,3 +114,58 @@ def test_evolucao_salarial_por_lote_sem_contracheques_retorna_404() -> None:
     assert resposta.json() == {
         "detail": "Nenhum contracheque processado foi encontrado para este lote."
     }
+
+
+def test_evolucao_salarial_por_lote_com_contracheques_retorna_series() -> None:
+    with SessionLocal() as db:
+        lote = PayrollBatch(
+            user_id=None,
+            total_files=2,
+            processed_files=2,
+            failed_files=0,
+            status="completed",
+        )
+        db.add(lote)
+        db.flush()
+
+        for competencia, salario_base in (("Janeiro/2024", "3000.00"), ("Fevereiro/2024", "3200.00")):
+            salario_base_decimal = Decimal(salario_base)
+            paycheck = Paycheck(
+                batch_id=lote.id,
+                user_id=None,
+                competencia=competencia,
+                ano=2024,
+                mes=1 if competencia.startswith("Janeiro") else 2,
+                bruto=salario_base_decimal,
+                descontos=Decimal("500.00"),
+                liquido=Decimal("2500.00"),
+                vencimento_basico=salario_base_decimal,
+                adicional_desempenho=Decimal("300.00"),
+                adicional_noturno=Decimal("100.00"),
+                irrf=Decimal("200.00"),
+                previdencia=Decimal("100.00"),
+            )
+            db.add(paycheck)
+            db.flush()
+            db.add(
+                PaycheckItem(
+                    paycheck_id=paycheck.id,
+                    tipo="vantagem",
+                    categoria_normalizada="salario_base",
+                    descricao_original="Vencimento Basico",
+                    descricao="Vencimento Basico",
+                    valor=salario_base_decimal,
+                )
+            )
+
+        db.commit()
+
+    client = criar_client()
+    resposta = client.get(f"/financeiro/batch/{lote.id}/evolucao-salarial")
+
+    assert resposta.status_code == 200
+    payload = resposta.json()
+    assert payload["ano_inicial"] == 2024
+    assert payload["ano_final"] == 2024
+    assert payload["salario_base_inicial_referencia"] == 3100.0
+    assert payload["series"][0]["salario_base_referencia_anual"] == 3100.0

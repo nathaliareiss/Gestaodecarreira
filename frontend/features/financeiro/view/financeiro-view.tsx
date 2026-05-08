@@ -260,7 +260,12 @@ export function FinanceiroView() {
   }, [batchId])
 
   useEffect(() => {
-    if (batchId === null || !batchStatus || !isBatchTerminalStatus(batchStatus.status)) {
+    if (
+      batchId === null ||
+      !batchStatus ||
+      !isBatchTerminalStatus(batchStatus.status) ||
+      batchStatus.processed === 0
+    ) {
       return
     }
 
@@ -310,8 +315,14 @@ export function FinanceiroView() {
     batchId !== null &&
       batchStatus &&
       isBatchTerminalStatus(batchStatus.status) &&
+      batchStatus.processed > 0 &&
       evolucaoSalarial === null &&
       erroEvolucao === null,
+  )
+  const loteSemContrachequesValidos = Boolean(
+    batchStatus &&
+      isBatchTerminalStatus(batchStatus.status) &&
+      batchStatus.processed === 0,
   )
 
   return (
@@ -483,6 +494,12 @@ export function FinanceiroView() {
             </div>
 
             {carregandoEvolucao ? <p className="helper">Calculating annual reference values...</p> : null}
+
+            {loteSemContrachequesValidos ? (
+              <p className="helper">
+                No valid pay stubs were processed in this batch, so there is no salary evolution to show.
+              </p>
+            ) : null}
 
             {erroEvolucao ? <p className="error-box">{erroEvolucao}</p> : null}
 
