@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import json
 from collections import defaultdict
 from decimal import Decimal, ROUND_HALF_UP
 from time import perf_counter
@@ -9,7 +10,7 @@ from statistics import median
 from sqlalchemy.orm import Session
 
 from backend.database.database import SessionLocal
-from backend.database.models import Paycheck, PaycheckItem
+from backend.database.models import Paycheck, PaycheckItem, PayrollBatch
 from backend.logger import logger
 from backend.metrics import registrar_job_execucao
 from backend.repositories.financeiro_repository import (
@@ -49,6 +50,56 @@ def _criar_paycheck_item(payload: dict[str, object]) -> PaycheckItem:
         descricao=str(payload["descricao"]),
         valor=_para_decimal(payload["valor"]),
     )
+
+
+def _ler_mensagens_erro_lote(valor_bruto: str | None) -> list[str]:
+    if not valor_bruto:
+        return []
+
+    try:
+        mensagens = json.loads(valor_bruto)
+    except Exception:
+        return []
+
+    if not isinstance(mensagens, list):
+        return []
+
+    return [str(mensagem).strip() for mensagem in mensagens if str(mensagem).strip()]
+
+
+def _normalizar_mensagem_erro_processamento(erro: Exception, arquivo_nome: str) -> str:
+    mensagem = str(erro).strip()
+    mensagem_normalizada = mensagem.lower()
+    nome_erro = erro.__class__.__name__.lower()
+
+    if isinstance(erro, ValueError):
+        if "competencia" in mensagem_normalizada:
+            return "Não foi possível identificar a competência do contracheque."
+        if "ja existe" in mensagem_normalizada or "já existe" in mensagem_normalizada:
+            return "Já existe um contracheque salvo para esta competência."
+        if "lote financeiro nao encontrado" in mensagem_normalizada:
+            return "O lote financeiro não foi encontrado."
+        return mensagem or f"Falha ao processar o arquivo {arquivo_nome}."
+
+    if "pdf" in mensagem_normalizada or "pdf" in nome_erro:
+        return f"O arquivo {arquivo_nome} parece estar inválido ou corrompido."
+
+    if mensagem:
+        return f"Falha ao processar o arquivo {arquivo_nome}: {mensagem}"
+
+    return f"Falha ao processar o arquivo {arquivo_nome}."
+
+
+def _registrar_erro_lote(db: Session, lote: PayrollBatch, mensagem_erro: str) -> None:
+    mensagens = _ler_mensagens_erro_lote(getattr(lote, "failure_messages", None))
+    if mensagem_erro not in mensagens:
+        mensagens.append(mensagem_erro)
+
+    lote.last_error_message = mensagem_erro
+    lote.failure_messages = json.dumps(mensagens[-5:], ensure_ascii=False)
+    db.add(lote)
+    db.commit()
+    db.refresh(lote)
 
 
 def _criar_paycheck_model(
@@ -133,14 +184,22 @@ def processar_lote_financeiro_job(dados: dict) -> dict[str, object]:
                     atualizar_lote_financeiro(db, lote, processed_delta=1)
                 except Exception as erro_arquivo:
                     db.rollback()
+                    mensagem_erro = _normalizar_mensagem_erro_processamento(
+                        erro_arquivo,
+                        arquivo.arquivo_nome,
+                    )
                     logger.warning(
                         "Falha ao processar contracheque do lote",
                         extra={
                             "batch_id": payload.batch_id,
                             "arquivo_nome": arquivo.arquivo_nome,
                             "erro": str(erro_arquivo),
+                            "mensagem_erro": mensagem_erro,
                         },
                     )
+                    lote_atual = obter_lote_financeiro_por_id(db, payload.batch_id)
+                    if lote_atual is not None:
+                        _registrar_erro_lote(db, lote_atual, mensagem_erro)
                     atualizar_lote_financeiro(db, lote, failed_delta=1)
                 finally:
                     try:

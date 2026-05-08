@@ -12,6 +12,8 @@ export type FinanceiroBatchStatusResponse = {
   processed: number
   failed: number
   status: FinanceiroBatchStatus
+  last_error_message: string | null
+  failure_messages: string[]
 }
 
 export type FinanceiroEvolucaoSalarialSerieItem = {

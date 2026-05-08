@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 import uuid
 from decimal import Decimal
@@ -53,6 +54,21 @@ def _diretorio_temporario_financeiro() -> Path:
     diretorio = Path(__file__).resolve().parents[1] / "temp_data" / "financeiro"
     diretorio.mkdir(parents=True, exist_ok=True)
     return diretorio
+
+
+def _carregar_mensagens_erro_lote(valor_bruto: str | None) -> list[str]:
+    if not valor_bruto:
+        return []
+
+    try:
+        mensagens = json.loads(valor_bruto)
+    except Exception:
+        return []
+
+    if not isinstance(mensagens, list):
+        return []
+
+    return [str(mensagem).strip() for mensagem in mensagens if str(mensagem).strip()]
 
 
 @router.post("/contracheque/analisar")
@@ -231,6 +247,8 @@ def obter_status_lote_financeiro(
         processed=lote.processed_files,
         failed=lote.failed_files,
         status=lote.status,
+        last_error_message=lote.last_error_message or None,
+        failure_messages=_carregar_mensagens_erro_lote(lote.failure_messages),
     )
 
 
