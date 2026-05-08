@@ -79,3 +79,4 @@
 - [x] Sanitizados os logs de auth e cadastro para remover e-mail, login e outros identificadores sensiveis.
 - [x] Removido o botao Use Example do cadastro, mantendo apenas o modo demo para a entrada de dados de exemplo.
 - [x] Financeiro demo agora carrega uma evolucao salarial falsa baseada nos contracheques reais de 2015 e 2026, sem chamar o backend.
+- [x] Corrigida a sessao de autenticacao para usar SameSite=None em ambiente cross-origin seguro, evitando 401 no /api/auth/me e o retorno indevido para o cadastro.
