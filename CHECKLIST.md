@@ -32,6 +32,7 @@
 - [x] Simplificada a tela do lote financeiro para ocultar a lista pesada de PDFs e mostrar barra de progresso.
 - [x] Criado workflow de CI para o frontend com `lint`, `test` e `build`.
 - [x] Adicionada a análise salarial anual com mediana por ano, gráfico de evolução e resumo amigável no frontend.
+- [x] Removida a pasta vazia `frontend/app/api`, que não era usada pelo fluxo atual do frontend.
 
 ### Em andamento
 
