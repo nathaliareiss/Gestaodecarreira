@@ -1,6 +1,6 @@
 ﻿"use client"
 
-import { useEffect, useState, type ChangeEvent, type FormEvent } from "react"
+import { useCallback, useEffect, useState, type ChangeEvent, type FormEvent } from "react"
 
 import {
   acompanharLoteFinanceiro,
@@ -369,7 +369,7 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
   const [erroEvolucao, setErroEvolucao] = useState<string | null>(null)
   const [carregandoAnalisePersistida, setCarregandoAnalisePersistida] = useState(!modoDemo)
 
-  async function carregarAnalisePersistida() {
+  const carregarAnalisePersistida = useCallback(async () => {
     if (modoDemo) {
       setEvolucaoSalarial(DEMO_FINANCEIRO_EVOLUCAO)
       setContrachequesSalvos(DEMO_FINANCEIRO_CONTRACHEQUES)
@@ -396,7 +396,7 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
     } finally {
       setCarregandoAnalisePersistida(false)
     }
-  }
+  }, [modoDemo])
 
   function selecionarArquivos(evento: ChangeEvent<HTMLInputElement>) {
     const selecionados = Array.from(evento.target.files ?? [])
@@ -478,7 +478,7 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
     queueMicrotask(() => {
       void carregarAnalisePersistida()
     })
-  }, [modoDemo])
+  }, [carregarAnalisePersistida])
 
   useEffect(() => {
     if (batchId === null) {
@@ -524,7 +524,7 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
     queueMicrotask(() => {
       void carregarAnalisePersistida()
     })
-  }, [batchStatus])
+  }, [batchStatus, carregarAnalisePersistida])
 
   const progresso = calcularProgressoLote(batchStatus)
   const monitorando = Boolean(

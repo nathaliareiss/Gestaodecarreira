@@ -58,6 +58,32 @@ def test_login_com_credenciais_corretas_retorna_200(monkeypatch) -> None:
     assert "gc_auth_token=" in resposta.headers.get("set-cookie", "")
 
 
+def test_login_cross_origin_em_https_usa_samesite_none(monkeypatch) -> None:
+    usuario = criar_usuario_falso()
+
+    def autenticar_usuario_falso(db, dados):
+        return usuario, "token-123"
+
+    monkeypatch.setattr(auth_routes, "autenticar_usuario", autenticar_usuario_falso)
+    monkeypatch.setattr(auth_routes, "FRONTEND_BASE_URL", "https://frontend.example.com")
+
+    app = FastAPI()
+    app.include_router(auth_routes.router)
+    app.dependency_overrides[auth_routes.get_db] = lambda: object()
+    client = TestClient(app, base_url="https://api.example.com")
+
+    resposta = client.post(
+        "/auth/login",
+        json={"login": "maria", "senha": "senha-segura"},
+    )
+
+    set_cookie = resposta.headers.get("set-cookie", "").lower()
+    assert resposta.status_code == 200
+    assert "gc_auth_token=" in set_cookie
+    assert "samesite=none" in set_cookie
+    assert "secure" in set_cookie
+
+
 def test_login_com_senha_errada_retorna_401(monkeypatch) -> None:
     def autenticar_usuario_falso(db, dados):
         raise ValueError("Senha incorreta.")

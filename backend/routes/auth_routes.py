@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from uuid import uuid4
+from urllib.parse import urlparse
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, Response, status
 from sqlalchemy.orm import Session
@@ -64,6 +65,25 @@ def _cookie_deve_ser_seguro(request: Request) -> bool:
     return proto.split(",")[0].strip().lower() == "https"
 
 
+def _cookie_same_site(request: Request) -> str:
+    """
+    Keep local same-site auth working, but allow production cross-site fetches
+    to send the session cookie when the frontend and backend are on different hosts.
+    """
+
+    frontend_host = urlparse(FRONTEND_BASE_URL).hostname if FRONTEND_BASE_URL else None
+    request_host = request.url.hostname
+
+    if frontend_host and request_host:
+        if frontend_host == request_host:
+            return "lax"
+
+        if {frontend_host, request_host} <= {"localhost", "127.0.0.1"}:
+            return "lax"
+
+    return "none" if _cookie_deve_ser_seguro(request) else "lax"
+
+
 @router.post("/login", response_model=UsuarioAuthResponse)
 def login(
     dados: UsuarioLoginRequest,
@@ -89,7 +109,7 @@ def login(
         path="/",
         httponly=True,
         secure=_cookie_deve_ser_seguro(request),
-        samesite="lax",
+        samesite=_cookie_same_site(request),
     )
     logger.info(
         "Login concluido",
