@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
+from uuid import uuid4
+
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from backend.database.database import get_db
@@ -28,6 +30,10 @@ from backend.services.email_service import enviar_email_confirmacao
 router = APIRouter(prefix="/usuarios", tags=["usuarios"])
 
 
+def _obter_request_id(request: Request) -> str:
+    return request.headers.get("x-request-id") or uuid4().hex
+
+
 def _enviar_email_confirmacao_com_erro_isolado(destinatario: str, nome: str, token: str) -> None:
     try:
         enviar_email_confirmacao(destinatario=destinatario, nome=nome, token=token)
@@ -42,25 +48,18 @@ def _enviar_email_confirmacao_com_erro_isolado(destinatario: str, nome: str, tok
 def criar_usuario(
     cadastro: UsuarioCreateRequest,
     background_tasks: BackgroundTasks,
+    request: Request,
     db: Session = Depends(get_db),
 ) -> UsuarioResponse:
-    logger.info(
-        "Recebida solicitacao de cadastro",
-        extra={"email": cadastro.email.strip().lower(), "login": cadastro.login.strip()},
-    )
+    request_id = _obter_request_id(request)
+    logger.info("Recebida solicitacao de cadastro", extra={"request_id": request_id})
     try:
         usuario = cadastrar_usuario(db, cadastro)
     except ValueError as erro:
-        logger.warning(
-            "Cadastro recusado",
-            extra={"email": cadastro.email.strip().lower(), "login": cadastro.login.strip()},
-        )
+        logger.warning("Cadastro recusado", extra={"request_id": request_id})
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(erro)) from erro
     except RuntimeError as erro:
-        logger.exception(
-            "Falha ao cadastrar usuario",
-            extra={"email": cadastro.email.strip().lower(), "login": cadastro.login.strip()},
-        )
+        logger.exception("Falha ao cadastrar usuario", extra={"request_id": request_id})
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Nao foi possivel concluir o cadastro agora. Tente novamente mais tarde.",
@@ -72,10 +71,7 @@ def criar_usuario(
         nome=usuario.nome,
         token=usuario.token_confirmacao_email,
     )
-    logger.info(
-        "Cadastro concluido e email programado em background",
-        extra={"usuario_id": usuario.id, "email": usuario.email},
-    )
+    logger.info("Cadastro concluido e email programado em background", extra={"request_id": request_id, "usuario_id": usuario.id})
     return UsuarioResponse.model_validate(usuario)
 
 
@@ -100,7 +96,7 @@ def obter_ultimo_usuario(db: Session = Depends(get_db)) -> UsuarioResponse:
             detail="Nenhum usuario encontrado.",
         )
 
-    logger.debug("Ultimo usuario consultado", extra={"usuario_id": usuario.id, "email": usuario.email})
+    logger.debug("Ultimo usuario consultado", extra={"usuario_id": usuario.id})
     resposta = UsuarioResponse.model_validate(usuario)
     definir_json_cache(chave_usuario_ultimo(), resposta.model_dump(mode="json"), CACHE_TTL_USUARIO_ULTIMO_SEGUNDOS)
     return resposta
@@ -109,19 +105,18 @@ def obter_ultimo_usuario(db: Session = Depends(get_db)) -> UsuarioResponse:
 @router.post("/confirmar", response_model=UsuarioResponse)
 def confirmar_email(
     dados: UsuarioConfirmarRequest,
+    request: Request,
     db: Session = Depends(get_db),
 ) -> UsuarioResponse:
-    logger.info("Recebida confirmacao de email", extra={"token_recebido": bool(dados.token)})
+    request_id = _obter_request_id(request)
+    logger.info("Recebida confirmacao de email", extra={"request_id": request_id, "token_recebido": bool(dados.token)})
     try:
         usuario = confirmar_usuario(db, dados)
     except ValueError as erro:
-        logger.warning("Confirmacao de email recusada", extra={"motivo": str(erro)})
+        logger.warning("Confirmacao de email recusada", extra={"request_id": request_id, "motivo": str(erro)})
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(erro)) from erro
 
-    logger.info(
-        "Email confirmado",
-        extra={"usuario_id": usuario.id, "email": usuario.email},
-    )
+    logger.info("Email confirmado", extra={"request_id": request_id, "usuario_id": usuario.id})
     return UsuarioResponse.model_validate(usuario)
 
 
@@ -134,8 +129,5 @@ def remover_ultimo_usuario(db: Session = Depends(get_db)) -> UsuarioResponse:
             detail="Nenhum usuario encontrado.",
         )
 
-    logger.info(
-        "Ultimo usuario removido",
-        extra={"usuario_id": usuario.id, "email": usuario.email},
-    )
+    logger.info("Ultimo usuario removido", extra={"usuario_id": usuario.id})
     return UsuarioResponse.model_validate(usuario)

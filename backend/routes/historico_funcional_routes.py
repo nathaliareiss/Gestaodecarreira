@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from backend.database.database import get_db
 from backend.logger import logger
+from backend.services.auth_service import obter_usuario_autenticado
 from backend.cache.redis_cache import (
     CACHE_TTL_HISTORICO_ULTIMO_SEGUNDOS,
     chave_historico_ultimo_usuario,
@@ -112,12 +113,12 @@ async def analisar_e_salvar_historico(
     arquivo: UploadFile = File(...),
     data_nascimento: date = Form(...),
     anos_clt_averbados: int = Form(0),
-    usuario_id: int | None = Form(None),
+    current_user=Depends(obter_usuario_autenticado),
     afastamentos_arquivo: UploadFile | None = File(None),
     db: Session = Depends(get_db),
 ) -> HistoricoFuncionalResponse | JobAgendadoResponse:
     arquivo_nome = _ler_nome_arquivo(arquivo, "historico-funcional.pdf")
-    arquivo_storage_path = gerar_caminho_storage_historico(arquivo_nome, usuario_id)
+    arquivo_storage_path = gerar_caminho_storage_historico(arquivo_nome, current_user.id)
     arquivo_storage_path, arquivo_armazenamento_origem = await _armazenar_arquivo_pdf(
         arquivo,
         arquivo_storage_path,
@@ -130,7 +131,7 @@ async def analisar_e_salvar_historico(
         afastamentos_arquivo_nome = _ler_nome_arquivo(afastamentos_arquivo, "afastamentos.pdf")
         afastamentos_storage_path = gerar_caminho_storage_afastamentos(
             afastamentos_arquivo_nome,
-            usuario_id,
+            current_user.id,
         )
         afastamentos_storage_path, afastamentos_armazenamento_origem = await _armazenar_arquivo_pdf(
             afastamentos_arquivo,
@@ -144,7 +145,7 @@ async def analisar_e_salvar_historico(
     )
 
     dados = HistoricoFuncionalUploadRequest(
-        usuario_id=usuario_id,
+        usuario_id=current_user.id,
         arquivo_nome=arquivo_nome,
         arquivo_storage_path=arquivo_storage_path,
         armazenamento_origem=armazenamento_origem,
@@ -157,7 +158,7 @@ async def analisar_e_salvar_historico(
     logger.info(
         "Recebido historico funcional para analise",
         extra={
-            "usuario_id": dados.usuario_id,
+            "usuario_id": current_user.id,
             "arquivo_nome": dados.arquivo_nome,
             "tem_afastamentos": bool(dados.afastamentos_storage_path),
         },
@@ -248,10 +249,16 @@ async def analisar_e_salvar_historico(
 async def anexar_afastamentos_historico(
     usuario_id: int,
     arquivo: UploadFile = File(...),
+    current_user=Depends(obter_usuario_autenticado),
     db: Session = Depends(get_db),
 ) -> HistoricoFuncionalResponse | JobAgendadoResponse:
+    if usuario_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Voce nao tem acesso a este historico funcional.",
+        )
     arquivo_nome = _ler_nome_arquivo(arquivo, "afastamentos.pdf")
-    arquivo_storage_path = gerar_caminho_storage_afastamentos(arquivo_nome, usuario_id)
+    arquivo_storage_path = gerar_caminho_storage_afastamentos(arquivo_nome, current_user.id)
     arquivo_storage_path, arquivo_armazenamento_origem = await _armazenar_arquivo_pdf(
         arquivo,
         arquivo_storage_path,
@@ -272,7 +279,7 @@ async def anexar_afastamentos_historico(
         try:
             job = fila.enqueue(
                 processar_afastamentos_job,
-                usuario_id,
+                current_user.id,
                 dados.model_dump(mode="json"),
                 job_timeout=900,
             )
@@ -294,7 +301,7 @@ async def anexar_afastamentos_historico(
                 extra={"user_id": usuario_id, "arquivo_nome": dados.arquivo_nome},
             )
             try:
-                return processar_afastamentos_db(db, usuario_id, dados, processamento_origem="direto")
+                return processar_afastamentos_db(db, current_user.id, dados, processamento_origem="direto")
             except StorageError as erro_storage:
                 raise HTTPException(
                     status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -326,7 +333,7 @@ async def anexar_afastamentos_historico(
                 ) from erro_direto
 
     try:
-        return processar_afastamentos_db(db, usuario_id, dados, processamento_origem="direto")
+        return processar_afastamentos_db(db, current_user.id, dados, processamento_origem="direto")
     except StorageError as erro:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -367,16 +374,22 @@ def obter_status_job(job_id: str) -> JobStatusResponse:
 @router.get("/usuario/{usuario_id}/ultimo", response_model=HistoricoFuncionalResponse)
 def obter_ultimo_historico_do_usuario(
     usuario_id: int,
+    current_user=Depends(obter_usuario_autenticado),
     db: Session = Depends(get_db),
 ) -> HistoricoFuncionalResponse:
-    logger.debug("Carregando ultimo historico funcional", extra={"user_id": usuario_id})
+    if usuario_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Voce nao tem acesso a este historico funcional.",
+        )
+    logger.debug("Carregando ultimo historico funcional", extra={"user_id": current_user.id})
 
-    cache = obter_json_cache(chave_historico_ultimo_usuario(usuario_id))
+    cache = obter_json_cache(chave_historico_ultimo_usuario(current_user.id))
     if cache is not None:
-        logger.debug("Ultimo historico funcional carregado do cache", extra={"user_id": usuario_id})
+        logger.debug("Ultimo historico funcional carregado do cache", extra={"user_id": current_user.id})
         return HistoricoFuncionalResponse.model_validate(cache)
 
-    historico = obter_ultimo_historico_por_usuario(db, usuario_id)
+    historico = obter_ultimo_historico_por_usuario(db, current_user.id)
     if historico is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -385,10 +398,10 @@ def obter_ultimo_historico_do_usuario(
 
     try:
         dados = json.loads(historico.dados_json)
-        dados = normalizar_dados_historico_salvo(dados, historico.id, usuario_id)
+        dados = normalizar_dados_historico_salvo(dados, historico.id, current_user.id)
         resposta = HistoricoFuncionalResponse.model_validate(dados)
         definir_json_cache(
-            chave_historico_ultimo_usuario(usuario_id),
+            chave_historico_ultimo_usuario(current_user.id),
             resposta.model_dump(mode="json"),
             CACHE_TTL_HISTORICO_ULTIMO_SEGUNDOS,
         )
@@ -396,7 +409,7 @@ def obter_ultimo_historico_do_usuario(
     except Exception as erro:
         logger.exception(
             "Falha ao carregar historico funcional salvo",
-            extra={"user_id": usuario_id},
+            extra={"user_id": current_user.id},
         )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

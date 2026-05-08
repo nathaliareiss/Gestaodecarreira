@@ -22,24 +22,18 @@ export async function autenticarUsuario(
   return parseApiResponse<UsuarioAuthResponse>(response, "Não foi possível entrar.")
 }
 
-export async function carregarUsuarioAutenticado(token: string): Promise<UsuarioConta> {
+export async function carregarUsuarioAutenticado(): Promise<UsuarioConta> {
   const response = await apiFetch("/api/auth/me", {
     method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
     cache: "no-store",
   })
 
   return parseApiResponse<UsuarioConta>(response, "Não foi possível carregar a sessão.")
 }
 
-export async function encerrarSessao(token: string): Promise<void> {
+export async function encerrarSessao(): Promise<void> {
   const response = await apiFetch("/api/auth/logout", {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
   })
 
   await parseApiResponse<{ status: string }>(response, "Não foi possível sair.")

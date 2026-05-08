@@ -28,7 +28,6 @@ def cadastrar_usuario(db: Session, cadastro: UsuarioCreateRequest) -> Usuario:
     senha = cadastro.senha
     logger.info(
         "Iniciando cadastro de usuario",
-        extra={"email": email, "login": login},
     )
 
     email_existente = obter_usuario_por_email(db, email)
@@ -57,14 +56,14 @@ def cadastrar_usuario(db: Session, cadastro: UsuarioCreateRequest) -> Usuario:
         db.commit()
     except Exception as exc:
         db.rollback()
-        logger.exception("Falha ao concluir cadastro", extra={"email": email, "login": login})
+        logger.exception("Falha ao concluir cadastro")
         raise RuntimeError(
             "Nao foi possivel concluir o cadastro. Tente novamente."
         ) from exc
 
     logger.info(
         "Cadastro concluido",
-        extra={"usuario_id": usuario.id, "email": usuario.email},
+        extra={"usuario_id": usuario.id},
     )
 
     return usuario
@@ -87,7 +86,7 @@ def confirmar_usuario(db: Session, dados: UsuarioConfirmarRequest) -> Usuario:
     usuario.confirmado_em = datetime.now(timezone.utc)
     logger.info(
         "Confirmacao de email concluida",
-        extra={"usuario_id": usuario.id, "email": usuario.email},
+        extra={"usuario_id": usuario.id},
     )
     return atualizar_usuario(db, usuario)
 
@@ -100,6 +99,6 @@ def excluir_usuario_mais_recente(db: Session) -> Usuario | None:
     remover_usuario(db, usuario)
     logger.info(
         "Usuario removido",
-        extra={"usuario_id": usuario.id, "email": usuario.email},
+        extra={"usuario_id": usuario.id},
     )
     return usuario

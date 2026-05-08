@@ -19,8 +19,6 @@ export type UsuarioRedefinicaoSenha = {
 }
 
 export type UsuarioAuthResponse = {
-  access_token: string
-  token_type: string
   usuario: UsuarioConta
 }
 

@@ -17,8 +17,7 @@ import {
 import {
   removerSessaoDemo,
   salvarSessaoDemo,
-  salvarTokenAutenticacao,
-  salvarUsuarioAutenticadoCache,
+  salvarUsuarioAutenticadoId,
 } from "@/shared/auth/session"
 import { DEMO_USUARIO } from "@/shared/demo/demo-data"
 
@@ -117,8 +116,8 @@ export function useLoginController() {
         senha: dados.senha,
       })
 
-      salvarTokenAutenticacao(resposta.access_token)
-      salvarUsuarioAutenticadoCache(resposta.usuario)
+      removerSessaoDemo()
+      salvarUsuarioAutenticadoId(resposta.usuario.id)
       router.replace("/usuario")
     } catch (error) {
       setErro(error instanceof Error ? error.message : "Falha inesperada ao entrar.")

@@ -1,8 +1,7 @@
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 
-import { AUTH_COOKIE_NAME, DEMO_MODE_COOKIE_NAME } from "@/shared/auth/session"
-import { obterApiBaseUrl } from "@/shared/config/api"
+import { AUTH_USER_COOKIE_NAME, DEMO_MODE_COOKIE_NAME } from "@/shared/auth/session"
 import { LoginController } from "@/features/auth/controller/login-controller"
 
 export const dynamic = "force-dynamic"
@@ -14,23 +13,12 @@ async function usuarioJaAutenticado(): Promise<boolean> {
     return true
   }
 
-  const token = cookieStore.get(AUTH_COOKIE_NAME)?.value
-  if (!token) {
+  const usuarioId = cookieStore.get(AUTH_USER_COOKIE_NAME)?.value
+  if (!usuarioId) {
     return false
   }
 
-  try {
-    const response = await fetch(`${obterApiBaseUrl()}/api/auth/me`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      cache: "no-store",
-    })
-
-    return response.ok
-  } catch {
-    return false
-  }
+  return Number.isFinite(Number(usuarioId)) && Number(usuarioId) > 0
 }
 
 export default async function LoginPage() {

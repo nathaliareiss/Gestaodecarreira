@@ -258,6 +258,7 @@ async def upload_lote_financeiro(
 @router.get("/batch/{batch_id}", response_model=LoteFinanceiroStatusResponse)
 def obter_status_lote_financeiro(
     batch_id: int,
+    current_user=Depends(obter_usuario_autenticado),
     db: Session = Depends(get_db),
 ) -> LoteFinanceiroStatusResponse:
     lote = obter_lote_financeiro_por_id(db, batch_id)
@@ -265,6 +266,11 @@ def obter_status_lote_financeiro(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Lote financeiro nao encontrado.",
+        )
+    if lote.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Voce nao tem acesso a este lote financeiro.",
         )
 
     return LoteFinanceiroStatusResponse(
@@ -283,27 +289,17 @@ def obter_status_lote_financeiro(
 
 @router.get("/evolucao-salarial", response_model=EvolucaoSalarialResponse)
 def obter_evolucao_salarial_persistida(
-    user_id: int | None = Query(default=None, gt=0),
-    batch_id: int | None = Query(default=None, gt=0),
+    current_user=Depends(obter_usuario_autenticado),
     db: Session = Depends(get_db),
 ) -> EvolucaoSalarialResponse:
-    if user_id is not None:
-        evolucao = calcular_evolucao_salarial_por_usuario(db, user_id)
-        return EvolucaoSalarialResponse.model_validate(evolucao)
-
-    if batch_id is not None:
-        evolucao = calcular_evolucao_salarial_lote(db, batch_id)
-        return EvolucaoSalarialResponse.model_validate(evolucao)
-
-    raise HTTPException(
-        status_code=status.HTTP_400_BAD_REQUEST,
-        detail="Informe user_id ou batch_id para consultar a evolucao salarial.",
-    )
+    evolucao = calcular_evolucao_salarial_por_usuario(db, current_user.id)
+    return EvolucaoSalarialResponse.model_validate(evolucao)
 
 
 @router.get("/batch/{batch_id}/evolucao-salarial", response_model=EvolucaoSalarialResponse)
 def obter_evolucao_salarial_lote(
     batch_id: int,
+    current_user=Depends(obter_usuario_autenticado),
     db: Session = Depends(get_db),
 ) -> EvolucaoSalarialResponse:
     lote = obter_lote_financeiro_por_id(db, batch_id)
@@ -311,6 +307,11 @@ def obter_evolucao_salarial_lote(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Lote financeiro nao encontrado.",
+        )
+    if lote.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Voce nao tem acesso a este lote financeiro.",
         )
 
     try:
@@ -326,8 +327,8 @@ def obter_evolucao_salarial_lote(
 
 @router.get("/contracheques", response_model=list[ContrachequeResumoResponse])
 def listar_contracheques_salvos(
-    user_id: int = Query(..., gt=0),
+    current_user=Depends(obter_usuario_autenticado),
     db: Session = Depends(get_db),
 ) -> list[ContrachequeResumoResponse]:
-    paychecks = obter_paychecks_por_usuario_id(db, user_id)
+    paychecks = obter_paychecks_por_usuario_id(db, current_user.id)
     return [_serializar_paycheck_resumo(paycheck) for paycheck in paychecks]

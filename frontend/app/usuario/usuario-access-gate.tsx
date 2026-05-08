@@ -9,9 +9,7 @@ import { UsuarioPageController } from "@/features/usuario/controller/usuario-pag
 import type { UsuarioConta } from "@/features/usuario/model/usuario.model"
 import { DEMO_HISTORICO, DEMO_USUARIO } from "@/shared/demo/demo-data"
 import {
-  DEMO_SESSION_TOKEN,
   modoDemoAtivoNoCliente,
-  obterTokenAutenticacao,
   salvarSessaoDemo,
 } from "@/shared/auth/session"
 
@@ -62,7 +60,7 @@ export function UsuarioAccessGate() {
       const demoAtivo = modoDemoAtivoNoCliente()
 
       if (demoAtivo) {
-        salvarSessaoDemo(DEMO_USUARIO)
+        salvarSessaoDemo(DEMO_USUARIO.id)
         if (!ativo) {
           return
         }
@@ -76,14 +74,8 @@ export function UsuarioAccessGate() {
         return
       }
 
-      const token = obterTokenAutenticacao()
-      if (!token || token === DEMO_SESSION_TOKEN) {
-        router.replace("/")
-        return
-      }
-
       try {
-        const usuario = await carregarUsuarioAutenticado(token)
+        const usuario = await carregarUsuarioAutenticado()
 
         if (!ativo) {
           return
