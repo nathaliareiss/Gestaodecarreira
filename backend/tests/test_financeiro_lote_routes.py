@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from backend.database.database import SessionLocal
-from backend.database.models import PayrollBatch
+from backend.database.models import PayrollBatch, Paycheck
 from backend.routes import financeiro_routes
 
 
@@ -92,3 +92,113 @@ def test_upload_lote_financeiro_processa_diretamente_quando_fila_ausente(monkeyp
         assert lote.status == "completed"
         assert lote.processed_files == 1
         assert lote.failed_files == 0
+
+
+def test_evolucao_salarial_por_lote_agrega_por_ano() -> None:
+    with SessionLocal() as db:
+        lote = PayrollBatch(
+            user_id=7,
+            total_files=3,
+            processed_files=3,
+            failed_files=0,
+            status="completed",
+        )
+        db.add(lote)
+        db.flush()
+        db.add_all(
+            [
+                Paycheck(
+                    batch_id=lote.id,
+                    user_id=7,
+                    competencia="Janeiro/2022",
+                    ano=2022,
+                    mes=1,
+                    bruto=3000,
+                    descontos=200,
+                    liquido=2800,
+                    vencimento_basico=2500,
+                    adicional_desempenho=250,
+                    adicional_noturno=0,
+                    irrf=100,
+                    previdencia=100,
+                ),
+                Paycheck(
+                    batch_id=lote.id,
+                    user_id=7,
+                    competencia="Fevereiro/2022",
+                    ano=2022,
+                    mes=2,
+                    bruto=5000,
+                    descontos=300,
+                    liquido=4700,
+                    vencimento_basico=4500,
+                    adicional_desempenho=300,
+                    adicional_noturno=0,
+                    irrf=150,
+                    previdencia=150,
+                ),
+                Paycheck(
+                    batch_id=lote.id,
+                    user_id=7,
+                    competencia="Janeiro/2025",
+                    ano=2025,
+                    mes=1,
+                    bruto=6000,
+                    descontos=400,
+                    liquido=5600,
+                    vencimento_basico=5500,
+                    adicional_desempenho=300,
+                    adicional_noturno=0,
+                    irrf=200,
+                    previdencia=200,
+                ),
+            ]
+        )
+        db.commit()
+
+    client = criar_client()
+    resposta = client.get(f"/financeiro/batch/{lote.id}/evolucao-salarial")
+
+    assert resposta.status_code == 200
+    assert resposta.json() == {
+        "batch_id": 1,
+        "ano_inicial": 2022,
+        "ano_final": 2025,
+        "valor_inicial": 4000.0,
+        "valor_final": 6000.0,
+        "variacao_absoluta": 2000.0,
+        "variacao_percentual": 50.0,
+        "series": [
+            {
+                "ano": 2022,
+                "valor_bruto_medio": 4000.0,
+                "quantidade_contracheques": 2,
+            },
+            {
+                "ano": 2025,
+                "valor_bruto_medio": 6000.0,
+                "quantidade_contracheques": 1,
+            },
+        ],
+    }
+
+
+def test_evolucao_salarial_por_lote_sem_contracheques_retorna_404() -> None:
+    with SessionLocal() as db:
+        lote = PayrollBatch(
+            user_id=7,
+            total_files=1,
+            processed_files=0,
+            failed_files=0,
+            status="completed",
+        )
+        db.add(lote)
+        db.commit()
+
+    client = criar_client()
+    resposta = client.get(f"/financeiro/batch/{lote.id}/evolucao-salarial")
+
+    assert resposta.status_code == 404
+    assert resposta.json() == {
+        "detail": "Nenhum contracheque processado foi encontrado para este lote."
+    }

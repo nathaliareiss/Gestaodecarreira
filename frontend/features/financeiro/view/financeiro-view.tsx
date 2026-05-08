@@ -9,10 +9,14 @@ import {
   isBatchTerminalStatus,
 } from "../model/financeiro-batch.mjs"
 import {
+  obterEvolucaoSalarialLote,
   enviarLoteContracheques,
   obterStatusLoteFinanceiro,
 } from "../model/financeiro.repository"
-import type { FinanceiroBatchStatusResponse } from "../model/financeiro.model"
+import type {
+  FinanceiroBatchStatusResponse,
+  FinanceiroEvolucaoSalarialResponse,
+} from "../model/financeiro.model"
 
 const INTERVALO_POLLING_MS = 2000
 
@@ -31,6 +35,17 @@ function formatarTamanhoArquivo(bytes: number) {
   }
 
   return `${(kilobytes / 1024).toFixed(1)} MB`
+}
+
+const formatadorMoeda = new Intl.NumberFormat("pt-BR", {
+  style: "currency",
+  currency: "BRL",
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+})
+
+function formatarMoeda(valor: number) {
+  return formatadorMoeda.format(valor)
 }
 
 function mensagemStatusBatch(status: FinanceiroBatchStatusResponse | null, enviando: boolean, monitorando: boolean) {
@@ -67,12 +82,27 @@ function resumoProgressoLote(status: FinanceiroBatchStatusResponse | null, envia
   return `${concluidos}/${status.total} PDFs processed so far.`
 }
 
+function resumoEvolucaoSalarial(evolucao: FinanceiroEvolucaoSalarialResponse) {
+  const aumento = evolucao.variacao_percentual >= 0
+  const movimento = aumento ? "grew" : "fell"
+  const direcao = aumento ? "increase" : "decrease"
+  const percentual = Math.abs(evolucao.variacao_percentual).toFixed(1)
+
+  if (evolucao.ano_inicial === evolucao.ano_final) {
+    return `The analyzed pay stubs all sit in ${evolucao.ano_inicial}, with an average gross salary of ${formatarMoeda(evolucao.valor_final)} across ${evolucao.series[0]?.quantidade_contracheques ?? 0} PDFs.`
+  }
+
+  return `Between ${evolucao.ano_inicial} and ${evolucao.ano_final}, the average gross salary ${movimento} from ${formatarMoeda(evolucao.valor_inicial)} to ${formatarMoeda(evolucao.valor_final)}, a ${percentual}% ${direcao} across ${evolucao.series.reduce((total, item) => total + item.quantidade_contracheques, 0)} PDFs.`
+}
+
 export function FinanceiroView() {
   const [arquivosSelecionados, setArquivosSelecionados] = useState<File[]>([])
   const [batchStatus, setBatchStatus] = useState<FinanceiroBatchStatusResponse | null>(null)
+  const [evolucaoSalarial, setEvolucaoSalarial] = useState<FinanceiroEvolucaoSalarialResponse | null>(null)
   const [batchId, setBatchId] = useState<number | null>(null)
   const [enviando, setEnviando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
+  const [erroEvolucao, setErroEvolucao] = useState<string | null>(null)
 
   function selecionarArquivos(evento: ChangeEvent<HTMLInputElement>) {
     const selecionados = Array.from(evento.target.files ?? [])
@@ -85,15 +115,19 @@ export function FinanceiroView() {
     ) {
       setArquivosSelecionados([])
       setBatchStatus(null)
+      setEvolucaoSalarial(null)
       setBatchId(null)
       setErro("Please select PDF files only.")
+      setErroEvolucao(null)
       return
     }
 
     setArquivosSelecionados(selecionados)
     setBatchStatus(null)
+    setEvolucaoSalarial(null)
     setBatchId(null)
     setErro(null)
+    setErroEvolucao(null)
   }
 
   async function enviarFormulario(evento: FormEvent<HTMLFormElement>) {
@@ -106,7 +140,9 @@ export function FinanceiroView() {
 
     setEnviando(true)
     setErro(null)
+    setErroEvolucao(null)
     setBatchStatus(null)
+    setEvolucaoSalarial(null)
     setBatchId(null)
 
     try {
@@ -172,6 +208,39 @@ export function FinanceiroView() {
     }
   }, [batchId])
 
+  useEffect(() => {
+    if (batchId === null || !batchStatus || !isBatchTerminalStatus(batchStatus.status)) {
+      return
+    }
+
+    let ativo = true
+
+    void obterEvolucaoSalarialLote(batchId)
+      .then((dados) => {
+        if (!ativo) {
+          return
+        }
+
+        setEvolucaoSalarial(dados)
+      })
+      .catch((error) => {
+        if (!ativo) {
+          return
+        }
+
+        setEvolucaoSalarial(null)
+        setErroEvolucao(
+          error instanceof Error
+            ? error.message
+            : "We could not load the salary evolution yet.",
+        )
+      })
+
+    return () => {
+      ativo = false
+    }
+  }, [batchId, batchStatus])
+
   const progresso = calcularProgressoLote(batchStatus)
   const monitorando = Boolean(
     batchId !== null && batchStatus && !isBatchTerminalStatus(batchStatus.status) && !enviando,
@@ -180,6 +249,19 @@ export function FinanceiroView() {
   const totalSelecionadoBytes = arquivosSelecionados.reduce((total, arquivo) => total + arquivo.size, 0)
   const totalSelecionadoArquivos = arquivosSelecionados.length
   const barraIndeterminada = enviando && batchStatus === null
+  const serieEvolucao = evolucaoSalarial?.series ?? []
+  const maiorValorSerie = Math.max(...serieEvolucao.map((item) => item.valor_bruto_medio), 0)
+  const totalContrachequesEvolucao = serieEvolucao.reduce(
+    (total, item) => total + item.quantidade_contracheques,
+    0,
+  )
+  const carregandoEvolucao = Boolean(
+    batchId !== null &&
+      batchStatus &&
+      isBatchTerminalStatus(batchStatus.status) &&
+      evolucaoSalarial === null &&
+      erroEvolucao === null,
+  )
 
   return (
     <section className="analysis-card card">
@@ -333,6 +415,86 @@ export function FinanceiroView() {
               <p className="helper">
                 The worker kept going after failures, so the batch can still finish with partial results.
               </p>
+            ) : null}
+          </section>
+        ) : null}
+
+        {batchStatus && isBatchTerminalStatus(batchStatus.status) ? (
+          <section className="salary-panel">
+            <div className="analysis-header__title analysis-header__title--compact">
+              <p className="eyebrow eyebrow--title">Salary Evolution</p>
+              <h3>{"Gross salary by year"}</h3>
+              <p className="analysis-header__subtitle">
+                {
+                  "This chart uses the pay stubs that were actually processed and groups them by year to show the salary trend."
+                }
+              </p>
+            </div>
+
+            {carregandoEvolucao ? (
+              <p className="helper">Calculating the yearly salary evolution...</p>
+            ) : null}
+
+            {erroEvolucao ? <p className="error-box">{erroEvolucao}</p> : null}
+
+            {evolucaoSalarial ? (
+              <>
+                <div className="metric-strip metric-strip--hero">
+                  <div className="metric-line">
+                    <span>Initial year</span>
+                    <strong>{evolucaoSalarial.ano_inicial}</strong>
+                  </div>
+                  <div className="metric-line">
+                    <span>Initial salary</span>
+                    <strong>{formatarMoeda(evolucaoSalarial.valor_inicial)}</strong>
+                  </div>
+                  <div className="metric-line">
+                    <span>Final year</span>
+                    <strong>{evolucaoSalarial.ano_final}</strong>
+                  </div>
+                  <div className="metric-line">
+                    <span>Final salary</span>
+                    <strong>{formatarMoeda(evolucaoSalarial.valor_final)}</strong>
+                  </div>
+                </div>
+
+                <div className="salary-chart" aria-label="Salary evolution chart">
+                  {serieEvolucao.map((item, index) => {
+                    const altura =
+                      maiorValorSerie > 0 ? Math.max(14, (item.valor_bruto_medio / maiorValorSerie) * 100) : 0
+                    const isInitial = index === 0
+                    const isFinal = index === serieEvolucao.length - 1
+
+                    return (
+                      <div className="salary-chart__bar" key={item.ano}>
+                        <div className="salary-chart__bar-track">
+                          <div
+                            className={[
+                              "salary-chart__bar-fill",
+                              isInitial ? "salary-chart__bar-fill--start" : "",
+                              isFinal ? "salary-chart__bar-fill--end" : "",
+                            ]
+                              .filter(Boolean)
+                              .join(" ")}
+                            style={{ height: `${altura}%` }}
+                          />
+                        </div>
+                        <strong>{item.ano}</strong>
+                        <span>{formatarMoeda(item.valor_bruto_medio)}</span>
+                        <small>{item.quantidade_contracheques} PDFs</small>
+                      </div>
+                    )
+                  })}
+                </div>
+
+                <p className="salary-summary">
+                  {resumoEvolucaoSalarial(evolucaoSalarial)}
+                </p>
+
+                <p className="helper">
+                  {`The chart covers ${totalContrachequesEvolucao} processed pay stubs.`}
+                </p>
+              </>
             ) : null}
           </section>
         ) : null}

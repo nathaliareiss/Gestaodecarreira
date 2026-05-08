@@ -2,6 +2,7 @@ import { apiFetch, parseApiResponse } from "@/shared/api/client"
 
 import type {
   ContrachequeAnalise,
+  FinanceiroEvolucaoSalarialResponse,
   FinanceiroBatchStatusResponse,
   FinanceiroBatchUploadResponse,
 } from "./financeiro.model"
@@ -44,5 +45,18 @@ export async function obterStatusLoteFinanceiro(
   return parseApiResponse<FinanceiroBatchStatusResponse>(
     response,
     "We could not fetch the batch status.",
+  )
+}
+
+export async function obterEvolucaoSalarialLote(
+  batchId: number,
+): Promise<FinanceiroEvolucaoSalarialResponse> {
+  const response = await apiFetch(`/api/financeiro/batch/${batchId}/evolucao-salarial`, {
+    method: "GET",
+  })
+
+  return parseApiResponse<FinanceiroEvolucaoSalarialResponse>(
+    response,
+    "We could not fetch the salary evolution.",
   )
 }

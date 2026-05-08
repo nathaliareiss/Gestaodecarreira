@@ -18,11 +18,13 @@ from backend.repositories.financeiro_repository import (
     obter_lote_financeiro_por_id,
 )
 from backend.schemas.financeiro_schema import (
+    EvolucaoSalarialResponse,
     LoteFinanceiroJobPayload,
     LoteFinanceiroStatusResponse,
     LoteFinanceiroUploadResponse,
 )
 from backend.services.contracheque_parser import parse_contracheque
+from backend.services.financeiro_batch_service import calcular_evolucao_salarial_lote
 
 router = APIRouter(prefix="/financeiro", tags=["financeiro"])
 
@@ -230,3 +232,26 @@ def obter_status_lote_financeiro(
         failed=lote.failed_files,
         status=lote.status,
     )
+
+
+@router.get("/batch/{batch_id}/evolucao-salarial", response_model=EvolucaoSalarialResponse)
+def obter_evolucao_salarial_lote(
+    batch_id: int,
+    db: Session = Depends(get_db),
+) -> EvolucaoSalarialResponse:
+    lote = obter_lote_financeiro_por_id(db, batch_id)
+    if lote is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Lote financeiro nao encontrado.",
+        )
+
+    try:
+        evolucao = calcular_evolucao_salarial_lote(db, batch_id)
+    except ValueError as erro:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Nenhum contracheque processado foi encontrado para este lote.",
+        ) from erro
+
+    return EvolucaoSalarialResponse.model_validate(evolucao)

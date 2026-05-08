@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import os
-from decimal import Decimal
+from collections import defaultdict
+from decimal import Decimal, ROUND_HALF_UP
 from time import perf_counter
 
 from sqlalchemy.orm import Session
@@ -14,6 +15,7 @@ from backend.repositories.financeiro_repository import (
     atualizar_lote_financeiro,
     existe_paycheck_por_competencia,
     obter_lote_financeiro_por_id,
+    obter_paychecks_por_batch_id,
     salvar_paycheck_com_itens,
 )
 from backend.schemas.financeiro_schema import LoteFinanceiroJobPayload
@@ -165,3 +167,54 @@ def processar_lote_financeiro_job(dados: dict) -> dict[str, object]:
             status_job,
             perf_counter() - inicio,
         )
+
+
+def calcular_evolucao_salarial_lote(db: Session, batch_id: int) -> dict[str, object]:
+    paychecks = obter_paychecks_por_batch_id(db, batch_id)
+    if not paychecks:
+        raise ValueError("Nenhum contracheque processado foi encontrado para este lote.")
+
+    acumulado_por_ano: dict[int, dict[str, Decimal | int]] = defaultdict(
+        lambda: {"total": ZERO, "quantidade": 0},
+    )
+
+    for paycheck in paychecks:
+        ano = int(paycheck.ano)
+        acumulado = acumulado_por_ano[ano]
+        acumulado["total"] = Decimal(acumulado["total"]) + _para_decimal(paycheck.bruto)
+        acumulado["quantidade"] = int(acumulado["quantidade"]) + 1
+
+    series = []
+    for ano in sorted(acumulado_por_ano):
+        acumulado = acumulado_por_ano[ano]
+        quantidade = max(int(acumulado["quantidade"]), 1)
+        valor_medio = (
+            Decimal(acumulado["total"]) / Decimal(quantidade)
+        ).quantize(ZERO, rounding=ROUND_HALF_UP)
+        series.append(
+            {
+                "ano": ano,
+                "valor_bruto_medio": float(valor_medio),
+                "quantidade_contracheques": quantidade,
+            }
+        )
+
+    primeiro = series[0]
+    ultimo = series[-1]
+    valor_inicial = float(primeiro["valor_bruto_medio"])
+    valor_final = float(ultimo["valor_bruto_medio"])
+    variacao_absoluta = valor_final - valor_inicial
+    variacao_percentual = (
+        (variacao_absoluta / valor_inicial) * 100 if valor_inicial else 0.0
+    )
+
+    return {
+        "batch_id": batch_id,
+        "ano_inicial": int(primeiro["ano"]),
+        "ano_final": int(ultimo["ano"]),
+        "valor_inicial": valor_inicial,
+        "valor_final": valor_final,
+        "variacao_absoluta": variacao_absoluta,
+        "variacao_percentual": variacao_percentual,
+        "series": series,
+    }

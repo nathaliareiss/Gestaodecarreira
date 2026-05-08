@@ -26,3 +26,20 @@ class LoteFinanceiroStatusResponse(BaseModel):
     processed: int = Field(ge=0)
     failed: int = Field(ge=0)
     status: Literal["pending", "processing", "completed", "failed"]
+
+
+class EvolucaoSalarialSerieItemResponse(BaseModel):
+    ano: int = Field(gt=0)
+    valor_bruto_medio: float = Field(ge=0)
+    quantidade_contracheques: int = Field(ge=0)
+
+
+class EvolucaoSalarialResponse(BaseModel):
+    batch_id: int = Field(gt=0)
+    ano_inicial: int = Field(gt=0)
+    ano_final: int = Field(gt=0)
+    valor_inicial: float
+    valor_final: float
+    variacao_absoluta: float
+    variacao_percentual: float
+    series: list[EvolucaoSalarialSerieItemResponse] = Field(min_length=1)

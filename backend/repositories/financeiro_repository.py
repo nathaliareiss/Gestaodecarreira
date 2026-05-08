@@ -28,6 +28,15 @@ def obter_lote_financeiro_por_id(db: Session, batch_id: int) -> PayrollBatch | N
     return db.get(PayrollBatch, batch_id)
 
 
+def obter_paychecks_por_batch_id(db: Session, batch_id: int) -> list[Paycheck]:
+    stmt = (
+        select(Paycheck)
+        .where(Paycheck.batch_id == batch_id)
+        .order_by(Paycheck.ano.asc(), Paycheck.mes.asc(), Paycheck.created_at.asc(), Paycheck.id.asc())
+    )
+    return list(db.scalars(stmt).all())
+
+
 def atualizar_lote_financeiro(
     db: Session,
     lote: PayrollBatch,
