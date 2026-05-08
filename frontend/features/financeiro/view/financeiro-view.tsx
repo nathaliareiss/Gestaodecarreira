@@ -497,7 +497,7 @@ export function FinanceiroView() {
                 </div>
 
                 <div className="salary-chart" aria-label="Gráfico da evolução salarial anual">
-                  {serieEvolucao.map((item, index) => {
+                  {serieEvolucao.map((item) => {
                     const altura =
                       maiorValorSerie > 0
                         ? Math.max(14, (item.bruto_referencia_anual / maiorValorSerie) * 100)
