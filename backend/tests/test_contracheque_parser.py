@@ -34,6 +34,7 @@ def test_parse_contracheque_lido_do_layout_real(monkeypatch) -> None:
         "competencia": "Janeiro/2025",
         "ano": 2025,
         "mes": 1,
+        "matricula": "",
         "bruto": Decimal("8816.54"),
         "descontos": Decimal("1912.66"),
         "liquido": Decimal("6903.88"),
@@ -62,6 +63,7 @@ def test_parse_contracheque_preenche_campos_ausentes_com_zero(monkeypatch) -> No
     assert dados["competencia"] == "Fevereiro/2023"
     assert dados["ano"] == 2023
     assert dados["mes"] == 2
+    assert dados["matricula"] == ""
     assert dados["bruto"] == Decimal("4250.00")
     assert dados["descontos"] == Decimal("0.00")
     assert dados["liquido"] == Decimal("4000.00")
@@ -109,3 +111,21 @@ def test_extrair_rubricas_contracheque_classifica_rubricas_por_categoria(monkeyp
     assert encontrar_por_categoria("previdencia")["tipo"] == "desconto"
     assert encontrar_por_categoria("irrf")["tipo"] == "desconto"
     assert encontrar_por_categoria("emprestimo")["tipo"] == "desconto"
+
+
+def test_parse_contracheque_extrai_matricula_quando_presente(monkeypatch) -> None:
+    from backend.services import contracheque_parser as parser
+
+    texto_simulado = """
+    DEMONSTRATIVO DE PAGAMENTO - MARCO/2024
+    MATRICULA: 123456
+    VENCIMENTO BASICO 4.000,00
+    TOTAL DE VANTAGENS 4.000,00
+    VALOR A RECEBER R$ 3.500,00
+    """
+
+    monkeypatch.setattr(parser, "_extrair_texto_pdf", lambda _pdf_path: texto_simulado)
+
+    dados = parse_contracheque("qualquer.pdf")
+
+    assert dados["matricula"] == "123456"

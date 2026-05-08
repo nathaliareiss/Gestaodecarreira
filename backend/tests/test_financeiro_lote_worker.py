@@ -66,13 +66,15 @@ def test_processamento_assincrono_persiste_paycheck_e_itens() -> None:
         assert any(item.descricao_original for item in itens)
 
 
-def test_duplicidade_de_competencia_marca_falha_sem_parar_lote() -> None:
+def test_duplicidade_de_competencia_conta_como_duplicado_sem_parar_lote() -> None:
     with SessionLocal() as db:
         lote = criar_lote_financeiro(db, user_id=7, total_files=1)
         lote_duplicado = criar_lote_financeiro(db, user_id=7, total_files=1)
         paycheck_existente = Paycheck(
             batch_id=lote.id,
             user_id=7,
+            file_hash="hash-existente",
+            matricula="",
             competencia="Janeiro/2022",
             ano=2022,
             mes=1,
@@ -102,21 +104,206 @@ def test_duplicidade_de_competencia_marca_falha_sem_parar_lote() -> None:
         }
     )
 
-    assert resultado["status"] == "failed"
+    assert resultado["status"] == "completed"
     assert resultado["processed"] == 0
-    assert resultado["failed"] == 1
+    assert resultado["duplicated"] == 1
+    assert resultado["failed"] == 0
 
     with SessionLocal() as db:
         lote_salvo = db.get(PayrollBatch, lote_duplicado.id)
         assert lote_salvo is not None
-        assert lote_salvo.status == "failed"
+        assert lote_salvo.status == "completed"
         assert lote_salvo.processed_files == 0
-        assert lote_salvo.failed_files == 1
+        assert lote_salvo.duplicated_files == 1
+        assert lote_salvo.failed_files == 0
 
         total_paychecks = db.scalar(
             select(func.count()).select_from(Paycheck).where(Paycheck.user_id == 7)
         )
         assert total_paychecks == 1
+
+
+def test_arquivo_com_mesmo_hash_e_nome_diferente_e_duplicado() -> None:
+    with SessionLocal() as db:
+        lote = criar_lote_financeiro(db, user_id=7, total_files=2)
+
+    arquivo_1 = _criar_copia_pdf("contracheque-original.pdf")
+    arquivo_2 = _criar_copia_pdf("contracheque-copia.pdf")
+
+    resultado = processar_lote_financeiro_job(
+        {
+            "batch_id": lote.id,
+            "user_id": 7,
+            "arquivos": [
+                {
+                    "arquivo_nome": arquivo_1.name,
+                    "arquivo_temporario_path": str(arquivo_1),
+                },
+                {
+                    "arquivo_nome": arquivo_2.name,
+                    "arquivo_temporario_path": str(arquivo_2),
+                },
+            ],
+        }
+    )
+
+    assert resultado["status"] == "completed"
+    assert resultado["processed_count"] == 1
+    assert resultado["duplicated_count"] == 1
+    assert resultado["failed_count"] == 0
+
+    with SessionLocal() as db:
+        lote_salvo = db.get(PayrollBatch, lote.id)
+        assert lote_salvo is not None
+        assert lote_salvo.processed_files == 1
+        assert lote_salvo.duplicated_files == 1
+        assert lote_salvo.failed_files == 0
+
+        total_paychecks = db.scalar(
+            select(func.count()).select_from(Paycheck).where(Paycheck.batch_id == lote.id)
+        )
+        assert total_paychecks == 1
+
+
+def test_mesmo_mes_ano_com_arquivo_diferente_e_mesma_matricula_e_duplicado(monkeypatch) -> None:
+    from backend.services import financeiro_batch_service as service
+
+    monkeypatch.setattr(
+        service,
+        "parse_contracheque",
+        lambda _pdf_path: {
+            "competencia": "Janeiro/2024",
+            "ano": 2024,
+            "mes": 1,
+            "matricula": "123456",
+            "bruto": Decimal("4000.00"),
+            "descontos": Decimal("500.00"),
+            "liquido": Decimal("3500.00"),
+            "vencimento_basico": Decimal("3000.00"),
+            "adicional_desempenho": Decimal("200.00"),
+            "adicional_noturno": Decimal("100.00"),
+            "irrf": Decimal("100.00"),
+            "previdencia": Decimal("100.00"),
+        },
+    )
+    monkeypatch.setattr(
+        service,
+        "extrair_rubricas_contracheque",
+        lambda _pdf_path: [
+            {
+                "tipo": "vantagem",
+                "categoria_normalizada": "salario_base",
+                "descricao_original": "Vencimento Basico",
+                "descricao": "Vencimento Basico",
+                "valor": Decimal("3000.00"),
+            }
+        ],
+    )
+
+    with SessionLocal() as db:
+        lote = criar_lote_financeiro(db, user_id=7, total_files=2)
+
+    arquivo_1 = TEST_TEMP_DIR / "competencia-1.pdf"
+    arquivo_1.write_bytes(b"%PDF-1.4 arquivo-um")
+    arquivo_2 = TEST_TEMP_DIR / "competencia-2.pdf"
+    arquivo_2.write_bytes(b"%PDF-1.4 arquivo-dois")
+
+    resultado = processar_lote_financeiro_job(
+        {
+            "batch_id": lote.id,
+            "user_id": 7,
+            "arquivos": [
+                {
+                    "arquivo_nome": arquivo_1.name,
+                    "arquivo_temporario_path": str(arquivo_1),
+                },
+                {
+                    "arquivo_nome": arquivo_2.name,
+                    "arquivo_temporario_path": str(arquivo_2),
+                },
+            ],
+        }
+    )
+
+    assert resultado["status"] == "completed"
+    assert resultado["processed_count"] == 1
+    assert resultado["duplicated_count"] == 1
+    assert resultado["failed_count"] == 0
+
+
+def test_usuarios_diferentes_mesma_competencia_nao_colidem(monkeypatch) -> None:
+    from backend.services import financeiro_batch_service as service
+
+    monkeypatch.setattr(
+        service,
+        "parse_contracheque",
+        lambda _pdf_path: {
+            "competencia": "Fevereiro/2024",
+            "ano": 2024,
+            "mes": 2,
+            "matricula": "123456",
+            "bruto": Decimal("5000.00"),
+            "descontos": Decimal("600.00"),
+            "liquido": Decimal("4400.00"),
+            "vencimento_basico": Decimal("3000.00"),
+            "adicional_desempenho": Decimal("300.00"),
+            "adicional_noturno": Decimal("100.00"),
+            "irrf": Decimal("200.00"),
+            "previdencia": Decimal("100.00"),
+        },
+    )
+    monkeypatch.setattr(
+        service,
+        "extrair_rubricas_contracheque",
+        lambda _pdf_path: [
+            {
+                "tipo": "vantagem",
+                "categoria_normalizada": "salario_base",
+                "descricao_original": "Vencimento Basico",
+                "descricao": "Vencimento Basico",
+                "valor": Decimal("3000.00"),
+            }
+        ],
+    )
+
+    with SessionLocal() as db:
+        lote_1 = criar_lote_financeiro(db, user_id=7, total_files=1)
+        lote_2 = criar_lote_financeiro(db, user_id=8, total_files=1)
+
+    arquivo_1 = TEST_TEMP_DIR / "usuario-7.pdf"
+    arquivo_1.write_bytes(b"%PDF-1.4 usuario-7")
+    arquivo_2 = TEST_TEMP_DIR / "usuario-8.pdf"
+    arquivo_2.write_bytes(b"%PDF-1.4 usuario-8")
+
+    resultado_1 = processar_lote_financeiro_job(
+        {
+            "batch_id": lote_1.id,
+            "user_id": 7,
+            "arquivos": [
+                {
+                    "arquivo_nome": arquivo_1.name,
+                    "arquivo_temporario_path": str(arquivo_1),
+                }
+            ],
+        }
+    )
+    resultado_2 = processar_lote_financeiro_job(
+        {
+            "batch_id": lote_2.id,
+            "user_id": 8,
+            "arquivos": [
+                {
+                    "arquivo_nome": arquivo_2.name,
+                    "arquivo_temporario_path": str(arquivo_2),
+                }
+            ],
+        }
+    )
+
+    assert resultado_1["status"] == "completed"
+    assert resultado_2["status"] == "completed"
+    assert resultado_1["processed_count"] == 1
+    assert resultado_2["processed_count"] == 1
 
 
 def test_pdf_invalido_marca_falha_e_continua_processamento() -> None:
