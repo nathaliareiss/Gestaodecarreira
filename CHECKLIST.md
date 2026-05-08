@@ -63,3 +63,4 @@
 - [x] Refatorada a análise financeira para separar salário-base, vantagens e descontos com composição anual por categoria.
 - [x] A rota de evolução salarial passou a responder estado vazio sem 404 quando o lote não tiver contracheques processados.
 - [x] Padronizada a rota de evolucao salarial em GET /api/financeiro/evolucao-salarial e melhorado o erro para mostrar a URL chamada.
+- [x] Mantida compatibilidade temporaria da evolucao salarial nos caminhos novo e legado para evitar 404 em deploys defasados.

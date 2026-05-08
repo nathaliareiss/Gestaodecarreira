@@ -108,27 +108,32 @@ def test_evolucao_salarial_por_lote_sem_contracheques_retorna_resposta_vazia() -
         db.commit()
 
     client = criar_client()
-    resposta = client.get("/financeiro/evolucao-salarial", params={"batch_id": lote.id})
+    for caminho in (
+        "/financeiro/evolucao-salarial",
+        f"/financeiro/batch/{lote.id}/evolucao-salarial",
+    ):
+        kwargs = {"params": {"batch_id": lote.id}} if caminho.endswith("/evolucao-salarial") and "batch/" not in caminho else {}
+        resposta = client.get(caminho, **kwargs)
 
-    assert resposta.status_code == 200
-    assert resposta.json() == {
-        "batch_id": lote.id,
-        "ano_inicial": None,
-        "ano_final": None,
-        "salario_base_inicial_referencia": None,
-        "salario_base_final_referencia": None,
-        "bruto_total_inicial_referencia": None,
-        "bruto_total_final_referencia": None,
-        "liquido_inicial_referencia": None,
-        "liquido_final_referencia": None,
-        "descontos_inicial_referencia": None,
-        "descontos_final_referencia": None,
-        "vantagens_adicionais_inicial_referencia": None,
-        "vantagens_adicionais_final_referencia": None,
-        "variacao_acumulada_salario_base_percentual": None,
-        "anos_sem_crescimento_relevante": [],
-        "series": [],
-    }
+        assert resposta.status_code == 200
+        assert resposta.json() == {
+            "batch_id": lote.id,
+            "ano_inicial": None,
+            "ano_final": None,
+            "salario_base_inicial_referencia": None,
+            "salario_base_final_referencia": None,
+            "bruto_total_inicial_referencia": None,
+            "bruto_total_final_referencia": None,
+            "liquido_inicial_referencia": None,
+            "liquido_final_referencia": None,
+            "descontos_inicial_referencia": None,
+            "descontos_final_referencia": None,
+            "vantagens_adicionais_inicial_referencia": None,
+            "vantagens_adicionais_final_referencia": None,
+            "variacao_acumulada_salario_base_percentual": None,
+            "anos_sem_crescimento_relevante": [],
+            "series": [],
+        }
 
 
 def test_evolucao_salarial_por_lote_com_contracheques_retorna_series() -> None:
@@ -176,11 +181,16 @@ def test_evolucao_salarial_por_lote_com_contracheques_retorna_series() -> None:
         db.commit()
 
     client = criar_client()
-    resposta = client.get("/financeiro/evolucao-salarial", params={"batch_id": lote.id})
+    for caminho in (
+        "/financeiro/evolucao-salarial",
+        f"/financeiro/batch/{lote.id}/evolucao-salarial",
+    ):
+        kwargs = {"params": {"batch_id": lote.id}} if caminho.endswith("/evolucao-salarial") and "batch/" not in caminho else {}
+        resposta = client.get(caminho, **kwargs)
 
-    assert resposta.status_code == 200
-    payload = resposta.json()
-    assert payload["ano_inicial"] == 2024
-    assert payload["ano_final"] == 2024
-    assert payload["salario_base_inicial_referencia"] == 3100.0
-    assert payload["series"][0]["salario_base_referencia_anual"] == 3100.0
+        assert resposta.status_code == 200
+        payload = resposta.json()
+        assert payload["ano_inicial"] == 2024
+        assert payload["ano_final"] == 2024
+        assert payload["salario_base_inicial_referencia"] == 3100.0
+        assert payload["series"][0]["salario_base_referencia_anual"] == 3100.0
