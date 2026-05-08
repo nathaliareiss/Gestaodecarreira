@@ -18,13 +18,12 @@ from backend.schemas.usuario_schema import (
     UsuarioCreateRequest,
     UsuarioResponse,
 )
+from backend.services.auth_service import obter_usuario_autenticado
 from backend.services.usuario_service import (
     cadastrar_usuario,
     confirmar_usuario,
-    consultar_usuarios,
-    excluir_usuario_mais_recente,
-    obter_usuario_mais_recente,
 )
+from backend.repositories.usuario_repository import remover_usuario
 from backend.services.email_service import enviar_email_confirmacao
 
 router = APIRouter(prefix="/usuarios", tags=["usuarios"])
@@ -76,29 +75,30 @@ def criar_usuario(
 
 
 @router.get("", response_model=list[UsuarioResponse])
-def listar_todos_os_usuarios(db: Session = Depends(get_db)) -> list[UsuarioResponse]:
-    usuarios = consultar_usuarios(db)
-    logger.debug("Listagem de usuarios consultada", extra={"total": len(usuarios)})
-    return [UsuarioResponse.model_validate(usuario) for usuario in usuarios]
+def listar_todos_os_usuarios(
+    current_user=Depends(obter_usuario_autenticado),
+    db: Session = Depends(get_db),
+) -> list[UsuarioResponse]:
+    logger.debug("Listagem de usuarios consultada", extra={"usuario_id": current_user.id})
+    return [UsuarioResponse.model_validate(current_user)]
 
 
 @router.get("/ultimo", response_model=UsuarioResponse)
-def obter_ultimo_usuario(db: Session = Depends(get_db)) -> UsuarioResponse:
+def obter_ultimo_usuario(
+    current_user=Depends(obter_usuario_autenticado),
+    db: Session = Depends(get_db),
+) -> UsuarioResponse:
     cache = obter_json_cache(chave_usuario_ultimo())
     if cache is not None:
-        logger.debug("Ultimo usuario carregado do cache")
+        logger.debug("Ultimo usuario carregado do cache", extra={"usuario_id": current_user.id})
         return UsuarioResponse.model_validate(cache)
 
-    usuario = obter_usuario_mais_recente(db)
-    if usuario is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Nenhum usuario encontrado.",
-        )
-
-    logger.debug("Ultimo usuario consultado", extra={"usuario_id": usuario.id})
-    resposta = UsuarioResponse.model_validate(usuario)
-    definir_json_cache(chave_usuario_ultimo(), resposta.model_dump(mode="json"), CACHE_TTL_USUARIO_ULTIMO_SEGUNDOS)
+    resposta = UsuarioResponse.model_validate(current_user)
+    definir_json_cache(
+        chave_usuario_ultimo(),
+        resposta.model_dump(mode="json"),
+        CACHE_TTL_USUARIO_ULTIMO_SEGUNDOS,
+    )
     return resposta
 
 
@@ -121,13 +121,10 @@ def confirmar_email(
 
 
 @router.delete("/ultimo", response_model=UsuarioResponse)
-def remover_ultimo_usuario(db: Session = Depends(get_db)) -> UsuarioResponse:
-    usuario = excluir_usuario_mais_recente(db)
-    if usuario is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Nenhum usuario encontrado.",
-        )
-
-    logger.info("Ultimo usuario removido", extra={"usuario_id": usuario.id})
-    return UsuarioResponse.model_validate(usuario)
+def remover_ultimo_usuario(
+    current_user=Depends(obter_usuario_autenticado),
+    db: Session = Depends(get_db),
+) -> UsuarioResponse:
+    remover_usuario(db, current_user)
+    logger.info("Usuario removido", extra={"usuario_id": current_user.id})
+    return UsuarioResponse.model_validate(current_user)
