@@ -41,7 +41,7 @@ def criar_app() -> FastAPI:
     def _criar_tabelas() -> None:
         Base.metadata.create_all(bind=engine)
         habilitar_rls_tabelas_publicas()
-        if AUTO_SYNC_DB_SCHEMA:
+        if engine.dialect.name != "sqlite":
             sincronizar_usuario_table()
 
         rotas_registradas = [
@@ -63,6 +63,7 @@ def criar_app() -> FastAPI:
                 "titulo": "Gestao de Carreira API",
                 "origens_cors": origens_cors,
                 "auto_sync_db_schema": AUTO_SYNC_DB_SCHEMA,
+                "schema_sync_executado": engine.dialect.name != "sqlite",
                 "rotas_registradas": rotas_registradas,
                 "rotas_financeiro": rotas_financeiro,
                 "rota_evolucao_salarial": next(

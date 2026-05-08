@@ -170,10 +170,26 @@ def processar_lote_financeiro_job(dados: dict) -> dict[str, object]:
             if lote is None:
                 raise ValueError("Lote financeiro nao encontrado.")
 
+            logger.info(
+                "Iniciando processamento do lote financeiro",
+                extra={
+                    "batch_id": payload.batch_id,
+                    "etapa": "inicio_lote",
+                    "total_arquivos": len(payload.arquivos),
+                },
+            )
             atualizar_lote_financeiro(db, lote, status="processing")
 
             for arquivo in payload.arquivos:
                 try:
+                    logger.info(
+                        "Processando arquivo do lote financeiro",
+                        extra={
+                            "batch_id": payload.batch_id,
+                            "arquivo_nome": arquivo.arquivo_nome,
+                            "etapa": "processar_arquivo",
+                        },
+                    )
                     _processar_arquivo_individual(
                         db=db,
                         batch_id=payload.batch_id,
@@ -188,11 +204,12 @@ def processar_lote_financeiro_job(dados: dict) -> dict[str, object]:
                         erro_arquivo,
                         arquivo.arquivo_nome,
                     )
-                    logger.warning(
+                    logger.exception(
                         "Falha ao processar contracheque do lote",
                         extra={
                             "batch_id": payload.batch_id,
                             "arquivo_nome": arquivo.arquivo_nome,
+                            "etapa": "processar_arquivo",
                             "erro": str(erro_arquivo),
                             "mensagem_erro": mensagem_erro,
                         },
