@@ -59,6 +59,8 @@ def sincronizar_usuario_table() -> None:
         "ALTER TABLE IF EXISTS usuarios ADD COLUMN IF NOT EXISTS redefinir_senha_expira_em TIMESTAMP WITH TIME ZONE",
         "ALTER TABLE IF EXISTS usuarios ADD COLUMN IF NOT EXISTS criado_em TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()",
         "ALTER TABLE IF EXISTS usuarios ADD COLUMN IF NOT EXISTS confirmado_em TIMESTAMP WITH TIME ZONE",
+        "ALTER TABLE IF EXISTS paycheck_items ADD COLUMN IF NOT EXISTS categoria_normalizada VARCHAR NOT NULL DEFAULT 'outros_vantagens'",
+        "ALTER TABLE IF EXISTS paycheck_items ADD COLUMN IF NOT EXISTS descricao_original VARCHAR NOT NULL DEFAULT ''",
         "UPDATE usuarios SET apelido = COALESCE(apelido, '') WHERE apelido IS NULL",
         "UPDATE usuarios SET login = COALESCE(login, email) WHERE login IS NULL",
         "UPDATE usuarios SET senha_hash = COALESCE(senha_hash, '') WHERE senha_hash IS NULL",

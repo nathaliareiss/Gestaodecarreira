@@ -33,6 +33,7 @@
 - [x] Criado workflow de CI para o frontend com `lint`, `test` e `build`.
 - [x] Adicionada a análise salarial anual com mediana por ano, gráfico de evolução e resumo amigável no frontend.
 - [x] Removida a pasta vazia `frontend/app/api`, que não era usada pelo fluxo atual do frontend.
+- [x] Padronizados em inglês os títulos e rótulos da seção de evolução salarial do Financeiro.
 
 ### Em andamento
 

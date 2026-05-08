@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+from sqlalchemy.orm import selectinload
 
 from backend.database.models import PayrollBatch, Paycheck, PaycheckItem
 
@@ -31,6 +32,7 @@ def obter_lote_financeiro_por_id(db: Session, batch_id: int) -> PayrollBatch | N
 def obter_paychecks_por_batch_id(db: Session, batch_id: int) -> list[Paycheck]:
     stmt = (
         select(Paycheck)
+        .options(selectinload(Paycheck.items))
         .where(Paycheck.batch_id == batch_id)
         .order_by(Paycheck.ano.asc(), Paycheck.mes.asc(), Paycheck.created_at.asc(), Paycheck.id.asc())
     )

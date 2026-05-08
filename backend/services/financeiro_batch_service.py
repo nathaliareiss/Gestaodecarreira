@@ -3,7 +3,6 @@ from __future__ import annotations
 import os
 from collections import defaultdict
 from decimal import Decimal, ROUND_HALF_UP
-from math import pow
 from time import perf_counter
 from statistics import median
 
@@ -22,6 +21,8 @@ from backend.repositories.financeiro_repository import (
 )
 from backend.schemas.financeiro_schema import LoteFinanceiroJobPayload
 from backend.services.contracheque_parser import (
+    CATEGORIAS_DESCONTO,
+    CATEGORIAS_VANTAGEM,
     extrair_rubricas_contracheque,
     parse_contracheque,
 )
@@ -43,6 +44,8 @@ def _para_decimal(valor: object) -> Decimal:
 def _criar_paycheck_item(payload: dict[str, object]) -> PaycheckItem:
     return PaycheckItem(
         tipo=str(payload["tipo"]),
+        categoria_normalizada=str(payload["categoria_normalizada"]),
+        descricao_original=str(payload["descricao_original"]),
         descricao=str(payload["descricao"]),
         valor=_para_decimal(payload["valor"]),
     )

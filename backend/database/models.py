@@ -158,6 +158,8 @@ class PaycheckItem(Base):
     id = Column(Integer, primary_key=True, index=True)
     paycheck_id = Column(Integer, ForeignKey("paychecks.id"), nullable=False, index=True)
     tipo = Column(String, nullable=False)
+    categoria_normalizada = Column(String, nullable=False, default="outros_vantagens")
+    descricao_original = Column(String, nullable=False, default="")
     descricao = Column(String, nullable=False)
     valor = Column(Numeric(14, 2, asdecimal=True), nullable=False, default=0)
     created_at = Column(

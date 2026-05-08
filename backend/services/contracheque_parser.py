@@ -96,6 +96,119 @@ PADROES_VALORES = {
     ],
 }
 
+CATEGORIAS_VANTAGEM = (
+    "salario_base",
+    "ade",
+    "adicional_noturno",
+    "alimentacao",
+    "decimo_terceiro",
+    "ferias",
+    "retroativo",
+    "abono_vestimenta",
+    "outros_vantagens",
+)
+
+CATEGORIAS_DESCONTO = (
+    "previdencia",
+    "irrf",
+    "emprestimo",
+    "saude",
+    "associacao",
+    "outros_descontos",
+)
+
+PADROES_RUBRICAS = [
+    (
+        "vantagem",
+        "salario_base",
+        "Vencimento Basico",
+        [rf"VENCIMENTO\s+BASICO.*?{PADRAO_VALOR}"],
+    ),
+    (
+        "vantagem",
+        "ade",
+        "Adicional Desempenho",
+        [rf"ADICIONAL\s+DESEMPENHO.*?{PADRAO_VALOR}", rf"\bADE\b.*?{PADRAO_VALOR}"],
+    ),
+    (
+        "vantagem",
+        "adicional_noturno",
+        "Adicional Noturno",
+        [rf"ADICIONAL\s+NOTURNO.*?{PADRAO_VALOR}", rf"ADIC\s+NOT.*?{PADRAO_VALOR}"],
+    ),
+    (
+        "vantagem",
+        "alimentacao",
+        "Aj.custo/aliment",
+        [
+            rf"AJ\.?\s*CUSTO\s*/\s*ALIMENT.*?{PADRAO_VALOR}",
+            rf"AJUDA\s+DE\s+CUSTO.*?ALIMENT.*?{PADRAO_VALOR}",
+            rf"ALIMENTA(?:CAO|ÇÃO).*?{PADRAO_VALOR}",
+        ],
+    ),
+    (
+        "vantagem",
+        "decimo_terceiro",
+        "Decimo Terceiro",
+        [rf"13(?:º|O)?\s+SALARIO.*?{PADRAO_VALOR}", rf"DECIMO\s+TERCEIRO.*?{PADRAO_VALOR}"],
+    ),
+    (
+        "vantagem",
+        "ferias",
+        "Ferias",
+        [rf"\bFERIAS\b.*?{PADRAO_VALOR}", rf"1/3.*?FERIAS.*?{PADRAO_VALOR}"],
+    ),
+    (
+        "vantagem",
+        "retroativo",
+        "Retroativo",
+        [rf"RETROATIV\w*.*?{PADRAO_VALOR}"],
+    ),
+    (
+        "vantagem",
+        "abono_vestimenta",
+        "Abono Aqu. vestimenta",
+        [
+            rf"ABONO\s+AQ\.?\s*VESTIMENTA.*?{PADRAO_VALOR}",
+            rf"ABONO\s+VESTIMENTA.*?{PADRAO_VALOR}",
+            rf"VESTIMENTA.*?{PADRAO_VALOR}",
+        ],
+    ),
+    (
+        "desconto",
+        "previdencia",
+        "Contrib.prev",
+        [rf"CONTRIB\.?\s*PREV.*?{PADRAO_VALOR}", rf"PREVIDENCIA.*?{PADRAO_VALOR}"],
+    ),
+    (
+        "desconto",
+        "irrf",
+        "Imp. Renda Ret.fonte",
+        [rf"IRRF.*?{PADRAO_VALOR}", rf"IMP\.\s*RENDA.*?{PADRAO_VALOR}"],
+    ),
+    (
+        "desconto",
+        "emprestimo",
+        "Emprestimo",
+        [
+            rf"EMPREST\w*.*?{PADRAO_VALOR}",
+            rf"B\.?\s*PAN.*?EMPREST.*?{PADRAO_VALOR}",
+        ],
+    ),
+    (
+        "desconto",
+        "saude",
+        "Saude",
+        [rf"SAUDE.*?{PADRAO_VALOR}", rf"COPART\w*.*?{PADRAO_VALOR}"],
+    ),
+    (
+        "desconto",
+        "associacao",
+        "Associacao",
+        [rf"ASSOC\w*.*?{PADRAO_VALOR}"],
+    ),
+]
+
 
 def _remover_acentos(texto: str) -> str:
     """Normaliza o texto para facilitar as buscas com regex."""
@@ -117,6 +230,66 @@ def _extrair_texto_pdf(pdf_path: str) -> str:
 
 def _normalizar_para_busca(texto: str) -> str:
     return _remover_acentos(texto).upper().strip()
+
+
+def _normalizar_para_comparacao(texto: str) -> str:
+    texto_limpo = _normalizar_para_busca(texto)
+    return re.sub(r"[^A-Z0-9]+", " ", texto_limpo).strip()
+
+
+def _limpar_descricao_rubrica(linha: str) -> str:
+    descricao = linha.strip()
+    descricao = re.sub(r"^\d+\s+\S+\s+", "", descricao).strip()
+    descricao = re.sub(r"\s*[-â€“–]\s*$", "", descricao).strip()
+    descricao = re.sub(r"\s+\d+$", "", descricao).strip()
+    descricao = re.sub(r"\s+de$", "", descricao, flags=re.IGNORECASE).strip()
+    return descricao
+
+
+def _classificar_rubrica(tipo: str, descricao_original: str) -> str:
+    descricao_busca = _normalizar_para_comparacao(descricao_original)
+
+    if tipo == "vantagem":
+        if "VENCIMENTO BASICO" in descricao_busca:
+            return "salario_base"
+        if "ADICIONAL DESEMPENHO" in descricao_busca or re.search(r"\bADE\b", descricao_busca):
+            return "ade"
+        if "ADICIONAL NOTURNO" in descricao_busca or "ADIC NOT" in descricao_busca:
+            return "adicional_noturno"
+        if "AJ CUSTO ALIMENT" in descricao_busca or "AJUDA DE CUSTO" in descricao_busca or "ALIMENTAC" in descricao_busca:
+            return "alimentacao"
+        if "13 SALARIO" in descricao_busca or "DECIMO TERCEIRO" in descricao_busca:
+            return "decimo_terceiro"
+        if "FERIAS" in descricao_busca:
+            return "ferias"
+        if "RETROAT" in descricao_busca:
+            return "retroativo"
+        if "VESTIMENTA" in descricao_busca:
+            return "abono_vestimenta"
+        return "outros_vantagens"
+
+    if "PREVID" in descricao_busca or "CONTRIB PREV" in descricao_busca:
+        return "previdencia"
+    if "IRRF" in descricao_busca or "IMPOSTO DE RENDA" in descricao_busca:
+        return "irrf"
+    if "EMPREST" in descricao_busca or "B PAN" in descricao_busca:
+        return "emprestimo"
+    if "SAUDE" in descricao_busca or "COPART" in descricao_busca:
+        return "saude"
+    if "ASSOC" in descricao_busca:
+        return "associacao"
+    return "outros_descontos"
+
+
+def _montar_rubrica(tipo: str, descricao_original: str, valor: Decimal) -> dict[str, str | Decimal]:
+    categoria_normalizada = _classificar_rubrica(tipo, descricao_original)
+    return {
+        "tipo": tipo,
+        "categoria_normalizada": categoria_normalizada,
+        "descricao_original": descricao_original,
+        "descricao": descricao_original,
+        "valor": valor.quantize(ZERO),
+    }
 
 
 def _converter_valor_monetario(valor: str | None) -> Decimal:
@@ -329,18 +502,17 @@ def _extrair_rubricas_do_texto_limpo(texto: str) -> list[dict[str, str | Decimal
         if not correspondencia:
             continue
 
-        descricao = linha_original[: correspondencia.start("valor")].strip()
-        descricao = re.sub(r"^\d+\s+\S+\s+", "", descricao).strip()
-        descricao = re.sub(r"\s*-\s*$", "", descricao).strip()
-        descricao = re.sub(r"\s+\d+$", "", descricao).strip()
-        descricao = re.sub(r"\s+de$", "", descricao, flags=re.IGNORECASE).strip()
+        descricao = _limpar_descricao_rubrica(
+            linha_original[: correspondencia.start("valor")].strip()
+        )
+        descricao_original = descricao or linha_original
 
         rubricas.append(
-            {
-                "tipo": secao,
-                "descricao": descricao or linha_original,
-                "valor": _converter_valor_monetario(correspondencia.group("valor")),
-            }
+            _montar_rubrica(
+                secao,
+                descricao_original,
+                _converter_valor_monetario(correspondencia.group("valor")),
+            )
         )
 
     return rubricas
@@ -348,37 +520,19 @@ def _extrair_rubricas_do_texto_limpo(texto: str) -> list[dict[str, str | Decimal
 
 def _extrair_rubricas_por_padroes(texto_busca: str) -> list[dict[str, str | Decimal]]:
     rubricas: list[dict[str, str | Decimal]] = []
-    padroes = [
-        ("vantagem", "Vencimento basico", [rf"VENCIMENTO\s+BASICO.*?{PADRAO_VALOR}"]),
-        (
-            "vantagem",
-            "Adicional desempenho",
-            [rf"ADICIONAL\s+DESEMPENHO.*?{PADRAO_VALOR}"],
-        ),
-        (
-            "vantagem",
-            "Adicional noturno",
-            [rf"ADICIONAL\s+NOTURNO.*?{PADRAO_VALOR}", rf"ADIC\s+NOT.*?{PADRAO_VALOR}"],
-        ),
-        ("vantagem", "Abono aquisicao vestimenta", [rf"ABONO\s+AQ\.?VESTIMENTA.*?{PADRAO_VALOR}"]),
-        ("desconto", "Contribuicao previdenciaria", [rf"CONTRIB\.?PREV.*?{PADRAO_VALOR}", rf"PREVIDENCIA.*?{PADRAO_VALOR}"]),
-        ("desconto", "IRRF", [rf"IRRF.*?{PADRAO_VALOR}", rf"IMP\.\s+RENDA.*?{PADRAO_VALOR}"]),
-        ("desconto", "B.pan emprestimo", [rf"B\.?PAN.*?{PADRAO_VALOR}"]),
-    ]
-
-    for tipo, descricao, padroes_item in padroes:
+    for tipo, categoria_normalizada, descricao, padroes_item in PADROES_RUBRICAS:
         for padrao in padroes_item:
             correspondencia = re.search(padrao, texto_busca, flags=re.IGNORECASE | re.DOTALL)
             if not correspondencia:
                 continue
 
-            rubricas.append(
-                {
-                    "tipo": tipo,
-                    "descricao": descricao,
-                    "valor": _converter_valor_monetario(correspondencia.group("valor")),
-                }
+            rubrica = _montar_rubrica(
+                tipo,
+                descricao,
+                _converter_valor_monetario(correspondencia.group("valor")),
             )
+            rubrica["categoria_normalizada"] = categoria_normalizada
+            rubricas.append(rubrica)
             break
 
     return rubricas

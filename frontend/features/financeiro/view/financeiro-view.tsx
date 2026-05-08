@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useState, type ChangeEvent, type FormEvent } from "react"
 
@@ -50,7 +50,7 @@ function formatarMoeda(valor: number) {
 
 function formatarVariacaoPercentual(valor: number | null) {
   if (valor === null || !Number.isFinite(valor)) {
-    return "Ano base"
+    return "Base year"
   }
 
   const sinal = valor > 0 ? "+" : ""
@@ -94,15 +94,15 @@ function resumoProgressoLote(status: FinanceiroBatchStatusResponse | null, envia
 function resumoEvolucaoSalarial(evolucao: FinanceiroEvolucaoSalarialResponse) {
   const anosSemCrescimento =
     evolucao.anos_sem_crescimento_relevante.length > 0
-      ? `Anos sem crescimento relevante: ${evolucao.anos_sem_crescimento_relevante.join(", ")}.`
-      : "Não houve anos sem crescimento relevante."
+      ? `Years without relevant growth: ${evolucao.anos_sem_crescimento_relevante.join(", ")}.`
+      : "There were no years without relevant growth."
 
   return (
-    `Período analisado: de ${evolucao.ano_inicial} a ${evolucao.ano_final}. ` +
-    `Salário bruto de referência inicial: ${formatarMoeda(evolucao.bruto_inicial_referencia)}. ` +
-    `Salário bruto de referência final: ${formatarMoeda(evolucao.bruto_final_referencia)}. ` +
-    `Evolução acumulada: ${formatarVariacaoPercentual(evolucao.variacao_acumulada_bruto_percentual)}. ` +
-    `Taxa média anual estimada (CAGR): ${formatarVariacaoPercentual(evolucao.cagr_bruto_percentual)}. ` +
+    `Analysis period: from ${evolucao.ano_inicial} to ${evolucao.ano_final}. ` +
+    `Starting gross reference salary: ${formatarMoeda(evolucao.bruto_inicial_referencia)}. ` +
+    `Ending gross reference salary: ${formatarMoeda(evolucao.bruto_final_referencia)}. ` +
+    `Accumulated evolution: ${formatarVariacaoPercentual(evolucao.variacao_acumulada_bruto_percentual)}. ` +
+    `Estimated average annual rate (CAGR): ${formatarVariacaoPercentual(evolucao.cagr_bruto_percentual)}. ` +
     anosSemCrescimento
   )
 }
@@ -438,21 +438,21 @@ export function FinanceiroView() {
         {batchStatus && isBatchTerminalStatus(batchStatus.status) ? (
           <section className="salary-panel">
             <div className="analysis-header__title analysis-header__title--compact">
-              <p className="eyebrow eyebrow--title">Evolução Salarial Anual</p>
-              <h3>{"Bruto e líquido por ano"}</h3>
+              <p className="eyebrow eyebrow--title">Annual Salary Evolution</p>
+              <h3>{"Gross and net by year"}</h3>
               <p className="analysis-header__subtitle">
                 {
-                  "O gráfico usa a mediana anual dos contracheques processados para reduzir distorções de 13º, férias, retroativos e outros meses atípicos."
+                  "The chart uses the annual median of processed pay stubs to reduce distortions from 13th salary, vacation pay, retroactive adjustments, and other atypical months."
                 }
               </p>
             </div>
 
-            <div className="salary-legend" aria-label="Legenda da evolução salarial">
-              <span className="salary-legend__item salary-legend__item--gross">Bruto</span>
-              <span className="salary-legend__item salary-legend__item--liquid">Líquido</span>
+            <div className="salary-legend" aria-label="Salary evolution legend">
+              <span className="salary-legend__item salary-legend__item--gross">Gross</span>
+              <span className="salary-legend__item salary-legend__item--liquid">Net</span>
             </div>
 
-            {carregandoEvolucao ? <p className="helper">Calculando a evolução anual...</p> : null}
+            {carregandoEvolucao ? <p className="helper">Calculating annual evolution...</p> : null}
 
             {erroEvolucao ? <p className="error-box">{erroEvolucao}</p> : null}
 
@@ -460,43 +460,43 @@ export function FinanceiroView() {
               <>
                 <div className="metric-strip metric-strip--hero metric-strip--salary">
                   <div className="metric-line">
-                    <span>Ano inicial</span>
+                    <span>Starting year</span>
                     <strong>{evolucaoSalarial.ano_inicial}</strong>
                   </div>
                   <div className="metric-line">
-                    <span>Bruto inicial</span>
+                    <span>Starting gross</span>
                     <strong>{formatarMoeda(evolucaoSalarial.bruto_inicial_referencia)}</strong>
                   </div>
                   <div className="metric-line">
-                    <span>Ano final</span>
+                    <span>Ending year</span>
                     <strong>{evolucaoSalarial.ano_final}</strong>
                   </div>
                   <div className="metric-line">
-                    <span>Bruto final</span>
+                    <span>Ending gross</span>
                     <strong>{formatarMoeda(evolucaoSalarial.bruto_final_referencia)}</strong>
                   </div>
                 </div>
 
                 <div className="metric-strip metric-strip--salary">
                   <div className="metric-line">
-                    <span>Líquido inicial</span>
+                    <span>Starting net</span>
                     <strong>{formatarMoeda(evolucaoSalarial.liquido_inicial_referencia)}</strong>
                   </div>
                   <div className="metric-line">
-                    <span>Líquido final</span>
+                    <span>Ending net</span>
                     <strong>{formatarMoeda(evolucaoSalarial.liquido_final_referencia)}</strong>
                   </div>
                   <div className="metric-line">
-                    <span>Evolução acumulada</span>
+                    <span>Accumulated evolution</span>
                     <strong>{formatarVariacaoPercentual(evolucaoSalarial.variacao_acumulada_bruto_percentual)}</strong>
                   </div>
                   <div className="metric-line">
-                    <span>CAGR estimado</span>
+                    <span>Estimated CAGR</span>
                     <strong>{formatarVariacaoPercentual(evolucaoSalarial.cagr_bruto_percentual)}</strong>
                   </div>
                 </div>
 
-                <div className="salary-chart" aria-label="Gráfico da evolução salarial anual">
+                <div className="salary-chart" aria-label="Annual salary evolution chart">
                   {serieEvolucao.map((item) => {
                     const altura =
                       maiorValorSerie > 0
@@ -517,7 +517,7 @@ export function FinanceiroView() {
                                 style={{ height: `${altura}%` }}
                               />
                             </div>
-                            <span>Bruto</span>
+                            <span>Gross</span>
                           </div>
                           <div className="salary-chart__bar-block">
                             <div className="salary-chart__bar-track salary-chart__bar-track--liquid">
@@ -526,17 +526,17 @@ export function FinanceiroView() {
                                 style={{ height: `${alturaLiquida}%` }}
                               />
                             </div>
-                            <span>Líquido</span>
+                            <span>Net</span>
                           </div>
                         </div>
                         <strong>{item.ano}</strong>
                         <span>{formatarMoeda(item.bruto_referencia_anual)}</span>
                         <small>{formatarMoeda(item.liquido_referencia_anual)}</small>
-                        <small>{formatarMoeda(item.descontos_referencia_anual)} de descontos</small>
+                        <small>{formatarMoeda(item.descontos_referencia_anual)} in deductions</small>
                         <small>{item.quantidade_contracheques} PDFs</small>
                         <p className="salary-chart__variation">
                           {formatarVariacaoPercentual(item.variacao_percentual_bruto_ano_a_ano)}
-                          {item.crescimento_relevante ? "" : " sem crescimento relevante"}
+                          {item.crescimento_relevante ? "" : " no relevant growth"}
                         </p>
                       </div>
                     )
@@ -548,7 +548,7 @@ export function FinanceiroView() {
                 </p>
 
                 <p className="helper">
-                  {`O gráfico cobre ${totalContrachequesEvolucao} contracheques processados.`}
+                  {`The chart covers ${totalContrachequesEvolucao} processed PDFs.`}
                 </p>
               </>
             ) : null}
@@ -558,3 +558,4 @@ export function FinanceiroView() {
     </section>
   )
 }
+
