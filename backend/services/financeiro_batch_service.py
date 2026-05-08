@@ -192,17 +192,37 @@ def _variacao_percentual_decimal(valor_inicial: Decimal, valor_final: Decimal) -
     )
 
 
-def _cagr_percentual_decimal(valor_inicial: Decimal, valor_final: Decimal, periodos: int) -> Decimal:
-    if valor_inicial <= ZERO or valor_final <= ZERO or periodos <= 0:
-        return ZERO
+def _somar_itens_por_categoria(
+    items: list[PaycheckItem],
+) -> dict[str, Decimal]:
+    totais = {categoria: ZERO for categoria in (*CATEGORIAS_VANTAGEM, *CATEGORIAS_DESCONTO)}
 
-    crescimento = (pow(float(valor_final / valor_inicial), 1 / periodos) - 1) * 100
-    return Decimal(str(crescimento)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+    for item in items:
+        categoria = str(getattr(item, "categoria_normalizada", "") or "").strip()
+        tipo = str(getattr(item, "tipo", "") or "").strip()
+        if tipo == "vantagem":
+            if categoria not in CATEGORIAS_VANTAGEM:
+                categoria = "outros_vantagens"
+        elif tipo == "desconto":
+            if categoria not in CATEGORIAS_DESCONTO:
+                categoria = "outros_descontos"
+        else:
+            continue
+
+        totais[categoria] = totais[categoria] + _para_decimal(getattr(item, "valor", ZERO))
+
+    return totais
+
+
+def _mediana_por_categoria(valores_por_categoria: dict[str, list[Decimal]]) -> dict[str, Decimal]:
+    return {
+        categoria: _mediana_decimal(valores)
+        for categoria, valores in valores_por_categoria.items()
+    }
 
 
 calcular_mediana_decimal = _mediana_decimal
 calcular_variacao_percentual_decimal = _variacao_percentual_decimal
-calcular_cagr_percentual_decimal = _cagr_percentual_decimal
 
 
 def calcular_evolucao_salarial_lote(db: Session, batch_id: int) -> dict[str, object]:
@@ -217,15 +237,46 @@ def calcular_evolucao_salarial_lote(db: Session, batch_id: int) -> dict[str, obj
     series_intermediarias: list[dict[str, object]] = []
     for ano in sorted(agrupados_por_ano):
         paychecks_ano = agrupados_por_ano[ano]
-        bruto_referencia = _mediana_decimal([_para_decimal(item.bruto) for item in paychecks_ano])
-        liquido_referencia = _mediana_decimal([_para_decimal(item.liquido) for item in paychecks_ano])
-        descontos_referencia = _mediana_decimal([_para_decimal(item.descontos) for item in paychecks_ano])
+        salarios_base = [_para_decimal(item.vencimento_basico) for item in paychecks_ano]
+        brutos_totais = [_para_decimal(item.bruto) for item in paychecks_ano]
+        liquidos = [_para_decimal(item.liquido) for item in paychecks_ano]
+        descontos = [_para_decimal(item.descontos) for item in paychecks_ano]
+        valores_por_categoria_vantagem = {
+            categoria: [] for categoria in CATEGORIAS_VANTAGEM
+        }
+        valores_por_categoria_desconto = {
+            categoria: [] for categoria in CATEGORIAS_DESCONTO
+        }
+
+        for paycheck in paychecks_ano:
+            totais_categoria = _somar_itens_por_categoria(list(paycheck.items))
+            for categoria in CATEGORIAS_VANTAGEM:
+                valores_por_categoria_vantagem[categoria].append(totais_categoria[categoria])
+            for categoria in CATEGORIAS_DESCONTO:
+                valores_por_categoria_desconto[categoria].append(totais_categoria[categoria])
+
+        salario_base_referencia = _mediana_decimal(salarios_base)
+        bruto_total_referencia = _mediana_decimal(brutos_totais)
+        liquido_referencia = _mediana_decimal(liquidos)
+        descontos_referencia = _mediana_decimal(descontos)
+        vantagens_adicionais_referencia = (bruto_total_referencia - salario_base_referencia).quantize(
+            ZERO,
+            rounding=ROUND_HALF_UP,
+        )
         series_intermediarias.append(
             {
                 "ano": ano,
-                "bruto_referencia": bruto_referencia,
+                "salario_base_referencia": salario_base_referencia,
+                "bruto_total_referencia": bruto_total_referencia,
                 "liquido_referencia": liquido_referencia,
                 "descontos_referencia": descontos_referencia,
+                "vantagens_adicionais_referencia": vantagens_adicionais_referencia,
+                "composicao_vantagens_referencia": _mediana_por_categoria(
+                    valores_por_categoria_vantagem
+                ),
+                "composicao_descontos_referencia": _mediana_por_categoria(
+                    valores_por_categoria_desconto
+                ),
                 "quantidade_contracheques": len(paychecks_ano),
             }
         )
@@ -233,23 +284,17 @@ def calcular_evolucao_salarial_lote(db: Session, batch_id: int) -> dict[str, obj
     anos_sem_crescimento_relevante: list[int] = []
     for indice, item in enumerate(series_intermediarias):
         if indice == 0:
-            item["variacao_percentual_bruto_ano_a_ano"] = None
-            item["variacao_percentual_liquido_ano_a_ano"] = None
+            item["variacao_percentual_salario_base_ano_a_ano"] = None
             item["crescimento_relevante"] = True
             continue
 
         anterior = series_intermediarias[indice - 1]
-        variacao_bruto = _variacao_percentual_decimal(
-            anterior["bruto_referencia"],
-            item["bruto_referencia"],
+        variacao_salario_base = _variacao_percentual_decimal(
+            anterior["salario_base_referencia"],
+            item["salario_base_referencia"],
         )
-        variacao_liquido = _variacao_percentual_decimal(
-            anterior["liquido_referencia"],
-            item["liquido_referencia"],
-        )
-        item["variacao_percentual_bruto_ano_a_ano"] = float(variacao_bruto)
-        item["variacao_percentual_liquido_ano_a_ano"] = float(variacao_liquido)
-        item["crescimento_relevante"] = abs(variacao_bruto) >= THRESHOLD_CRESCIMENTO_RELEVANTE
+        item["variacao_percentual_salario_base_ano_a_ano"] = float(variacao_salario_base)
+        item["crescimento_relevante"] = abs(variacao_salario_base) >= THRESHOLD_CRESCIMENTO_RELEVANTE
         if not item["crescimento_relevante"]:
             anos_sem_crescimento_relevante.append(int(item["ano"]))
 
@@ -257,36 +302,29 @@ def calcular_evolucao_salarial_lote(db: Session, batch_id: int) -> dict[str, obj
     ultimo = series_intermediarias[-1]
     ano_inicial = int(primeiro["ano"])
     ano_final = int(ultimo["ano"])
-    periodos = max(ano_final - ano_inicial, 0)
-
-    variacao_acumulada_bruto = _variacao_percentual_decimal(
-        primeiro["bruto_referencia"],
-        ultimo["bruto_referencia"],
-    )
-    variacao_acumulada_liquido = _variacao_percentual_decimal(
-        primeiro["liquido_referencia"],
-        ultimo["liquido_referencia"],
-    )
-    cagr_bruto = _cagr_percentual_decimal(
-        primeiro["bruto_referencia"],
-        ultimo["bruto_referencia"],
-        periodos,
-    )
-    cagr_liquido = _cagr_percentual_decimal(
-        primeiro["liquido_referencia"],
-        ultimo["liquido_referencia"],
-        periodos,
+    variacao_acumulada_salario_base = _variacao_percentual_decimal(
+        primeiro["salario_base_referencia"],
+        ultimo["salario_base_referencia"],
     )
 
     series = [
         {
             "ano": int(item["ano"]),
-            "bruto_referencia_anual": float(item["bruto_referencia"]),
+            "salario_base_referencia_anual": float(item["salario_base_referencia"]),
+            "bruto_total_referencia_anual": float(item["bruto_total_referencia"]),
             "liquido_referencia_anual": float(item["liquido_referencia"]),
             "descontos_referencia_anual": float(item["descontos_referencia"]),
+            "vantagens_adicionais_referencia_anual": float(item["vantagens_adicionais_referencia"]),
+            "composicao_vantagens_referencia_anual": {
+                categoria: float(valor)
+                for categoria, valor in item["composicao_vantagens_referencia"].items()
+            },
+            "composicao_descontos_referencia_anual": {
+                categoria: float(valor)
+                for categoria, valor in item["composicao_descontos_referencia"].items()
+            },
             "quantidade_contracheques": int(item["quantidade_contracheques"]),
-            "variacao_percentual_bruto_ano_a_ano": item["variacao_percentual_bruto_ano_a_ano"],
-            "variacao_percentual_liquido_ano_a_ano": item["variacao_percentual_liquido_ano_a_ano"],
+            "variacao_percentual_salario_base_ano_a_ano": item["variacao_percentual_salario_base_ano_a_ano"],
             "crescimento_relevante": bool(item["crescimento_relevante"]),
         }
         for item in series_intermediarias
@@ -296,16 +334,17 @@ def calcular_evolucao_salarial_lote(db: Session, batch_id: int) -> dict[str, obj
         "batch_id": batch_id,
         "ano_inicial": ano_inicial,
         "ano_final": ano_final,
-        "bruto_inicial_referencia": float(primeiro["bruto_referencia"]),
-        "bruto_final_referencia": float(ultimo["bruto_referencia"]),
+        "salario_base_inicial_referencia": float(primeiro["salario_base_referencia"]),
+        "salario_base_final_referencia": float(ultimo["salario_base_referencia"]),
+        "bruto_total_inicial_referencia": float(primeiro["bruto_total_referencia"]),
+        "bruto_total_final_referencia": float(ultimo["bruto_total_referencia"]),
         "liquido_inicial_referencia": float(primeiro["liquido_referencia"]),
         "liquido_final_referencia": float(ultimo["liquido_referencia"]),
         "descontos_inicial_referencia": float(primeiro["descontos_referencia"]),
         "descontos_final_referencia": float(ultimo["descontos_referencia"]),
-        "variacao_acumulada_bruto_percentual": float(variacao_acumulada_bruto),
-        "variacao_acumulada_liquido_percentual": float(variacao_acumulada_liquido),
-        "cagr_bruto_percentual": float(cagr_bruto),
-        "cagr_liquido_percentual": float(cagr_liquido),
+        "vantagens_adicionais_inicial_referencia": float(primeiro["vantagens_adicionais_referencia"]),
+        "vantagens_adicionais_final_referencia": float(ultimo["vantagens_adicionais_referencia"]),
+        "variacao_acumulada_salario_base_percentual": float(variacao_acumulada_salario_base),
         "anos_sem_crescimento_relevante": anos_sem_crescimento_relevante,
         "series": series,
     }
