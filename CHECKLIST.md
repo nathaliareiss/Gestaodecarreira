@@ -70,3 +70,5 @@
 - [x] Simplified the Financeiro screen to use lightweight annual line charts, a compact discounts table, and a collapsed Ver detalhes file list.
 
 - [x] Financeiro now reloads saved contracheques from PostgreSQL on refresh using user-scoped endpoints.
+
+- [x] Adicionado hash SHA-256 e chave de negocio para deduplicar contracheques por usuario, competencia e matricula, com batch contabilizando processados, duplicados e falhas.
