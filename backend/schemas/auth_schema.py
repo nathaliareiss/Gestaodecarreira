@@ -24,6 +24,4 @@ class UsuarioRedefinirSenhaRequest(BaseModel):
 
 
 class UsuarioAuthResponse(BaseModel):
-    access_token: str
-    token_type: str = "bearer"
     usuario: UsuarioResponse

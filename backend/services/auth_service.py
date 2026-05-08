@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 
+from fastapi import HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from backend.logger import logger
@@ -20,6 +21,9 @@ from backend.schemas.auth_schema import (
     UsuarioSolicitarRecuperacaoSenhaRequest,
 )
 from backend.services.security_service import gerar_hash_sha256, gerar_token_seguro
+
+AUTH_COOKIE_NAME = "gc_auth_token"
+AUTH_COOKIE_MAX_AGE_SEGUNDOS = 60 * 60 * 24 * 7
 
 
 def _hash_token(valor: str) -> str:
@@ -54,10 +58,31 @@ def autenticar_usuario(db: Session, dados: UsuarioLoginRequest) -> tuple[Usuario
     db.commit()
     logger.info(
         "Autenticacao concluida",
-        extra={"usuario_id": usuario.id, "email": usuario.email},
+        extra={"usuario_id": usuario.id},
     )
 
     return usuario, token_sessao
+
+
+def extrair_token_autenticacao(request: Request) -> str:
+    authorization = request.headers.get("authorization")
+    if authorization:
+        esquema, _, token = authorization.partition(" ")
+        if esquema.lower() == "bearer" and token.strip():
+            return token.strip()
+
+    token_cookie = request.cookies.get(AUTH_COOKIE_NAME)
+    if token_cookie:
+        return token_cookie.strip()
+
+    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Nao autenticado.")
+
+
+def extrair_token_autenticacao_opcional(request: Request) -> str | None:
+    try:
+        return extrair_token_autenticacao(request)
+    except HTTPException:
+        return None
 
 
 def obter_usuario_autenticado_por_token(
@@ -65,6 +90,14 @@ def obter_usuario_autenticado_por_token(
     token: str,
 ) -> Usuario | None:
     return obter_usuario_por_sessao_token_hash(db, _hash_token(token))
+
+
+def obter_usuario_autenticado(request: Request, db: Session) -> Usuario:
+    token = extrair_token_autenticacao(request)
+    usuario = obter_usuario_autenticado_por_token(db, token)
+    if usuario is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Sessao expirada.")
+    return usuario
 
 
 def encerrar_sessao_usuario(db: Session, token: str) -> None:
@@ -78,7 +111,7 @@ def encerrar_sessao_usuario(db: Session, token: str) -> None:
     atualizar_usuario(db, usuario)
     logger.info(
         "Sessao encerrada",
-        extra={"usuario_id": usuario.id, "email": usuario.email},
+        extra={"usuario_id": usuario.id},
     )
 
 
@@ -101,7 +134,7 @@ def solicitar_recuperacao_senha(
     db.commit()
     logger.info(
         "Recuperacao de senha preparada",
-        extra={"usuario_id": usuario.id, "email": usuario.email},
+        extra={"usuario_id": usuario.id},
     )
     return usuario, token
 
@@ -130,7 +163,7 @@ def reenviar_confirmacao_email(
     db.commit()
     logger.info(
         "Confirmacao preparada para reenvio",
-        extra={"usuario_id": usuario.id, "email": usuario.email},
+        extra={"usuario_id": usuario.id},
     )
     return usuario, token
 
@@ -151,6 +184,6 @@ def redefinir_senha_usuario(
     atualizar_usuario(db, usuario)
     logger.info(
         "Senha redefinida com sucesso",
-        extra={"usuario_id": usuario.id, "email": usuario.email},
+        extra={"usuario_id": usuario.id},
     )
     return usuario
