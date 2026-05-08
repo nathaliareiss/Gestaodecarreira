@@ -234,7 +234,7 @@ def obter_status_lote_financeiro(
     )
 
 
-@router.get("/batch/{batch_id}/evolucao-salarial", response_model=EvolucaoSalarialResponse)
+@router.get("/evolucao-salarial", response_model=EvolucaoSalarialResponse)
 def obter_evolucao_salarial_lote(
     batch_id: int,
     db: Session = Depends(get_db),

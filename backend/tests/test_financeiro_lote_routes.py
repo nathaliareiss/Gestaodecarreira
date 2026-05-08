@@ -108,7 +108,7 @@ def test_evolucao_salarial_por_lote_sem_contracheques_retorna_resposta_vazia() -
         db.commit()
 
     client = criar_client()
-    resposta = client.get(f"/financeiro/batch/{lote.id}/evolucao-salarial")
+    resposta = client.get("/financeiro/evolucao-salarial", params={"batch_id": lote.id})
 
     assert resposta.status_code == 200
     assert resposta.json() == {
@@ -176,7 +176,7 @@ def test_evolucao_salarial_por_lote_com_contracheques_retorna_series() -> None:
         db.commit()
 
     client = criar_client()
-    resposta = client.get(f"/financeiro/batch/{lote.id}/evolucao-salarial")
+    resposta = client.get("/financeiro/evolucao-salarial", params={"batch_id": lote.id})
 
     assert resposta.status_code == 200
     payload = resposta.json()
