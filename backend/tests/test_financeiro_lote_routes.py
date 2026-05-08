@@ -102,6 +102,7 @@ def test_status_lote_financeiro_expoe_mensagens_de_erro() -> None:
             user_id=7,
             total_files=2,
             processed_files=0,
+            duplicated_files=1,
             failed_files=2,
             status="failed",
             last_error_message="O arquivo contracheque-2.pdf parece estar inválido ou corrompido.",
@@ -121,6 +122,9 @@ def test_status_lote_financeiro_expoe_mensagens_de_erro() -> None:
 
     assert resposta.status_code == 200
     assert resposta.json()["status"] == "failed"
+    assert resposta.json()["processed_count"] == 0
+    assert resposta.json()["duplicated_count"] == 1
+    assert resposta.json()["failed_count"] == 2
     assert resposta.json()["last_error_message"] == "O arquivo contracheque-2.pdf parece estar inválido ou corrompido."
     assert resposta.json()["failure_messages"] == [
         "Já existe um contracheque salvo para esta competência.",
