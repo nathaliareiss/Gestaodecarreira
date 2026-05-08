@@ -75,9 +75,6 @@ export function LoginView({
             <Link className="ghost-button button--large" href="/">
               Create Account
             </Link>
-            <Link className="ghost-button button--large" href="/usuario">
-              View Profile
-            </Link>
           </div>
 
           <p className="hero-text">
