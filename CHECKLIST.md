@@ -77,3 +77,4 @@
 - [x] Financeiro passou a ignorar `user_id` do cliente e a buscar tudo a partir do usuario autenticado.
 - [x] Historico funcional passou a usar o usuario autenticado para salvar e consultar, bloqueando acesso por `usuario_id` manual.
 - [x] Sanitizados os logs de auth e cadastro para remover e-mail, login e outros identificadores sensiveis.
+- [x] Removido o botao Use Example do cadastro, mantendo apenas o modo demo para a entrada de dados de exemplo.

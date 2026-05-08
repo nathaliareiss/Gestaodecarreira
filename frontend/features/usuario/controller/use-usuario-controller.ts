@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation"
 import { useState, type FormEvent } from "react"
 
 import {
-  USUARIO_CADASTRO_EXEMPLO,
   USUARIO_CADASTRO_INICIAL,
   type UsuarioCadastro,
 } from "../model/usuario.model"
@@ -27,11 +26,6 @@ export function useUsuarioController() {
       ...atual,
       [chave]: valor,
     }))
-  }
-
-  function usarExemplo() {
-    setCadastro(USUARIO_CADASTRO_EXEMPLO)
-    setErro(null)
   }
 
   function entrarComDadosDeExemplo() {
@@ -98,7 +92,6 @@ export function useUsuarioController() {
     entrandoDemo,
     erro,
     enviarFormulario,
-    usarExemplo,
     entrarComDadosDeExemplo,
     atualizarCampo,
   }

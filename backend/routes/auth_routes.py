@@ -59,6 +59,11 @@ def _obter_request_id(request: Request) -> str:
     return request.headers.get("x-request-id") or uuid4().hex
 
 
+def _cookie_deve_ser_seguro(request: Request) -> bool:
+    proto = request.headers.get("x-forwarded-proto", request.url.scheme)
+    return proto.split(",")[0].strip().lower() == "https"
+
+
 @router.post("/login", response_model=UsuarioAuthResponse)
 def login(
     dados: UsuarioLoginRequest,
@@ -83,7 +88,7 @@ def login(
         max_age=AUTH_COOKIE_MAX_AGE_SEGUNDOS,
         path="/",
         httponly=True,
-        secure=True,
+        secure=_cookie_deve_ser_seguro(request),
         samesite="lax",
     )
     logger.info(

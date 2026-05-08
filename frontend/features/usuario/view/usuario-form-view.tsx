@@ -13,7 +13,6 @@ type UsuarioFormViewProps = {
   onDataExercicioChange: (valor: string) => void
   onLoginChange: (valor: string) => void
   onSenhaChange: (valor: string) => void
-  onUsarExemplo: () => void
 }
 
 export function UsuarioFormView({
@@ -27,7 +26,6 @@ export function UsuarioFormView({
   onDataExercicioChange,
   onLoginChange,
   onSenhaChange,
-  onUsarExemplo,
 }: UsuarioFormViewProps) {
   return (
     <form className="card form-card form-card--register" onSubmit={onSubmit}>
@@ -36,13 +34,6 @@ export function UsuarioFormView({
           <p className="eyebrow">New User</p>
           <h2>Access Details</h2>
         </div>
-        <button
-          className="ghost-button ghost-button--compact"
-          type="button"
-          onClick={onUsarExemplo}
-        >
-          Use Example
-        </button>
       </div>
 
       <label className="field">

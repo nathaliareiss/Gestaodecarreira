@@ -28,12 +28,3 @@ export const USUARIO_CADASTRO_INICIAL: UsuarioCadastro = {
   login: "",
   senha: "",
 }
-
-export const USUARIO_CADASTRO_EXEMPLO: UsuarioCadastro = {
-  nome: "Maria Silva",
-  apelido: "Mari",
-  email: "maria.silva@exemplo.com",
-  data_exercicio: "2018-03-01",
-  login: "maria.silva",
-  senha: "senha123",
-}

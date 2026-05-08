@@ -10,7 +10,6 @@ export function UsuarioController() {
     entrandoDemo,
     erro,
     enviarFormulario,
-    usarExemplo,
     entrarComDadosDeExemplo,
     atualizarCampo,
   } = useUsuarioController()
@@ -29,7 +28,6 @@ export function UsuarioController() {
       onDataExercicioChange={(valor) => atualizarCampo("data_exercicio", valor)}
       onLoginChange={(valor) => atualizarCampo("login", valor)}
       onSenhaChange={(valor) => atualizarCampo("senha", valor)}
-      onUsarExemplo={usarExemplo}
     />
   )
 }

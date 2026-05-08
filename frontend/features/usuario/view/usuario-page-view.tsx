@@ -18,7 +18,6 @@ type UsuarioPageViewProps = {
   onDataExercicioChange: (valor: string) => void
   onLoginChange: (valor: string) => void
   onSenhaChange: (valor: string) => void
-  onUsarExemplo: () => void
 }
 
 export function UsuarioPageView({
@@ -34,7 +33,6 @@ export function UsuarioPageView({
   onDataExercicioChange,
   onLoginChange,
   onSenhaChange,
-  onUsarExemplo,
 }: UsuarioPageViewProps) {
   return (
     <main className="page-shell">
@@ -59,7 +57,6 @@ export function UsuarioPageView({
             onDataExercicioChange={onDataExercicioChange}
             onLoginChange={onLoginChange}
             onSenhaChange={onSenhaChange}
-            onUsarExemplo={onUsarExemplo}
           />
         </div>
       </section>
