@@ -11,8 +11,9 @@ async function executar() {
   assert.equal(
     calcularProgressoLote({
       total: 5,
-      processed: 3,
-      failed: 1,
+      processed_count: 3,
+      duplicated_count: 1,
+      failed_count: 1,
       status: "processing",
     }),
     80,
@@ -26,9 +27,9 @@ async function executar() {
   assert.equal(formatarStatusLote("completed"), "Completed")
 
   const statuses = [
-    { total: 5, processed: 1, failed: 0, status: "processing" },
-    { total: 5, processed: 3, failed: 1, status: "processing" },
-    { total: 5, processed: 4, failed: 1, status: "completed" },
+    { total: 5, processed_count: 1, duplicated_count: 0, failed_count: 0, status: "processing" },
+    { total: 5, processed_count: 3, duplicated_count: 1, failed_count: 0, status: "processing" },
+    { total: 5, processed_count: 3, duplicated_count: 1, failed_count: 1, status: "completed" },
   ]
   const chamadas = []
   let esperas = 0
