@@ -31,7 +31,7 @@
 - [x] Criados testes do frontend para o polling do lote.
 - [x] Simplificada a tela do lote financeiro para ocultar a lista pesada de PDFs e mostrar barra de progresso.
 - [x] Criado workflow de CI para o frontend com `lint`, `test` e `build`.
-- [x] Adicionada a análise de evolução salarial por ano com gráfico e resumo amigável no frontend.
+- [x] Adicionada a análise salarial anual com mediana por ano, gráfico de evolução e resumo amigável no frontend.
 
 ### Em andamento
 
