@@ -64,3 +64,4 @@
 - [x] A rota de evolução salarial passou a responder estado vazio sem 404 quando o lote não tiver contracheques processados.
 - [x] Padronizada a rota de evolucao salarial em GET /api/financeiro/evolucao-salarial e melhorado o erro para mostrar a URL chamada.
 - [x] Mantida compatibilidade temporaria da evolucao salarial nos caminhos novo e legado para evitar 404 em deploys defasados.
+- [x] Diagnosticada e registrada no startup a rota financeira de evolucao salarial, com compatibilidade da rota legada e rota final em GET /api/financeiro/evolucao-salarial.

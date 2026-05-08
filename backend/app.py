@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.routing import APIRoute
 
 from backend.config import AUTO_SYNC_DB_SCHEMA, CORS_ORIGINS, FRONTEND_BASE_URL
 from backend.database import models as database_models  # noqa: F401
@@ -42,12 +43,32 @@ def criar_app() -> FastAPI:
         habilitar_rls_tabelas_publicas()
         if AUTO_SYNC_DB_SCHEMA:
             sincronizar_usuario_table()
+
+        rotas_registradas = [
+            route.path
+            for route in app.routes
+            if isinstance(route, APIRoute)
+        ]
+        for rota in rotas_registradas:
+            print(rota)
+
+        rotas_financeiro = [
+            route.path
+            for route in app.routes
+            if isinstance(route, APIRoute) and route.path.startswith("/api/financeiro")
+        ]
         logger.info(
             "Aplicacao FastAPI iniciada com sucesso",
             extra={
                 "titulo": "Gestao de Carreira API",
                 "origens_cors": origens_cors,
                 "auto_sync_db_schema": AUTO_SYNC_DB_SCHEMA,
+                "rotas_registradas": rotas_registradas,
+                "rotas_financeiro": rotas_financeiro,
+                "rota_evolucao_salarial": next(
+                    (rota for rota in rotas_financeiro if rota.endswith("/evolucao-salarial")),
+                    None,
+                ),
             },
         )
 
