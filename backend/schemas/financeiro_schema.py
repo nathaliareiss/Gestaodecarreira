@@ -26,6 +26,8 @@ class LoteFinanceiroStatusResponse(BaseModel):
     processed: int = Field(ge=0)
     failed: int = Field(ge=0)
     status: Literal["pending", "processing", "completed", "failed"]
+    last_error_message: str | None = None
+    failure_messages: list[str] = Field(default_factory=list)
 
 
 class EvolucaoSalarialSerieItemResponse(BaseModel):

@@ -59,6 +59,8 @@ def sincronizar_usuario_table() -> None:
         "ALTER TABLE IF EXISTS usuarios ADD COLUMN IF NOT EXISTS redefinir_senha_expira_em TIMESTAMP WITH TIME ZONE",
         "ALTER TABLE IF EXISTS usuarios ADD COLUMN IF NOT EXISTS criado_em TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()",
         "ALTER TABLE IF EXISTS usuarios ADD COLUMN IF NOT EXISTS confirmado_em TIMESTAMP WITH TIME ZONE",
+        "ALTER TABLE IF EXISTS payroll_batches ADD COLUMN IF NOT EXISTS last_error_message VARCHAR NOT NULL DEFAULT ''",
+        "ALTER TABLE IF EXISTS payroll_batches ADD COLUMN IF NOT EXISTS failure_messages TEXT NOT NULL DEFAULT '[]'",
         "ALTER TABLE IF EXISTS paycheck_items ADD COLUMN IF NOT EXISTS categoria_normalizada VARCHAR NOT NULL DEFAULT 'outros_vantagens'",
         "ALTER TABLE IF EXISTS paycheck_items ADD COLUMN IF NOT EXISTS descricao_original VARCHAR NOT NULL DEFAULT ''",
         "UPDATE usuarios SET apelido = COALESCE(apelido, '') WHERE apelido IS NULL",
@@ -67,6 +69,8 @@ def sincronizar_usuario_table() -> None:
         "UPDATE usuarios SET token_confirmacao_email = COALESCE(token_confirmacao_email, 'legacy-' || id::text) WHERE token_confirmacao_email IS NULL",
         "UPDATE usuarios SET email_confirmado = COALESCE(email_confirmado, FALSE) WHERE email_confirmado IS NULL",
         "UPDATE usuarios SET criado_em = COALESCE(criado_em, NOW()) WHERE criado_em IS NULL",
+        "UPDATE payroll_batches SET last_error_message = COALESCE(last_error_message, '') WHERE last_error_message IS NULL",
+        "UPDATE payroll_batches SET failure_messages = COALESCE(failure_messages, '[]') WHERE failure_messages IS NULL",
     ]
     comandos.extend(
         [
