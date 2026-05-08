@@ -110,53 +110,236 @@ function resumoEvolucaoSalarial(evolucao: FinanceiroEvolucaoSalarialResponse) {
   )} para ${formatarMoeda(evolucao.salario_base_final_referencia)}. A remuneração bruta total também variou por causa de adicionais, auxílios e outras vantagens.`
 }
 
-type ComposicaoLegendaItem = {
+type SerieLinha = {
   key: string
   label: string
   color: string
-  keys?: string[]
+  values: number[]
 }
 
-const COMPOSICAO_VANTAGENS: ComposicaoLegendaItem[] = [
-  { key: "salario_base", label: "Salary base", color: "#14b8a6" },
-  { key: "ade", label: "ADE", color: "#0f766e" },
-  { key: "adicional_noturno", label: "Night bonus", color: "#06b6d4" },
-  { key: "alimentacao", label: "Meals", color: "#3b82f6" },
-  { key: "abono_vestimenta", label: "Wardrobe allowance", color: "#8b5cf6" },
-  {
-    key: "outros_vantagens",
-    label: "Other benefits",
-    color: "#64748b",
-    keys: ["outros_vantagens", "decimo_terceiro", "ferias", "retroativo"],
-  },
-]
-
-const COMPOSICAO_DESCONTOS: ComposicaoLegendaItem[] = [
-  { key: "previdencia", label: "Pension", color: "#f97316" },
-  { key: "irrf", label: "IRRF", color: "#ef4444" },
-  { key: "emprestimo", label: "Loans", color: "#f59e0b" },
-  { key: "saude", label: "Health", color: "#14b8a6" },
-  {
-    key: "outros_descontos",
-    label: "Other discounts",
-    color: "#64748b",
-    keys: ["outros_descontos", "associacao"],
-  },
-]
-
-function obterValorComposicao(
-  composicao: Record<string, number>,
-  item: ComposicaoLegendaItem,
-): number {
-  const chaves = item.keys ?? [item.key]
-  return chaves.reduce((total, chave) => total + (composicao[chave] ?? 0), 0)
+type ColunaDesconto = {
+  key: string
+  label: string
 }
 
-function totalComposicao(
+const COLUNAS_DESCONTOS: ColunaDesconto[] = [
+  { key: "previdencia", label: "Pension" },
+  { key: "irrf", label: "IRRF" },
+  { key: "emprestimo", label: "Loans" },
+  { key: "saude", label: "Health" },
+  { key: "outros_descontos", label: "Other discounts" },
+]
+
+const SALARY_BASE_SERIE: SerieLinha = {
+  key: "salario_base",
+  label: "Salary base",
+  color: "#14b8a6",
+  values: [],
+}
+
+const BRUTO_SERIE: SerieLinha = {
+  key: "bruto_total",
+  label: "Gross total",
+  color: "#60a5fa",
+  values: [],
+}
+
+const LIQUIDO_SERIE: SerieLinha = {
+  key: "liquido",
+  label: "Net pay",
+  color: "#f97316",
+  values: [],
+}
+
+type LineChartProps = {
+  title: string
+  subtitle: string
+  years: number[]
+  series: SerieLinha[]
+  ariaLabel: string
+}
+
+function calcularPontoLinha(
+  index: number,
+  total: number,
+  value: number,
+  maxValue: number,
+  width: number,
+  height: number,
+  padding: { top: number; right: number; bottom: number; left: number },
+) {
+  const plotWidth = width - padding.left - padding.right
+  const plotHeight = height - padding.top - padding.bottom
+  const x = total <= 1 ? padding.left + plotWidth / 2 : padding.left + (index / (total - 1)) * plotWidth
+  const y =
+    maxValue <= 0
+      ? padding.top + plotHeight
+      : padding.top + plotHeight - (Math.max(value, 0) / maxValue) * plotHeight
+
+  return { x, y }
+}
+
+function criarCaminhoSerie(
+  values: number[],
+  maxValue: number,
+  width: number,
+  height: number,
+  padding: { top: number; right: number; bottom: number; left: number },
+) {
+  return values
+    .map((value, index) => {
+      const ponto = calcularPontoLinha(index, values.length, value, maxValue, width, height, padding)
+      return `${index === 0 ? "M" : "L"} ${ponto.x} ${ponto.y}`
+    })
+    .join(" ")
+}
+
+function formatarEixoMoeda(valor: number) {
+  return formatarMoeda(valor)
+}
+
+function LineChart({ title, subtitle, years, series, ariaLabel }: LineChartProps) {
+  const width = 960
+  const height = 320
+  const padding = { top: 24, right: 24, bottom: 56, left: 88 }
+  const valores = series.flatMap((serie) => serie.values)
+  const maxValue = Math.max(0, ...valores)
+  const gridLines = 4
+
+  return (
+    <section className="chart-panel">
+      <div className="analysis-header__title analysis-header__title--compact">
+        <p className="eyebrow eyebrow--title">Annual analysis</p>
+        <h3>{title}</h3>
+        <p className="analysis-header__subtitle">{subtitle}</p>
+      </div>
+
+      {years.length === 0 ? (
+        <div className="chart-empty">
+          <p className="helper">No annual data is available yet.</p>
+        </div>
+      ) : (
+        <div className="chart-canvas" aria-label={ariaLabel}>
+          <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={ariaLabel}>
+            <defs>
+              <linearGradient id={`grid-${ariaLabel.replace(/\s+/g, "-").toLowerCase()}`} x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0%" stopColor="rgba(148, 163, 184, 0.28)" />
+                <stop offset="100%" stopColor="rgba(148, 163, 184, 0.08)" />
+              </linearGradient>
+            </defs>
+
+            {Array.from({ length: gridLines + 1 }, (_, index) => {
+              const y = padding.top + ((height - padding.top - padding.bottom) / gridLines) * index
+              const value = maxValue - (maxValue / gridLines) * index
+              return (
+                <g key={`grid-${index}`}>
+                  <line
+                    className="chart-grid-line"
+                    x1={padding.left}
+                    x2={width - padding.right}
+                    y1={y}
+                    y2={y}
+                  />
+                  <text className="chart-axis-label chart-axis-label--y" x={padding.left - 12} y={y + 4}>
+                    {formatarEixoMoeda(value)}
+                  </text>
+                </g>
+              )
+            })}
+
+            {years.map((ano, index) => {
+              const ponto = calcularPontoLinha(index, years.length, 0, 0, width, height, padding)
+              return (
+                <g key={`year-${ano}`}>
+                  <line
+                    className="chart-axis-tick"
+                    x1={ponto.x}
+                    x2={ponto.x}
+                    y1={height - padding.bottom}
+                    y2={height - padding.bottom + 8}
+                  />
+                  <text
+                    className="chart-axis-label chart-axis-label--x"
+                    x={ponto.x}
+                    y={height - padding.bottom + 26}
+                  >
+                    {ano}
+                  </text>
+                </g>
+              )
+            })}
+
+            <line
+              className="chart-axis-baseline"
+              x1={padding.left}
+              x2={width - padding.right}
+              y1={height - padding.bottom}
+              y2={height - padding.bottom}
+            />
+
+            {series.map((serie) => {
+              const caminho = criarCaminhoSerie(serie.values, maxValue, width, height, padding)
+              return (
+                <g key={serie.key}>
+                  <path
+                    d={caminho}
+                    fill="none"
+                    stroke={serie.color}
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  {serie.values.map((value, index) => {
+                    const ponto = calcularPontoLinha(
+                      index,
+                      serie.values.length,
+                      value,
+                      maxValue,
+                      width,
+                      height,
+                      padding,
+                    )
+
+                    return (
+                      <circle
+                        key={`${serie.key}-${index}`}
+                        cx={ponto.x}
+                        cy={ponto.y}
+                        r="4.5"
+                        fill={serie.color}
+                        stroke="rgba(8, 16, 30, 0.9)"
+                        strokeWidth="2.5"
+                      >
+                        <title>
+                          {`${serie.label} - ${years[index]}: ${formatarMoeda(value)}`}
+                        </title>
+                      </circle>
+                    )
+                  })}
+                </g>
+              )
+            })}
+          </svg>
+        </div>
+      )}
+
+      <div className="chart-legend" aria-label={`${title} legend`}>
+        {series.map((serie) => (
+          <span className="chart-legend__item" key={serie.key}>
+            <span className="chart-legend__swatch" style={{ background: serie.color }} />
+            {serie.label}
+          </span>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function obterValorDesconto(
   composicao: Record<string, number>,
-  itens: ComposicaoLegendaItem[],
+  chave: string,
 ): number {
-  return itens.reduce((total, item) => total + obterValorComposicao(composicao, item), 0)
+  return composicao[chave] ?? 0
 }
 
 export function FinanceiroView() {
@@ -319,12 +502,11 @@ export function FinanceiroView() {
   const totalSelecionadoArquivos = arquivosSelecionados.length
   const barraIndeterminada = enviando && batchStatus === null
   const serieEvolucao = evolucaoSalarial?.series ?? []
+  const anosEvolucao = serieEvolucao.map((item) => item.ano)
+  const serieSalarioBase = serieEvolucao.map((item) => item.salario_base_referencia_anual)
+  const serieBruto = serieEvolucao.map((item) => item.bruto_total_referencia_anual)
+  const serieLiquido = serieEvolucao.map((item) => item.liquido_referencia_anual)
   const evolucaoSemDados = Boolean(evolucaoSalarial && evolucaoSalarial.series.length === 0)
-  const maiorValorSerie = serieEvolucao.reduce(
-    (maior, item) =>
-      Math.max(maior, item.salario_base_referencia_anual),
-    0,
-  )
   const carregandoEvolucao = Boolean(
     batchId !== null &&
       batchStatus &&
@@ -390,6 +572,30 @@ export function FinanceiroView() {
                 <strong>{formatarTamanhoArquivo(totalSelecionadoBytes)}</strong>
               </div>
             </div>
+
+            {totalSelecionadoArquivos > 0 ? (
+              <details className="batch-details">
+                <summary>Ver detalhes ({totalSelecionadoArquivos})</summary>
+                <div className="batch-details__content">
+                  <p className="helper">
+                    File names stay collapsed so the page stays light even with large batches.
+                  </p>
+                  <ul className="batch-details__list">
+                    {arquivosSelecionados.slice(0, 12).map((arquivo) => (
+                      <li key={`${arquivo.name}-${arquivo.size}`}>
+                        <strong>{arquivo.name}</strong>
+                        <span>{formatarTamanhoArquivo(arquivo.size)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  {totalSelecionadoArquivos > 12 ? (
+                    <p className="helper">
+                      {`+${totalSelecionadoArquivos - 12} additional files are hidden from the preview.`}
+                    </p>
+                  ) : null}
+                </div>
+              </details>
+            ) : null}
 
             <div className="progress-list">
               <div className="progress-row">
@@ -516,11 +722,9 @@ export function FinanceiroView() {
           <section className="salary-panel">
             <div className="analysis-header__title analysis-header__title--compact">
               <p className="eyebrow eyebrow--title">Annual Salary Evolution</p>
-              <h3>{"Salary base and remuneration composition"}</h3>
+              <h3>{"Simple annual charts and aggregated totals"}</h3>
               <p className="analysis-header__subtitle">
-                {
-                  "The analysis now separates salary base, additional benefits, and deductions to keep the contracheque composition clear."
-                }
+                {"The screen now keeps only yearly aggregates so it stays fast even with large batches."}
               </p>
             </div>
 
@@ -561,144 +765,86 @@ export function FinanceiroView() {
                   </div>
                 </div>
 
-                <div className="salary-base-chart" aria-label="Annual salary base chart">
-                  {serieEvolucao.map((item) => {
-                    const altura =
-                      maiorValorSerie > 0
-                        ? Math.max(12, (item.salario_base_referencia_anual / maiorValorSerie) * 100)
-                        : 0
+                <LineChart
+                  ariaLabel="Annual salary base evolution"
+                  title="Salary base by year"
+                  subtitle="A single line keeps the base salary trend clear and easy to scan."
+                  years={anosEvolucao}
+                  series={[
+                    {
+                      key: SALARY_BASE_SERIE.key,
+                      label: SALARY_BASE_SERIE.label,
+                      color: SALARY_BASE_SERIE.color,
+                      values: serieSalarioBase,
+                    },
+                  ]}
+                />
 
-                    return (
-                      <div className="salary-base-chart__year" key={item.ano}>
-                        <div className="salary-base-chart__bar-track">
-                          <div
-                            className="salary-base-chart__bar-fill"
-                            style={{ height: `${altura}%` }}
-                          />
-                        </div>
-                        <strong>{item.ano}</strong>
-                        <span>{formatarMoeda(item.salario_base_referencia_anual)}</span>
-                        <small>{formatarVariacaoPercentual(item.variacao_percentual_salario_base_ano_a_ano)}</small>
-                      </div>
-                    )
-                  })}
-                </div>
+                <LineChart
+                  ariaLabel="Annual gross and net pay evolution"
+                  title="Gross total and net pay"
+                  subtitle="The second line chart keeps gross and liquid values separated without stacking blocks."
+                  years={anosEvolucao}
+                  series={[
+                    {
+                      key: BRUTO_SERIE.key,
+                      label: BRUTO_SERIE.label,
+                      color: BRUTO_SERIE.color,
+                      values: serieBruto,
+                    },
+                    {
+                      key: LIQUIDO_SERIE.key,
+                      label: LIQUIDO_SERIE.label,
+                      color: LIQUIDO_SERIE.color,
+                      values: serieLiquido,
+                    },
+                  ]}
+                />
 
-                <div className="composition-grid">
-                  <section className="composition-panel">
-                    <div className="analysis-header__title analysis-header__title--compact">
-                      <p className="eyebrow eyebrow--title">Remuneration composition</p>
-                      <h3>{"Median reference by year"}</h3>
-                      <p className="analysis-header__subtitle">
-                        {
-                          "Stacked bars show the salary base and the main additional benefits tracked in the contracheque."
-                        }
-                      </p>
-                    </div>
+                <section className="discounts-panel">
+                  <div className="analysis-header__title analysis-header__title--compact">
+                    <p className="eyebrow eyebrow--title">Discounts</p>
+                    <h3>{"Annual summary table"}</h3>
+                    <p className="analysis-header__subtitle">
+                      {"The summary keeps deductions readable without adding another heavy chart."}
+                    </p>
+                  </div>
 
-                    <div className="salary-legend salary-legend--composition" aria-label="Remuneration composition legend">
-                      {COMPOSICAO_VANTAGENS.map((item) => (
-                        <span
-                          className="salary-legend__item"
-                          key={item.key}
-                          style={{ borderColor: item.color, boxShadow: `inset 0 0 0 1px ${item.color}33` }}
-                        >
-                          <span
-                            className="salary-legend__swatch"
-                            style={{ background: item.color }}
-                          />
-                          {item.label}
-                        </span>
-                      ))}
-                    </div>
-
-                    <div className="composition-chart" aria-label="Remuneration composition chart">
-                      {serieEvolucao.map((item) => {
-                        const composicao = item.composicao_vantagens_referencia_anual
-                        const total = totalComposicao(composicao, COMPOSICAO_VANTAGENS)
-
-                        return (
-                          <div className="composition-chart__year" key={item.ano}>
-                            <div className="composition-chart__stack">
-                              {COMPOSICAO_VANTAGENS.map((segmento) => {
-                                const valor = obterValorComposicao(composicao, segmento)
-                                const altura = total > 0 ? Math.max(4, (valor / total) * 100) : 0
-
-                                return (
-                                  <div
-                                    className="composition-chart__segment"
-                                    key={segmento.key}
-                                    style={{ height: `${altura}%`, background: segmento.color }}
-                                    title={`${segmento.label}: ${formatarMoeda(valor)}`}
-                                  />
-                                )
-                              })}
-                            </div>
-                            <strong>{item.ano}</strong>
-                            <span>{formatarMoeda(total)}</span>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </section>
-
-                  <section className="composition-panel">
-                    <div className="analysis-header__title analysis-header__title--compact">
-                      <p className="eyebrow eyebrow--title">Discounts</p>
-                      <h3>{"Median reference by year"}</h3>
-                      <p className="analysis-header__subtitle">
-                        {
-                          "Here we keep the discount block separate so pension, tax, loans, and health deductions stay easy to read."
-                        }
-                      </p>
-                    </div>
-
-                    <div className="salary-legend salary-legend--composition" aria-label="Discount legend">
-                      {COMPOSICAO_DESCONTOS.map((item) => (
-                        <span
-                          className="salary-legend__item"
-                          key={item.key}
-                          style={{ borderColor: item.color, boxShadow: `inset 0 0 0 1px ${item.color}33` }}
-                        >
-                          <span
-                            className="salary-legend__swatch"
-                            style={{ background: item.color }}
-                          />
-                          {item.label}
-                        </span>
-                      ))}
-                    </div>
-
-                    <div className="composition-chart" aria-label="Discount composition chart">
-                      {serieEvolucao.map((item) => {
-                        const composicao = item.composicao_descontos_referencia_anual
-                        const total = totalComposicao(composicao, COMPOSICAO_DESCONTOS)
-
-                        return (
-                          <div className="composition-chart__year" key={item.ano}>
-                            <div className="composition-chart__stack">
-                              {COMPOSICAO_DESCONTOS.map((segmento) => {
-                                const valor = obterValorComposicao(composicao, segmento)
-                                const altura = total > 0 ? Math.max(4, (valor / total) * 100) : 0
-
-                                return (
-                                  <div
-                                    className="composition-chart__segment"
-                                    key={segmento.key}
-                                    style={{ height: `${altura}%`, background: segmento.color }}
-                                    title={`${segmento.label}: ${formatarMoeda(valor)}`}
-                                  />
-                                )
-                              })}
-                            </div>
-                            <strong>{item.ano}</strong>
-                            <span>{formatarMoeda(total)}</span>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </section>
-                </div>
+                  <div className="table-wrap">
+                    <table className="timeline-table timeline-table--compact">
+                      <thead>
+                        <tr>
+                          <th>Year</th>
+                          <th>Pension</th>
+                          <th>IRRF</th>
+                          <th>Loans</th>
+                          <th>Health</th>
+                          <th>Other discounts</th>
+                          <th>Total</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {serieEvolucao.map((item) => (
+                          <tr key={item.ano}>
+                            <td>
+                              <strong>{item.ano}</strong>
+                            </td>
+                            {COLUNAS_DESCONTOS.map((coluna) => (
+                              <td key={`${item.ano}-${coluna.key}`}>
+                                {formatarMoeda(
+                                  obterValorDesconto(item.composicao_descontos_referencia_anual, coluna.key),
+                                )}
+                              </td>
+                            ))}
+                            <td>
+                              <strong>{formatarMoeda(item.descontos_referencia_anual)}</strong>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </section>
 
                 {evolucaoSalarial.anos_sem_crescimento_relevante.length > 0 ? (
                   <p className="helper">

@@ -1283,6 +1283,158 @@ html[data-theme="light"] .upload-shell__collapsed--compact {
   background: rgba(255, 255, 255, 0.03);
 }
 
+.batch-details {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0.9rem 1rem;
+  border-radius: 18px;
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  background: rgba(8, 16, 30, 0.28);
+}
+
+.batch-details > summary {
+  cursor: pointer;
+  list-style: none;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.batch-details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.batch-details__content {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.batch-details__list {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-height: 12rem;
+  overflow: auto;
+}
+
+.batch-details__list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.batch-details__list strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.batch-details__list span {
+  color: var(--muted);
+  font-size: 0.84rem;
+  flex: 0 0 auto;
+}
+
+.chart-panel {
+  display: grid;
+  gap: 0.9rem;
+  padding: 1rem;
+  border-radius: 20px;
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  background: rgba(8, 16, 30, 0.26);
+}
+
+.chart-canvas {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 18px;
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  background:
+    linear-gradient(180deg, rgba(8, 16, 30, 0.2), rgba(8, 16, 30, 0.45)),
+    radial-gradient(circle at top, rgba(94, 234, 212, 0.07), transparent 65%);
+}
+
+.chart-canvas svg {
+  display: block;
+  width: 100%;
+  min-width: 42rem;
+  height: auto;
+}
+
+.chart-grid-line,
+.chart-axis-tick,
+.chart-axis-baseline {
+  stroke: rgba(148, 163, 184, 0.16);
+  stroke-width: 1;
+  shape-rendering: geometricPrecision;
+}
+
+.chart-axis-baseline {
+  stroke: rgba(148, 163, 184, 0.22);
+}
+
+.chart-axis-label {
+  fill: var(--muted);
+  font-size: 0.76rem;
+}
+
+.chart-axis-label--y {
+  text-anchor: end;
+}
+
+.chart-axis-label--x {
+  text-anchor: middle;
+}
+
+.chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.chart-legend__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.72rem;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  background: rgba(8, 16, 30, 0.42);
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.chart-legend__swatch {
+  width: 0.72rem;
+  height: 0.72rem;
+  border-radius: 999px;
+  display: inline-block;
+  flex: 0 0 auto;
+}
+
+.chart-empty {
+  padding: 1rem 0;
+}
+
+.discounts-panel {
+  display: grid;
+  gap: 0.9rem;
+  padding: 1rem;
+  border-radius: 20px;
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  background: rgba(8, 16, 30, 0.26);
+}
+
+.timeline-table--compact {
+  min-width: 860px;
+}
+
 .salary-legend {
   display: flex;
   flex-wrap: wrap;

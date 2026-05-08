@@ -67,3 +67,4 @@
 - [x] Diagnosticada e registrada no startup a rota financeira de evolucao salarial, com compatibilidade da rota legada e rota final em GET /api/financeiro/evolucao-salarial.
 - [x] Expostas mensagens de erro importantes do lote financeiro no status e na tela para substituir o erro genérico failed.
 - [x] Diagnosticada a falha do upload-lote: o schema de payroll_batches em producao nao tinha last_error_message/failure_messages e o insert quebrava antes do worker.
+- [x] Simplified the Financeiro screen to use lightweight annual line charts, a compact discounts table, and a collapsed Ver detalhes file list.
