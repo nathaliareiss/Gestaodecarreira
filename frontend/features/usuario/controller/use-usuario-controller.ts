@@ -17,6 +17,7 @@ export function useUsuarioController() {
   const [carregando, setCarregando] = useState(false)
   const [entrandoDemo, setEntrandoDemo] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
+  const [mensagem, setMensagem] = useState<string | null>(null)
 
   function atualizarCampo<Chave extends keyof UsuarioCadastro>(
     chave: Chave,
@@ -30,9 +31,10 @@ export function useUsuarioController() {
 
   function entrarComDadosDeExemplo() {
     setErro(null)
+    setMensagem(null)
     setEntrandoDemo(true)
     try {
-      salvarSessaoDemo(DEMO_USUARIO.id)
+      salvarSessaoDemo()
       router.replace("/usuario")
     } finally {
       setEntrandoDemo(false)
@@ -68,6 +70,7 @@ export function useUsuarioController() {
 
     setCarregando(true)
     setErro(null)
+    setMensagem(null)
 
     try {
       await criarUsuario({
@@ -78,7 +81,7 @@ export function useUsuarioController() {
         login: cadastro.login.trim(),
         senha: cadastro.senha,
       })
-      router.push("/usuario")
+      setMensagem("Cadastro concluído com sucesso. Agora você pode entrar com seu login.")
     } catch (error) {
       setErro(error instanceof Error ? error.message : "Falha inesperada ao salvar.")
     } finally {
@@ -91,6 +94,7 @@ export function useUsuarioController() {
     carregando,
     entrandoDemo,
     erro,
+    mensagem,
     enviarFormulario,
     entrarComDadosDeExemplo,
     atualizarCampo,

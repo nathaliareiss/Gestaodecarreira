@@ -24,8 +24,7 @@ function getDemoModeCookiePair(valor: string) {
   return `${DEMO_MODE_COOKIE_NAME}=${encodeURIComponent(valor)}`
 }
 
-export function salvarSessaoDemo(usuarioId: number) {
-  salvarUsuarioAutenticadoId(usuarioId)
+export function salvarSessaoDemo() {
   document.cookie = [getDemoModeCookiePair("1"), "Path=/", `Max-Age=${AUTH_COOKIE_MAX_AGE}`, "SameSite=Lax"].join(
     "; ",
   )

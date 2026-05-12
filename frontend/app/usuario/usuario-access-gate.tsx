@@ -62,7 +62,7 @@ export function UsuarioAccessGate() {
       const demoAtivo = modoDemoAtivoNoCliente()
 
       if (demoAtivo) {
-        salvarSessaoDemo(DEMO_USUARIO.id)
+        salvarSessaoDemo()
         if (!ativo) {
           return
         }

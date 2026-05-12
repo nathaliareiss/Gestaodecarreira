@@ -1,12 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 import { useLoginController } from "./use-login-controller"
 import { LoginCardView } from "@/features/auth/view/login-card-view"
 import { useUsuarioController } from "@/features/usuario/controller/use-usuario-controller"
 import { UsuarioFormView } from "@/features/usuario/view/usuario-form-view"
 import { UsuarioHeroSection } from "@/features/usuario/view/usuario-hero-section"
+import { removerUsuarioAutenticadoId } from "@/shared/auth/session"
 
 type ModoEntradaAuth = "login" | "cadastro"
 
@@ -18,6 +19,10 @@ export function AuthEntryController({ modoInicial }: AuthEntryControllerProps) {
   const [modo, setModo] = useState<ModoEntradaAuth>(modoInicial)
   const login = useLoginController()
   const cadastro = useUsuarioController()
+
+  useEffect(() => {
+    removerUsuarioAutenticadoId()
+  }, [])
 
   return (
     <main className="page-shell">
@@ -37,6 +42,7 @@ export function AuthEntryController({ modoInicial }: AuthEntryControllerProps) {
               cadastro={cadastro.cadastro}
               carregando={cadastro.carregando}
               erro={cadastro.erro}
+              mensagem={cadastro.mensagem}
               onSubmit={cadastro.enviarFormulario}
               onNomeChange={(valor) => cadastro.atualizarCampo("nome", valor)}
               onApelidoChange={(valor) => cadastro.atualizarCampo("apelido", valor)}

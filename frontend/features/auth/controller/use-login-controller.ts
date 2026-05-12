@@ -17,7 +17,6 @@ import {
 import {
   removerSessaoDemo,
   salvarSessaoDemo,
-  salvarUsuarioAutenticadoId,
 } from "@/shared/auth/session"
 import { DEMO_USUARIO } from "@/shared/demo/demo-data"
 
@@ -111,13 +110,12 @@ export function useLoginController() {
     setErro(null)
 
     try {
-      const resposta = await autenticarUsuario({
+      await autenticarUsuario({
         login: dados.login.trim(),
         senha: dados.senha,
       })
 
       removerSessaoDemo()
-      salvarUsuarioAutenticadoId(resposta.usuario.id)
       router.replace("/usuario")
     } catch (error) {
       setErro(error instanceof Error ? error.message : "Falha inesperada ao entrar.")
@@ -136,7 +134,7 @@ export function useLoginController() {
 
     try {
       removerSessaoDemo()
-      salvarSessaoDemo(DEMO_USUARIO.id)
+      salvarSessaoDemo()
       router.replace("/usuario")
     } finally {
       setEntrandoDemo(false)

@@ -6,6 +6,7 @@ type UsuarioFormViewProps = {
   cadastro: UsuarioCadastro
   carregando: boolean
   erro: string | null
+  mensagem: string | null
   onSubmit: (evento: FormEvent<HTMLFormElement>) => void
   onNomeChange: (valor: string) => void
   onApelidoChange: (valor: string) => void
@@ -19,6 +20,7 @@ export function UsuarioFormView({
   cadastro,
   carregando,
   erro,
+  mensagem,
   onSubmit,
   onNomeChange,
   onApelidoChange,
@@ -102,13 +104,14 @@ export function UsuarioFormView({
 
       <div className="actions">
         <button className="primary-button button--large" type="submit" disabled={carregando}>
-          {carregando ? "Saving..." : "Create Account and Go to Profile"}
+          {carregando ? "Saving..." : "Create Account"}
         </button>
         <p className="helper">
           After registration, you will receive an email to confirm access.
         </p>
       </div>
 
+      {mensagem ? <p className="success-box">{mensagem}</p> : null}
       {erro ? <p className="error-box">{erro}</p> : null}
     </form>
   )
