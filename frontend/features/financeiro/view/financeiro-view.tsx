@@ -26,6 +26,8 @@ import {
 } from "@/shared/demo/demo-data"
 import type { SiteLanguage } from "@/shared/i18n/messages"
 
+type FinanceTexts = (typeof import("@/shared/i18n/messages").LOCALE_TEXTS)["pt-BR"]["finance"]
+
 const INTERVALO_POLLING_MS = 2000
 
 type FinanceiroViewProps = {
@@ -77,10 +79,7 @@ function mensagemStatusBatch(
   status: FinanceiroBatchStatusResponse | null,
   enviando: boolean,
   monitorando: boolean,
-  textosFinanceiro: Pick<
-    (typeof import("@/shared/i18n/messages").LOCALE_TEXTS)["pt-BR"]["finance"],
-    "uploadingBatch" | "pollingEveryTwoSeconds" | "ready"
-  >,
+  textosFinanceiro: Pick<FinanceTexts, "uploadingBatch" | "pollingEveryTwoSeconds" | "ready">,
 ) {
   if (enviando) {
     return textosFinanceiro.uploadingBatch
@@ -100,10 +99,7 @@ function mensagemStatusBatch(
 function resumoProgressoLote(
   status: FinanceiroBatchStatusResponse | null,
   enviando: boolean,
-  textosFinanceiro: Pick<
-    (typeof import("@/shared/i18n/messages").LOCALE_TEXTS)["pt-BR"]["finance"],
-    "waitingForBatchToStart" | "processed" | "duplicated" | "failed"
-  >,
+  textosFinanceiro: Pick<FinanceTexts, "waitingForBatchToStart" | "processed" | "duplicated" | "failed">,
 ) {
   if (enviando || !status) {
     return textosFinanceiro.waitingForBatchToStart
@@ -126,10 +122,7 @@ function resumoProgressoLote(
 
 function resumoEvolucaoSalarial(
   evolucao: FinanceiroEvolucaoSalarialResponse,
-  textosFinanceiro: Pick<
-    (typeof import("@/shared/i18n/messages").LOCALE_TEXTS)["pt-BR"]["finance"],
-    "noPaychecksYet" | "salaryAnalysisPersists" | "demoFigures"
-  >,
+  textosFinanceiro: Pick<FinanceTexts, "noPaychecksYet" | "salaryAnalysisPersists" | "demoFigures">,
 ) {
   if (
     evolucao.ano_inicial === null ||

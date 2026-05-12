@@ -19,38 +19,38 @@ import {
 } from "@/shared/auth/session"
 import { useLanguage } from "@/shared/i18n/language-provider"
 
-function formatarDataCurta(valor: string | null) {
+function formatarDataCurta(valor: string | null, idioma: "pt-BR" | "en") {
   if (!valor) {
     return "-"
   }
 
-  return new Intl.DateTimeFormat("pt-BR", {
+  return new Intl.DateTimeFormat(idioma === "en" ? "en-US" : "pt-BR", {
     dateStyle: "medium",
     timeZone: "UTC",
   }).format(new Date(valor))
 }
 
-function formatarDuracaoEmIngles(dias: number) {
+function formatarDuracaoEmIngles(dias: number, idioma: "pt-BR" | "en") {
   const anos = Math.floor(dias / 365)
   const meses = Math.floor((dias % 365) / 30)
 
   if (anos <= 0) {
-    return `${meses}mo`
+    return idioma === "en" ? `${meses}mo` : `${meses}m`
   }
 
   if (meses <= 0) {
-    return `${anos}y`
+    return idioma === "en" ? `${anos}y` : `${anos}a`
   }
 
-  return `${anos}y ${meses}mo`
+  return idioma === "en" ? `${anos}y ${meses}mo` : `${anos}a ${meses}m`
 }
 
-function formatarDataEmIngles(valor: string | null) {
+function formatarDataEmIngles(valor: string | null, idioma: "pt-BR" | "en") {
   if (!valor) {
     return "-"
   }
 
-  return new Intl.DateTimeFormat("en-US", {
+  return new Intl.DateTimeFormat(idioma === "en" ? "en-US" : "pt-BR", {
     dateStyle: "medium",
     timeZone: "UTC",
   }).format(new Date(valor))
@@ -70,7 +70,7 @@ export function UsuarioPageController({
   modoDemo,
 }: UsuarioPageControllerProps) {
   const router = useRouter()
-  const { texts } = useLanguage()
+  const { language, texts } = useLanguage()
   const [usuario, setUsuario] = useState<UsuarioConta | null>(usuarioInicial)
   const [abaAtiva, setAbaAtiva] = useState<"perfil" | "historico" | "financeiro">(
     modoDemo ? "historico" : "perfil",
@@ -87,20 +87,20 @@ export function UsuarioPageController({
   const rotuloSair = saindo ? texts.dashboard.exitLabel : modoDemo ? texts.dashboard.exitDemo : texts.dashboard.exit
   const indicadoresDemo = modoDemo && historicoInicial && resumoDemo ? [
     {
-      label: "Years Worked",
-      value: formatarDuracaoEmIngles(resumoDemo.tempo_trabalhado_dias),
+      label: texts.dashboard.yearsWorked,
+      value: formatarDuracaoEmIngles(resumoDemo.tempo_trabalhado_dias, language),
     },
     {
-      label: "Events",
+      label: texts.dashboard.events,
       value: String(resumoDemo.eventos_totais),
     },
     {
-      label: "Next Progression",
-      value: formatarDataEmIngles(historicoInicial.proxima_progressao_prevista),
+      label: texts.dashboard.nextProgression,
+      value: formatarDataEmIngles(historicoInicial.proxima_progressao_prevista, language),
     },
     {
-      label: "Retirement Estimate",
-      value: formatarDataEmIngles(historicoInicial.data_aposentadoria_prevista),
+      label: texts.dashboard.retirementEstimate,
+      value: formatarDataEmIngles(historicoInicial.data_aposentadoria_prevista, language),
     },
   ] : []
 
@@ -112,7 +112,7 @@ export function UsuarioPageController({
       const dados = await carregarUsuarioAutenticado()
       setUsuario(dados)
     } catch (error) {
-      setErro(error instanceof Error ? error.message : "Falha inesperada ao carregar.")
+      setErro(error instanceof Error ? error.message : (language === "en" ? "Unexpected failure while loading." : "Falha inesperada ao carregar."))
     } finally {
       setCarregando(false)
     }
@@ -126,7 +126,7 @@ export function UsuarioPageController({
       await removerUsuarioMaisRecente()
       setUsuario(null)
     } catch (error) {
-      setErro(error instanceof Error ? error.message : "Falha inesperada ao remover.")
+      setErro(error instanceof Error ? error.message : (language === "en" ? "Unexpected failure while removing." : "Falha inesperada ao remover."))
     } finally {
       setRemovendo(false)
     }
@@ -185,7 +185,7 @@ export function UsuarioPageController({
       </section>
 
       {indicadoresDemo.length > 0 ? (
-        <section className="card hero-metrics" aria-label="Demo highlights">
+        <section className="card hero-metrics" aria-label={texts.dashboard.demoHighlights}>
           <div className="metric-strip metric-strip--hero">
             {indicadoresDemo.map((indicador) => (
               <div className="metric-line" key={indicador.label}>
@@ -259,20 +259,20 @@ export function UsuarioPageController({
                       <strong>{usuario.nome}</strong>
                     </div>
                     <div className="result-block">
-                      <span className="label">Email</span>
+                      <span className="label">{texts.dashboard.email}</span>
                       <strong>{usuario.email}</strong>
                     </div>
                     <div className="result-block">
-                      <span className="label">Level</span>
+                      <span className="label">{texts.dashboard.level}</span>
                       <strong>{nivelExibido}</strong>
                     </div>
                     <div className="result-block">
-                      <span className="label">Grade</span>
+                      <span className="label">{texts.dashboard.grade}</span>
                       <strong>{grauExibido}</strong>
                     </div>
                     <div className="result-block">
                       <span className="label">{texts.registerForm.startDate}</span>
-                      <strong>{formatarDataCurta(dataExercicioExibida)}</strong>
+                      <strong>{formatarDataCurta(dataExercicioExibida, language)}</strong>
                     </div>
                   </div>
 
@@ -293,7 +293,7 @@ export function UsuarioPageController({
                 </>
               ) : (
                 <div className="empty-state">
-                  <p>{texts.dashboard.noActiveSession}</p>
+                  <p>{texts.dashboard.noSession}</p>
                   <Link className="primary-button" href="/login">
                     {texts.dashboard.goToLogin}
                   </Link>
