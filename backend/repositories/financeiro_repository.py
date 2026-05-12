@@ -1,12 +1,18 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from decimal import Decimal
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from sqlalchemy.orm import selectinload
 
-from backend.database.models import PayrollBatch, Paycheck, PaycheckItem
+from backend.database.models import (
+    FinanceiroImportacaoTemporaria,
+    PayrollBatch,
+    Paycheck,
+    PaycheckItem,
+)
 
 
 def _para_decimal(valor: int | float | Decimal | None) -> Decimal:
@@ -37,6 +43,95 @@ def criar_lote_financeiro(
     db.commit()
     db.refresh(lote)
     return lote
+
+
+def criar_importacao_temporaria_financeira(
+    db: Session,
+    user_id: int,
+    token_hash: str,
+    expires_at: datetime,
+    scope: str = "financeiro_importacao",
+) -> FinanceiroImportacaoTemporaria:
+    importacao = FinanceiroImportacaoTemporaria(
+        user_id=user_id,
+        scope=scope,
+        token_hash=token_hash,
+        expires_at=expires_at,
+    )
+    db.add(importacao)
+    db.commit()
+    db.refresh(importacao)
+    return importacao
+
+
+def invalidar_importacoes_temporarias_ativas(
+    db: Session,
+    user_id: int,
+    scope: str = "financeiro_importacao",
+) -> int:
+    agora = datetime.now(timezone.utc)
+    stmt = (
+        select(FinanceiroImportacaoTemporaria)
+        .where(
+            FinanceiroImportacaoTemporaria.user_id == user_id,
+            FinanceiroImportacaoTemporaria.scope == scope,
+            FinanceiroImportacaoTemporaria.used_at.is_(None),
+            FinanceiroImportacaoTemporaria.expires_at > agora,
+        )
+        .with_for_update()
+    )
+    importacoes = list(db.scalars(stmt).all())
+    if not importacoes:
+        return 0
+
+    for importacao in importacoes:
+        importacao.used_at = agora
+        db.add(importacao)
+
+    db.commit()
+    return len(importacoes)
+
+
+def obter_importacao_temporaria_por_token_hash(
+    db: Session,
+    token_hash: str,
+) -> FinanceiroImportacaoTemporaria | None:
+    stmt = select(FinanceiroImportacaoTemporaria).where(
+        FinanceiroImportacaoTemporaria.token_hash == token_hash,
+    )
+    return db.scalar(stmt)
+
+
+def obter_importacao_temporaria_ativa_por_token_hash(
+    db: Session,
+    token_hash: str,
+) -> FinanceiroImportacaoTemporaria | None:
+    agora = datetime.now(timezone.utc)
+    stmt = select(FinanceiroImportacaoTemporaria).where(
+        FinanceiroImportacaoTemporaria.token_hash == token_hash,
+        FinanceiroImportacaoTemporaria.used_at.is_(None),
+        FinanceiroImportacaoTemporaria.expires_at > agora,
+    )
+    return db.scalar(stmt)
+
+
+def marcar_importacao_temporaria_como_usada(
+    db: Session,
+    importacao: FinanceiroImportacaoTemporaria,
+) -> FinanceiroImportacaoTemporaria:
+    importacao_atual = db.scalar(
+        select(FinanceiroImportacaoTemporaria).where(
+            FinanceiroImportacaoTemporaria.id == importacao.id,
+        ).with_for_update()
+    )
+    if importacao_atual is None:
+        raise ValueError("Importacao temporaria nao encontrada.")
+
+    importacao_atual.used_at = datetime.now(timezone.utc)
+    db.add(importacao_atual)
+    db.commit()
+    db.refresh(importacao_atual)
+    return importacao_atual
 
 
 def obter_lote_financeiro_por_id(db: Session, batch_id: int) -> PayrollBatch | None:

@@ -7,7 +7,7 @@ import uuid
 from decimal import Decimal
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, Header, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
 
 from backend.database.database import get_db
@@ -20,6 +20,7 @@ from backend.queue.tasks.financeiro_tasks import (
 from backend.repositories.financeiro_repository import (
     atualizar_lote_financeiro,
     criar_lote_financeiro,
+    marcar_importacao_temporaria_como_usada,
     obter_lote_financeiro_por_id,
     obter_paychecks_por_usuario_id,
 )
@@ -27,11 +28,18 @@ from backend.schemas.financeiro_schema import (
     ArquivoFinanceiroJobPayload,
     ContrachequeResumoResponse,
     EvolucaoSalarialResponse,
+    FinanceiroImportacaoTemporariaCriacaoResponse,
+    FinanceiroImportacaoTemporariaValidacaoRequest,
+    FinanceiroImportacaoTemporariaValidacaoResponse,
     LoteFinanceiroJobPayload,
     LoteFinanceiroStatusResponse,
     LoteFinanceiroUploadResponse,
 )
 from backend.services.contracheque_parser import parse_contracheque
+from backend.services.financeiro_importacao_service import (
+    criar_importacao_temporaria_financeira,
+    validar_importacao_temporaria_financeira,
+)
 from backend.services.financeiro_batch_service import (
     calcular_evolucao_salarial_lote,
     calcular_evolucao_salarial_por_usuario,
@@ -99,52 +107,11 @@ def _serializar_paycheck_resumo(paycheck) -> ContrachequeResumoResponse:
     )
 
 
-@router.post("/contracheque/analisar")
-async def analisar_contracheque(arquivo: UploadFile = File(...)) -> dict[str, object]:
-    conteudo = await arquivo.read()
-    if not conteudo:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Nao foi possivel ler o arquivo enviado.",
-        )
-
-    if not conteudo.lstrip().startswith(b"%PDF"):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Envie um arquivo PDF valido.",
-        )
-
-    caminho_temporario = None
-    try:
-        caminho_temporario = _diretorio_temporario_financeiro() / f"analisar_{uuid.uuid4().hex}.pdf"
-        caminho_temporario.write_bytes(conteudo)
-
-        dados = parse_contracheque(str(caminho_temporario))
-        return _serializar_contracheque(dados)
-    except HTTPException:
-        raise
-    except Exception as erro:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Nao foi possivel analisar o contracheque. Verifique o PDF e tente novamente.",
-        ) from erro
-    finally:
-        if caminho_temporario:
-            try:
-                os.unlink(caminho_temporario)
-            except FileNotFoundError:
-                pass
-
-
-@router.post(
-    "/upload-lote",
-    response_model=LoteFinanceiroUploadResponse,
-    status_code=status.HTTP_201_CREATED,
-)
-async def upload_lote_financeiro(
-    arquivos: list[UploadFile] = File(...),
-    current_user=Depends(obter_usuario_autenticado),
-    db: Session = Depends(get_db),
+async def _processar_upload_lote_financeiro(
+    *,
+    arquivos: list[UploadFile],
+    user_id: int,
+    db: Session,
 ) -> LoteFinanceiroUploadResponse:
     if not arquivos:
         raise HTTPException(
@@ -178,11 +145,11 @@ async def upload_lote_financeiro(
                 }
             )
 
-        lote = criar_lote_financeiro(db, current_user.id, len(arquivos_job))
+        lote = criar_lote_financeiro(db, user_id, len(arquivos_job))
         fila = obter_fila_financeiro()
         payload = LoteFinanceiroJobPayload(
             batch_id=lote.id,
-            user_id=current_user.id,
+            user_id=user_id,
             arquivos=arquivos_job,
         )
         payload_json = payload.model_dump(mode="json")
@@ -193,7 +160,7 @@ async def upload_lote_financeiro(
                 for arquivo_job in arquivos_job:
                     payload_arquivo = ArquivoFinanceiroJobPayload(
                         batch_id=lote.id,
-                        user_id=current_user.id,
+                        user_id=user_id,
                         arquivo=arquivo_job,
                     )
                     job = fila.enqueue(
@@ -247,7 +214,10 @@ async def upload_lote_financeiro(
         )
 
         resultado_direto = processar_lote_financeiro_job(payload_json)
-        return LoteFinanceiroUploadResponse(batch_id=int(resultado_direto["batch_id"]), status=str(resultado_direto["status"]))
+        return LoteFinanceiroUploadResponse(
+            batch_id=int(resultado_direto["batch_id"]),
+            status=str(resultado_direto["status"]),
+        )
     except HTTPException:
         if lote is not None:
             atualizar_lote_financeiro(db, lote, status="failed")
@@ -274,6 +244,129 @@ async def upload_lote_financeiro(
                 diretorio_temporario.rmdir()
             except OSError:
                 pass
+
+
+@router.post("/contracheque/analisar")
+async def analisar_contracheque(arquivo: UploadFile = File(...)) -> dict[str, object]:
+    conteudo = await arquivo.read()
+    if not conteudo:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Nao foi possivel ler o arquivo enviado.",
+        )
+
+    if not conteudo.lstrip().startswith(b"%PDF"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Envie um arquivo PDF valido.",
+        )
+
+    caminho_temporario = None
+    try:
+        caminho_temporario = _diretorio_temporario_financeiro() / f"analisar_{uuid.uuid4().hex}.pdf"
+        caminho_temporario.write_bytes(conteudo)
+
+        dados = parse_contracheque(str(caminho_temporario))
+        return _serializar_contracheque(dados)
+    except HTTPException:
+        raise
+    except Exception as erro:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Nao foi possivel analisar o contracheque. Verifique o PDF e tente novamente.",
+        ) from erro
+    finally:
+        if caminho_temporario:
+            try:
+                os.unlink(caminho_temporario)
+            except FileNotFoundError:
+                pass
+
+
+@router.post(
+    "/importacao-temporaria",
+    response_model=FinanceiroImportacaoTemporariaCriacaoResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def criar_importacao_temporaria_financeira_route(
+    current_user=Depends(obter_usuario_autenticado),
+    db: Session = Depends(get_db),
+) -> FinanceiroImportacaoTemporariaCriacaoResponse:
+    importacao = criar_importacao_temporaria_financeira(db, current_user)
+    return FinanceiroImportacaoTemporariaCriacaoResponse(
+        token=importacao.token,
+        expires_at=importacao.importacao.expires_at,
+        scope=importacao.importacao.scope,
+    )
+
+
+@router.post(
+    "/importacao-temporaria/validar",
+    response_model=FinanceiroImportacaoTemporariaValidacaoResponse,
+)
+def validar_importacao_temporaria_financeira_route(
+    payload: FinanceiroImportacaoTemporariaValidacaoRequest,
+    db: Session = Depends(get_db),
+) -> FinanceiroImportacaoTemporariaValidacaoResponse:
+    try:
+        importacao = validar_importacao_temporaria_financeira(db, payload.token)
+    except ValueError as erro:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=str(erro),
+        ) from erro
+
+    return FinanceiroImportacaoTemporariaValidacaoResponse(
+        valid=True,
+        scope=importacao.scope,
+        user_id=importacao.user_id,
+        expires_at=importacao.expires_at,
+        used=importacao.used_at is not None,
+    )
+
+
+@router.post(
+    "/importacao-temporaria/upload-lote",
+    response_model=LoteFinanceiroUploadResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def upload_lote_financeiro_importacao_temporaria(
+    arquivos: list[UploadFile] = File(...),
+    x_import_token: str = Header(..., alias="X-Import-Token"),
+    db: Session = Depends(get_db),
+) -> LoteFinanceiroUploadResponse:
+    try:
+        importacao = validar_importacao_temporaria_financeira(db, x_import_token)
+    except ValueError as erro:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=str(erro),
+        ) from erro
+
+    resposta = await _processar_upload_lote_financeiro(
+        arquivos=arquivos,
+        user_id=importacao.user_id,
+        db=db,
+    )
+    marcar_importacao_temporaria_como_usada(db, importacao)
+    return resposta
+
+
+@router.post(
+    "/upload-lote",
+    response_model=LoteFinanceiroUploadResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def upload_lote_financeiro(
+    arquivos: list[UploadFile] = File(...),
+    current_user=Depends(obter_usuario_autenticado),
+    db: Session = Depends(get_db),
+) -> LoteFinanceiroUploadResponse:
+    return await _processar_upload_lote_financeiro(
+        arquivos=arquivos,
+        user_id=current_user.id,
+        db=db,
+    )
 
 
 @router.get("/batch/{batch_id}", response_model=LoteFinanceiroStatusResponse)

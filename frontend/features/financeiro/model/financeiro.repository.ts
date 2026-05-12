@@ -6,6 +6,9 @@ import type {
   FinanceiroEvolucaoSalarialResponse,
   FinanceiroBatchStatusResponse,
   FinanceiroBatchUploadResponse,
+  FinanceiroImportacaoTemporariaCriacaoResponse,
+  FinanceiroImportacaoTemporariaValidacaoRequest,
+  FinanceiroImportacaoTemporariaValidacaoResponse,
 } from "./financeiro.model"
 
 export async function analisarContracheque(
@@ -33,6 +36,35 @@ export async function enviarLoteContracheques(
   return parseApiResponse<FinanceiroBatchUploadResponse>(
     response,
     "We could not start the pay stub batch.",
+  )
+}
+
+export async function criarImportacaoTemporariaFinanceiro(): Promise<FinanceiroImportacaoTemporariaCriacaoResponse> {
+  const response = await apiFetch("/api/financeiro/importacao-temporaria", {
+    method: "POST",
+  })
+
+  return parseApiResponse<FinanceiroImportacaoTemporariaCriacaoResponse>(
+    response,
+    "We could not create the temporary import token.",
+  )
+}
+
+export async function validarImportacaoTemporariaFinanceiro(
+  token: string,
+): Promise<FinanceiroImportacaoTemporariaValidacaoResponse> {
+  const payload: FinanceiroImportacaoTemporariaValidacaoRequest = { token }
+  const response = await apiFetch("/api/financeiro/importacao-temporaria/validar", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  })
+
+  return parseApiResponse<FinanceiroImportacaoTemporariaValidacaoResponse>(
+    response,
+    "We could not validate the temporary import token.",
   )
 }
 

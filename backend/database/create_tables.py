@@ -10,6 +10,7 @@ def habilitar_rls_tabelas_publicas() -> None:
         "ALTER TABLE IF EXISTS public.usuarios ENABLE ROW LEVEL SECURITY",
         "ALTER TABLE IF EXISTS public.historicos_funcionais ENABLE ROW LEVEL SECURITY",
         "ALTER TABLE IF EXISTS public.payroll_batches ENABLE ROW LEVEL SECURITY",
+        "ALTER TABLE IF EXISTS public.financeiro_importacoes_temporarias ENABLE ROW LEVEL SECURITY",
         "ALTER TABLE IF EXISTS public.paychecks ENABLE ROW LEVEL SECURITY",
         "ALTER TABLE IF EXISTS public.paycheck_items ENABLE ROW LEVEL SECURITY",
         "DROP POLICY IF EXISTS usuarios_backend_access ON public.usuarios",
@@ -22,6 +23,10 @@ def habilitar_rls_tabelas_publicas() -> None:
         "WITH CHECK (current_setting('app.backend_access', true) = 'on')",
         "DROP POLICY IF EXISTS payroll_batches_backend_access ON public.payroll_batches",
         "CREATE POLICY payroll_batches_backend_access ON public.payroll_batches FOR ALL TO PUBLIC "
+        "USING (current_setting('app.backend_access', true) = 'on') "
+        "WITH CHECK (current_setting('app.backend_access', true) = 'on')",
+        "DROP POLICY IF EXISTS financeiro_importacoes_temporarias_backend_access ON public.financeiro_importacoes_temporarias",
+        "CREATE POLICY financeiro_importacoes_temporarias_backend_access ON public.financeiro_importacoes_temporarias FOR ALL TO PUBLIC "
         "USING (current_setting('app.backend_access', true) = 'on') "
         "WITH CHECK (current_setting('app.backend_access', true) = 'on')",
         "DROP POLICY IF EXISTS paychecks_backend_access ON public.paychecks",
@@ -65,6 +70,12 @@ def sincronizar_usuario_table() -> None:
         "ALTER TABLE IF EXISTS payroll_batches ADD COLUMN IF NOT EXISTS processing_seconds_total NUMERIC(14,3) NOT NULL DEFAULT 0",
         "ALTER TABLE IF EXISTS paychecks ADD COLUMN IF NOT EXISTS file_hash VARCHAR NOT NULL DEFAULT ''",
         "ALTER TABLE IF EXISTS paychecks ADD COLUMN IF NOT EXISTS matricula VARCHAR NOT NULL DEFAULT ''",
+        "ALTER TABLE IF EXISTS financeiro_importacoes_temporarias ADD COLUMN IF NOT EXISTS scope VARCHAR NOT NULL DEFAULT 'financeiro_importacao'",
+        "ALTER TABLE IF EXISTS financeiro_importacoes_temporarias ADD COLUMN IF NOT EXISTS token_hash VARCHAR",
+        "ALTER TABLE IF EXISTS financeiro_importacoes_temporarias ADD COLUMN IF NOT EXISTS expires_at TIMESTAMP WITH TIME ZONE",
+        "ALTER TABLE IF EXISTS financeiro_importacoes_temporarias ADD COLUMN IF NOT EXISTS used_at TIMESTAMP WITH TIME ZONE",
+        "ALTER TABLE IF EXISTS financeiro_importacoes_temporarias ADD COLUMN IF NOT EXISTS created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()",
+        "UPDATE financeiro_importacoes_temporarias SET scope = COALESCE(scope, 'financeiro_importacao') WHERE scope IS NULL",
         "ALTER TABLE IF EXISTS paycheck_items ADD COLUMN IF NOT EXISTS categoria_normalizada VARCHAR NOT NULL DEFAULT 'outros_vantagens'",
         "ALTER TABLE IF EXISTS paycheck_items ADD COLUMN IF NOT EXISTS descricao_original VARCHAR NOT NULL DEFAULT ''",
         "UPDATE usuarios SET apelido = COALESCE(apelido, '') WHERE apelido IS NULL",
@@ -88,6 +99,9 @@ def sincronizar_usuario_table() -> None:
             "CREATE INDEX IF NOT EXISTS ix_usuarios_sessao_token_hash ON usuarios (sessao_token_hash)",
             "CREATE INDEX IF NOT EXISTS ix_usuarios_redefinir_senha_token_hash ON usuarios (redefinir_senha_token_hash)",
             "CREATE INDEX IF NOT EXISTS ix_historicos_funcionais_usuario_criado_em_id ON historicos_funcionais (usuario_id, criado_em DESC, id DESC)",
+            "CREATE INDEX IF NOT EXISTS ix_financeiro_importacoes_temporarias_user_id_created_at ON financeiro_importacoes_temporarias (user_id, created_at DESC, id DESC)",
+            "CREATE INDEX IF NOT EXISTS ix_financeiro_importacoes_temporarias_token_hash ON financeiro_importacoes_temporarias (token_hash)",
+            "CREATE INDEX IF NOT EXISTS ix_financeiro_importacoes_temporarias_expires_at ON financeiro_importacoes_temporarias (expires_at)",
             "CREATE INDEX IF NOT EXISTS ix_paychecks_user_id_file_hash ON paychecks (user_id, file_hash)",
             "CREATE INDEX IF NOT EXISTS ix_paychecks_user_id_ano_mes_matricula ON paychecks (user_id, ano, mes, matricula)",
         ]

@@ -118,6 +118,26 @@ class PayrollBatch(Base):
     )
 
 
+class FinanceiroImportacaoTemporaria(Base):
+    __tablename__ = "financeiro_importacoes_temporarias"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False, index=True)
+    scope = Column(String, nullable=False, default="financeiro_importacao")
+    token_hash = Column(String, nullable=False, unique=True, index=True)
+    expires_at = Column(DateTime(timezone=True), nullable=False, index=True)
+    used_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+
+    __table_args__ = (
+        Index("ix_financeiro_importacoes_temporarias_user_id_created_at", "user_id", "created_at", "id"),
+    )
+
+
 class Paycheck(Base):
     __tablename__ = "paychecks"
 

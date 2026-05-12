@@ -7,6 +7,24 @@ export type FinanceiroBatchUploadResponse = {
   status: FinanceiroBatchStatus
 }
 
+export type FinanceiroImportacaoTemporariaCriacaoResponse = {
+  token: string
+  expires_at: string
+  scope: string
+}
+
+export type FinanceiroImportacaoTemporariaValidacaoRequest = {
+  token: string
+}
+
+export type FinanceiroImportacaoTemporariaValidacaoResponse = {
+  valid: boolean
+  scope: string
+  user_id: number
+  expires_at: string
+  used: boolean
+}
+
 export type FinanceiroBatchStatusResponse = {
   total: number
   processed_count: number

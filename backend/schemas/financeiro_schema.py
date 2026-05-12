@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel, Field
@@ -26,6 +27,24 @@ class LoteFinanceiroJobPayload(BaseModel):
 class LoteFinanceiroUploadResponse(BaseModel):
     batch_id: int = Field(gt=0)
     status: Literal["processing", "completed", "failed"]
+
+
+class FinanceiroImportacaoTemporariaCriacaoResponse(BaseModel):
+    token: str = Field(min_length=1)
+    expires_at: datetime
+    scope: str = Field(default="financeiro_importacao")
+
+
+class FinanceiroImportacaoTemporariaValidacaoRequest(BaseModel):
+    token: str = Field(min_length=1)
+
+
+class FinanceiroImportacaoTemporariaValidacaoResponse(BaseModel):
+    valid: bool
+    scope: str = Field(default="financeiro_importacao")
+    user_id: int = Field(gt=0)
+    expires_at: datetime
+    used: bool
 
 
 class LoteFinanceiroStatusResponse(BaseModel):

@@ -112,6 +112,15 @@ export type LocaleTexts = {
   finance: {
     title: string
     subtitle: string
+    autoImportSectionTitle: string
+    autoImportSectionSubtitle: string
+    autoImportButton: string
+    autoImporting: string
+    autoImportDesktopNotice: string
+    autoImportMobileNotice: string
+    autoImportTokenLabel: string
+    autoImportExpiresLabel: string
+    autoImportHelper: string
     batchTitle: string
     uploadPdfs: string
     demoDataOnly: string
@@ -350,6 +359,19 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       title: "Finanças",
       subtitle:
         "Envie um ou mais contracheques e acompanhe o progresso do lote em tempo real até o worker terminar.",
+      autoImportSectionTitle: "ImportaÃ§Ã£o automÃ¡tica",
+      autoImportSectionSubtitle:
+        "Gere um token temporÃ¡rio para o helper Windows baixar os PDFs depois que vocÃª entrar no portal oficial.",
+      autoImportButton: "Importar automaticamente",
+      autoImporting: "Gerando token...",
+      autoImportDesktopNotice:
+        "Use este fluxo no computador/Windows. O helper vai pedir ou receber este token temporÃ¡rio antes de baixar os PDFs.",
+      autoImportMobileNotice:
+        "A importaÃ§Ã£o automÃ¡tica estÃ¡ disponÃ­vel apenas no computador/Windows. No celular, use o upload manual abaixo.",
+      autoImportTokenLabel: "Token temporÃ¡rio",
+      autoImportExpiresLabel: "Expira em",
+      autoImportHelper:
+        "Esse token Ã© de uso Ãºnico, fica vinculado ao seu login e nÃ£o dÃ¡ acesso Ã  conta do governo.",
       batchTitle: "Lote de contracheques",
       uploadPdfs: "Enviar PDFs",
       demoDataOnly: "Apenas dados de demo",
@@ -587,6 +609,19 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       title: "Finance",
       subtitle:
         "Upload one or more pay stubs, then follow the batch progress in real time until the worker finishes.",
+      autoImportSectionTitle: "Automatic import",
+      autoImportSectionSubtitle:
+        "Generate a temporary token so the Windows helper can download PDFs after you sign in to the official portal.",
+      autoImportButton: "Import automatically",
+      autoImporting: "Generating token...",
+      autoImportDesktopNotice:
+        "Use this flow on a computer/Windows. The helper will ask for or receive this temporary token before downloading the PDFs.",
+      autoImportMobileNotice:
+        "Automatic import is available only on computer/Windows. On mobile, use the manual upload below.",
+      autoImportTokenLabel: "Temporary token",
+      autoImportExpiresLabel: "Expires at",
+      autoImportHelper:
+        "This token is single-use, tied to your login, and does not grant access to the government account.",
       batchTitle: "Pay Stub Batch",
       uploadPdfs: "Upload PDFs",
       demoDataOnly: "Demo data only",

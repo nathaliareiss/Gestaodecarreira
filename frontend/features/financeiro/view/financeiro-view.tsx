@@ -12,6 +12,7 @@ import {
 import {
   obterContrachequesSalvos,
   obterEvolucaoSalarialPersistida,
+  criarImportacaoTemporariaFinanceiro,
   enviarLoteContracheques,
   obterStatusLoteFinanceiro,
 } from "../model/financeiro.repository"
@@ -19,6 +20,7 @@ import type {
   FinanceiroContrachequeResumo,
   FinanceiroBatchStatusResponse,
   FinanceiroEvolucaoSalarialResponse,
+  FinanceiroImportacaoTemporariaCriacaoResponse,
 } from "../model/financeiro.model"
 import {
   DEMO_FINANCEIRO_CONTRACHEQUES,
@@ -64,6 +66,13 @@ function formatarMoeda(valor: number | null) {
   }
 
   return formatadorMoeda.format(valor)
+}
+
+function formatarDataHoraCurta(valor: string, idioma: SiteLanguage) {
+  return new Intl.DateTimeFormat(idioma === "en" ? "en-US" : "pt-BR", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(valor))
 }
 
 function formatarVariacaoPercentual(valor: number | null, idioma: SiteLanguage) {
@@ -385,6 +394,10 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
   const [enviando, setEnviando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
   const [erroEvolucao, setErroEvolucao] = useState<string | null>(null)
+  const [erroImportacaoAutomatica, setErroImportacaoAutomatica] = useState<string | null>(null)
+  const [criandoImportacaoAutomatica, setCriandoImportacaoAutomatica] = useState(false)
+  const [importacaoTemporaria, setImportacaoTemporaria] =
+    useState<FinanceiroImportacaoTemporariaCriacaoResponse | null>(null)
   const [carregandoAnalisePersistida, setCarregandoAnalisePersistida] = useState(!modoDemo)
 
   const carregarAnalisePersistida = useCallback(async () => {
@@ -418,7 +431,7 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
     } finally {
       setCarregandoAnalisePersistida(false)
     }
-  }, [modoDemo])
+  }, [modoDemo, language])
 
   function selecionarArquivos(evento: ChangeEvent<HTMLInputElement>) {
     const selecionados = Array.from(evento.target.files ?? [])
@@ -495,6 +508,36 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
       )
     } finally {
       setEnviando(false)
+    }
+  }
+
+  async function criarImportacaoAutomatica() {
+    if (modoDemo) {
+      setErroImportacaoAutomatica(
+        language === "en"
+          ? "Demo mode does not create temporary import tokens."
+          : "O modo demo não cria tokens temporários de importação.",
+      )
+      return
+    }
+
+    setCriandoImportacaoAutomatica(true)
+    setErroImportacaoAutomatica(null)
+
+    try {
+      const resposta = await criarImportacaoTemporariaFinanceiro()
+      setImportacaoTemporaria(resposta)
+    } catch (error) {
+      setImportacaoTemporaria(null)
+      setErroImportacaoAutomatica(
+        error instanceof Error
+          ? error.message
+          : language === "en"
+            ? "We could not create the temporary import token."
+            : "Não foi possível criar o token temporário de importação.",
+      )
+    } finally {
+      setCriandoImportacaoAutomatica(false)
     }
   }
 
@@ -579,6 +622,49 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
       </div>
 
       <div className="analysis-stack">
+        <section className="card finance-auto-import-panel">
+          <div className="analysis-header__title analysis-header__title--compact">
+            <p className="eyebrow eyebrow--title">{t.autoImportSectionTitle}</p>
+            <h3>{t.autoImportSectionTitle}</h3>
+            <p className="analysis-header__subtitle">{t.autoImportSectionSubtitle}</p>
+          </div>
+
+          <div className="finance-auto-import-panel__desktop desktop-only">
+            <div className="actions-row">
+              <button
+                className="primary-button"
+                type="button"
+                onClick={() => void criarImportacaoAutomatica()}
+                disabled={modoDemo || criandoImportacaoAutomatica}
+              >
+                {modoDemo ? t.demoMode : criandoImportacaoAutomatica ? t.autoImporting : t.autoImportButton}
+              </button>
+            </div>
+
+            <p className="helper">{t.autoImportDesktopNotice}</p>
+            <p className="helper">{t.autoImportHelper}</p>
+
+            {erroImportacaoAutomatica ? <p className="error-box">{erroImportacaoAutomatica}</p> : null}
+
+            {importacaoTemporaria ? (
+              <div className="finance-auto-import-panel__token">
+                <div className="metric-line">
+                  <span>{t.autoImportTokenLabel}</span>
+                  <code>{importacaoTemporaria.token}</code>
+                </div>
+                <div className="metric-line">
+                  <span>{t.autoImportExpiresLabel}</span>
+                  <strong>{formatarDataHoraCurta(importacaoTemporaria.expires_at, language)}</strong>
+                </div>
+              </div>
+            ) : null}
+          </div>
+
+          <div className="finance-auto-import-panel__mobile mobile-only">
+            <p className="helper">{t.autoImportMobileNotice}</p>
+          </div>
+        </section>
+
         <form className="upload-shell" onSubmit={enviarFormulario}>
           <div className="upload-shell__header">
             <div>
