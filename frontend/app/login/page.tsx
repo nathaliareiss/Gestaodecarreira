@@ -1,5 +1,5 @@
-import { LoginAccessGate } from "@/features/auth/controller/login-access-gate"
+import { AuthEntryController } from "@/features/auth/controller/auth-entry-controller"
 
 export default function LoginPage() {
-  return <LoginAccessGate />
+  return <AuthEntryController modoInicial="login" />
 }

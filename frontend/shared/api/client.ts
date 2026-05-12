@@ -1,5 +1,3 @@
-import { obterApiBaseUrl } from "@/shared/config/api"
-
 type RespostaErroApi = {
   detail?: string
 }
@@ -17,14 +15,8 @@ export class ApiResponseError extends Error {
 }
 
 function montarUrlApi(path: string) {
-  const baseUrl = obterApiBaseUrl().replace(/\/$/, "")
   const caminho = path.startsWith("/") ? path : `/${path}`
-
-  if (baseUrl.endsWith("/api") && caminho.startsWith("/api/")) {
-    return `${baseUrl}${caminho.replace(/^\/api/, "")}`
-  }
-
-  return `${baseUrl}${caminho}`
+  return caminho
 }
 
 export async function apiFetch(path: string, init: RequestInit = {}) {
@@ -40,7 +32,7 @@ export async function apiFetch(path: string, init: RequestInit = {}) {
     }
 
     throw new Error(
-      `We could not reach the backend API at ${url}. Check that it is running and that NEXT_PUBLIC_API_URL is correct.`,
+      `We could not reach the backend API at ${url}. Check that the frontend proxy and backend are running.`,
     )
   }
 }

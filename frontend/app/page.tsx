@@ -1,7 +1,7 @@
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 
-import { UsuarioController } from "@/features/usuario/controller/usuario-controller"
+import { AuthEntryController } from "@/features/auth/controller/auth-entry-controller"
 import { DEMO_MODE_COOKIE_NAME } from "@/shared/auth/session"
 
 export const dynamic = "force-dynamic"
@@ -13,5 +13,5 @@ export default async function HomePage() {
     redirect("/usuario")
   }
 
-  return <UsuarioController />
+  return <AuthEntryController modoInicial="cadastro" />
 }

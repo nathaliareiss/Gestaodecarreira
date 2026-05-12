@@ -12,6 +12,7 @@ type UsuarioPageViewProps = {
   erro: string | null
   onSubmit: (evento: FormEvent<HTMLFormElement>) => void
   onEntrarDemo: () => void
+  onAbrirLogin?: () => void
   onNomeChange: (valor: string) => void
   onApelidoChange: (valor: string) => void
   onEmailChange: (valor: string) => void
@@ -27,6 +28,7 @@ export function UsuarioPageView({
   erro,
   onSubmit,
   onEntrarDemo,
+  onAbrirLogin,
   onNomeChange,
   onApelidoChange,
   onEmailChange,
@@ -43,6 +45,7 @@ export function UsuarioPageView({
         <UsuarioHeroSection
           entrandoDemo={entrandoDemo}
           onEntrarDemo={onEntrarDemo}
+          onAbrirLogin={onAbrirLogin}
         />
 
         <div className="side-panel side-panel--register">

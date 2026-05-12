@@ -1,4 +1,3 @@
-import Link from "next/link"
 import type { FormEvent } from "react"
 
 import type {
@@ -24,6 +23,7 @@ type LoginViewProps = {
   onRecuperacaoSubmit: (evento: FormEvent<HTMLFormElement>) => void
   onReenviarConfirmacao: () => void
   onAbrirRecuperacao: () => void
+  onAbrirCadastro?: () => void
   onVoltarLogin: () => void
   onLoginChange: (valor: string) => void
   onSenhaChange: (valor: string) => void
@@ -48,6 +48,7 @@ export function LoginView({
   onRecuperacaoSubmit,
   onReenviarConfirmacao,
   onAbrirRecuperacao,
+  onAbrirCadastro,
   onVoltarLogin,
   onLoginChange,
   onSenhaChange,
@@ -72,9 +73,9 @@ export function LoginView({
             >
               {entrandoDemo ? "Entering demo..." : "Enter Demo With Sample Data"}
             </button>
-            <Link className="ghost-button button--large" href="/">
+            <button className="ghost-button button--large" type="button" onClick={onAbrirCadastro}>
               Create Account
-            </Link>
+            </button>
           </div>
 
           <p className="hero-text">

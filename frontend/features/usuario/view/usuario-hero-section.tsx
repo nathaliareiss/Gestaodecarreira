@@ -1,11 +1,14 @@
-import Link from "next/link"
-
 type UsuarioHeroSectionProps = {
   entrandoDemo: boolean
   onEntrarDemo: () => void
+  onAbrirLogin?: () => void
 }
 
-export function UsuarioHeroSection({ entrandoDemo, onEntrarDemo }: UsuarioHeroSectionProps) {
+export function UsuarioHeroSection({
+  entrandoDemo,
+  onEntrarDemo,
+  onAbrirLogin,
+}: UsuarioHeroSectionProps) {
   return (
     <div className="hero-copy hero-copy--register hero-copy--centered">
       <div className="hero-topbar hero-topbar--register">
@@ -20,9 +23,13 @@ export function UsuarioHeroSection({ entrandoDemo, onEntrarDemo }: UsuarioHeroSe
           >
             {entrandoDemo ? "Entering demo..." : "Enter Demo With Sample Data"}
           </button>
-          <Link className="ghost-button ghost-button--compact hero-login-button" href="/login">
+          <button
+            className="ghost-button ghost-button--compact hero-login-button"
+            type="button"
+            onClick={onAbrirLogin}
+          >
             Sign In
-          </Link>
+          </button>
         </div>
       </div>
 
