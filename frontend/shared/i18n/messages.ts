@@ -59,6 +59,10 @@ export type LocaleTexts = {
     saving: string
     createAccount: string
     afterRegistration: string
+    requiredFields: string
+    passwordMinLength: string
+    successMessage: string
+    unexpectedSave: string
   }
   dashboard: {
     careerDashboard: string
@@ -84,6 +88,144 @@ export type LocaleTexts = {
     dataManagement: string
     saved: string
     waitingForPdf: string
+    yearsWorked: string
+    events: string
+    nextProgression: string
+    retirementEstimate: string
+    email: string
+    level: string
+    grade: string
+    demoHighlights: string
+    viewOnly: string
+    addDocuments: string
+    uploadDocuments: string
+    loading: string
+    reloadLastSaved: string
+    noSession: string
+    goToLogin: string
+  }
+  finance: {
+    title: string
+    subtitle: string
+    batchTitle: string
+    uploadPdfs: string
+    demoDataOnly: string
+    pdfFiles: string
+    selectOneOrMorePdfs: string
+    demoReadOnly: string
+    largeBatchesCanTakeAWhile: string
+    selectedPdfs: string
+    totalSize: string
+    viewDetails: string
+    fileNamesStayCollapsed: string
+    additionalFilesHidden: string
+    ready: string
+    uploadingBatch: string
+    pollingEveryTwoSeconds: string
+    waitingForBatchToStart: string
+    sendingBatch: string
+    demoMode: string
+    analyzeBatch: string
+    batchMonitor: string
+    processingStatus: string
+    batchProgressSubtitle: string
+    status: string
+    processed: string
+    duplicated: string
+    failed: string
+    total: string
+    somePaychecksAlreadyExisted: string
+    workerKeptGoingAfterFailures: string
+    primaryIssue: string
+    primaryIssueNotAvailable: string
+    annualSalaryEvolution: string
+    savedSalaryAnalysis: string
+    salaryAnalysisPersists: string
+    demoFigures: string
+    loadingSavedAnalysis: string
+    noPaychecksYet: string
+    analysisPeriod: string
+    startingSalaryBase: string
+    endingSalaryBase: string
+    salaryBaseEvolution: string
+    salaryBaseByYear: string
+    grossTotalAndNetPay: string
+    grossAndNetSubtitle: string
+    discounts: string
+    annualSummaryTable: string
+    summaryKeepsDeductionsReadable: string
+    year: string
+    pension: string
+    irrf: string
+    loans: string
+    health: string
+    otherDiscounts: string
+    totalLabel: string
+    yearsWithoutRelevantGrowth: string
+  }
+  history: {
+    title: string
+    subtitle: string
+    statusSaved: string
+    waitingForPdf: string
+    documents: string
+    demoDashboard: string
+    viewOnly: string
+    uploadCareerHistory: string
+    attachLeaveRecords: string
+    updateCareerHistory: string
+    downloadPdf: string
+    demoDataLoaded: string
+    openAccount: string
+    opening: string
+    clickUploadCareerHistory: string
+    careerHistoryPdf: string
+    dateOfBirth: string
+    recognizedCltYears: string
+    leaveRecordsPdf: string
+    selectedLeaveRecordsFile: string
+    fill10CltYears: string
+    upTo10CltYears: string
+    selectedFile: string
+    reloadLastSaved: string
+    selectPdfToAttach: string
+    sendOtherFiles: string
+    pdfStorage: string
+    processing: string
+    timeWorked: string
+    timeRemaining: string
+    events: string
+    daysAway: string
+    medicalReview: string
+    nextProgression: string
+    comparison: string
+    timeWorkedAndLeave: string
+    noLeavePeriods: string
+    start: string
+    today: string
+    data: string
+    delayed: string
+    probation: string
+    onTrack: string
+    nA: string
+    medicalLeave: string
+    medicalReviewCompleted: string
+    daysUntilMedicalReview: string
+    enoughEvents: string
+    chartTitle: string
+    uploadHint: string
+    loadedInDemo: string
+    userRequiredForHistory: string
+    userRequiredForLeave: string
+    chooseCareerHistoryPdf: string
+    chooseLeaveRecordsPdf: string
+    processingCareerHistory: string
+    processingLeaveRecords: string
+    unexpectedReload: string
+    unexpectedAnalyze: string
+    unexpectedAttach: string
+    loadSavedAnalysis: string
+    uploadFilesAbove: string
   }
 }
 

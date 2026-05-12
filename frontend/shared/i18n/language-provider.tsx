@@ -80,7 +80,3 @@ export function useLanguage() {
 
   return context
 }
-
-export function removerCookieIdioma() {
-  document.cookie = `${SITE_LANGUAGE_COOKIE_NAME}=; Path=/; Max-Age=0; SameSite=Lax`
-}
