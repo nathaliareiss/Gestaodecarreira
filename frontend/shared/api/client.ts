@@ -4,6 +4,18 @@ type RespostaErroApi = {
   detail?: string
 }
 
+export class ApiResponseError extends Error {
+  status: number
+  url: string
+
+  constructor(response: Response, mensagemPadrao: string) {
+    super(mensagemPadrao)
+    this.name = "ApiResponseError"
+    this.status = response.status
+    this.url = response.url || "unknown"
+  }
+}
+
 function montarUrlApi(path: string) {
   const baseUrl = obterApiBaseUrl().replace(/\/$/, "")
   const caminho = path.startsWith("/") ? path : `/${path}`
@@ -44,7 +56,7 @@ export async function parseApiResponse<T>(
       dados && typeof dados === "object" && "detail" in dados
         ? dados.detail ?? mensagemPadrao
         : mensagemPadrao
-    throw new Error(`${mensagem} [URL: ${response.url || "unknown"}]`)
+    throw new ApiResponseError(response, `${mensagem} [URL: ${response.url || "unknown"}]`)
   }
 
   return dados as T

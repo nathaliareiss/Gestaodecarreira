@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 
 import { carregarUsuarioAutenticado } from "@/features/auth/model/auth.repository"
 import type { HistoricoFuncionalAnalise } from "@/features/historico-funcional/model/historico-funcional.model"
+import { limparSessaoAutenticada } from "@/features/auth/model/auth-session"
 import { UsuarioPageController } from "@/features/usuario/controller/usuario-page-controller"
 import type { UsuarioConta } from "@/features/usuario/model/usuario.model"
 import { DEMO_HISTORICO, DEMO_USUARIO } from "@/shared/demo/demo-data"
@@ -12,6 +13,7 @@ import {
   modoDemoAtivoNoCliente,
   salvarSessaoDemo,
 } from "@/shared/auth/session"
+import { ApiResponseError } from "@/shared/api/client"
 
 type EstadoTela =
   | {
@@ -87,8 +89,14 @@ export function UsuarioAccessGate() {
           historico: null,
           modoDemo: false,
         })
-      } catch {
-        router.replace("/login")
+      } catch (error) {
+        if (error instanceof ApiResponseError && error.status === 401) {
+          await limparSessaoAutenticada()
+        }
+
+        if (ativo) {
+          router.replace("/login")
+        }
       }
     }
 
