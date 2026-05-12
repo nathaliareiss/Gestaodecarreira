@@ -18,11 +18,14 @@ import {
   removerSessaoDemo,
   salvarSessaoDemo,
 } from "@/shared/auth/session"
+import { useLanguage } from "@/shared/i18n/language-provider"
 
 type ModoAutenticacao = "login" | "recuperacao"
 
 export function useLoginController() {
   const router = useRouter()
+  const { texts } = useLanguage()
+  const authTexts = texts.authCard
   const [modo, setModo] = useState<ModoAutenticacao>("login")
   const [dados, setDados] = useState<UsuarioLogin>(USUARIO_LOGIN_INICIAL)
   const [recuperacao, setRecuperacao] = useState<UsuarioSolicitacaoRecuperacaoSenha>(
@@ -82,7 +85,7 @@ export function useLoginController() {
   async function reenviarConfirmacao() {
     const identificador = dados.login.trim()
     if (!identificador) {
-      setErroConfirmacao("Digite seu login ou e-mail para reenviar a confirmação.")
+      setErroConfirmacao(authTexts.enterLoginOrEmailToResend)
       setMensagemConfirmacao(null)
       return
     }
@@ -95,9 +98,7 @@ export function useLoginController() {
       const resposta = await reenviarConfirmacaoEmail({ identificador })
       setMensagemConfirmacao(resposta.message)
     } catch (error) {
-      setErroConfirmacao(
-        error instanceof Error ? error.message : "Falha inesperada ao reenviar a confirmação.",
-      )
+      setErroConfirmacao(error instanceof Error ? error.message : authTexts.unexpectedResendConfirmation)
     } finally {
       setReenviandoConfirmacao(false)
     }
@@ -117,7 +118,7 @@ export function useLoginController() {
       removerSessaoDemo()
       router.replace("/usuario")
     } catch (error) {
-      setErro(error instanceof Error ? error.message : "Falha inesperada ao entrar.")
+      setErro(error instanceof Error ? error.message : authTexts.unexpectedSignin)
     } finally {
       setCarregando(false)
     }
@@ -154,9 +155,7 @@ export function useLoginController() {
       setMensagemRecuperacao(resposta.message)
       setRecuperacao(USUARIO_SOLICITACAO_RECUPERACAO_SENHA_INICIAL)
     } catch (error) {
-      setErroRecuperacao(
-        error instanceof Error ? error.message : "Falha inesperada ao recuperar a senha.",
-      )
+      setErroRecuperacao(error instanceof Error ? error.message : authTexts.unexpectedRecovery)
     } finally {
       setRecuperando(false)
     }

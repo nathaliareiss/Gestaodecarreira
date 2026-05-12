@@ -4,6 +4,7 @@
 import { useState } from "react"
 import { useHistoricoFuncionalController } from "../controller/use-historico-funcional-controller"
 import { formatarTipoEvento, type HistoricoFuncionalAnalise } from "../model/historico-funcional.model"
+import { useLanguage } from "@/shared/i18n/language-provider"
 
 type HistoricoFuncionalViewProps = {
   usuarioId: number | null
@@ -33,18 +34,20 @@ const ROTULOS_AFASTAMENTO = {
   licenca_para_tratamento_de_saude: "Medical Leave",
 } as const
 
-function formatarData(valor: string | null) {
+function formatarData(valor: string | null, idioma: "pt-BR" | "en") {
   if (!valor) {
     return "-"
   }
 
-  return new Intl.DateTimeFormat("pt-BR", { dateStyle: "medium" }).format(new Date(`${valor}T00:00:00`))
+  return new Intl.DateTimeFormat(idioma === "en" ? "en-US" : "pt-BR", { dateStyle: "medium" }).format(
+    new Date(`${valor}T00:00:00`),
+  )
 }
 
-function formatarDuracaoEmAnos(dias: number) {
+function formatarDuracaoEmAnos(dias: number, idioma: "pt-BR" | "en") {
   const anos = Math.floor(dias / 365)
   const meses = Math.floor((dias % 365) / 30)
-  return `${anos}y ${meses}mo`
+  return idioma === "en" ? `${anos}y ${meses}mo` : `${anos}a ${meses}m`
 }
 
 function formatarAtraso(dataPrevista: string | null, dataEfetiva: string | null) {
@@ -98,17 +101,17 @@ function corDoStatus(status: StatusEvento) {
   return "#94a3b8"
 }
 
-function rotuloStatus(status: StatusEvento) {
+function rotuloStatus(status: StatusEvento, idioma: "pt-BR" | "en") {
   if (status === "atrasado") {
-    return "Delayed"
+    return idioma === "en" ? "Delayed" : "Atrasado"
   }
 
   if (status === "estagio_probatorio") {
-    return "Probation"
+    return idioma === "en" ? "Probation" : "Probatório"
   }
 
   if (status === "cumprindo") {
-    return "On Track"
+    return idioma === "en" ? "On Track" : "Em dia"
   }
 
   return "N/A"
@@ -118,8 +121,14 @@ function corTipoAfastamento(tipo: keyof typeof CORES_AFASTAMENTO) {
   return CORES_AFASTAMENTO[tipo]
 }
 
-function rotuloAfastamento(tipo: keyof typeof ROTULOS_AFASTAMENTO) {
-  return ROTULOS_AFASTAMENTO[tipo]
+function rotuloAfastamento(tipo: keyof typeof ROTULOS_AFASTAMENTO, idioma: "pt-BR" | "en") {
+  if (idioma === "en") {
+    return ROTULOS_AFASTAMENTO[tipo]
+  }
+
+  return tipo === "aguardando_resultado_conclusivo_de_exame_pericial"
+    ? "Revisão médica"
+    : "Licença médica"
 }
 
 function ExibirTooltip({ tooltip }: { tooltip: TooltipGrafico | null }) {
@@ -145,8 +154,10 @@ function ExibirTooltip({ tooltip }: { tooltip: TooltipGrafico | null }) {
 
 function GraficoPizzaTempo({
   percentualTrabalhado,
+  idioma,
 }: {
   percentualTrabalhado: number
+  idioma: "pt-BR" | "en"
 }) {
   const percentualFormatado = Math.max(0, Math.min(percentualTrabalhado, 100))
 
@@ -162,9 +173,9 @@ function GraficoPizzaTempo({
           maxHeight: "100%",
         }}
       >
-        <div className="pie-visual__center" style={{ overflow: "hidden" }}>
+          <div className="pie-visual__center" style={{ overflow: "hidden" }}>
           <strong>{formatarPorcentagem(percentualTrabalhado)}</strong>
-          <span>trabalhado</span>
+          <span>{idioma === "en" ? "worked" : "trabalhado"}</span>
         </div>
       </div>
     </div>
@@ -172,7 +183,13 @@ function GraficoPizzaTempo({
 }
 
 
-function GraficoPizzaAfastamentos({ resumo }: { resumo: ResumoAfastamentos }) {
+function GraficoPizzaAfastamentos({
+  resumo,
+  idioma,
+}: {
+  resumo: ResumoAfastamentos
+  idioma: "pt-BR" | "en"
+}) {
   const total = Math.max(resumo.dias_totais, 1)
   const tipos = Object.entries(resumo.dias_por_tipo)
     .filter(([, dias]) => dias > 0)
@@ -221,8 +238,8 @@ function GraficoPizzaAfastamentos({ resumo }: { resumo: ResumoAfastamentos }) {
           <div className="pie-visual__legend-item" key={tipo}>
             <span className="pie-visual__legend-dot" style={{ background: corTipoAfastamento(tipo) }} />
             <div>
-              <strong>{rotuloAfastamento(tipo)}</strong>
-              <span>{dias} dia(s)</span>
+              <strong>{rotuloAfastamento(tipo, idioma)}</strong>
+              <span>{`${dias} ${idioma === "en" ? "day(s)" : "dia(s)"}`}</span>
             </div>
           </div>
         ))}
@@ -231,13 +248,19 @@ function GraficoPizzaAfastamentos({ resumo }: { resumo: ResumoAfastamentos }) {
   )
 }
 
-function LinhaDoTempoGrafica({ eventos }: { eventos: HistoricoFuncionalAnalise["eventos"] }) {
+function LinhaDoTempoGrafica({
+  eventos,
+  idioma,
+}: {
+  eventos: HistoricoFuncionalAnalise["eventos"]
+  idioma: "pt-BR" | "en"
+}) {
   const [tooltip, setTooltip] = useState<TooltipGrafico | null>(null)
 
   if (eventos.length === 0) {
     return (
       <div className="history-empty history-empty--compact">
-        <p>O PDF não trouxe eventos suficientes para desenhar a linha do tempo.</p>
+        <p>{idioma === "en" ? "The PDF did not bring enough events to draw the timeline." : "O PDF não trouxe eventos suficientes para desenhar a linha do tempo."}</p>
       </div>
     )
   }
@@ -271,11 +294,11 @@ function LinhaDoTempoGrafica({ eventos }: { eventos: HistoricoFuncionalAnalise["
       alinhamento,
       titulo: formatarTipoEvento(evento.tipo),
       linhas: [
-        `Data: ${formatarData(evento.data_efetiva)}`,
-        `Status: ${
+        `${idioma === "en" ? "Date" : "Data"}: ${formatarData(evento.data_efetiva, idioma)}`,
+        `${idioma === "en" ? "Status" : "Status"}: ${
           evento.status === "atrasado" && atrasoFormatado
-            ? `Atrasado - ${atrasoFormatado}`
-            : rotuloStatus(evento.status)
+            ? `${idioma === "en" ? "Delayed" : "Atrasado"} - ${atrasoFormatado}`
+            : rotuloStatus(evento.status, idioma)
         }`,
         evento.descricao,
       ],
@@ -335,7 +358,7 @@ function LinhaDoTempoGrafica({ eventos }: { eventos: HistoricoFuncionalAnalise["
                 x={x}
                 y={isAbove ? y + 8 : y + 52}
               >
-                {formatarData(evento.data_efetiva)}
+                {formatarData(evento.data_efetiva, idioma)}
               </text>
             </g>
           )
@@ -347,8 +370,10 @@ function LinhaDoTempoGrafica({ eventos }: { eventos: HistoricoFuncionalAnalise["
 
 function GraficoComparativoTempo({
   painel,
+  idioma,
 }: {
   painel: HistoricoFuncionalAnalise
+  idioma: "pt-BR" | "en"
 }) {
   const [tooltip, setTooltip] = useState<TooltipGrafico | null>(null)
   const afastamentos = painel.afastamentos || []
@@ -357,11 +382,11 @@ function GraficoComparativoTempo({
     return (
       <div className="career-bars">
         <div className="career-bars__title">
-          <p className="eyebrow">Comparison</p>
-          <h3>Time Worked and Leave</h3>
+          <p className="eyebrow">{idioma === "en" ? "Comparison" : "Comparação"}</p>
+          <h3>{idioma === "en" ? "Time Worked and Leave" : "Tempo trabalhado e afastamento"}</h3>
         </div>
         <div className="history-empty history-empty--compact">
-          <p>You do not have any recorded leave periods to draw the comparison.</p>
+          <p>{idioma === "en" ? "You do not have any recorded leave periods to draw the comparison." : "Você não possui períodos de afastamento registrados para desenhar a comparação."}</p>
         </div>
       </div>
     )
@@ -404,15 +429,17 @@ function GraficoComparativoTempo({
       x: (x / largura) * 100,
       y: (y / altura) * 100,
       alinhamento,
-      titulo: rotuloAfastamento(afastamento.tipo),
+      titulo: rotuloAfastamento(afastamento.tipo, idioma),
       linhas: [
-        `Start: ${formatarData(afastamento.data_inicio)}`,
-        `End: ${formatarData(afastamento.data_fim)}`,
-        `Month/Year: ${afastamento.mes_ano_afastamento}`,
-        `${afastamento.total_dias} day(s)`,
+        `${idioma === "en" ? "Start" : "Início"}: ${formatarData(afastamento.data_inicio, idioma)}`,
+        `${idioma === "en" ? "End" : "Fim"}: ${formatarData(afastamento.data_fim, idioma)}`,
+        `${idioma === "en" ? "Month/Year" : "Mês/Ano"}: ${afastamento.mes_ano_afastamento}`,
+        `${afastamento.total_dias} ${idioma === "en" ? "day(s)" : "dia(s)"}`,
         afastamento.dias_restantes_ate_pericia > 0
-          ? `${afastamento.dias_restantes_ate_pericia} day(s) until medical review`
-          : "Medical review completed",
+          ? `${afastamento.dias_restantes_ate_pericia} ${idioma === "en" ? "day(s) until medical review" : "dia(s) até a revisão médica"}`
+          : idioma === "en"
+            ? "Medical review completed"
+            : "Revisão médica concluída",
       ],
     })
   }
@@ -420,8 +447,8 @@ function GraficoComparativoTempo({
   return (
     <div className="career-bars">
       <div className="career-bars__title">
-        <p className="eyebrow">Comparison</p>
-        <h3>Time Worked and Leave</h3>
+        <p className="eyebrow">{idioma === "en" ? "Comparison" : "Comparação"}</p>
+        <h3>{idioma === "en" ? "Time Worked and Leave" : "Tempo trabalhado e afastamento"}</h3>
       </div>
 
       <div className="timeline-graph timeline-graph--interactive">
@@ -437,10 +464,10 @@ function GraficoComparativoTempo({
           <line className="timeline-graph__axis" x1={margemX} x2={xHoje} y1={eixoY} y2={eixoY} style={{ stroke: "var(--accent)", strokeWidth: 4 }} />
 
           <circle cx={xHoje} cy={eixoY} r="5" style={{ fill: "var(--accent)" }} />
-          <text className="timeline-graph__label timeline-graph__label--muted" textAnchor="end" x={xHoje} y={eixoY + 22}>Today</text>
+          <text className="timeline-graph__label timeline-graph__label--muted" textAnchor="end" x={xHoje} y={eixoY + 22}>{idioma === "en" ? "Today" : "Hoje"}</text>
 
           <circle cx={margemX} cy={eixoY} r="4" style={{ fill: "var(--accent)" }} />
-          <text className="timeline-graph__label timeline-graph__label--muted" textAnchor="end" x={margemX - 10} y={eixoY + 4}>Start</text>
+          <text className="timeline-graph__label timeline-graph__label--muted" textAnchor="end" x={margemX - 10} y={eixoY + 4}>{idioma === "en" ? "Start" : "Início"}</text>
 
           {ordenados.map((afastamento, indice) => {
             const x = posicaoX(afastamento.data_inicio)
@@ -475,7 +502,7 @@ function GraficoComparativoTempo({
                   x={x}
                   y={isAbove ? y - 18 : y + 32}
                 >
-                  {afastamento.total_dias} days
+                  {afastamento.total_dias} {idioma === "en" ? "days" : "dias"}
                 </text>
                 <text
                   className={`timeline-graph__label timeline-graph__label--muted ${isAbove ? "timeline-graph__label--above" : "timeline-graph__label--below"}`}
@@ -483,7 +510,7 @@ function GraficoComparativoTempo({
                   x={x}
                   y={isAbove ? y + 8 : y + 48}
                 >
-                  {formatarData(afastamento.data_inicio)}
+                  {formatarData(afastamento.data_inicio, idioma)}
                 </text>
               </g>
             )
@@ -494,11 +521,25 @@ function GraficoComparativoTempo({
   )
 }
 
-function rotuloArmazenamento(origem: HistoricoFuncionalAnalise["armazenamento_origem"]) {
+function rotuloArmazenamento(
+  origem: HistoricoFuncionalAnalise["armazenamento_origem"],
+  idioma: "pt-BR" | "en",
+) {
+  if (idioma === "en") {
+    return origem === "local" ? "local fallback storage" : "Supabase Storage"
+  }
+
   return origem === "local" ? "storage local de fallback" : "Supabase Storage"
 }
 
-function rotuloProcessamento(origem: HistoricoFuncionalAnalise["processamento_origem"]) {
+function rotuloProcessamento(
+  origem: HistoricoFuncionalAnalise["processamento_origem"],
+  idioma: "pt-BR" | "en",
+) {
+  if (idioma === "en") {
+    return origem === "fila" ? "background queue" : "direct backend processing"
+  }
+
   return origem === "fila" ? "fila em segundo plano" : "processamento direto no backend"
 }
 
@@ -509,6 +550,8 @@ export function HistoricoFuncionalView({
   onCreateAccount,
   criandoConta = false,
 }: HistoricoFuncionalViewProps) {
+  const { language, texts } = useLanguage()
+  const t = texts.history
   const {
     arquivo,
     arquivoDownloadUrl,
@@ -543,22 +586,22 @@ export function HistoricoFuncionalView({
     <section className="analysis-card card">
       <div className="analysis-header">
         <div className="analysis-header__title">
-          <p className="eyebrow eyebrow--title">Career History</p>
-          <h2>Data Management</h2>
-          <p className="analysis-header__subtitle">Data management</p>
+          <p className="eyebrow eyebrow--title">{t.title}</p>
+          <h2>{t.title}</h2>
+          <p className="analysis-header__subtitle">{t.subtitle}</p>
         </div>
-        <span className="status-pill">{painel ? "Saved" : "Waiting for PDF"}</span>
+        <span className="status-pill">{painel ? t.statusSaved : t.waitingForPdf}</span>
       </div>
 
       <div className="analysis-stack">
         <section className="upload-shell">
           <div className="upload-shell__header">
             <div>
-              <p className="eyebrow">Documents</p>
-              <h3>{modoDemo ? "Demo Dashboard" : painel ? "Add Documents" : "Upload Documents"}</h3>
+              <p className="eyebrow">{t.documents}</p>
+              <h3>{modoDemo ? t.demoDashboard : painel ? t.addDocuments : t.uploadDocuments}</h3>
             </div>
 
-            {modoDemo ? <span className="status-pill">View Only</span> : null}
+            {modoDemo ? <span className="status-pill">{t.viewOnly}</span> : null}
             {!modoDemo ? (
               <div className="upload-shell__actions">
                 {!painel ? (
@@ -567,7 +610,7 @@ export function HistoricoFuncionalView({
                     type="button"
                     onClick={iniciarAtualizacaoHistorico}
                   >
-                    Upload Career History
+                    {t.uploadCareerHistory}
                   </button>
                 ) : null}
                 {painel ? (
@@ -576,7 +619,7 @@ export function HistoricoFuncionalView({
                     type="button"
                     onClick={iniciarAnexoAfastamentos}
                   >
-                    Attach Leave Records
+                    {t.attachLeaveRecords}
                   </button>
                 ) : null}
                 {painel ? (
@@ -585,7 +628,7 @@ export function HistoricoFuncionalView({
                     type="button"
                     onClick={iniciarAtualizacaoHistorico}
                   >
-                    Update Career History
+                    {t.updateCareerHistory}
                   </button>
                 ) : null}
                 {arquivoDownloadUrl ? (
@@ -594,7 +637,7 @@ export function HistoricoFuncionalView({
                     download={arquivo?.name ?? "historico-funcional.pdf"}
                     href={arquivoDownloadUrl}
                   >
-                    Download PDF
+                    {t.downloadPdf}
                   </a>
                 ) : null}
               </div>
@@ -603,10 +646,7 @@ export function HistoricoFuncionalView({
 
           {modoDemo ? (
             <div className="upload-shell__collapsed">
-              <p className="helper">
-                The data below is already loaded for the demo. You can explore the charts,
-                timeline, and indicators without creating an account.
-              </p>
+              <p className="helper">{t.demoDataLoaded}</p>
               <div className="actions-row">
                 {onCreateAccount ? (
                   <button
@@ -615,28 +655,26 @@ export function HistoricoFuncionalView({
                     onClick={onCreateAccount}
                     disabled={criandoConta}
                   >
-                    {criandoConta ? "Opening..." : "Create Account"}
+                    {criandoConta ? t.opening : t.openAccount}
                   </button>
                 ) : null}
               </div>
             </div>
           ) : !painel && !modoAtualizacaoHistorico ? (
             <div className="upload-shell__collapsed">
-              <p className="helper">
-                Click &quot;Upload Career History&quot; to open the upload fields.
-              </p>
+              <p className="helper">{t.clickUploadCareerHistory}</p>
               {erro ? <p className="error-box">{erro}</p> : null}
             </div>
           ) : modoAtualizacaoHistorico ? (
             <form className="upload-form" onSubmit={enviarFormulario}>
               <label className="field">
-                <span>Career History PDF</span>
+                <span>{t.careerHistoryPdf}</span>
                 <input type="file" accept="application/pdf" onChange={selecionarArquivo} />
               </label>
 
               <div className="field-grid">
                 <label className="field">
-                  <span>Date of Birth</span>
+                  <span>{t.dateOfBirth}</span>
                   <input
                     type="date"
                     value={dataNascimento}
@@ -646,7 +684,7 @@ export function HistoricoFuncionalView({
                 </label>
 
                 <label className="field">
-                  <span>Recognized CLT Years</span>
+                  <span>{t.recognizedCltYears}</span>
                   <input
                     type="number"
                     min={0}
@@ -658,28 +696,26 @@ export function HistoricoFuncionalView({
               </div>
 
               <label className="field">
-                <span>Leave Records PDF</span>
+                <span>{t.leaveRecordsPdf}</span>
                 <input type="file" accept="application/pdf" onChange={selecionarArquivoAfastamentos} />
               </label>
 
               {arquivoAfastamentos ? (
-                <p className="helper">Selected leave records file: {arquivoAfastamentos.name}</p>
+                <p className="helper">{`${t.selectedLeaveRecordsFile}: ${arquivoAfastamentos.name}`}</p>
               ) : null}
 
               <div className="upload-actions">
                 <button className="ghost-button" type="button" onClick={usarCltMaximo}>
-                  Fill 10 CLT Years
+                  {t.fill10CltYears}
                 </button>
               </div>
 
-              <p className="helper">
-                You can enter up to 10 CLT years. If you already have that time, enter `10` or use the shortcut.
-              </p>
+              <p className="helper">{t.upTo10CltYears}</p>
 
-              {arquivo ? <p className="helper">Selected file: {arquivo.name}</p> : null}
+              {arquivo ? <p className="helper">{`${t.selectedFile}: ${arquivo.name}`}</p> : null}
               {usuarioId ? (
                 <button className="ghost-button" type="button" onClick={() => void recarregarHistorico()}>
-                  Reload Last Saved
+                  {t.reloadLastSaved}
                 </button>
               ) : null}
 
@@ -689,14 +725,14 @@ export function HistoricoFuncionalView({
           ) : painel && modoAnexoAfastamentos ? (
             <div className="upload-shell__collapsed upload-shell__collapsed--compact">
               <label className="field">
-                <span>Leave Records PDF</span>
+                <span>{t.leaveRecordsPdf}</span>
                 <input type="file" accept="application/pdf" onChange={selecionarArquivoAfastamentos} />
               </label>
 
               {arquivoAfastamentos ? (
-                <p className="helper">Selected leave records file: {arquivoAfastamentos.name}</p>
+                <p className="helper">{`${t.selectedLeaveRecordsFile}: ${arquivoAfastamentos.name}`}</p>
               ) : (
-                <p className="helper">Select the PDF to attach to the saved data.</p>
+                <p className="helper">{t.selectPdfToAttach}</p>
               )}
 
               {mensagemProcessamento ? <p className="helper">{mensagemProcessamento}</p> : null}
@@ -704,9 +740,7 @@ export function HistoricoFuncionalView({
             </div>
           ) : (
             <div className="upload-shell__collapsed">
-              <p className="helper">
-                To send other files, use the buttons above to open the corresponding field.
-              </p>
+              <p className="helper">{t.sendOtherFiles}</p>
               {erro ? <p className="error-box">{erro}</p> : null}
             </div>
           )}
@@ -717,45 +751,46 @@ export function HistoricoFuncionalView({
             <div className="overview-panel__chart">
               <GraficoPizzaTempo
                 percentualTrabalhado={resumo.percentual_trabalhado}
+                idioma={language}
               />
-              {resumoAfastamentos ? <GraficoPizzaAfastamentos resumo={resumoAfastamentos} /> : null}
+              {resumoAfastamentos ? <GraficoPizzaAfastamentos resumo={resumoAfastamentos} idioma={language} /> : null}
             </div>
 
             <div className="overview-panel__content">
               <p className="helper">
-                PDF storage: {rotuloArmazenamento(painel.armazenamento_origem)}.
+                {`${t.pdfStorage}: ${rotuloArmazenamento(painel.armazenamento_origem, language)}.`}
               </p>
               <p className="helper">
-                Processing: {rotuloProcessamento(painel.processamento_origem)}.
+                {`${t.processing}: ${rotuloProcessamento(painel.processamento_origem, language)}.`}
               </p>
               <div className="metric-strip">
                 <div className="metric-line">
-                  <span>Time Worked</span>
-                  <strong>{formatarDuracaoEmAnos(resumo.tempo_trabalhado_dias)}</strong>
+                  <span>{t.timeWorked}</span>
+                  <strong>{formatarDuracaoEmAnos(resumo.tempo_trabalhado_dias, language)}</strong>
                 </div>
                 <div className="metric-line">
-                  <span>Time Remaining</span>
-                  <strong>{formatarDuracaoEmAnos(resumo.tempo_restante_dias)}</strong>
+                  <span>{t.timeRemaining}</span>
+                  <strong>{formatarDuracaoEmAnos(resumo.tempo_restante_dias, language)}</strong>
                 </div>
                 <div className="metric-line">
-                  <span>Events</span>
+                  <span>{t.events}</span>
                   <strong>{resumo.eventos_totais}</strong>
                 </div>
                 {resumoAfastamentos ? (
                   <div className="metric-line metric-line--danger">
-                    <span>Days Away</span>
+                    <span>{t.daysAway}</span>
                     <strong>{resumoAfastamentos.dias_totais}</strong>
                   </div>
                 ) : null}
                 {resumoAfastamentos ? (
                   <div className="metric-line metric-line--danger">
-                    <span>Medical Review</span>
+                    <span>{t.medicalReview}</span>
                     <strong>{afastamentoPericia}</strong>
                   </div>
                 ) : null}
                 <div className="metric-line">
-                  <span>Next Progression</span>
-                  <strong>{formatarData(painel.proxima_progressao_prevista)}</strong>
+                  <span>{t.nextProgression}</span>
+                  <strong>{formatarData(painel.proxima_progressao_prevista, language)}</strong>
                 </div>
               </div>
 
@@ -763,25 +798,22 @@ export function HistoricoFuncionalView({
           </section>
         ) : (
           <div className="history-empty">
-            <p>
-              Upload the career history PDF to analyze the data and build the career calculations.
-            </p>
-            <p>
-              Here you will see time worked, retirement projection, and the next progression and promotion.
-            </p>
+            <p>{t.uploadHint}</p>
+            <p>{t.loadedInDemo}</p>
           </div>
         )}
 
         {painel && resumo ? (
           <section className="timeline-panel">
           <div className="career-bars__title" style={{ marginBottom: "1.5rem" }}>
-              <p className="eyebrow">Timeline: Progressions and Promotions</p>
+              <p className="eyebrow">{t.chartTitle}</p>
             </div>
 
-            <LinhaDoTempoGrafica eventos={painel.eventos} />
+            <LinhaDoTempoGrafica eventos={painel.eventos} idioma={language} />
 
             <GraficoComparativoTempo
               painel={painel}
+              idioma={language}
             />
           </section>
         ) : null}

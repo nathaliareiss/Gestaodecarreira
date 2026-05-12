@@ -9,9 +9,12 @@ import {
 } from "../model/usuario.model"
 import { criarUsuario } from "../model/usuario.repository"
 import { salvarSessaoDemo } from "@/shared/auth/session"
+import { useLanguage } from "@/shared/i18n/language-provider"
 
 export function useUsuarioController() {
   const router = useRouter()
+  const { texts } = useLanguage()
+  const registerTexts = texts.registerForm
   const [cadastro, setCadastro] = useState<UsuarioCadastro>(USUARIO_CADASTRO_INICIAL)
   const [carregando, setCarregando] = useState(false)
   const [entrandoDemo, setEntrandoDemo] = useState(false)
@@ -48,11 +51,11 @@ export function useUsuarioController() {
     const senha = cadastro.senha
 
     if (!nome || !email || !dataExercicio || !login || !senha) {
-      return "Preencha nome, e-mail, data de exercício, login e senha."
+      return registerTexts.requiredFields
     }
 
     if (senha.length < 6) {
-      return "A senha precisa ter pelo menos 6 caracteres."
+      return registerTexts.passwordMinLength
     }
 
     return null
@@ -80,9 +83,9 @@ export function useUsuarioController() {
         login: cadastro.login.trim(),
         senha: cadastro.senha,
       })
-      setMensagem("Cadastro concluído com sucesso. Agora você pode entrar com seu login.")
+      setMensagem(registerTexts.successMessage)
     } catch (error) {
-      setErro(error instanceof Error ? error.message : "Falha inesperada ao salvar.")
+      setErro(error instanceof Error ? error.message : registerTexts.unexpectedSave)
     } finally {
       setCarregando(false)
     }

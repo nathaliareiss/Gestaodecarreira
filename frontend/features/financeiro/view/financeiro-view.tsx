@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState, type ChangeEvent, type FormEvent } from "react"
 
+import { useLanguage } from "@/shared/i18n/language-provider"
 import {
   acompanharLoteFinanceiro,
   calcularProgressoLote,
@@ -23,6 +24,7 @@ import {
   DEMO_FINANCEIRO_CONTRACHEQUES,
   DEMO_FINANCEIRO_EVOLUCAO,
 } from "@/shared/demo/demo-data"
+import type { SiteLanguage } from "@/shared/i18n/messages"
 
 const INTERVALO_POLLING_MS = 2000
 
@@ -62,34 +64,49 @@ function formatarMoeda(valor: number | null) {
   return formatadorMoeda.format(valor)
 }
 
-function formatarVariacaoPercentual(valor: number | null) {
+function formatarVariacaoPercentual(valor: number | null, idioma: SiteLanguage) {
   if (valor === null || !Number.isFinite(valor)) {
-    return "Base year"
+    return idioma === "en" ? "Base year" : "Ano base"
   }
 
   const sinal = valor > 0 ? "+" : ""
   return `${sinal}${valor.toFixed(2)}%`
 }
 
-function mensagemStatusBatch(status: FinanceiroBatchStatusResponse | null, enviando: boolean, monitorando: boolean) {
+function mensagemStatusBatch(
+  status: FinanceiroBatchStatusResponse | null,
+  enviando: boolean,
+  monitorando: boolean,
+  textosFinanceiro: Pick<
+    (typeof import("@/shared/i18n/messages").LOCALE_TEXTS)["pt-BR"]["finance"],
+    "uploadingBatch" | "pollingEveryTwoSeconds" | "ready"
+  >,
+) {
   if (enviando) {
-    return "Uploading batch..."
+    return textosFinanceiro.uploadingBatch
   }
 
   if (monitorando) {
-    return "Polling every 2 seconds..."
+    return textosFinanceiro.pollingEveryTwoSeconds
   }
 
   if (status) {
     return formatarStatusLote(status.status)
   }
 
-  return "Ready"
+  return textosFinanceiro.ready
 }
 
-function resumoProgressoLote(status: FinanceiroBatchStatusResponse | null, enviando: boolean) {
+function resumoProgressoLote(
+  status: FinanceiroBatchStatusResponse | null,
+  enviando: boolean,
+  textosFinanceiro: Pick<
+    (typeof import("@/shared/i18n/messages").LOCALE_TEXTS)["pt-BR"]["finance"],
+    "waitingForBatchToStart" | "processed" | "duplicated" | "failed"
+  >,
+) {
   if (enviando || !status) {
-    return "Waiting for the batch to start..."
+    return textosFinanceiro.waitingForBatchToStart
   }
 
   const processados = Math.max(0, Number(status.processed_count ?? status.processed ?? 0))
@@ -97,24 +114,30 @@ function resumoProgressoLote(status: FinanceiroBatchStatusResponse | null, envia
   const falhas = Math.max(0, Number(status.failed_count ?? status.failed ?? 0))
 
   if (status.status === "completed") {
-    return `${processados} processados, ${duplicados} duplicados, ${falhas} falharam.`
+    return `${processados} ${textosFinanceiro.processed}, ${duplicados} ${textosFinanceiro.duplicated}, ${falhas} ${textosFinanceiro.failed}.`
   }
 
   if (status.status === "failed") {
-    return `${processados} processados, ${duplicados} duplicados, ${falhas} falharam.`
+    return `${processados} ${textosFinanceiro.processed}, ${duplicados} ${textosFinanceiro.duplicated}, ${falhas} ${textosFinanceiro.failed}.`
   }
 
-  return `${processados} processados, ${duplicados} duplicados, ${falhas} falharam.`
+  return `${processados} ${textosFinanceiro.processed}, ${duplicados} ${textosFinanceiro.duplicated}, ${falhas} ${textosFinanceiro.failed}.`
 }
 
-function resumoEvolucaoSalarial(evolucao: FinanceiroEvolucaoSalarialResponse) {
+function resumoEvolucaoSalarial(
+  evolucao: FinanceiroEvolucaoSalarialResponse,
+  textosFinanceiro: Pick<
+    (typeof import("@/shared/i18n/messages").LOCALE_TEXTS)["pt-BR"]["finance"],
+    "noPaychecksYet" | "salaryAnalysisPersists" | "demoFigures"
+  >,
+) {
   if (
     evolucao.ano_inicial === null ||
     evolucao.ano_final === null ||
     evolucao.salario_base_inicial_referencia === null ||
     evolucao.salario_base_final_referencia === null
   ) {
-    return "Você ainda não enviou contracheques."
+    return textosFinanceiro.noPaychecksYet
   }
 
   return `No período analisado, seu salário-base passou de ${formatarMoeda(
@@ -221,14 +244,14 @@ function LineChart({ title, subtitle, years, series, ariaLabel }: LineChartProps
   return (
     <section className="chart-panel">
       <div className="analysis-header__title analysis-header__title--compact">
-        <p className="eyebrow eyebrow--title">Annual analysis</p>
+        <p className="eyebrow eyebrow--title">{t.annualAnalysis}</p>
         <h3>{title}</h3>
         <p className="analysis-header__subtitle">{subtitle}</p>
       </div>
 
       {years.length === 0 ? (
         <div className="chart-empty">
-          <p className="helper">No annual data is available yet.</p>
+          <p className="helper">{t.noAnnualData}</p>
         </div>
       ) : (
         <div className="chart-canvas" aria-label={ariaLabel}>
@@ -355,6 +378,8 @@ function obterValorDesconto(
 }
 
 export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
+  const { language, texts } = useLanguage()
+  const t = texts.finance
   const [arquivosSelecionados, setArquivosSelecionados] = useState<File[]>([])
   const [batchStatus, setBatchStatus] = useState<FinanceiroBatchStatusResponse | null>(null)
   const [evolucaoSalarial, setEvolucaoSalarial] = useState<FinanceiroEvolucaoSalarialResponse | null>(
@@ -391,7 +416,11 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
       setEvolucaoSalarial(null)
       setContrachequesSalvos([])
       setErroEvolucao(
-        error instanceof Error ? error.message : "We could not load the saved salary analysis.",
+        error instanceof Error
+          ? error.message
+          : language === "en"
+            ? "We could not load the saved salary analysis."
+            : "Não foi possível carregar a análise salarial salva.",
       )
     } finally {
       setCarregandoAnalisePersistida(false)
@@ -410,7 +439,7 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
       setArquivosSelecionados([])
       setBatchStatus(null)
       setBatchId(null)
-      setErro("Please select PDF files only.")
+      setErro(language === "en" ? "Please select PDF files only." : "Selecione apenas arquivos PDF.")
       setErroEvolucao(null)
       return
     }
@@ -426,12 +455,12 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
     evento.preventDefault()
 
     if (modoDemo) {
-      setErro("Demo mode uses sample data and does not accept uploads.")
+      setErro(language === "en" ? "Demo mode uses sample data and does not accept uploads." : "O modo demo usa dados de exemplo e não aceita envios.")
       return
     }
 
     if (arquivosSelecionados.length === 0) {
-      setErro("Select at least one PDF before continuing.")
+      setErro(language === "en" ? "Select at least one PDF before continuing." : "Selecione pelo menos um PDF antes de continuar.")
       return
     }
 
@@ -467,7 +496,9 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
       setErro(
         error instanceof Error
           ? error.message
-          : "We could not start the batch. Check the PDFs and try again.",
+          : language === "en"
+            ? "We could not start the batch. Check the PDFs and try again."
+            : "Não foi possível iniciar o lote. Verifique os PDFs e tente novamente.",
       )
     } finally {
       setEnviando(false)
@@ -530,7 +561,7 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
   const monitorando = Boolean(
     batchId !== null && batchStatus && !isBatchTerminalStatus(batchStatus.status) && !enviando,
   )
-  const statusAtual = mensagemStatusBatch(batchStatus, enviando, monitorando)
+  const statusAtual = mensagemStatusBatch(batchStatus, enviando, monitorando, t)
   const totalSelecionadoBytes = arquivosSelecionados.reduce((total, arquivo) => total + arquivo.size, 0)
   const totalSelecionadoArquivos = arquivosSelecionados.length
   const barraIndeterminada = enviando && batchStatus === null
@@ -547,14 +578,10 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
   return (
     <section className="analysis-card card">
       <div className="analysis-header">
-        <div className="analysis-header__title">
-          <p className="eyebrow eyebrow--title">Finance</p>
-          <h2>{"Batch Financial Analysis"}</h2>
-            <p className="analysis-header__subtitle">
-              {
-                "Upload one or more pay stubs, then follow the batch progress in real time until the worker finishes."
-              }
-            </p>
+          <div className="analysis-header__title">
+          <p className="eyebrow eyebrow--title">{t.title}</p>
+          <h2>{t.payStubBatch}</h2>
+            <p className="analysis-header__subtitle">{t.subtitle}</p>
           </div>
       </div>
 
@@ -562,15 +589,15 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
         <form className="upload-shell" onSubmit={enviarFormulario}>
           <div className="upload-shell__header">
             <div>
-              <p className="eyebrow">Pay Stub Batch</p>
-              <h3>Upload PDFs</h3>
+              <p className="eyebrow">{t.batchTitle}</p>
+              <h3>{t.uploadPdfs}</h3>
             </div>
-            <span className="status-pill">{modoDemo ? "Demo data only" : statusAtual}</span>
+            <span className="status-pill">{modoDemo ? t.demoDataOnly : statusAtual}</span>
           </div>
 
           <div className="upload-shell__collapsed">
             <label className="field">
-              <span>PDF files</span>
+              <span>{t.pdfFiles}</span>
               <input
                 accept=".pdf,application/pdf"
                 multiple
@@ -580,36 +607,28 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
               />
             </label>
 
-            <p className="helper">
-              Select one or more PDFs. The batch monitor will poll the backend every 2 seconds.
-            </p>
+            <p className="helper">{t.selectOneOrMorePdfs}</p>
             {modoDemo ? (
-              <p className="helper">
-                Demo mode keeps this section read-only because the financial analysis is already loaded.
-              </p>
+              <p className="helper">{t.demoReadOnly}</p>
             ) : null}
-            <p className="helper">
-              Large batches can take a few minutes. The worker keeps processing in the background.
-            </p>
+            <p className="helper">{t.largeBatchesCanTakeAWhile}</p>
 
             <div className="metric-strip metric-strip--selection">
               <div className="metric-line">
-                <span>Selected PDFs</span>
+                <span>{t.selectedPdfs}</span>
                 <strong>{totalSelecionadoArquivos}</strong>
               </div>
               <div className="metric-line">
-                <span>Total size</span>
+                <span>{t.totalSize}</span>
                 <strong>{formatarTamanhoArquivo(totalSelecionadoBytes)}</strong>
               </div>
             </div>
 
             {totalSelecionadoArquivos > 0 ? (
               <details className="batch-details">
-                <summary>Ver detalhes ({totalSelecionadoArquivos})</summary>
+                <summary>{`${t.viewDetails} (${totalSelecionadoArquivos})`}</summary>
                 <div className="batch-details__content">
-                  <p className="helper">
-                    File names stay collapsed so the page stays light even with large batches.
-                  </p>
+                  <p className="helper">{t.fileNamesStayCollapsed}</p>
                   <ul className="batch-details__list">
                     {arquivosSelecionados.slice(0, 12).map((arquivo) => (
                       <li key={`${arquivo.name}-${arquivo.size}`}>
@@ -620,7 +639,7 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
                   </ul>
                   {totalSelecionadoArquivos > 12 ? (
                     <p className="helper">
-                      {`+${totalSelecionadoArquivos - 12} additional files are hidden from the preview.`}
+                      {`+${totalSelecionadoArquivos - 12} ${t.additionalFilesHidden}`}
                     </p>
                   ) : null}
                 </div>
@@ -639,7 +658,7 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
                       ? "progress-track progress-track--indeterminate"
                       : "progress-track"
                   }
-                  aria-label="Batch processing progress"
+                  aria-label={t.batchProcessingProgressLabel}
                   aria-busy={barraIndeterminada || monitorando}
                   role="progressbar"
                   aria-valuemin={0}
@@ -662,7 +681,7 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
 
             <div className="actions-row">
               <button className="primary-button" type="submit" disabled={modoDemo || enviando || monitorando}>
-                {modoDemo ? "Demo mode" : enviando ? "Sending batch..." : "Analyze batch"}
+                {modoDemo ? t.demoMode : enviando ? t.sendingBatch : t.analyzeBatch}
               </button>
             </div>
 
@@ -673,34 +692,30 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
         {batchStatus ? (
           <section className="summary-panel">
             <div className="analysis-header__title analysis-header__title--compact">
-              <p className="eyebrow eyebrow--title">Batch Monitor</p>
-              <h3>{"Processing status"}</h3>
-              <p className="analysis-header__subtitle">
-                {
-                  "A compact progress bar updates automatically while the worker processes each uploaded PDF."
-                }
-              </p>
+              <p className="eyebrow eyebrow--title">{t.batchMonitor}</p>
+              <h3>{t.processingStatus}</h3>
+              <p className="analysis-header__subtitle">{t.batchProgressSubtitle}</p>
             </div>
 
             <div className="metric-strip metric-strip--hero">
               <div className="metric-line">
-                <span>Status</span>
+                <span>{t.status}</span>
                 <strong>{formatarStatusLote(batchStatus.status)}</strong>
               </div>
               <div className="metric-line">
-                <span>Processados</span>
+                <span>{t.processed}</span>
                 <strong>{batchStatus.processed_count ?? batchStatus.processed ?? 0}</strong>
               </div>
               <div className="metric-line">
-                <span>Duplicados</span>
+                <span>{t.duplicated}</span>
                 <strong>{batchStatus.duplicated_count ?? batchStatus.duplicated ?? 0}</strong>
               </div>
               <div className="metric-line">
-                <span>Falharam</span>
+                <span>{t.failed}</span>
                 <strong>{batchStatus.failed_count ?? batchStatus.failed ?? 0}</strong>
               </div>
               <div className="metric-line">
-                <span>Total</span>
+                <span>{t.total}</span>
                 <strong>{batchStatus.total}</strong>
               </div>
             </div>
@@ -708,7 +723,7 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
             <div className="progress-list">
               <div className="progress-row">
                 <div className="progress-row-header">
-                  <span className="helper">{resumoProgressoLote(batchStatus, enviando)}</span>
+                  <span className="helper">{resumoProgressoLote(batchStatus, enviando, t)}</span>
                   <strong>{progresso}%</strong>
                 </div>
                 <div
@@ -730,19 +745,17 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
             </div>
 
             {(batchStatus.duplicated_count ?? batchStatus.duplicated ?? 0) > 0 ? (
-              <p className="helper">Alguns contracheques já existiam e foram ignorados.</p>
+              <p className="helper">{t.somePaychecksAlreadyExisted}</p>
             ) : null}
 
             {(batchStatus.failed_count ?? batchStatus.failed ?? 0) > 0 ? (
-              <p className="helper">
-                The worker kept going after failures, so the batch can still finish with partial results.
-              </p>
+              <p className="helper">{t.workerKeptGoingAfterFailures}</p>
             ) : null}
 
             {batchStatus && (batchStatus.failed_count ?? batchStatus.failed ?? 0) > 0 ? (
               <div className="error-box">
                 <p className="error-box__title">
-                  {erroPrincipalLote ? `Primary issue: ${erroPrincipalLote}` : "Primary issue not available."}
+                  {erroPrincipalLote ? `${t.primaryIssue}: ${erroPrincipalLote}` : t.primaryIssueNotAvailable}
                 </p>
                 {mensagensErroLote.length > 0 ? (
                   <ul className="error-list">
@@ -758,25 +771,20 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
 
         <section className="salary-panel">
           <div className="analysis-header__title analysis-header__title--compact">
-            <p className="eyebrow eyebrow--title">Annual Salary Evolution</p>
-            <h3>{"Saved salary analysis"}</h3>
-            <p className="analysis-header__subtitle">
-              {"This section always loads the saved contracheques from PostgreSQL, so the data survives refresh."}
-            </p>
+            <p className="eyebrow eyebrow--title">{t.annualSalaryEvolution}</p>
+            <h3>{t.savedSalaryAnalysis}</h3>
+            <p className="analysis-header__subtitle">{t.salaryAnalysisPersists}</p>
             {modoDemo ? (
-              <p className="helper">
-                Demo figures are estimated from the 2015 and 2026 pay stubs you shared, so you can explore the
-                salary trend without uploading files.
-              </p>
+              <p className="helper">{t.demoFigures}</p>
             ) : null}
           </div>
 
           {carregandoAnalisePersistida ? (
-            <p className="helper">Loading saved analysis from the database...</p>
+            <p className="helper">{t.loadingSavedAnalysis}</p>
           ) : null}
 
           {!carregandoAnalisePersistida && (totalContrachequesSalvos === 0 || evolucaoSemDados) ? (
-            <p className="helper">Você ainda não enviou contracheques.</p>
+            <p className="helper">{t.noPaychecksYet}</p>
           ) : null}
 
           {erroEvolucao ? <p className="error-box">{erroEvolucao}</p> : null}
@@ -785,27 +793,32 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
             <>
               <div className="metric-strip metric-strip--hero metric-strip--salary">
                 <div className="metric-line">
-                  <span>Analysis period</span>
+                  <span>{t.analysisPeriod}</span>
                   <strong>{`${evolucaoSalarial.ano_inicial} - ${evolucaoSalarial.ano_final}`}</strong>
                 </div>
                 <div className="metric-line">
-                  <span>Starting salary base</span>
+                  <span>{t.startingSalaryBase}</span>
                   <strong>{formatarMoeda(evolucaoSalarial.salario_base_inicial_referencia)}</strong>
                 </div>
                 <div className="metric-line">
-                  <span>Ending salary base</span>
+                  <span>{t.endingSalaryBase}</span>
                   <strong>{formatarMoeda(evolucaoSalarial.salario_base_final_referencia)}</strong>
                 </div>
                 <div className="metric-line">
-                  <span>Salary base evolution</span>
-                  <strong>{formatarVariacaoPercentual(evolucaoSalarial.variacao_acumulada_salario_base_percentual)}</strong>
+                  <span>{t.salaryBaseEvolution}</span>
+                  <strong>
+                    {formatarVariacaoPercentual(
+                      evolucaoSalarial.variacao_acumulada_salario_base_percentual,
+                      language,
+                    )}
+                  </strong>
                 </div>
               </div>
 
               <LineChart
-                ariaLabel="Annual salary base evolution"
-                title="Salary base by year"
-                subtitle="A single line keeps the base salary trend clear and easy to scan."
+                ariaLabel={language === "en" ? "Annual salary base evolution" : "Evolução anual da base salarial"}
+                title={t.salaryBaseByYear}
+                subtitle={t.salaryTrendExplainer}
                 years={anosEvolucao}
                 series={[
                   {
@@ -819,8 +832,8 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
 
               <LineChart
                 ariaLabel="Annual gross and net pay evolution"
-                title="Gross total and net pay"
-                subtitle="The second line chart keeps gross and liquid values separated without stacking blocks."
+                title={t.grossTotalAndNetPay}
+                subtitle={t.grossAndNetSubtitle}
                 years={anosEvolucao}
                 series={[
                   {
@@ -840,24 +853,22 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
 
               <section className="discounts-panel">
                 <div className="analysis-header__title analysis-header__title--compact">
-                  <p className="eyebrow eyebrow--title">Discounts</p>
-                  <h3>{"Annual summary table"}</h3>
-                  <p className="analysis-header__subtitle">
-                    {"The summary keeps deductions readable without adding another heavy chart."}
-                  </p>
+                  <p className="eyebrow eyebrow--title">{t.discounts}</p>
+                  <h3>{t.annualSummaryTable}</h3>
+                  <p className="analysis-header__subtitle">{t.summaryKeepsDeductionsReadable}</p>
                 </div>
 
                 <div className="table-wrap">
                   <table className="timeline-table timeline-table--compact">
                     <thead>
                       <tr>
-                        <th>Year</th>
-                        <th>Pension</th>
-                        <th>IRRF</th>
-                        <th>Loans</th>
-                        <th>Health</th>
-                        <th>Other discounts</th>
-                        <th>Total</th>
+                        <th>{t.year}</th>
+                        <th>{t.pension}</th>
+                        <th>{t.irrf}</th>
+                        <th>{t.loans}</th>
+                        <th>{t.health}</th>
+                        <th>{t.otherDiscounts}</th>
+                        <th>{t.totalLabel}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -885,11 +896,11 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
 
               {evolucaoSalarial.anos_sem_crescimento_relevante.length > 0 ? (
                 <p className="helper">
-                  {`Years without relevant growth: ${evolucaoSalarial.anos_sem_crescimento_relevante.join(", ")}.`}
+                  {`${t.yearsWithoutRelevantGrowth}: ${evolucaoSalarial.anos_sem_crescimento_relevante.join(", ")}.`}
                 </p>
               ) : null}
 
-              <p className="salary-summary">{resumoEvolucaoSalarial(evolucaoSalarial)}</p>
+              <p className="salary-summary">{resumoEvolucaoSalarial(evolucaoSalarial, t)}</p>
             </>
           ) : null}
         </section>
