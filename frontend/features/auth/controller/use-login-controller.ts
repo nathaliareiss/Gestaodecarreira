@@ -18,7 +18,6 @@ import {
   removerSessaoDemo,
   salvarSessaoDemo,
 } from "@/shared/auth/session"
-import { DEMO_USUARIO } from "@/shared/demo/demo-data"
 
 type ModoAutenticacao = "login" | "recuperacao"
 

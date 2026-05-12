@@ -9,7 +9,6 @@ import {
 } from "../model/usuario.model"
 import { criarUsuario } from "../model/usuario.repository"
 import { salvarSessaoDemo } from "@/shared/auth/session"
-import { DEMO_USUARIO } from "@/shared/demo/demo-data"
 
 export function useUsuarioController() {
   const router = useRouter()
