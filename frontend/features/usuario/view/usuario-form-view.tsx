@@ -1,6 +1,7 @@
 import type { FormEvent } from "react"
 
 import type { UsuarioCadastro } from "../model/usuario.model"
+import { useLanguage } from "@/shared/i18n/language-provider"
 
 type UsuarioFormViewProps = {
   cadastro: UsuarioCadastro
@@ -29,17 +30,19 @@ export function UsuarioFormView({
   onLoginChange,
   onSenhaChange,
 }: UsuarioFormViewProps) {
+  const { texts } = useLanguage()
+
   return (
     <form className="card form-card form-card--register" onSubmit={onSubmit}>
       <div className="card-header card-header--tight">
         <div>
-          <p className="eyebrow">New User</p>
-          <h2>Access Details</h2>
+          <p className="eyebrow">{texts.registerForm.newUser}</p>
+          <h2>{texts.registerForm.accessDetails}</h2>
         </div>
       </div>
 
       <label className="field">
-        <span>Full Name</span>
+        <span>{texts.registerForm.fullName}</span>
         <input
           value={cadastro.nome}
           onChange={(evento) => onNomeChange(evento.target.value)}
@@ -49,7 +52,7 @@ export function UsuarioFormView({
       </label>
 
       <label className="field">
-        <span>Nickname (optional)</span>
+        <span>{texts.registerForm.nickname}</span>
         <input
           value={cadastro.apelido}
           onChange={(evento) => onApelidoChange(evento.target.value)}
@@ -58,7 +61,7 @@ export function UsuarioFormView({
       </label>
 
       <label className="field">
-        <span>Confirmation Email</span>
+        <span>{texts.registerForm.confirmationEmail}</span>
         <input
           type="email"
           value={cadastro.email}
@@ -69,7 +72,7 @@ export function UsuarioFormView({
       </label>
 
       <label className="field">
-        <span>Start Date</span>
+        <span>{texts.registerForm.startDate}</span>
         <input
           type="date"
           value={cadastro.data_exercicio}
@@ -80,7 +83,7 @@ export function UsuarioFormView({
 
       <div className="field-grid">
         <label className="field">
-          <span>Login</span>
+          <span>{texts.registerForm.login}</span>
           <input
             value={cadastro.login}
             onChange={(evento) => onLoginChange(evento.target.value)}
@@ -90,7 +93,7 @@ export function UsuarioFormView({
         </label>
 
         <label className="field">
-          <span>Password</span>
+          <span>{texts.registerForm.password}</span>
           <input
             type="password"
             value={cadastro.senha}
@@ -104,11 +107,9 @@ export function UsuarioFormView({
 
       <div className="actions">
         <button className="primary-button button--large" type="submit" disabled={carregando}>
-          {carregando ? "Saving..." : "Create Account"}
+          {carregando ? texts.registerForm.saving : texts.registerForm.createAccount}
         </button>
-        <p className="helper">
-          After registration, you will receive an email to confirm access.
-        </p>
+        <p className="helper">{texts.registerForm.afterRegistration}</p>
       </div>
 
       {mensagem ? <p className="success-box">{mensagem}</p> : null}

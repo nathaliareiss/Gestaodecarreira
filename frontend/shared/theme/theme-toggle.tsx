@@ -2,6 +2,8 @@
 
 import { useLayoutEffect, useState } from "react"
 
+import { useLanguage } from "@/shared/i18n/language-provider"
+
 type ThemeMode = "dark" | "light"
 
 const STORAGE_KEY = "career-theme-mode"
@@ -25,6 +27,7 @@ function temaInicial(): ThemeMode {
 }
 
 export function ThemeToggle() {
+  const { texts } = useLanguage()
   const [tema, setTema] = useState<ThemeMode>(() => temaInicial())
   const [pronto, setPronto] = useState(false)
 
@@ -52,14 +55,16 @@ export function ThemeToggle() {
       className="theme-toggle"
       type="button"
       onClick={alternarTema}
-      aria-label={tema === "dark" ? "Ativar tema claro" : "Ativar tema escuro"}
-      title={tema === "dark" ? "Ativar tema claro" : "Ativar tema escuro"}
+      aria-label={tema === "dark" ? texts.theme.lightTitle : texts.theme.darkTitle}
+      title={tema === "dark" ? texts.theme.lightTitle : texts.theme.darkTitle}
     >
-      <span className="theme-toggle__label">Tema</span>
+      <span className="theme-toggle__label">{texts.theme.label}</span>
       <span className="theme-toggle__pill" aria-hidden="true">
         <span className="theme-toggle__dot" />
       </span>
-      <span className="theme-toggle__state">{tema === "dark" ? "Escuro" : "Claro"}</span>
+      <span className="theme-toggle__state">
+        {tema === "dark" ? texts.theme.darkState : texts.theme.lightState}
+      </span>
     </button>
   )
 }

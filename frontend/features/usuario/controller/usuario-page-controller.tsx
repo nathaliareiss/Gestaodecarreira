@@ -17,6 +17,7 @@ import {
   removerSessaoDemo,
   removerUsuarioAutenticadoId,
 } from "@/shared/auth/session"
+import { useLanguage } from "@/shared/i18n/language-provider"
 
 function formatarDataCurta(valor: string | null) {
   if (!valor) {
@@ -69,6 +70,7 @@ export function UsuarioPageController({
   modoDemo,
 }: UsuarioPageControllerProps) {
   const router = useRouter()
+  const { texts } = useLanguage()
   const [usuario, setUsuario] = useState<UsuarioConta | null>(usuarioInicial)
   const [abaAtiva, setAbaAtiva] = useState<"perfil" | "historico" | "financeiro">(
     modoDemo ? "historico" : "perfil",
@@ -82,7 +84,7 @@ export function UsuarioPageController({
   const nivelExibido = historicoInicial?.nivel_atual ?? "-"
   const grauExibido = historicoInicial?.grau_atual ?? "-"
   const resumoDemo = historicoInicial?.resumo_grafico ?? null
-  const rotuloSair = saindo ? "Exiting..." : modoDemo ? "Exit Demo" : "Exit"
+  const rotuloSair = saindo ? texts.dashboard.exitLabel : modoDemo ? texts.dashboard.exitDemo : texts.dashboard.exit
   const indicadoresDemo = modoDemo && historicoInicial && resumoDemo ? [
     {
       label: "Years Worked",
@@ -173,10 +175,12 @@ export function UsuarioPageController({
 
       <section className="hero hero--usuario-dashboard">
         <div className="hero-copy hero-copy--dashboard hero-copy--centered">
-          <p className="eyebrow">CAREER DASHBOARD</p>
+          <p className="eyebrow">{texts.dashboard.careerDashboard.toUpperCase()}</p>
           <h1 className="hero-title--centered">CareerFlow</h1>
-          <p className="hero-subtitle hero-subtitle--dashboard">Career Progression Analytics</p>
-          {modoDemo ? <span className="status-pill">DEMO ACTIVE</span> : null}
+          <p className="hero-subtitle hero-subtitle--dashboard">
+            {texts.dashboard.careerProgressionAnalytics}
+          </p>
+          {modoDemo ? <span className="status-pill">{texts.dashboard.demoActive}</span> : null}
         </div>
       </section>
 
@@ -197,9 +201,9 @@ export function UsuarioPageController({
         <section className="card results-card">
           <div className="tab-bar">
             {[
-              { key: "perfil" as const, label: "Profile" },
-              { key: "historico" as const, label: "Career History" },
-              { key: "financeiro" as const, label: "Finance" },
+              { key: "perfil" as const, label: texts.dashboard.profile },
+              { key: "historico" as const, label: texts.dashboard.history },
+              { key: "financeiro" as const, label: texts.dashboard.finance },
             ].map((aba) => (
               <button
                 className={abaAtiva === aba.key ? "tab-button tab-button--active" : "tab-button"}
@@ -224,17 +228,17 @@ export function UsuarioPageController({
             <>
               <div className="card-header">
                 <div>
-                  <p className="eyebrow">PROFILE OVERVIEW</p>
-                  <h2>Professional Profile</h2>
+                  <p className="eyebrow">{texts.dashboard.profileOverview.toUpperCase()}</p>
+                  <h2>{texts.dashboard.professionalProfile}</h2>
                 </div>
                 <span className="status-pill">
-                  {usuario?.email_confirmado ? "Confirmed" : "Pending"}
+                  {usuario?.email_confirmado ? texts.dashboard.confirmed : texts.dashboard.pending}
                 </span>
               </div>
 
               {carregando ? (
                 <div className="empty-state">
-                  <p>Loading session data...</p>
+                  <p>{texts.dashboard.loadingSessionData}</p>
                 </div>
               ) : erro ? (
                 <div className="empty-state">
@@ -244,14 +248,14 @@ export function UsuarioPageController({
                     type="button"
                     onClick={() => void recarregarUsuario()}
                   >
-                    Try again
+                    {texts.dashboard.tryAgain}
                   </button>
                 </div>
               ) : usuario ? (
                 <>
                   <div className="results-grid">
                     <div className="result-block">
-                      <span className="label">Full Name</span>
+                      <span className="label">{texts.registerForm.fullName}</span>
                       <strong>{usuario.nome}</strong>
                     </div>
                     <div className="result-block">
@@ -267,7 +271,7 @@ export function UsuarioPageController({
                       <strong>{grauExibido}</strong>
                     </div>
                     <div className="result-block">
-                      <span className="label">Start Date</span>
+                      <span className="label">{texts.registerForm.startDate}</span>
                       <strong>{formatarDataCurta(dataExercicioExibida)}</strong>
                     </div>
                   </div>
@@ -281,7 +285,7 @@ export function UsuarioPageController({
                           onClick={() => void excluirCadastro()}
                           disabled={removendo}
                         >
-                          {removendo ? "Removing..." : "Clear Last Record"}
+                          {removendo ? texts.dashboard.loading : texts.dashboard.removeLastRecord}
                         </button>
                       ) : null}
                     </div>
@@ -289,11 +293,9 @@ export function UsuarioPageController({
                 </>
               ) : (
                 <div className="empty-state">
-                  <p>
-                    No active session was found. Sign in again to view your data.
-                  </p>
+                  <p>{texts.dashboard.noActiveSession}</p>
                   <Link className="primary-button" href="/login">
-                    Go to Login
+                    {texts.dashboard.goToLogin}
                   </Link>
                 </div>
               )}

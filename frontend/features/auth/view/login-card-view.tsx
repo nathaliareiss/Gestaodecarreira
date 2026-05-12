@@ -4,6 +4,7 @@ import type {
   UsuarioLogin,
   UsuarioSolicitacaoRecuperacaoSenha,
 } from "../model/auth.model"
+import { useLanguage } from "@/shared/i18n/language-provider"
 
 type LoginCardViewProps = {
   modo: "login" | "recuperacao"
@@ -50,22 +51,24 @@ export function LoginCardView({
   onSenhaChange,
   onRecuperacaoEmailChange,
 }: LoginCardViewProps) {
+  const { texts } = useLanguage()
+
   return (
     <div className="login-panel">
       {modo === "login" ? (
         <form className="card form-card form-card--login" onSubmit={onSubmit}>
           <div className="card-header card-header--tight">
             <div>
-              <p className="eyebrow">Access</p>
-              <h2>Sign In</h2>
+              <p className="eyebrow">{texts.authCard.access}</p>
+              <h2>{texts.authCard.signIn}</h2>
             </div>
             <button className="ghost-button ghost-button--compact" type="button" onClick={onAbrirCadastro}>
-              Create Account
+              {texts.authCard.createAccount}
             </button>
           </div>
 
           <label className="field">
-            <span>Login or Email</span>
+            <span>{texts.authCard.loginOrEmail}</span>
             <input
               className="login-input"
               value={dados.login}
@@ -77,7 +80,7 @@ export function LoginCardView({
           </label>
 
           <label className="field">
-            <span>Password</span>
+            <span>{texts.authCard.password}</span>
             <input
               type="password"
               value={dados.senha}
@@ -90,27 +93,29 @@ export function LoginCardView({
 
           <div className="actions actions--login">
             <button className="primary-button button--large" type="submit" disabled={carregando}>
-              {carregando ? "Signing in..." : "Sign In"}
+              {carregando ? texts.authCard.signingIn : texts.authCard.signIn}
             </button>
             <button
               className="ghost-button ghost-button--compact"
               type="button"
               onClick={onAbrirRecuperacao}
             >
-              Forgot Password
+              {texts.authCard.forgotPassword}
             </button>
             <div className="login-secondary-link">
-              <span className="login-secondary-link__label">Didn&apos;t receive the email?</span>
+              <span className="login-secondary-link__label">{texts.authCard.didNotReceiveEmail}</span>
               <button
                 className="ghost-button ghost-button--text"
                 type="button"
                 onClick={onReenviarConfirmacao}
                 disabled={reenviandoConfirmacao}
               >
-                {reenviandoConfirmacao ? "Resending confirmation..." : "Resend Confirmation Email"}
+                {reenviandoConfirmacao
+                  ? texts.authCard.sendingLink
+                  : texts.authCard.resendConfirmation}
               </button>
             </div>
-            <p className="helper">After signing in, you&apos;ll go to your page.</p>
+            <p className="helper">{texts.authCard.afterSignIn}</p>
           </div>
 
           {mensagemConfirmacao ? <p className="success-box">{mensagemConfirmacao}</p> : null}
@@ -121,17 +126,15 @@ export function LoginCardView({
         <form className="card form-card form-card--recovery" onSubmit={onRecuperacaoSubmit}>
           <div className="card-header card-header--tight">
             <div>
-              <p className="eyebrow">Access Help</p>
-              <h2>Forgot Password</h2>
+              <p className="eyebrow">{texts.authCard.accessHelp}</p>
+              <h2>{texts.authCard.forgotPassword}</h2>
             </div>
             <button className="ghost-button ghost-button--compact" type="button" onClick={onVoltarLogin}>
-              Back
+              {texts.authCard.back}
             </button>
           </div>
 
-          <p className="helper">
-            Enter only your email. If it is registered, you will receive a link to create a new password.
-          </p>
+          <p className="helper">{texts.authCard.enterEmailOnly}</p>
 
           <label className="field">
             <span>Email</span>
@@ -147,7 +150,7 @@ export function LoginCardView({
 
           <div className="actions actions--compact">
             <button className="primary-button button--large" type="submit" disabled={recuperando}>
-              {recuperando ? "Sending..." : "Send Link"}
+              {recuperando ? texts.authCard.sendingLink : texts.authCard.sendLink}
             </button>
           </div>
 
