@@ -10,7 +10,6 @@ type LoginCardViewProps = {
   dados: UsuarioLogin
   recuperacao: UsuarioSolicitacaoRecuperacaoSenha
   carregando: boolean
-  entrandoDemo: boolean
   reenviandoConfirmacao: boolean
   recuperando: boolean
   erro: string | null
@@ -19,7 +18,6 @@ type LoginCardViewProps = {
   erroRecuperacao: string | null
   mensagemRecuperacao: string | null
   onSubmit: (evento: FormEvent<HTMLFormElement>) => void
-  onEntrarDemo: () => void
   onRecuperacaoSubmit: (evento: FormEvent<HTMLFormElement>) => void
   onReenviarConfirmacao: () => void
   onAbrirRecuperacao: () => void
@@ -35,7 +33,6 @@ export function LoginCardView({
   dados,
   recuperacao,
   carregando,
-  entrandoDemo,
   reenviandoConfirmacao,
   recuperando,
   erro,
@@ -44,7 +41,6 @@ export function LoginCardView({
   erroRecuperacao,
   mensagemRecuperacao,
   onSubmit,
-  onEntrarDemo,
   onRecuperacaoSubmit,
   onReenviarConfirmacao,
   onAbrirRecuperacao,

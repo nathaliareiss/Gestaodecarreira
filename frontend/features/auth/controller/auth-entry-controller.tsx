@@ -60,7 +60,6 @@ export function AuthEntryController({ modoInicial }: AuthEntryControllerProps) {
               erroRecuperacao={login.erroRecuperacao}
               mensagemRecuperacao={login.mensagemRecuperacao}
               onSubmit={login.enviarFormulario}
-              onEntrarDemo={login.entrarComDadosDeExemplo}
               onRecuperacaoSubmit={login.enviarRecuperacao}
               onReenviarConfirmacao={login.reenviarConfirmacao}
               onAbrirRecuperacao={login.abrirRecuperacao}
