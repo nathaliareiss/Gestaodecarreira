@@ -1,5 +1,3 @@
-import { obterApiBaseUrl } from "@/shared/config/api"
-
 type RespostaErroApi = {
   detail?: string
 }
@@ -17,9 +15,11 @@ export class ApiResponseError extends Error {
 }
 
 function montarUrlApi(path: string) {
-  const caminho = path.startsWith("/") ? path : `/${path}`
-  const baseUrl = obterApiBaseUrl()
-  return new URL(caminho, `${baseUrl}/`).toString()
+  if (path.startsWith("http://") || path.startsWith("https://")) {
+    return path
+  }
+
+  return path.startsWith("/") ? path : `/${path}`
 }
 
 export async function apiFetch(path: string, init: RequestInit = {}) {

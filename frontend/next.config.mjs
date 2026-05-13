@@ -1,3 +1,7 @@
+import { loadEnvConfig } from "@next/env"
+
+loadEnvConfig(process.cwd())
+
 /** @type {import('next').NextConfig} */
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL?.trim()?.replace(/\/$/, "")
 

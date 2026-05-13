@@ -1,6 +1,9 @@
 .git
 .next
 node_modules
-*.log
-__pycache__
+out
 .env.local
+.env.local.example
+__pycache__
+*.log
+*.tsbuildinfo
