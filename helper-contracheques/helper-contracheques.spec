@@ -1,0 +1,66 @@
+# -*- mode: python ; coding: utf-8 -*-
+
+from pathlib import Path
+
+
+block_cipher = None
+project_dir = Path(__file__).resolve().parent
+icon_path = project_dir / "assets" / "helper-contracheques.ico"
+
+datas = []
+if icon_path.is_file():
+    datas.append((str(icon_path), "assets"))
+
+
+a = Analysis(
+    ["main.py"],
+    pathex=[str(project_dir)],
+    binaries=[],
+    datas=datas,
+    hiddenimports=[
+        "playwright",
+        "playwright.sync_api",
+        "requests",
+    ],
+    hookspath=[],
+    hooksconfig={},
+    runtime_hooks=[],
+    excludes=["pytest", "unittest", "tkinter"],
+    win_no_prefer_redirects=False,
+    win_private_assemblies=False,
+    cipher=block_cipher,
+    noarchive=False,
+)
+
+pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
+
+exe = EXE(
+    pyz,
+    a.scripts,
+    [],
+    exclude_binaries=True,
+    name="helper-contracheques",
+    debug=False,
+    bootloader_ignore_signals=False,
+    strip=False,
+    upx=True,
+    console=True,
+    disable_windowed_traceback=False,
+    argv_emulation=False,
+    target_arch=None,
+    codesign_identity=None,
+    entitlements_file=None,
+    icon=str(icon_path) if icon_path.is_file() else None,
+)
+
+coll = COLLECT(
+    exe,
+    a.binaries,
+    a.zipfiles,
+    a.datas,
+    strip=False,
+    upx=True,
+    upx_exclude=[],
+    name="helper-contracheques",
+)
+
