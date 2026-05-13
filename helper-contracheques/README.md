@@ -33,6 +33,12 @@ O arquivo final fica em:
 dist\GestaoDeCarreira-Assistente.exe
 ```
 
+Para publicar no frontend, copie o exe para:
+
+```text
+backend\static\downloads\gestao-de-carreira-assistente.exe
+```
+
 ## Dependencias
 
 - `playwright`
