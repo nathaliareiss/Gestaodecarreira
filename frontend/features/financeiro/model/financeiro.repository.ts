@@ -182,7 +182,7 @@ export async function criarImportacaoTemporariaFinanceiro(): Promise<FinanceiroI
 
   const dados = await parseApiResponse<Partial<FinanceiroImportacaoTemporariaCriacaoResponse> | null>(
     response,
-    "We could not create the temporary import token.",
+    "We could not start the import assistant.",
   )
 
   return normalizarImportacaoCriada(dados)
@@ -202,7 +202,7 @@ export async function validarImportacaoTemporariaFinanceiro(
 
   const dados = await parseApiResponse<Partial<FinanceiroImportacaoTemporariaValidacaoResponse> | null>(
     response,
-    "We could not validate the temporary import token.",
+    "We could not validate the import assistant.",
   )
 
   return normalizarImportacaoValidada(dados)

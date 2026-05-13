@@ -34,9 +34,7 @@ export async function apiFetch(path: string, init: RequestInit = {}) {
       throw error
     }
 
-    throw new Error(
-      `We could not reach the backend API at ${url}. Check that the frontend proxy and backend are running.`,
-    )
+    throw new Error("We could not load the information right now. Please try again in a moment.")
   }
 }
 
@@ -51,7 +49,7 @@ export async function parseApiResponse<T>(
       dados && typeof dados === "object" && "detail" in dados
         ? dados.detail ?? mensagemPadrao
         : mensagemPadrao
-    throw new ApiResponseError(response, `${mensagem} [URL: ${response.url || "unknown"}]`)
+    throw new ApiResponseError(response, mensagem)
   }
 
   return dados as T

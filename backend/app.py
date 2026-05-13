@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.routing import APIRoute
+from fastapi.staticfiles import StaticFiles
 
 from backend.config import AUTO_SYNC_DB_SCHEMA, CORS_ORIGINS, FRONTEND_BASE_URL
 from backend.database import models as database_models  # noqa: F401
@@ -19,6 +22,7 @@ def criar_app() -> FastAPI:
         title="Gestao de Carreira API",
         version="0.1.0",
     )
+    downloads_dir = Path(__file__).resolve().parent / "static" / "downloads"
 
     origens_cors = [
         origem
@@ -37,6 +41,7 @@ def criar_app() -> FastAPI:
 
     registrar_middleware_de_erros(app)
     registrar_middleware_de_metricas(app)
+    app.mount("/downloads", StaticFiles(directory=str(downloads_dir), check_dir=False), name="downloads")
     app.include_router(api_router)
 
     @app.get("/")
