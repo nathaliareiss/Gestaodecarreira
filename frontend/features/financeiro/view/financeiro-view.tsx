@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState, type ChangeEvent, type FormEvent } from "react"
 
 import { useLanguage } from "@/shared/i18n/language-provider"
+import { ApiResponseError } from "@/shared/api/client"
 import {
   acompanharLoteFinanceiro,
   calcularProgressoLote,
@@ -36,6 +37,73 @@ type FinanceiroViewProps = {
   modoDemo: boolean
 }
 
+function listaSegura<T>(valor: T[] | null | undefined): T[] {
+  return Array.isArray(valor) ? valor : []
+}
+
+function mapaNumericoSegura(valor: Record<string, number> | null | undefined): Record<string, number> {
+  if (!valor || typeof valor !== "object" || Array.isArray(valor)) {
+    return {}
+  }
+
+  return Object.fromEntries(
+    Object.entries(valor).map(([chave, item]) => {
+      const numero = typeof item === "number" ? item : Number(item)
+      return [chave, Number.isFinite(numero) ? numero : 0]
+    }),
+  )
+}
+
+function formatarErroFinanceiro(
+  error: unknown,
+  idioma: SiteLanguage,
+  contexto: "analise" | "lote" | "token" | "envio",
+) {
+  if (error instanceof ApiResponseError) {
+    if (error.status === 401) {
+      return idioma === "en"
+        ? "Your session expired. Please sign in again to continue."
+        : "Sua sessão expirou. Entre novamente para continuar."
+    }
+
+    if (error.status === 404) {
+      if (contexto === "analise") {
+        return idioma === "en"
+          ? "No saved payroll analysis is available yet."
+          : "Ainda não há análise salarial salva."
+      }
+
+      if (contexto === "lote") {
+        return idioma === "en"
+          ? "The payroll batch was not found."
+          : "O lote financeiro não foi encontrado."
+      }
+
+      if (contexto === "token") {
+        return idioma === "en"
+          ? "The temporary import token is no longer valid."
+          : "O token temporário de importação não está mais válido."
+      }
+    }
+
+    if (error.status === 500) {
+      return idioma === "en"
+        ? "The Finance area is temporarily unavailable. Please try again in a moment."
+        : "O Financeiro está temporariamente indisponível. Tente novamente em instantes."
+    }
+
+    return error.message
+  }
+
+  if (error instanceof Error && error.message.trim().length > 0) {
+    return error.message
+  }
+
+  return idioma === "en"
+    ? "We could not complete this action right now."
+    : "Não foi possível concluir essa ação agora."
+}
+
 function formatarTamanhoArquivo(bytes: number) {
   if (!Number.isFinite(bytes) || bytes <= 0) {
     return "-"
@@ -61,7 +129,7 @@ const formatadorMoeda = new Intl.NumberFormat("pt-BR", {
 })
 
 function formatarMoeda(valor: number | null) {
-  if (valor === null || !Number.isFinite(valor)) {
+  if (valor == null || !Number.isFinite(valor)) {
     return "-"
   }
 
@@ -69,6 +137,10 @@ function formatarMoeda(valor: number | null) {
 }
 
 function formatarDataHoraCurta(valor: string, idioma: SiteLanguage) {
+  if (!valor) {
+    return "-"
+  }
+
   return new Intl.DateTimeFormat(idioma === "en" ? "en-US" : "pt-BR", {
     dateStyle: "medium",
     timeStyle: "short",
@@ -76,7 +148,7 @@ function formatarDataHoraCurta(valor: string, idioma: SiteLanguage) {
 }
 
 function formatarVariacaoPercentual(valor: number | null, idioma: SiteLanguage) {
-  if (valor === null || !Number.isFinite(valor)) {
+  if (valor == null || !Number.isFinite(valor)) {
     return idioma === "en" ? "Base year" : "Ano base"
   }
 
@@ -130,14 +202,15 @@ function resumoProgressoLote(
 }
 
 function resumoEvolucaoSalarial(
-  evolucao: FinanceiroEvolucaoSalarialResponse,
+  evolucao: FinanceiroEvolucaoSalarialResponse | null | undefined,
   textosFinanceiro: Pick<FinanceTexts, "noPaychecksYet" | "salaryAnalysisPersists" | "demoFigures">,
 ) {
   if (
-    evolucao.ano_inicial === null ||
-    evolucao.ano_final === null ||
-    evolucao.salario_base_inicial_referencia === null ||
-    evolucao.salario_base_final_referencia === null
+    evolucao == null ||
+    evolucao.ano_inicial == null ||
+    evolucao.ano_final == null ||
+    evolucao.salario_base_inicial_referencia == null ||
+    evolucao.salario_base_final_referencia == null
   ) {
     return textosFinanceiro.noPaychecksYet
   }
@@ -194,6 +267,7 @@ type LineChartProps = {
   years: number[]
   series: SerieLinha[]
   ariaLabel: string
+  texts: Pick<FinanceTexts, "annualAnalysis" | "noAnnualData">
 }
 
 function calcularPontoLinha(
@@ -235,25 +309,28 @@ function formatarEixoMoeda(valor: number) {
   return formatarMoeda(valor)
 }
 
-function LineChart({ title, subtitle, years, series, ariaLabel }: LineChartProps) {
+function LineChart({ title, subtitle, years, series, ariaLabel, texts }: LineChartProps) {
   const width = 960
   const height = 320
   const padding = { top: 24, right: 24, bottom: 56, left: 88 }
-  const valores = series.flatMap((serie) => serie.values)
+  const yearsSeguros = listaSegura(years)
+  const seriesSeguras = listaSegura(series)
+  const valores = seriesSeguras.flatMap((serie) => listaSegura(serie.values))
   const maxValue = Math.max(0, ...valores)
   const gridLines = 4
+  const semDados = yearsSeguros.length === 0 || seriesSeguras.length === 0 || valores.length === 0
 
   return (
     <section className="chart-panel">
       <div className="analysis-header__title analysis-header__title--compact">
-        <p className="eyebrow eyebrow--title">{t.annualAnalysis}</p>
+        <p className="eyebrow eyebrow--title">{texts.annualAnalysis}</p>
         <h3>{title}</h3>
         <p className="analysis-header__subtitle">{subtitle}</p>
       </div>
 
-      {years.length === 0 ? (
+      {semDados ? (
         <div className="chart-empty">
-          <p className="helper">{t.noAnnualData}</p>
+          <p className="helper">{texts.noAnnualData}</p>
         </div>
       ) : (
         <div className="chart-canvas" aria-label={ariaLabel}>
@@ -284,8 +361,8 @@ function LineChart({ title, subtitle, years, series, ariaLabel }: LineChartProps
               )
             })}
 
-            {years.map((ano, index) => {
-              const ponto = calcularPontoLinha(index, years.length, 0, 0, width, height, padding)
+            {yearsSeguros.map((ano, index) => {
+              const ponto = calcularPontoLinha(index, yearsSeguros.length, 0, 0, width, height, padding)
               return (
                 <g key={`year-${ano}`}>
                   <line
@@ -314,8 +391,9 @@ function LineChart({ title, subtitle, years, series, ariaLabel }: LineChartProps
               y2={height - padding.bottom}
             />
 
-            {series.map((serie) => {
-              const caminho = criarCaminhoSerie(serie.values, maxValue, width, height, padding)
+            {seriesSeguras.map((serie) => {
+              const valoresSerie = listaSegura(serie.values)
+              const caminho = criarCaminhoSerie(valoresSerie, maxValue, width, height, padding)
               return (
                 <g key={serie.key}>
                   <path
@@ -326,10 +404,10 @@ function LineChart({ title, subtitle, years, series, ariaLabel }: LineChartProps
                     strokeLinecap="round"
                     strokeLinejoin="round"
                   />
-                  {serie.values.map((value, index) => {
+                  {valoresSerie.map((value, index) => {
                     const ponto = calcularPontoLinha(
                       index,
-                      serie.values.length,
+                      valoresSerie.length,
                       value,
                       maxValue,
                       width,
@@ -348,7 +426,7 @@ function LineChart({ title, subtitle, years, series, ariaLabel }: LineChartProps
                         strokeWidth="2.5"
                       >
                         <title>
-                          {`${serie.label} - ${years[index]}: ${formatarMoeda(value)}`}
+                          {`${serie.label} - ${yearsSeguros[index]}: ${formatarMoeda(value)}`}
                         </title>
                       </circle>
                     )
@@ -361,7 +439,7 @@ function LineChart({ title, subtitle, years, series, ariaLabel }: LineChartProps
       )}
 
       <div className="chart-legend" aria-label={`${title} legend`}>
-        {series.map((serie) => (
+        {seriesSeguras.map((serie) => (
           <span className="chart-legend__item" key={serie.key}>
             <span className="chart-legend__swatch" style={{ background: serie.color }} />
             {serie.label}
@@ -373,10 +451,10 @@ function LineChart({ title, subtitle, years, series, ariaLabel }: LineChartProps
 }
 
 function obterValorDesconto(
-  composicao: Record<string, number>,
+  composicao: Record<string, number> | null | undefined,
   chave: string,
 ): number {
-  return composicao[chave] ?? 0
+  return mapaNumericoSegura(composicao)[chave] ?? 0
 }
 
 export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
@@ -413,21 +491,31 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
     setErroEvolucao(null)
 
     try {
-      const evolucaoPersistida = await obterEvolucaoSalarialPersistida()
-      const contrachequesPersistidos = await obterContrachequesSalvos().catch(() => [])
+      const [evolucaoResultado, contrachequesResultado] = await Promise.allSettled([
+        obterEvolucaoSalarialPersistida(),
+        obterContrachequesSalvos(),
+      ])
 
-      setEvolucaoSalarial(evolucaoPersistida)
-      setContrachequesSalvos(contrachequesPersistidos)
+      if (evolucaoResultado.status === "fulfilled") {
+        setEvolucaoSalarial(evolucaoResultado.value)
+      } else {
+        setEvolucaoSalarial(null)
+        if (!(evolucaoResultado.reason instanceof ApiResponseError && evolucaoResultado.reason.status === 404)) {
+          setErroEvolucao(
+            formatarErroFinanceiro(evolucaoResultado.reason, language, "analise"),
+          )
+        }
+      }
+
+      if (contrachequesResultado.status === "fulfilled") {
+        setContrachequesSalvos(listaSegura(contrachequesResultado.value))
+      } else {
+        setContrachequesSalvos([])
+      }
     } catch (error) {
       setEvolucaoSalarial(null)
       setContrachequesSalvos([])
-      setErroEvolucao(
-        error instanceof Error
-          ? error.message
-          : language === "en"
-            ? "We could not load the saved salary analysis."
-            : "Não foi possível carregar a análise salarial salva.",
-      )
+      setErroEvolucao(formatarErroFinanceiro(error, language, "analise"))
     } finally {
       setCarregandoAnalisePersistida(false)
     }
@@ -483,6 +571,13 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
       }
 
       const resposta = await enviarLoteContracheques(payload)
+      if (!Number.isFinite(resposta.batch_id) || resposta.batch_id <= 0) {
+        throw new Error(
+          language === "en"
+            ? "We could not create a valid batch for the selected PDFs."
+            : "Não foi possível criar um lote válido para os PDFs selecionados.",
+        )
+      }
       setBatchId(resposta.batch_id)
       setBatchStatus({
         total: arquivosSelecionados.length,
@@ -499,13 +594,7 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
     } catch (error) {
       setBatchStatus(null)
       setBatchId(null)
-      setErro(
-        error instanceof Error
-          ? error.message
-          : language === "en"
-            ? "We could not start the batch. Check the PDFs and try again."
-            : "Não foi possível iniciar o lote. Verifique os PDFs e tente novamente.",
-      )
+      setErro(formatarErroFinanceiro(error, language, "envio"))
     } finally {
       setEnviando(false)
     }
@@ -529,13 +618,7 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
       setImportacaoTemporaria(resposta)
     } catch (error) {
       setImportacaoTemporaria(null)
-      setErroImportacaoAutomatica(
-        error instanceof Error
-          ? error.message
-          : language === "en"
-            ? "We could not create the temporary import token."
-            : "Não foi possível criar o token temporário de importação.",
-      )
+      setErroImportacaoAutomatica(formatarErroFinanceiro(error, language, "token"))
     } finally {
       setCriandoImportacaoAutomatica(false)
     }
@@ -571,17 +654,13 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
           return
         }
 
-        setErro(
-          error instanceof Error
-            ? error.message
-            : "We could not monitor the batch. Please try again.",
-        )
+        setErro(formatarErroFinanceiro(error, language, "lote"))
       })
 
     return () => {
       controller.abort()
     }
-  }, [batchId])
+  }, [batchId, language])
 
   useEffect(() => {
     if (!batchStatus || !isBatchTerminalStatus(batchStatus.status)) {
@@ -601,15 +680,17 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
   const totalSelecionadoBytes = arquivosSelecionados.reduce((total, arquivo) => total + arquivo.size, 0)
   const totalSelecionadoArquivos = arquivosSelecionados.length
   const barraIndeterminada = enviando && batchStatus === null
-  const serieEvolucao = evolucaoSalarial?.series ?? []
+  const serieEvolucao = listaSegura(evolucaoSalarial?.series)
   const anosEvolucao = serieEvolucao.map((item) => item.ano)
   const serieSalarioBase = serieEvolucao.map((item) => item.salario_base_referencia_anual)
   const serieBruto = serieEvolucao.map((item) => item.bruto_total_referencia_anual)
   const serieLiquido = serieEvolucao.map((item) => item.liquido_referencia_anual)
-  const evolucaoSemDados = Boolean(evolucaoSalarial && evolucaoSalarial.series.length === 0)
-  const totalContrachequesSalvos = contrachequesSalvos.length
-  const mensagensErroLote = batchStatus?.failure_messages ?? []
+  const anosSemCrescimento = listaSegura(evolucaoSalarial?.anos_sem_crescimento_relevante)
+  const evolucaoSemDados = Boolean(evolucaoSalarial && serieEvolucao.length === 0)
+  const totalContrachequesSalvos = listaSegura(contrachequesSalvos).length
+  const mensagensErroLote = listaSegura(batchStatus?.failure_messages)
   const erroPrincipalLote = batchStatus?.last_error_message ?? null
+  const possuiEvolucao = Boolean(evolucaoSalarial && serieEvolucao.length > 0)
 
   return (
     <section className="analysis-card card">
@@ -868,26 +949,26 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
 
           {erroEvolucao ? <p className="error-box">{erroEvolucao}</p> : null}
 
-          {evolucaoSalarial && evolucaoSalarial.series.length > 0 ? (
+          {possuiEvolucao ? (
             <>
               <div className="metric-strip metric-strip--hero metric-strip--salary">
                 <div className="metric-line">
                   <span>{t.analysisPeriod}</span>
-                  <strong>{`${evolucaoSalarial.ano_inicial} - ${evolucaoSalarial.ano_final}`}</strong>
+                  <strong>{`${evolucaoSalarial?.ano_inicial ?? "-"} - ${evolucaoSalarial?.ano_final ?? "-"}`}</strong>
                 </div>
                 <div className="metric-line">
                   <span>{t.startingSalaryBase}</span>
-                  <strong>{formatarMoeda(evolucaoSalarial.salario_base_inicial_referencia)}</strong>
+                  <strong>{formatarMoeda(evolucaoSalarial?.salario_base_inicial_referencia ?? null)}</strong>
                 </div>
                 <div className="metric-line">
                   <span>{t.endingSalaryBase}</span>
-                  <strong>{formatarMoeda(evolucaoSalarial.salario_base_final_referencia)}</strong>
+                  <strong>{formatarMoeda(evolucaoSalarial?.salario_base_final_referencia ?? null)}</strong>
                 </div>
                 <div className="metric-line">
                   <span>{t.salaryBaseEvolution}</span>
                   <strong>
                     {formatarVariacaoPercentual(
-                      evolucaoSalarial.variacao_acumulada_salario_base_percentual,
+                      evolucaoSalarial?.variacao_acumulada_salario_base_percentual ?? null,
                       language,
                     )}
                   </strong>
@@ -899,6 +980,7 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
                 title={t.salaryBaseByYear}
                 subtitle={t.salaryTrendExplainer}
                 years={anosEvolucao}
+                texts={{ annualAnalysis: t.annualAnalysis, noAnnualData: t.noAnnualData }}
                 series={[
                   {
                     key: SALARY_BASE_SERIE.key,
@@ -914,6 +996,7 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
                 title={t.grossTotalAndNetPay}
                 subtitle={t.grossAndNetSubtitle}
                 years={anosEvolucao}
+                texts={{ annualAnalysis: t.annualAnalysis, noAnnualData: t.noAnnualData }}
                 series={[
                   {
                     key: BRUTO_SERIE.key,
@@ -973,9 +1056,9 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
                 </div>
               </section>
 
-              {evolucaoSalarial.anos_sem_crescimento_relevante.length > 0 ? (
+              {anosSemCrescimento.length > 0 ? (
                 <p className="helper">
-                  {`${t.yearsWithoutRelevantGrowth}: ${evolucaoSalarial.anos_sem_crescimento_relevante.join(", ")}.`}
+                  {`${t.yearsWithoutRelevantGrowth}: ${anosSemCrescimento.join(", ")}.`}
                 </p>
               ) : null}
 
