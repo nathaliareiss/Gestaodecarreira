@@ -651,7 +651,11 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
       return
     }
 
-    if (!assistenteWindowsDisponivel) {
+    const disponivel = assistenteWindowsDisponivel || (await verificarDisponibilidadeAssistente())
+    setAssistenteWindowsDisponivel(disponivel)
+    setVerificandoAssistenteWindows(false)
+
+    if (!disponivel) {
       setErroImportacaoAutomatica(
         language === "en"
           ? "Windows assistant is being prepared."

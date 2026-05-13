@@ -18,7 +18,7 @@ if (Test-Path "assets\helper-contracheques.ico") {
 }
 
 if ($OneFile) {
-    .\.venv\Scripts\python.exe -m PyInstaller --clean --noconfirm --onefile --name helper-contracheques @iconArg main.py
+    .\.venv\Scripts\python.exe -m PyInstaller --clean --noconfirm --onefile --name GestaoDeCarreira-Assistente @iconArg main.py
 } else {
-    .\.venv\Scripts\python.exe -m PyInstaller --clean --noconfirm helper-contracheques.spec
+    .\.venv\Scripts\python.exe -m PyInstaller --clean --noconfirm helper.spec
 }

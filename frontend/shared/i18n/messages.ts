@@ -374,7 +374,7 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       autoImportSectionSubtitle:
         "Baixe o assistente no seu computador e siga o passo a passo. Ele abrirá o portal oficial para você fazer login com segurança.",
       autoImportButton: "Iniciar importação",
-      autoImporting: "Preparando importação...",
+      autoImporting: "Baixando assistente...",
       autoImportDesktopNotice: "O assistente para Windows ainda está sendo preparado.",
       autoImportMobileNotice: "No celular, volte ao computador para usar o assistente.",
       autoImportTokenLabel: "Código de conexão",
@@ -634,7 +634,7 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       autoImportSectionSubtitle:
         "Download the assistant on your computer and follow the steps. It will open the official portal so you can sign in securely.",
       autoImportButton: "Start import",
-      autoImporting: "Preparing import...",
+      autoImporting: "Downloading assistant...",
       autoImportDesktopNotice: "The Windows assistant is still being prepared.",
       autoImportMobileNotice: "On mobile, return to a computer to use the assistant.",
       autoImportTokenLabel: "Connection code",
