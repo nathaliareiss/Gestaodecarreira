@@ -2,6 +2,30 @@
 
 App Python + Playwright para abrir navegador, esperar login manual no gov.br, baixar PDFs de contracheques e enviar para o backend com token temporário.
 
+## Configuração por ambiente
+
+O helper lê ambiente automaticamente:
+
+- `HELPER_ENV=development` usa desenvolvimento;
+- `HELPER_ENV=production` usa produção;
+- se `HELPER_ENV` não vier, o helper tenta inferir pelo `BACKEND_URL`.
+
+### Variáveis
+
+- `BACKEND_URL`: URL do backend usada pelo helper;
+- `DEV_BACKEND_URL`: URL usada em desenvolvimento;
+- `PRODUCTION_BACKEND_URL`: alternativa para produção;
+- `PORTAL_URL`: página inicial do portal;
+- `UPLOAD_ENDPOINT`: rota de upload, padrão `/api/financeiro/importacao-temporaria/upload-lote`;
+- `DOWNLOAD_SELECTORS`: seletores CSS separados por vírgula;
+- `DOWNLOAD_ROOT`: pasta base dos downloads temporários.
+
+### Regras
+
+- `localhost` só vale em desenvolvimento;
+- em produção, o helper exige `BACKEND_URL` ou `PRODUCTION_BACKEND_URL`;
+- o helper também aceita `--backend-url` para sobrescrever a URL na linha de comando.
+
 ## O que ele faz
 
 - abre navegador automaticamente;
@@ -24,7 +48,7 @@ App Python + Playwright para abrir navegador, esperar login manual no gov.br, ba
 ## Arquivos
 
 - `main.py`: fluxo principal;
-- `config.py`: URLs, timeout e seletores;
+- `config.py`: resolve ambiente e URLs;
 - `upload_service.py`: envio dos PDFs;
 - `requirements.txt`: dependências;
 - `helper-contracheques.spec`: build do PyInstaller;
@@ -38,20 +62,23 @@ python -m venv .venv
 .\.venv\Scripts\activate
 pip install -r requirements.txt
 python -m playwright install chromium
+copy .env.development.example .env.development
 python main.py --token "SEU_TOKEN_TEMPORARIO"
 ```
 
-## Variáveis úteis
+## Produção
 
-- `BACKEND_URL`: URL do backend, exemplo `http://localhost:8000`;
-- `PORTAL_URL`: página inicial do portal;
-- `UPLOAD_ENDPOINT`: rota de upload, padrão `/api/financeiro/importacao-temporaria/upload-lote`;
-- `DOWNLOAD_SELECTORS`: seletores CSS separados por vírgula;
-- `DOWNLOAD_ROOT`: pasta base dos downloads temporários.
+No release Windows, coloque um `.env.production` ao lado do `.exe` com:
+
+```env
+HELPER_ENV=production
+BACKEND_URL=https://SEU-BACKEND-REAL-AQUI
+PORTAL_URL=https://www.gov.br/
+```
 
 ## Gerar `.exe`
 
-### Opção 1: script pronto
+### Script pronto
 
 ```powershell
 .\build_helper.ps1
@@ -65,7 +92,7 @@ Para gerar `onefile`:
 .\build_helper.ps1 -OneFile
 ```
 
-### Opção 2: manual
+### Manual
 
 ```powershell
 python -m venv .venv

@@ -4,3 +4,7 @@ build/
 dist/
 tmp/
 .pytest_cache/
+.env
+.env.local
+.env.development
+.env.production
