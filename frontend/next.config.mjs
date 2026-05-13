@@ -1,5 +1,9 @@
 /** @type {import('next').NextConfig} */
-const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL?.trim()?.replace(/\/$/, "") || "http://localhost:8000"
+const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL?.trim()?.replace(/\/$/, "")
+
+if (!apiBaseUrl) {
+  throw new Error("NEXT_PUBLIC_API_URL nao foi definido.")
+}
 
 const nextConfig = {
   reactStrictMode: true,
