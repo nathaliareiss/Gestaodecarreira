@@ -359,7 +359,7 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       title: "Finanças",
       subtitle:
         "Envie um ou mais contracheques e acompanhe o progresso do lote em tempo real até o worker terminar.",
-      autoImportSectionTitle: "ImportaÃ§Ã£o automÃ¡tica",
+      autoImportSectionTitle: "Importação automatica",
       autoImportSectionSubtitle:
         "Gere um token temporÃ¡rio para o helper Windows baixar os PDFs depois que vocÃª entrar no portal oficial.",
       autoImportButton: "Importar automaticamente",
