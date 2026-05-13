@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from "react"
 
+import { ApiResponseError } from "@/shared/api/client"
 import type {
   HistoricoFuncionalAnalise,
   JobAgendadoResponse,
@@ -22,6 +23,38 @@ function respostaEhJob(
   resposta: HistoricoFuncionalAnalise | JobAgendadoResponse,
 ): resposta is JobAgendadoResponse {
   return "job_id" in resposta
+}
+
+function formatarErroHistorico(error: unknown, idioma: "pt-BR" | "en") {
+  if (error instanceof ApiResponseError) {
+    if (error.status === 401) {
+      return idioma === "en"
+        ? "Your session expired. Please sign in again."
+        : "Sua sessão expirou. Entre novamente."
+    }
+
+    if (error.status === 404) {
+      return idioma === "en"
+        ? "No saved career history was found yet."
+        : "Ainda não foi encontrado um histórico funcional salvo."
+    }
+
+    if (error.status === 500) {
+      return idioma === "en"
+        ? "The career history area is temporarily unavailable."
+        : "A área de histórico funcional está temporariamente indisponível."
+    }
+
+    return error.message
+  }
+
+  if (error instanceof Error && error.message.trim().length > 0) {
+    return error.message
+  }
+
+  return idioma === "en"
+    ? "Unexpected failure while processing the career history."
+    : "Falha inesperada ao processar o histórico funcional."
 }
 
 export function useHistoricoFuncionalController({
@@ -152,7 +185,7 @@ export function useHistoricoFuncionalController({
       setModoAtualizacaoHistorico(false)
       setModoAnexoAfastamentos(false)
     } catch (error) {
-      setErro(error instanceof Error ? error.message : "Falha inesperada ao recarregar.")
+      setErro(formatarErroHistorico(error, "pt-BR"))
     } finally {
       setCarregando(false)
     }
@@ -204,7 +237,7 @@ export function useHistoricoFuncionalController({
         if (assinatura) {
           assinaturaEnvioAutomatico.current = null
         }
-        setErro(error instanceof Error ? error.message : "Falha inesperada ao analisar.")
+        setErro(formatarErroHistorico(error, "pt-BR"))
       } finally {
         setMensagemProcessamento(null)
         setCarregando(false)
@@ -254,7 +287,7 @@ export function useHistoricoFuncionalController({
         if (assinatura) {
           assinaturaEnvioAutomatico.current = null
         }
-        setErro(error instanceof Error ? error.message : "Unexpected failure while analyzing leave records.")
+        setErro(formatarErroHistorico(error, "pt-BR"))
       } finally {
         setMensagemProcessamento(null)
         setCarregando(false)

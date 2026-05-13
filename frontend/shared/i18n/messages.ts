@@ -102,8 +102,6 @@ export type LocaleTexts = {
     grade: string
     demoHighlights: string
     viewOnly: string
-    addDocuments: string
-    uploadDocuments: string
     loading: string
     reloadLastSaved: string
     noSession: string
@@ -190,6 +188,8 @@ export type LocaleTexts = {
     documents: string
     demoDashboard: string
     viewOnly: string
+    addDocuments: string
+    uploadDocuments: string
     uploadCareerHistory: string
     attachLeaveRecords: string
     updateCareerHistory: string
@@ -348,30 +348,26 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       grade: "Classe",
       demoHighlights: "Destaques da demo",
       viewOnly: "Somente visualização",
-      addDocuments: "Adicionar documentos",
-      uploadDocuments: "Enviar documentos",
-      loading: "Carregando...",
       reloadLastSaved: "Recarregar último salvo",
       noSession: "Nenhuma sessão ativa foi encontrada. Entre novamente para ver seus dados.",
-      goToLogin: "Ir para login",
     },
     finance: {
       title: "Finanças",
       subtitle:
         "Envie um ou mais contracheques e acompanhe o progresso do lote em tempo real até o worker terminar.",
-      autoImportSectionTitle: "Importação automatica",
+      autoImportSectionTitle: "Importação automática",
       autoImportSectionSubtitle:
-        "Gere um token temporÃ¡rio para o helper Windows baixar os PDFs depois que vocÃª entrar no portal oficial.",
+        "Gere um token temporário para o helper Windows baixar os PDFs depois que você entrar no portal oficial.",
       autoImportButton: "Importar automaticamente",
       autoImporting: "Gerando token...",
       autoImportDesktopNotice:
-        "Use este fluxo no computador/Windows. O helper vai pedir ou receber este token temporÃ¡rio antes de baixar os PDFs.",
+        "Use este fluxo no computador/Windows. O helper vai pedir ou receber este token temporário antes de baixar os PDFs.",
       autoImportMobileNotice:
-        "A importaÃ§Ã£o automÃ¡tica estÃ¡ disponÃ­vel apenas no computador/Windows. No celular, use o upload manual abaixo.",
-      autoImportTokenLabel: "Token temporÃ¡rio",
+        "A importação automática está disponível apenas no computador/Windows. No celular, use o upload manual abaixo.",
+      autoImportTokenLabel: "Token temporário",
       autoImportExpiresLabel: "Expira em",
       autoImportHelper:
-        "Esse token Ã© de uso Ãºnico, fica vinculado ao seu login e nÃ£o dÃ¡ acesso Ã  conta do governo.",
+        "Esse token é de uso único, fica vinculado ao seu login e não dá acesso à conta do governo.",
       batchTitle: "Lote de contracheques",
       uploadPdfs: "Enviar PDFs",
       demoDataOnly: "Apenas dados de demo",
@@ -442,6 +438,8 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       documents: "Documentos",
       demoDashboard: "Painel de demonstração",
       viewOnly: "Somente visualização",
+      addDocuments: "Adicionar documentos",
+      uploadDocuments: "Enviar documentos",
       uploadCareerHistory: "Enviar histórico funcional",
       attachLeaveRecords: "Anexar afastamentos",
       updateCareerHistory: "Atualizar histórico funcional",
@@ -598,8 +596,6 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       grade: "Grade",
       demoHighlights: "Demo Highlights",
       viewOnly: "View Only",
-      addDocuments: "Add Documents",
-      uploadDocuments: "Upload Documents",
       loading: "Loading...",
       reloadLastSaved: "Reload Last Saved",
       noSession: "No active session was found. Sign in again to view your data.",
@@ -692,6 +688,8 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       documents: "Documents",
       demoDashboard: "Demo Dashboard",
       viewOnly: "View Only",
+      addDocuments: "Add Documents",
+      uploadDocuments: "Upload Documents",
       uploadCareerHistory: "Upload Career History",
       attachLeaveRecords: "Attach Leave Records",
       updateCareerHistory: "Update Career History",
