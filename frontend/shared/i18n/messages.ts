@@ -119,6 +119,16 @@ export type LocaleTexts = {
     autoImportTokenLabel: string
     autoImportExpiresLabel: string
     autoImportHelper: string
+    assistantDownloadButton: string
+    assistantDownloadHint: string
+    assistantStepsTitle: string
+    assistantStep1: string
+    assistantStep2: string
+    assistantStep3: string
+    advancedModeLabel: string
+    advancedModeHint: string
+    tokenHidden: string
+    copiedToast: string
     batchTitle: string
     uploadPdfs: string
     demoDataOnly: string
@@ -355,19 +365,29 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       title: "Finanças",
       subtitle:
         "Envie um ou mais contracheques e acompanhe o progresso do lote em tempo real até o worker terminar.",
-      autoImportSectionTitle: "Importação automática",
+      autoImportSectionTitle: "Assistente de importação",
       autoImportSectionSubtitle:
-        "Gere um token temporário para o helper Windows baixar os PDFs depois que você entrar no portal oficial.",
-      autoImportButton: "Importar automaticamente",
-      autoImporting: "Gerando token...",
+        "Fluxo em 3 passos para usuários não técnicos: baixe o assistente, abra o portal oficial e acompanhe a importação.",
+      autoImportButton: "Iniciar importação",
+      autoImporting: "Gerando código...",
       autoImportDesktopNotice:
-        "Use este fluxo no computador/Windows. O helper vai pedir ou receber este token temporário antes de baixar os PDFs.",
+        "Use o Assistente no computador Windows para fazer a importação guiada.",
       autoImportMobileNotice:
-        "A importação automática está disponível apenas no computador/Windows. No celular, use o upload manual abaixo.",
+        "No celular, use o upload manual ou volte ao computador para baixar o Assistente.",
       autoImportTokenLabel: "Token temporário",
       autoImportExpiresLabel: "Expira em",
       autoImportHelper:
-        "Esse token é de uso único, fica vinculado ao seu login e não dá acesso à conta do governo.",
+        "O código fica oculto por padrão. Ative o Modo avançado apenas se precisar conferir o valor.",
+      assistantDownloadButton: "Baixar Assistente para Windows (.exe)",
+      assistantDownloadHint: "Baixe antes de iniciar a importação.",
+      assistantStepsTitle: "Como usar",
+      assistantStep1: "Abra o Assistente.",
+      assistantStep2: "Faça login no portal oficial.",
+      assistantStep3: "Aguarde a importação.",
+      advancedModeLabel: "Modo avançado",
+      advancedModeHint: "Mostra o código técnico e a validade para suporte.",
+      tokenHidden: "Código oculto.",
+      copiedToast: "Código copiado. Abra o Assistente.",
       batchTitle: "Lote de contracheques",
       uploadPdfs: "Enviar PDFs",
       demoDataOnly: "Apenas dados de demo",
@@ -605,19 +625,29 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       title: "Finance",
       subtitle:
         "Upload one or more pay stubs, then follow the batch progress in real time until the worker finishes.",
-      autoImportSectionTitle: "Automatic import",
+      autoImportSectionTitle: "Import Assistant",
       autoImportSectionSubtitle:
-        "Generate a temporary token so the Windows helper can download PDFs after you sign in to the official portal.",
-      autoImportButton: "Import automatically",
-      autoImporting: "Generating token...",
+        "A simple 3-step flow for non-technical users: download the assistant, open the official portal, and wait for the import.",
+      autoImportButton: "Start import",
+      autoImporting: "Generating code...",
       autoImportDesktopNotice:
-        "Use this flow on a computer/Windows. The helper will ask for or receive this temporary token before downloading the PDFs.",
+        "Use the Assistant on a Windows computer for the guided import.",
       autoImportMobileNotice:
-        "Automatic import is available only on computer/Windows. On mobile, use the manual upload below.",
+        "On mobile, use the manual upload or return to a computer to download the Assistant.",
       autoImportTokenLabel: "Temporary token",
       autoImportExpiresLabel: "Expires at",
       autoImportHelper:
-        "This token is single-use, tied to your login, and does not grant access to the government account.",
+        "The code stays hidden by default. Enable Advanced Mode only if you need to review the value.",
+      assistantDownloadButton: "Download Windows Assistant (.exe)",
+      assistantDownloadHint: "Download it before starting the import.",
+      assistantStepsTitle: "How to use it",
+      assistantStep1: "Open the Assistant.",
+      assistantStep2: "Sign in on the official portal.",
+      assistantStep3: "Wait for the import.",
+      advancedModeLabel: "Advanced mode",
+      advancedModeHint: "Shows the technical code and expiry for support.",
+      tokenHidden: "Code hidden.",
+      copiedToast: "Code copied. Open the Assistant.",
       batchTitle: "Pay Stub Batch",
       uploadPdfs: "Upload PDFs",
       demoDataOnly: "Demo data only",
