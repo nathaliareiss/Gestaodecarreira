@@ -6,6 +6,7 @@ import logging
 import re
 import shutil
 import sys
+import time
 from datetime import datetime
 from pathlib import Path
 from urllib.parse import parse_qs, urljoin, urlparse
@@ -169,42 +170,61 @@ def texto_elemento(locator) -> str:
     return " | ".join(partes)
 
 
-def encontrar_alvos_download(page) -> list[tuple[str, object]]:
-    alvos: list[tuple[str, object]] = []
-    assinaturas: set[str] = set()
+def elemento_visivel(locator) -> bool:
+    try:
+        if locator.count() == 0:
+            return False
+        return locator.first.is_visible()
+    except Exception:
+        return False
 
-    for seletor in DOWNLOAD_SELECTORS:
-        locator = page.locator(seletor)
+
+def pagina_consultar_contracheque_pronta(page) -> bool:
+    elementos = [
+        page.get_by_text("Consultar contracheque"),
+        page.get_by_text("Mês/Ano"),
+        page.get_by_role("button", name="CONSULTAR"),
+        page.get_by_role("button", name="BAIXAR"),
+    ]
+
+    return all(elemento_visivel(locator) for locator in elementos)
+
+
+def wait_until_paystub_page_ready(page) -> bool:
+    log("Aguardando página correta...")
+    prazo = time.monotonic() + 10 * 60
+
+    while time.monotonic() < prazo:
+        if pagina_consultar_contracheque_pronta(page):
+            log("Página Consultar contracheque encontrada.")
+            return True
+
+        log("Aguardando você acessar a página Consultar contracheque...")
+        page.wait_for_timeout(1000)
+
+    log("Página Consultar contracheque não encontrada.")
+    exibir_erro_amigavel("Página Consultar contracheque não encontrada.")
+    return False
+
+
+def encontrar_botoes_baixar(page) -> list[object]:
+    locator = page.get_by_role("button", name="BAIXAR")
+
+    try:
+        total = locator.count()
+    except Exception:
+        return []
+
+    botoes: list[object] = []
+    for indice in range(total):
+        item = locator.nth(indice)
         try:
-            total = locator.count()
+            if item.is_visible():
+                botoes.append(item)
         except Exception:
             continue
 
-        for indice in range(total):
-            item = locator.nth(indice)
-            try:
-                if not item.is_visible():
-                    continue
-            except Exception:
-                continue
-
-            assinatura = texto_elemento(item)
-            if not assinatura:
-                continue
-
-            texto_normalizado = assinatura.lower()
-            if ".pdf" not in texto_normalizado and not any(
-                palavra in texto_normalizado for palavra in DOWNLOAD_KEYWORDS
-            ):
-                continue
-
-            if assinatura in assinaturas:
-                continue
-
-            assinaturas.add(assinatura)
-            alvos.append((assinatura, item))
-
-    return alvos
+    return botoes
 
 
 def criar_sessao_requests(context, page) -> requests.Session:
