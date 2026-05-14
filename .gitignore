@@ -41,3 +41,4 @@ frontend/tsconfig.tsbuildinfo
 
 *.log
 *.tsbuildinfo
+CHECKLIST.md
