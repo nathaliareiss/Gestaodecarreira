@@ -258,8 +258,18 @@ html[data-theme="light"] .note-card {
 
 .hero--auth {
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 0.65rem;
+  gap: 0;
   align-items: stretch;
+}
+
+.hero--auth > *:first-child {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.hero--auth > *:last-child {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
 }
 
 .hero--auth > * {
