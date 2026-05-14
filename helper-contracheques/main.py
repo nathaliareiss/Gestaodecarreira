@@ -129,24 +129,35 @@ def extrair_token_de_candidato(candidato: str) -> str:
     return ""
 
 
-def resolver_token(args: argparse.Namespace) -> str | None:
+def resolver_token(args: argparse.Namespace) -> tuple[str | None, str]:
     candidatos = [
-        getattr(args, "token", ""),
-        getattr(args, "import_url", ""),
-        getattr(args, "import_uri", ""),
+        ("cli", getattr(args, "token", "")),
+        ("protocolo", getattr(args, "import_url", "")),
+        ("protocolo", getattr(args, "import_uri", "")),
     ]
 
-    for candidato in candidatos:
+    for origem, candidato in candidatos:
         token = extrair_token_de_candidato(str(candidato or ""))
         if token:
-            return token
+            return token, origem
 
     token_interativo = solicitar_token_interativo()
     if token_interativo:
-        return token_interativo
+        return token_interativo, "manual"
 
     exibir_erro_amigavel("Token obrigatório para iniciar a importação.")
-    return None
+    return None, "manual"
+
+
+def exibir_diagnostico_inicial(exec_path: Path, origem: str, token: str | None, portal_url: str) -> None:
+    print("====================================")
+    print("Gestão de Carreira Assistente")
+    print("====================================")
+    print(f"Executavel: {exec_path}")
+    print(f"Origem: {origem}")
+    print(f"PORTAL_URL carregada: {portal_url}")
+    print(f"Token recebido: {'sim' if token else 'nao'}")
+    print("====================================")
 
 
 def texto_elemento(locator) -> str:
@@ -425,9 +436,11 @@ def main() -> int:
     configurar_logger()
     registrar_protocolo_windows()
     args = parse_args()
-    token = resolver_token(args)
+    token, origem_token = resolver_token(args)
     if not token:
         return 1
+
+    exibir_diagnostico_inicial(Path(sys.executable).resolve(), origem_token, token, args.portal_url)
 
     pasta_saida = Path(args.download_dir).expanduser().resolve() if args.download_dir else criar_diretorio_temporario()
     pasta_saida.mkdir(parents=True, exist_ok=True)

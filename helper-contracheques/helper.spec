@@ -6,6 +6,7 @@ from pathlib import Path
 block_cipher = None
 project_dir = Path(SPECPATH)
 icon_path = project_dir / "assets" / "helper-contracheques.ico"
+version_info_path = project_dir / "version_info.txt"
 
 datas = []
 if icon_path.is_file():
@@ -54,4 +55,5 @@ exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
     icon=str(icon_path) if icon_path.is_file() else None,
+    version=str(version_info_path) if version_info_path.is_file() else None,
 )

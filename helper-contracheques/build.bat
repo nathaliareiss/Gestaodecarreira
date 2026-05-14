@@ -16,12 +16,13 @@ powershell.exe -ExecutionPolicy Bypass -File "scripts\generate-installer-icon.ps
 python -m PyInstaller --clean --noconfirm helper.spec
 
 if not exist "..\backend\static\downloads" mkdir "..\backend\static\downloads"
+copy /Y "dist\GestaoDeCarreira-Assistente.exe" "..\backend\static\downloads\GestaoDeCarreira-Setup.exe"
 
 where iscc >nul 2>nul
 if %errorlevel%==0 (
   iscc installer\GestaoDeCarreira-Setup.iss
 ) else (
-  echo Inno Setup nao encontrado. O instalador nao foi compilado.
+  echo Inno Setup nao encontrado. O arquivo publicado e um fallback do helper atualizado.
 )
 
 echo.
