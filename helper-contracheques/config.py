@@ -113,7 +113,7 @@ def obter_backend_url() -> str:
 
 
 BACKEND_URL = obter_backend_url()
-PORTAL_URL = os.getenv("PORTAL_URL", "https://ssc.prodemge.gov.br/ssc-idp-frontend/loginVM.zul").strip().rstrip("/")
+PORTAL_URL = os.getenv("PORTAL_URL", "https://portaldoservidor.mg.gov.br/").strip().rstrip("/")
 UPLOAD_ENDPOINT = os.getenv(
     "UPLOAD_ENDPOINT",
     "/api/financeiro/importacao-temporaria/upload-lote",
@@ -145,4 +145,3 @@ DOWNLOAD_SELECTORS = _ler_lista_csv(
 )
 
 DOWNLOAD_KEYWORDS = ("baix", "download", "pdf", "salvar", "exportar")
-

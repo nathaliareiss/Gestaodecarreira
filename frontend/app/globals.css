@@ -1318,17 +1318,18 @@ html[data-theme="dark"] .finance-auto-import-panel {
   inset: 0;
   z-index: 60;
   display: grid;
-  place-items: center;
-  padding: 1rem;
+  place-items: start center;
+  padding: clamp(4.25rem, 12vh, 7rem) 1rem 1rem;
   background: rgba(15, 23, 42, 0.45);
   backdrop-filter: blur(6px);
+  overflow-y: auto;
 }
 
 .finance-auto-import-modal__dialog {
   width: min(100%, 36rem);
   display: grid;
   gap: 1rem;
-  padding: 1.2rem;
+  padding: 1.05rem 1.1rem;
   border-radius: 24px;
   border: 1px solid rgba(15, 23, 42, 0.08);
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(246, 249, 253, 0.98));
@@ -1371,7 +1372,7 @@ html[data-theme="dark"] .finance-auto-import-panel {
 
 .finance-auto-import-modal__code {
   display: block;
-  padding: 0.95rem 1rem;
+  padding: 0.8rem 0.9rem;
   border-radius: 16px;
   border: 1px solid rgba(148, 163, 184, 0.22);
   background: #f8fafc;
@@ -1384,6 +1385,10 @@ html[data-theme="dark"] .finance-auto-import-panel {
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
+}
+
+.finance-auto-import-modal__actions .primary-button {
+  min-height: 2.8rem;
 }
 
 .finance-auto-import-modal__feedback {
