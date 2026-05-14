@@ -258,7 +258,7 @@ html[data-theme="light"] .note-card {
 
 .hero--auth {
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 1.5rem;
+  gap: 0.65rem;
   align-items: stretch;
 }
 
@@ -268,19 +268,30 @@ html[data-theme="light"] .note-card {
 
 .hero-copy--auth {
   min-height: clamp(28rem, 62svh, 34rem);
-  padding: 1.75rem 1.9rem;
-  justify-content: center;
-  align-items: center;
+  padding: 1.55rem 1.7rem;
+  justify-content: stretch;
+  align-items: stretch;
   text-align: center;
-  gap: 1rem;
+  gap: 0.9rem;
+}
+
+.auth-hero-topbar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-start;
+}
+
+.auth-hero-demo {
+  width: fit-content;
 }
 
 .auth-hero-stack {
   display: grid;
-  gap: 0.7rem;
+  gap: 0.65rem;
   align-content: center;
   justify-items: center;
   max-width: 29rem;
+  margin-inline: auto;
 }
 
 .hero-title--auth {
@@ -303,6 +314,24 @@ html[data-theme="light"] .note-card {
   line-height: 1.6;
 }
 
+.auth-hero-bottom {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.55rem;
+  margin-top: auto;
+  flex-wrap: wrap;
+}
+
+.auth-hero-bottom__label {
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.auth-hero-signup {
+  width: fit-content;
+}
+
 .hero-links--auth {
   margin-top: 0.25rem;
   display: flex;
@@ -314,10 +343,6 @@ html[data-theme="light"] .note-card {
 .hero-links--auth .primary-button,
 .hero-links--auth .ghost-button {
   min-width: 0;
-}
-
-.auth-hero-button {
-  width: fit-content;
 }
 
 .hero-copy--centered {
@@ -752,6 +777,11 @@ html[data-theme="light"] .ghost-button {
   flex-wrap: wrap;
   gap: 0.65rem 1rem;
   margin-top: 0.1rem;
+}
+
+.auth-card-links--center {
+  justify-content: center;
+  text-align: center;
 }
 
 .auth-card-links .ghost-button--text {
@@ -2522,7 +2552,7 @@ html[data-language="en"] .language-toggle__dot {
   }
 
   .hero--auth {
-    gap: 1.1rem;
+    gap: 0.75rem;
   }
 
   .hero h1 {

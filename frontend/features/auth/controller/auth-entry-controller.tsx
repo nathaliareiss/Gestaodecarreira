@@ -41,6 +41,7 @@ export function AuthEntryController({ modoInicial }: AuthEntryControllerProps) {
           <AuthHeroSection
             entrandoDemo={login.entrandoDemo}
             onEntrarDemo={login.entrarComDadosDeExemplo}
+            onAbrirCadastro={() => setModo("cadastro")}
           />
         )}
 
@@ -77,7 +78,6 @@ export function AuthEntryController({ modoInicial }: AuthEntryControllerProps) {
               onRecuperacaoSubmit={login.enviarRecuperacao}
               onReenviarConfirmacao={login.reenviarConfirmacao}
               onAbrirRecuperacao={login.abrirRecuperacao}
-              onAbrirCadastro={() => setModo("cadastro")}
               onVoltarLogin={login.voltarParaLogin}
               onLoginChange={(valor) => login.atualizarCampo("login", valor)}
               onSenhaChange={(valor) => login.atualizarCampo("senha", valor)}

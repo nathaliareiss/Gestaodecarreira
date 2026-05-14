@@ -22,7 +22,6 @@ type LoginCardViewProps = {
   onRecuperacaoSubmit: (evento: FormEvent<HTMLFormElement>) => void
   onReenviarConfirmacao: () => void
   onAbrirRecuperacao: () => void
-  onAbrirCadastro: () => void
   onVoltarLogin: () => void
   onLoginChange: (valor: string) => void
   onSenhaChange: (valor: string) => void
@@ -45,7 +44,6 @@ export function LoginCardView({
   onRecuperacaoSubmit,
   onReenviarConfirmacao,
   onAbrirRecuperacao,
-  onAbrirCadastro,
   onVoltarLogin,
   onLoginChange,
   onSenhaChange,
@@ -92,16 +90,9 @@ export function LoginCardView({
             <button className="primary-button button--large auth-card__primary" type="submit" disabled={carregando}>
               {carregando ? texts.authCard.signingIn : texts.authCard.signIn}
             </button>
-            <button
-              className="ghost-button ghost-button--compact auth-card__secondary"
-              type="button"
-              onClick={onAbrirCadastro}
-            >
-              {texts.authCard.createAccount}
-            </button>
           </div>
 
-          <div className="auth-card-links" aria-label="Account links">
+          <div className="auth-card-links auth-card-links--center" aria-label="Account links">
             <button
               className="ghost-button ghost-button--text"
               type="button"

@@ -22,6 +22,7 @@ export type LocaleTexts = {
   authHero: {
     enterDemo: string
     enteringDemo: string
+    noAccount: string
     titleLine1: string
     titleLine2: string
     description: string
@@ -288,6 +289,7 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
     authHero: {
       enterDemo: "Explorar demonstração",
       enteringDemo: "Abrindo demonstração...",
+      noAccount: "Não tem conta?",
       titleLine1: "Gestão",
       titleLine2: "de Carreira",
       description:
@@ -559,6 +561,7 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
     authHero: {
       enterDemo: "Explore demo",
       enteringDemo: "Opening demo...",
+      noAccount: "No account?",
       titleLine1: "Career",
       titleLine2: "Management",
       description:
