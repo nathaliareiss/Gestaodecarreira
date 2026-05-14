@@ -60,7 +60,17 @@ function formatarErroFinanceiro(
   error: unknown,
   idioma: SiteLanguage,
   contexto: "analise" | "lote" | "importacao" | "envio",
+  textosFinanceiro?: Pick<FinanceTexts, "assistantLaunchError">,
 ) {
+  if (contexto === "importacao") {
+    return (
+      textosFinanceiro?.assistantLaunchError ??
+      (idioma === "en"
+        ? "We could not start the import right now. Please try again or check if the assistant is open."
+        : "Não foi possível iniciar a importação agora. Tente novamente ou verifique se o assistente está aberto.")
+    )
+  }
+
   if (error instanceof ApiResponseError) {
     if (error.status === 401) {
       return idioma === "en"
@@ -136,17 +146,6 @@ function formatarMoeda(valor: number | null) {
   }
 
   return formatadorMoeda.format(valor)
-}
-
-function formatarDataHoraCurta(valor: string, idioma: SiteLanguage) {
-  if (!valor) {
-    return "-"
-  }
-
-  return new Intl.DateTimeFormat(idioma === "en" ? "en-US" : "pt-BR", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(valor))
 }
 
 function formatarVariacaoPercentual(valor: number | null, idioma: SiteLanguage) {
@@ -641,6 +640,30 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
     }
   }
 
+  async function baixarAssistenteWindows() {
+    if (modoDemo) {
+      setErroImportacaoAutomatica(
+        language === "en"
+          ? "Demo mode does not download the assistant."
+          : "O modo demo não baixa o assistente.",
+      )
+      return
+    }
+
+    const disponivel = assistenteWindowsDisponivel || (await verificarDisponibilidadeAssistente())
+    setAssistenteWindowsDisponivel(disponivel)
+    setVerificandoAssistenteWindows(false)
+
+    if (!disponivel) {
+      setErroImportacaoAutomatica(t.assistantWindowsPreparing)
+      return
+    }
+
+    setErroImportacaoAutomatica(null)
+    setMensagemImportacaoAutomatica(null)
+    iniciarDownloadAssistente()
+  }
+
   async function iniciarImportacaoAutomatica() {
     if (modoDemo) {
       setErroImportacaoAutomatica(
@@ -651,34 +674,24 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
       return
     }
 
-    const disponivel = assistenteWindowsDisponivel || (await verificarDisponibilidadeAssistente())
-    setAssistenteWindowsDisponivel(disponivel)
-    setVerificandoAssistenteWindows(false)
-
-    if (!disponivel) {
-      setErroImportacaoAutomatica(
-        language === "en"
-          ? "Windows assistant is being prepared."
-          : "Assistente Windows em preparação.",
-      )
-      return
-    }
-
     setCriandoImportacaoAutomatica(true)
     setErroImportacaoAutomatica(null)
     setMensagemImportacaoAutomatica(null)
-
-    iniciarDownloadAssistente()
-    setMensagemImportacaoAutomatica(t.copiedToast)
+    setImportacaoTemporaria(null)
 
     void (async () => {
       try {
         const resposta = await criarImportacaoTemporariaFinanceiro()
         setImportacaoTemporaria(resposta)
-        await copiarTextoParaClipboard(resposta.token)
+        try {
+          await copiarTextoParaClipboard(resposta.token)
+        } catch {
+          // If clipboard access fails, keep the import flow alive and let the user use advanced options.
+        }
+        setMensagemImportacaoAutomatica(t.copiedToast)
       } catch (error) {
         setImportacaoTemporaria(null)
-        setErroImportacaoAutomatica(formatarErroFinanceiro(error, language, "importacao"))
+        setErroImportacaoAutomatica(formatarErroFinanceiro(error, language, "importacao", t))
       } finally {
         setCriandoImportacaoAutomatica(false)
       }
@@ -783,56 +796,62 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
 
       <div className="analysis-stack">
         <section className="card finance-auto-import-panel">
-          <div className="analysis-header__title analysis-header__title--compact">
-            <p className="eyebrow eyebrow--title">{t.autoImportSectionTitle}</p>
+          <div className="finance-auto-import-panel__hero">
             <h3>{t.autoImportSectionTitle}</h3>
-            <p className="analysis-header__subtitle">{t.autoImportSectionSubtitle}</p>
+            <p className="finance-auto-import-panel__subtitle">{t.autoImportSectionSubtitle}</p>
           </div>
 
-          <div className="finance-auto-import-panel__cards">
-            <article className="finance-auto-import-panel__step">
-              <div className="finance-auto-import-panel__step-header">
-                <span className="finance-auto-import-panel__badge">1</span>
-                <div>
-                  <strong>{t.assistantStepDownloadTitle}</strong>
-                  <p>{t.assistantStep1}</p>
-                </div>
-              </div>
-            </article>
+          <div className="finance-auto-import-panel__cta-stack">
+            <button
+              className="primary-button button--large finance-auto-import-panel__primary-action"
+              type="button"
+              onClick={() => void baixarAssistenteWindows()}
+              disabled={modoDemo || verificandoAssistenteWindows || !assistenteWindowsDisponivel}
+            >
+              {t.assistantDownloadButton}
+            </button>
 
-            <article className="finance-auto-import-panel__step">
-              <div className="finance-auto-import-panel__step-header">
-                <span className="finance-auto-import-panel__badge">2</span>
-                <div>
-                  <strong>{t.assistantStepOpenTitle}</strong>
-                  <p>{t.assistantStep2}</p>
-                </div>
-              </div>
+            <button
+              className="ghost-button ghost-button--text finance-auto-import-panel__secondary-action"
+              type="button"
+              onClick={() => void iniciarImportacaoAutomatica()}
+              disabled={modoDemo || criandoImportacaoAutomatica}
+            >
+              {criandoImportacaoAutomatica ? t.autoImporting : t.autoImportButton}
+            </button>
 
-              <button
-                className="primary-button"
-                type="button"
-                onClick={() => void iniciarImportacaoAutomatica()}
-                disabled={modoDemo || criandoImportacaoAutomatica || verificandoAssistenteWindows || !assistenteWindowsDisponivel}
-              >
-                {criandoImportacaoAutomatica ? t.autoImporting : t.autoImportButton}
-              </button>
-
-              {!verificandoAssistenteWindows && !assistenteWindowsDisponivel ? (
-                <p className="helper">{t.assistantWindowsPreparing}</p>
-              ) : null}
-            </article>
-
-            <article className="finance-auto-import-panel__step">
-              <div className="finance-auto-import-panel__step-header">
-                <span className="finance-auto-import-panel__badge">3</span>
-                <div>
-                  <strong>{t.assistantStepTrackTitle}</strong>
-                  <p>{t.assistantStep3}</p>
-                </div>
-              </div>
-            </article>
+            {!verificandoAssistenteWindows && !assistenteWindowsDisponivel ? (
+              <p className="finance-auto-import-panel__note">{t.assistantWindowsPreparing}</p>
+            ) : null}
           </div>
+
+          <p className="finance-auto-import-panel__list-label">{t.assistantStepsTitle}</p>
+          <ul className="finance-auto-import-panel__checklist">
+            <li className="finance-auto-import-panel__checklist-item">
+              <span className="finance-auto-import-panel__checkmark" aria-hidden="true">
+                ✓
+              </span>
+              <span>{t.assistantStep1}</span>
+            </li>
+            <li className="finance-auto-import-panel__checklist-item">
+              <span className="finance-auto-import-panel__checkmark" aria-hidden="true">
+                ✓
+              </span>
+              <span>{t.assistantStep2}</span>
+            </li>
+            <li className="finance-auto-import-panel__checklist-item">
+              <span className="finance-auto-import-panel__checkmark" aria-hidden="true">
+                ✓
+              </span>
+              <span>{t.assistantStep3}</span>
+            </li>
+            <li className="finance-auto-import-panel__checklist-item">
+              <span className="finance-auto-import-panel__checkmark" aria-hidden="true">
+                ✓
+              </span>
+              <span>{t.assistantStep4}</span>
+            </li>
+          </ul>
 
           {mensagemImportacaoAutomatica ? (
             <p className="finance-auto-import-panel__toast" aria-live="polite">
@@ -861,11 +880,6 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
                 {t.copyConnectionCodeButton}
               </button>
             </div>
-            <p className="helper finance-auto-import-panel__advanced-meta">
-              {importacaoTemporaria
-                ? `${t.autoImportExpiresLabel}: ${formatarDataHoraCurta(importacaoTemporaria.expires_at, language)}`
-                : "A validade aparecera aqui depois que voce iniciar a importacao."}
-            </p>
           </details>
         </section>
 

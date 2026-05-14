@@ -112,9 +112,6 @@ export type LocaleTexts = {
     subtitle: string
     autoImportSectionTitle: string
     autoImportSectionSubtitle: string
-    assistantStepDownloadTitle: string
-    assistantStepOpenTitle: string
-    assistantStepTrackTitle: string
     autoImportButton: string
     autoImporting: string
     autoImportDesktopNotice: string
@@ -129,11 +126,13 @@ export type LocaleTexts = {
     assistantStep1: string
     assistantStep2: string
     assistantStep3: string
+    assistantStep4: string
     advancedModeLabel: string
     advancedModeHint: string
     copyConnectionCodeButton: string
     tokenHidden: string
     copiedToast: string
+    assistantLaunchError: string
     batchTitle: string
     uploadPdfs: string
     demoDataOnly: string
@@ -370,27 +369,30 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       title: "Finanças",
       subtitle:
         "Envie um ou mais contracheques e acompanhe o progresso do lote enquanto os arquivos são processados.",
-      autoImportSectionTitle: "Importação automática de contracheques",
+      autoImportSectionTitle: "Importe seus contracheques automaticamente",
       autoImportSectionSubtitle:
-        "Baixe o assistente no seu computador e siga o passo a passo. Ele abrirá o portal oficial para você fazer login com segurança.",
-      autoImportButton: "Iniciar importação",
-      autoImporting: "Baixando assistente...",
-      autoImportDesktopNotice: "O assistente para Windows ainda está sendo preparado.",
+        "Baixe o assistente uma vez. Depois disso, importar vira um clique.",
+      autoImportButton: "Já tem o assistente? Iniciar importação",
+      autoImporting: "Iniciando importação...",
+      autoImportDesktopNotice: "O download para Windows ainda está sendo preparado.",
       autoImportMobileNotice: "No celular, volte ao computador para usar o assistente.",
       autoImportTokenLabel: "Código de conexão",
       autoImportExpiresLabel: "Expira em",
-      autoImportHelper: "Abra as opções avançadas somente se precisar copiar o código manualmente.",
-      assistantDownloadButton: "Baixar para Windows",
-      assistantDownloadHint: "O assistente para Windows ainda está sendo preparado.",
-      assistantWindowsPreparing: "Assistente Windows em preparação.",
-      assistantStepsTitle: "Etapas",
-      assistantStep1: "Instale o assistente no Windows.",
-      assistantStep2: "Depois de baixar, abra o programa no seu computador.",
-      assistantStep3: "Faça login no portal oficial e aguarde os contracheques serem enviados para sua conta.",
+      autoImportHelper: "Use as opções avançadas só se precisar do código manualmente.",
+      assistantDownloadButton: "Baixar assistente para Windows",
+      assistantDownloadHint: "Download recomendado para a primeira configuração.",
+      assistantWindowsPreparing: "Preparando o download para Windows.",
+      assistantStepsTitle: "Como funciona",
+      assistantStep1: "Baixe o assistente",
+      assistantStep2: "Abra no seu computador",
+      assistantStep3: "Entre com segurança usando gov.br",
+      assistantStep4: "Seus contracheques aparecem aqui automaticamente",
       advancedModeLabel: "Opções avançadas",
-      advancedModeHint: "Use apenas se precisar copiar o código manualmente ou conferir a validade.",
-      tokenHidden: "Cópia protegida.",
-      copiedToast: "Assistente baixado. Abra o arquivo para continuar.",
+      advancedModeHint: "Abra só se precisar copiar o código manualmente.",
+      copyConnectionCodeButton: "Copiar código de conexão",
+      tokenHidden: "Código protegido.",
+      copiedToast: "Importação pronta. Abra o assistente para continuar.",
+      assistantLaunchError: "Não foi possível iniciar a importação agora. Tente novamente ou verifique se o assistente está aberto.",
       batchTitle: "Lote de contracheques",
       uploadPdfs: "Enviar PDFs",
       demoDataOnly: "Apenas dados de demo",
@@ -629,27 +631,30 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       title: "Finance",
       subtitle:
         "Upload one or more pay stubs, then watch the batch progress as the files are processed.",
-      autoImportSectionTitle: "Automatic pay stub import",
+      autoImportSectionTitle: "Import your pay stubs automatically",
       autoImportSectionSubtitle:
-        "Download the assistant on your computer and follow the steps. It will open the official portal so you can sign in securely.",
-      autoImportButton: "Start import",
-      autoImporting: "Downloading assistant...",
-      autoImportDesktopNotice: "The Windows assistant is still being prepared.",
+        "Download the assistant once. After that, importing is one click.",
+      autoImportButton: "Already installed? Start import",
+      autoImporting: "Starting import...",
+      autoImportDesktopNotice: "The Windows download is still being prepared.",
       autoImportMobileNotice: "On mobile, return to a computer to use the assistant.",
       autoImportTokenLabel: "Connection code",
       autoImportExpiresLabel: "Expires at",
-      autoImportHelper: "Open advanced options only if you need to copy the code manually.",
-      assistantDownloadButton: "Download for Windows",
-      assistantDownloadHint: "The Windows assistant is still being prepared.",
-      assistantWindowsPreparing: "Windows assistant is being prepared.",
-      assistantStepsTitle: "Steps",
-      assistantStep1: "Install the assistant on Windows.",
-      assistantStep2: "After downloading, open the program on your computer.",
-      assistantStep3: "Sign in on the official portal and wait for the pay stubs to be sent to your account.",
+      autoImportHelper: "Use advanced options only if you need the code manually.",
+      assistantDownloadButton: "Download Windows assistant",
+      assistantDownloadHint: "Recommended for first-time setup.",
+      assistantWindowsPreparing: "Preparing the Windows download.",
+      assistantStepsTitle: "How it works",
+      assistantStep1: "Download the assistant",
+      assistantStep2: "Open it on your computer",
+      assistantStep3: "Sign in securely with gov.br",
+      assistantStep4: "Your pay stubs appear here automatically",
       advancedModeLabel: "Advanced options",
-      advancedModeHint: "Use only if you need to copy the code manually or check its validity.",
-      tokenHidden: "Protected copy.",
-      copiedToast: "Assistant downloaded. Open the file to continue.",
+      advancedModeHint: "Open only if you need to copy the code manually.",
+      copyConnectionCodeButton: "Copy connection code",
+      tokenHidden: "Protected code.",
+      copiedToast: "Import ready. Open the assistant to continue.",
+      assistantLaunchError: "We couldn't start the import right now. Please try again or check if the assistant is open.",
       batchTitle: "Pay Stub Batch",
       uploadPdfs: "Upload PDFs",
       demoDataOnly: "Demo data only",
