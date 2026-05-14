@@ -40,7 +40,7 @@ def criar_app() -> FastAPI:
             headers={"Cache-Control": "no-store, max-age=0"},
         )
 
-    @app.get("/downloads/GestaoDeCarreira-Setup.exe", include_in_schema=False)
+    @app.get("downloads/GestaoDeCarreira-Setup-1.0.3.exe", include_in_schema=False)
     def baixar_instalador_legado() -> FileResponse:
         if not installer_path.is_file():
             raise HTTPException(status_code=404, detail="Instalador nao encontrado.")
