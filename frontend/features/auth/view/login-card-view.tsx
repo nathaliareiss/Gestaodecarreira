@@ -54,17 +54,14 @@ export function LoginCardView({
   const { texts } = useLanguage()
 
   return (
-    <div className="login-panel">
+    <>
       {modo === "login" ? (
-        <form className="card form-card form-card--login" onSubmit={onSubmit}>
-          <div className="card-header card-header--tight">
+        <form className="card form-card form-card--login form-card--auth" onSubmit={onSubmit}>
+          <div className="card-header card-header--tight card-header--stacked">
             <div>
               <p className="eyebrow">{texts.authCard.access}</p>
               <h2>{texts.authCard.signIn}</h2>
             </div>
-            <button className="ghost-button ghost-button--compact" type="button" onClick={onAbrirCadastro}>
-              {texts.authCard.createAccount}
-            </button>
           </div>
 
           <label className="field">
@@ -92,30 +89,36 @@ export function LoginCardView({
           </label>
 
           <div className="actions actions--login">
-            <button className="primary-button button--large" type="submit" disabled={carregando}>
+            <button className="primary-button button--large auth-card__primary" type="submit" disabled={carregando}>
               {carregando ? texts.authCard.signingIn : texts.authCard.signIn}
             </button>
             <button
-              className="ghost-button ghost-button--compact"
+              className="ghost-button ghost-button--compact auth-card__secondary"
+              type="button"
+              onClick={onAbrirCadastro}
+            >
+              {texts.authCard.createAccount}
+            </button>
+          </div>
+
+          <div className="auth-card-links" aria-label="Account links">
+            <button
+              className="ghost-button ghost-button--text"
               type="button"
               onClick={onAbrirRecuperacao}
             >
               {texts.authCard.forgotPassword}
             </button>
-            <div className="login-secondary-link">
-              <span className="login-secondary-link__label">{texts.authCard.didNotReceiveEmail}</span>
-              <button
-                className="ghost-button ghost-button--text"
-                type="button"
-                onClick={onReenviarConfirmacao}
-                disabled={reenviandoConfirmacao}
-              >
-                {reenviandoConfirmacao
-                  ? texts.authCard.sendingLink
-                  : texts.authCard.resendConfirmation}
-              </button>
-            </div>
-            <p className="helper">{texts.authCard.afterSignIn}</p>
+            <button
+              className="ghost-button ghost-button--text"
+              type="button"
+              onClick={onReenviarConfirmacao}
+              disabled={reenviandoConfirmacao}
+            >
+              {reenviandoConfirmacao
+                ? texts.authCard.sendingLink
+                : texts.authCard.resendConfirmation}
+            </button>
           </div>
 
           {mensagemConfirmacao ? <p className="success-box">{mensagemConfirmacao}</p> : null}
@@ -123,8 +126,8 @@ export function LoginCardView({
           {erro ? <p className="error-box">{erro}</p> : null}
         </form>
       ) : (
-        <form className="card form-card form-card--recovery" onSubmit={onRecuperacaoSubmit}>
-          <div className="card-header card-header--tight">
+        <form className="card form-card form-card--recovery form-card--auth" onSubmit={onRecuperacaoSubmit}>
+          <div className="card-header card-header--tight card-header--stacked">
             <div>
               <p className="eyebrow">{texts.authCard.accessHelp}</p>
               <h2>{texts.authCard.forgotPassword}</h2>
@@ -158,6 +161,6 @@ export function LoginCardView({
           {erroRecuperacao ? <p className="error-box">{erroRecuperacao}</p> : null}
         </form>
       )}
-    </div>
+    </>
   )
 }

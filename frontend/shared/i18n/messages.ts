@@ -20,12 +20,8 @@ export type LocaleTexts = {
     enTitle: string
   }
   authHero: {
-    signUpLabel: string
-    alreadyHaveAccount: string
     enterDemo: string
     enteringDemo: string
-    signIn: string
-    subtitle: string
     titleLine1: string
     titleLine2: string
     description: string
@@ -38,9 +34,7 @@ export type LocaleTexts = {
     password: string
     signingIn: string
     forgotPassword: string
-    didNotReceiveEmail: string
     resendConfirmation: string
-    afterSignIn: string
     accessHelp: string
     back: string
     enterEmailOnly: string
@@ -292,16 +286,12 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       enTitle: "Mudar para inglês",
     },
     authHero: {
-      signUpLabel: "Cadastro",
-      alreadyHaveAccount: "Já tem uma conta? Entre aqui.",
-      enterDemo: "Entrar na demo com dados de exemplo",
-      enteringDemo: "Entrando na demo...",
-      signIn: "Entrar",
-      subtitle: "Gestão de Carreira",
+      enterDemo: "Explorar demonstração",
+      enteringDemo: "Abrindo demonstração...",
       titleLine1: "Gestão",
       titleLine2: "de Carreira",
       description:
-        "Crie sua conta para acompanhar sua evolução profissional com mais organização e clareza.",
+        "Organize sua evolução profissional com clareza, automação e inteligência.",
     },
     authCard: {
       access: "Acesso",
@@ -311,9 +301,7 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       password: "Senha",
       signingIn: "Entrando...",
       forgotPassword: "Esqueci minha senha",
-      didNotReceiveEmail: "Não recebeu o e-mail?",
       resendConfirmation: "Reenviar confirmação",
-      afterSignIn: "Depois de entrar, você será levado para a sua página.",
       accessHelp: "Ajuda de acesso",
       back: "Voltar",
       enterEmailOnly: "Digite apenas o seu e-mail. Se ele estiver cadastrado, você receberá um link para criar uma nova senha.",
@@ -569,16 +557,12 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       enTitle: "Switch to English",
     },
     authHero: {
-      signUpLabel: "Sign Up",
-      alreadyHaveAccount: "Already have an account? Sign in here.",
-      enterDemo: "Enter demo with sample data",
-      enteringDemo: "Entering demo...",
-      signIn: "Sign In",
-      subtitle: "Career Management",
+      enterDemo: "Explore demo",
+      enteringDemo: "Opening demo...",
       titleLine1: "Career",
-      titleLine2: "Flow",
+      titleLine2: "Management",
       description:
-        "Create your account to keep track of your career progression with more clarity and organization.",
+        "Organize your professional growth with clarity, automation, and intelligence.",
     },
     authCard: {
       access: "Access",
@@ -588,9 +572,7 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       password: "Password",
       signingIn: "Signing in...",
       forgotPassword: "Forgot Password",
-      didNotReceiveEmail: "Didn't receive the email?",
       resendConfirmation: "Resend Confirmation Email",
-      afterSignIn: "After signing in, you'll go to your page.",
       accessHelp: "Access Help",
       back: "Back",
       enterEmailOnly: "Enter only your email. If it is registered, you will receive a link to create a new password.",
