@@ -109,7 +109,6 @@ export type LocaleTexts = {
     grade: string
     demoHighlights: string
     viewOnly: string
-    loading: string
     reloadLastSaved: string
     noSession: string
     goToLogin: string
