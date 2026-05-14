@@ -98,6 +98,13 @@ export type LocaleTexts = {
     nextProgression: string
     retirementEstimate: string
     email: string
+    fullName: string
+    registrationNumber: string
+    cpf: string
+    birthDate: string
+    possessionDate: string
+    position: string
+    symbol: string
     level: string
     grade: string
     demoHighlights: string
@@ -365,6 +372,13 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       nextProgression: "Próxima progressão",
       retirementEstimate: "Estimativa de aposentadoria",
       email: "E-mail",
+      fullName: "Nome completo",
+      registrationNumber: "MASP",
+      cpf: "CPF",
+      birthDate: "Data de nascimento",
+      possessionDate: "Data de posse",
+      position: "Cargo atual",
+      symbol: "Símbolo atual",
       level: "Nível",
       grade: "Classe",
       demoHighlights: "Destaques da demo",
@@ -635,6 +649,13 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       nextProgression: "Next Progression",
       retirementEstimate: "Retirement Estimate",
       email: "Email",
+      fullName: "Full name",
+      registrationNumber: "Employee ID",
+      cpf: "Tax ID",
+      birthDate: "Birth date",
+      possessionDate: "Appointment date",
+      position: "Current role",
+      symbol: "Current symbol",
       level: "Level",
       grade: "Grade",
       demoHighlights: "Demo Highlights",

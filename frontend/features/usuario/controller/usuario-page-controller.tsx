@@ -57,6 +57,25 @@ function formatarDataEmIngles(valor: string | null, idioma: "pt-BR" | "en") {
   }).format(new Date(valor))
 }
 
+function limparTextoExibicao(valor: string | null | undefined) {
+  const texto = valor?.trim()
+  return texto && texto.length > 0 ? texto : "-"
+}
+
+function formatarCpf(valor: string | null | undefined) {
+  const texto = valor?.trim()
+  if (!texto) {
+    return "-"
+  }
+
+  const digitos = texto.replace(/\D/g, "")
+  if (digitos.length !== 11) {
+    return texto
+  }
+
+  return `${digitos.slice(0, 3)}.${digitos.slice(3, 6)}.${digitos.slice(6, 9)}-${digitos.slice(9, 11)}`
+}
+
 type UsuarioPageControllerProps = {
   usuarioInicial: UsuarioConta | null
   historicoInicial: HistoricoFuncionalAnalise | null
@@ -84,6 +103,13 @@ export function UsuarioPageController({
   const [historico, setHistorico] = useState<HistoricoFuncionalAnalise | null>(historicoInicial)
   const [carregandoHistorico, setCarregandoHistorico] = useState(false)
   const historicoExibido = historico ?? historicoInicial
+  const nomeExibido = historicoExibido?.nome?.trim() || usuario?.nome || "-"
+  const maspExibido = limparTextoExibicao(historicoExibido?.masp)
+  const cpfExibido = formatarCpf(historicoExibido?.cpf)
+  const cargoExibido = limparTextoExibicao(historicoExibido?.cargo_atual)
+  const simboloExibido = limparTextoExibicao(historicoExibido?.simbolo_atual)
+  const dataNascimentoExibida = historicoExibido?.data_nascimento ?? null
+  const dataPosseExibida = historicoExibido?.data_posse ?? null
   const dataExercicioExibida = usuario?.data_exercicio ?? historicoExibido?.data_exercicio ?? null
   const nivelExibido = historicoExibido?.nivel_atual ?? "-"
   const grauExibido = historicoExibido?.grau_atual ?? "-"
@@ -114,7 +140,11 @@ export function UsuarioPageController({
 
     try {
       const dados = await carregarUsuarioAutenticado()
-      setUsuario(dados)
+      setUsuario((atual) => ({
+        ...dados,
+        nome: historicoExibido?.nome?.trim() ? historicoExibido.nome.trim() : dados.nome,
+        data_exercicio: dados.data_exercicio ?? historicoExibido?.data_exercicio ?? atual?.data_exercicio ?? null,
+      }))
     } catch (error) {
       setErro(error instanceof Error ? error.message : (language === "en" ? "Unexpected failure while loading." : "Falha inesperada ao carregar."))
     } finally {
@@ -185,6 +215,17 @@ export function UsuarioPageController({
         const ultimoHistorico = await buscarUltimoHistoricoFuncional(usuario.id)
         if (ativo) {
           setHistorico(ultimoHistorico)
+          setUsuario((atual) => {
+            if (!atual) {
+              return atual
+            }
+
+            return {
+              ...atual,
+              nome: ultimoHistorico?.nome?.trim() ? ultimoHistorico.nome.trim() : atual.nome,
+              data_exercicio: atual.data_exercicio ?? ultimoHistorico?.data_exercicio ?? null,
+            }
+          })
         }
       } catch {
         if (ativo) {
@@ -287,14 +328,42 @@ export function UsuarioPageController({
                 </div>
               ) : usuario ? (
                 <>
-                  <div className="results-grid">
+                  <div className="results-grid results-grid--profile">
                     <div className="result-block">
-                      <span className="label">{texts.registerForm.fullName}</span>
-                      <strong>{usuario.nome}</strong>
+                      <span className="label">{texts.dashboard.fullName}</span>
+                      <strong>{nomeExibido}</strong>
                     </div>
                     <div className="result-block">
                       <span className="label">{texts.dashboard.email}</span>
                       <strong>{usuario.email}</strong>
+                    </div>
+                    <div className="result-block">
+                      <span className="label">{texts.dashboard.registrationNumber}</span>
+                      <strong>{maspExibido}</strong>
+                    </div>
+                    <div className="result-block">
+                      <span className="label">{texts.dashboard.cpf}</span>
+                      <strong>{cpfExibido}</strong>
+                    </div>
+                    <div className="result-block">
+                      <span className="label">{texts.dashboard.birthDate}</span>
+                      <strong>{formatarDataCurta(dataNascimentoExibida, language)}</strong>
+                    </div>
+                    <div className="result-block">
+                      <span className="label">{texts.dashboard.possessionDate}</span>
+                      <strong>{formatarDataCurta(dataPosseExibida, language)}</strong>
+                    </div>
+                    <div className="result-block">
+                      <span className="label">{texts.registerForm.startDate}</span>
+                      <strong>{formatarDataCurta(dataExercicioExibida, language)}</strong>
+                    </div>
+                    <div className="result-block">
+                      <span className="label">{texts.dashboard.position}</span>
+                      <strong>{cargoExibido}</strong>
+                    </div>
+                    <div className="result-block">
+                      <span className="label">{texts.dashboard.symbol}</span>
+                      <strong>{simboloExibido}</strong>
                     </div>
                     <div className="result-block">
                       <span className="label">{texts.dashboard.level}</span>
@@ -303,10 +372,6 @@ export function UsuarioPageController({
                     <div className="result-block">
                       <span className="label">{texts.dashboard.grade}</span>
                       <strong>{grauExibido}</strong>
-                    </div>
-                    <div className="result-block">
-                      <span className="label">{texts.registerForm.startDate}</span>
-                      <strong>{formatarDataCurta(dataExercicioExibida, language)}</strong>
                     </div>
                   </div>
 

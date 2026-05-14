@@ -80,6 +80,11 @@ export function UsuarioAccessGate() {
       try {
         const usuario = await carregarUsuarioAutenticado()
         const historico = await buscarUltimoHistoricoFuncional(usuario.id)
+        const usuarioComHistorico = {
+          ...usuario,
+          nome: historico?.nome?.trim() ? historico.nome.trim() : usuario.nome,
+          data_exercicio: usuario.data_exercicio ?? historico?.data_exercicio ?? null,
+        }
 
         if (!ativo) {
           return
@@ -87,7 +92,7 @@ export function UsuarioAccessGate() {
 
         setEstado({
           status: "ready",
-          usuario,
+          usuario: usuarioComHistorico,
           historico,
           modoDemo: false,
         })
