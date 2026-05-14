@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import shutil
 import os
 from pathlib import Path
 
@@ -22,3 +23,13 @@ def recriar_schema_teste() -> None:
     Base.metadata.create_all(bind=engine)
     yield
     Base.metadata.drop_all(bind=engine)
+
+
+@pytest.fixture
+def tmp_financeiro_dir() -> Path:
+    temp_dir = Path.cwd() / ".tmp-financeiro-tests"
+    temp_dir.mkdir(parents=True, exist_ok=True)
+    try:
+        yield temp_dir
+    finally:
+        shutil.rmtree(temp_dir, ignore_errors=True)

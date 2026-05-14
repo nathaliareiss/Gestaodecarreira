@@ -14,22 +14,112 @@ from backend.queue.tasks.financeiro_tasks import (
 )
 
 
-FIXTURE_PDF = Path(__file__).parent / "fixtures" / "contracheque_exemplo.pdf"
-TEST_TEMP_DIR = Path(__file__).parent / "_tmp_financeiro"
-TEST_TEMP_DIR.mkdir(parents=True, exist_ok=True)
+PDF_MINIMO = (
+    b"%PDF-1.4\n"
+    b"1 0 obj\n"
+    b"<< /Type /Catalog /Pages 2 0 R >>\n"
+    b"endobj\n"
+    b"2 0 obj\n"
+    b"<< /Type /Pages /Count 0 >>\n"
+    b"endobj\n"
+    b"xref\n"
+    b"0 3\n"
+    b"0000000000 65535 f \n"
+    b"0000000009 00000 n \n"
+    b"0000000058 00000 n \n"
+    b"trailer\n"
+    b"<< /Root 1 0 R /Size 3 >>\n"
+    b"startxref\n"
+    b"107\n"
+    b"%%EOF\n"
+)
 
 
-def _criar_copia_pdf(nome: str) -> Path:
-    destino = TEST_TEMP_DIR / nome
-    destino.write_bytes(FIXTURE_PDF.read_bytes())
+def _criar_pdf_temp(tmp_path: Path, nome: str, conteudo: bytes = PDF_MINIMO) -> Path:
+    tmp_path.mkdir(parents=True, exist_ok=True)
+    destino = tmp_path / nome
+    destino.write_bytes(conteudo)
     return destino
 
 
-def test_processamento_assincrono_persiste_paycheck_e_itens() -> None:
+def _mockar_parser_padrao(
+    monkeypatch,
+    *,
+    competencia: str = "Janeiro/2022",
+    ano: int = 2022,
+    mes: int = 1,
+    matricula: str = "123456",
+) -> None:
+    from backend.services import financeiro_batch_service as service
+
+    monkeypatch.setattr(
+        service,
+        "parse_contracheque",
+        lambda _pdf_path: {
+            "competencia": competencia,
+            "ano": ano,
+            "mes": mes,
+            "matricula": matricula,
+            "bruto": Decimal("5375.07"),
+            "descontos": Decimal("812.34"),
+            "liquido": Decimal("4562.73"),
+            "vencimento_basico": Decimal("4000.00"),
+            "adicional_desempenho": Decimal("600.00"),
+            "adicional_noturno": Decimal("200.00"),
+            "irrf": Decimal("150.00"),
+            "previdencia": Decimal("200.00"),
+        },
+    )
+    monkeypatch.setattr(
+        service,
+        "extrair_rubricas_contracheque",
+        lambda _pdf_path: [
+            {
+                "tipo": "vantagem",
+                "categoria_normalizada": "salario_base",
+                "descricao_original": "Vencimento Basico",
+                "descricao": "Vencimento Basico",
+                "valor": Decimal("4000.00"),
+            },
+            {
+                "tipo": "vantagem",
+                "categoria_normalizada": "adicional_desempenho",
+                "descricao_original": "Adicional de Desempenho",
+                "descricao": "Adicional de Desempenho",
+                "valor": Decimal("600.00"),
+            },
+            {
+                "tipo": "vantagem",
+                "categoria_normalizada": "adicional_noturno",
+                "descricao_original": "Adicional Noturno",
+                "descricao": "Adicional Noturno",
+                "valor": Decimal("200.00"),
+            },
+            {
+                "tipo": "desconto",
+                "categoria_normalizada": "irrf",
+                "descricao_original": "IRRF",
+                "descricao": "IRRF",
+                "valor": Decimal("150.00"),
+            },
+            {
+                "tipo": "desconto",
+                "categoria_normalizada": "previdencia",
+                "descricao_original": "Previdencia",
+                "descricao": "Previdencia",
+                "valor": Decimal("200.00"),
+            },
+        ],
+    )
+
+
+def test_processamento_assincrono_persiste_paycheck_e_itens(monkeypatch, tmp_financeiro_dir: Path) -> None:
+    _mockar_parser_padrao(monkeypatch)
+
     with SessionLocal() as db:
         lote = criar_lote_financeiro(db, user_id=7, total_files=1)
 
-    arquivo = _criar_copia_pdf("contracheque-1.pdf")
+    arquivo = _criar_pdf_temp(tmp_financeiro_dir, "contracheque-1.pdf")
     resultado = processar_lote_financeiro_job(
         {
             "batch_id": lote.id,
@@ -69,12 +159,14 @@ def test_processamento_assincrono_persiste_paycheck_e_itens() -> None:
     assert any(item.descricao_original for item in itens)
 
 
-def test_processamento_por_pdf_atualiza_contadores_progressivamente() -> None:
+def test_processamento_por_pdf_atualiza_contadores_progressivamente(monkeypatch, tmp_financeiro_dir: Path) -> None:
+    _mockar_parser_padrao(monkeypatch)
+
     with SessionLocal() as db:
         lote = criar_lote_financeiro(db, user_id=7, total_files=2)
 
-    arquivo_1 = _criar_copia_pdf("contracheque-progressivo-1.pdf")
-    arquivo_2 = _criar_copia_pdf("contracheque-progressivo-2.pdf")
+    arquivo_1 = _criar_pdf_temp(tmp_financeiro_dir, "contracheque-progressivo-1.pdf")
+    arquivo_2 = _criar_pdf_temp(tmp_financeiro_dir, "contracheque-progressivo-2.pdf")
 
     resultado_1 = processar_arquivo_financeiro_job(
         {
@@ -112,7 +204,9 @@ def test_processamento_por_pdf_atualiza_contadores_progressivamente() -> None:
         assert lote_salvo.processing_seconds_total > 0
 
 
-def test_duplicidade_de_competencia_conta_como_duplicado_sem_parar_lote() -> None:
+def test_duplicidade_de_competencia_conta_como_duplicado_sem_parar_lote(monkeypatch, tmp_financeiro_dir: Path) -> None:
+    _mockar_parser_padrao(monkeypatch, matricula="")
+
     with SessionLocal() as db:
         lote = criar_lote_financeiro(db, user_id=7, total_files=1)
         lote_duplicado = criar_lote_financeiro(db, user_id=7, total_files=1)
@@ -136,7 +230,7 @@ def test_duplicidade_de_competencia_conta_como_duplicado_sem_parar_lote() -> Non
         db.add(paycheck_existente)
         db.commit()
 
-    arquivo = _criar_copia_pdf("contracheque-duplicado.pdf")
+    arquivo = _criar_pdf_temp(tmp_financeiro_dir, "contracheque-duplicado.pdf")
     resultado = processar_lote_financeiro_job(
         {
             "batch_id": lote_duplicado.id,
@@ -169,12 +263,14 @@ def test_duplicidade_de_competencia_conta_como_duplicado_sem_parar_lote() -> Non
         assert total_paychecks == 1
 
 
-def test_arquivo_com_mesmo_hash_e_nome_diferente_e_duplicado() -> None:
+def test_arquivo_com_mesmo_hash_e_nome_diferente_e_duplicado(monkeypatch, tmp_financeiro_dir: Path) -> None:
+    _mockar_parser_padrao(monkeypatch)
+
     with SessionLocal() as db:
         lote = criar_lote_financeiro(db, user_id=7, total_files=2)
 
-    arquivo_1 = _criar_copia_pdf("contracheque-original.pdf")
-    arquivo_2 = _criar_copia_pdf("contracheque-copia.pdf")
+    arquivo_1 = _criar_pdf_temp(tmp_financeiro_dir, "contracheque-original.pdf")
+    arquivo_2 = _criar_pdf_temp(tmp_financeiro_dir, "contracheque-copia.pdf")
 
     resultado = processar_lote_financeiro_job(
         {
@@ -217,7 +313,7 @@ def test_arquivo_com_mesmo_hash_e_nome_diferente_e_duplicado() -> None:
         assert total_paychecks == 1
 
 
-def test_mesmo_mes_ano_com_arquivo_diferente_e_mesma_matricula_e_duplicado(monkeypatch) -> None:
+def test_mesmo_mes_ano_com_arquivo_diferente_e_mesma_matricula_e_duplicado(monkeypatch, tmp_financeiro_dir: Path) -> None:
     from backend.services import financeiro_batch_service as service
 
     monkeypatch.setattr(
@@ -255,10 +351,8 @@ def test_mesmo_mes_ano_com_arquivo_diferente_e_mesma_matricula_e_duplicado(monke
     with SessionLocal() as db:
         lote = criar_lote_financeiro(db, user_id=7, total_files=2)
 
-    arquivo_1 = TEST_TEMP_DIR / "competencia-1.pdf"
-    arquivo_1.write_bytes(b"%PDF-1.4 arquivo-um")
-    arquivo_2 = TEST_TEMP_DIR / "competencia-2.pdf"
-    arquivo_2.write_bytes(b"%PDF-1.4 arquivo-dois")
+    arquivo_1 = _criar_pdf_temp(tmp_financeiro_dir, "competencia-1.pdf", b"%PDF-1.4 arquivo-um")
+    arquivo_2 = _criar_pdf_temp(tmp_financeiro_dir, "competencia-2.pdf", b"%PDF-1.4 arquivo-dois")
 
     resultado = processar_lote_financeiro_job(
         {
@@ -283,7 +377,7 @@ def test_mesmo_mes_ano_com_arquivo_diferente_e_mesma_matricula_e_duplicado(monke
     assert resultado["failed_count"] == 0
 
 
-def test_usuarios_diferentes_mesma_competencia_nao_colidem(monkeypatch) -> None:
+def test_usuarios_diferentes_mesma_competencia_nao_colidem(monkeypatch, tmp_financeiro_dir: Path) -> None:
     from backend.services import financeiro_batch_service as service
 
     monkeypatch.setattr(
@@ -322,10 +416,8 @@ def test_usuarios_diferentes_mesma_competencia_nao_colidem(monkeypatch) -> None:
         lote_1 = criar_lote_financeiro(db, user_id=7, total_files=1)
         lote_2 = criar_lote_financeiro(db, user_id=8, total_files=1)
 
-    arquivo_1 = TEST_TEMP_DIR / "usuario-7.pdf"
-    arquivo_1.write_bytes(b"%PDF-1.4 usuario-7")
-    arquivo_2 = TEST_TEMP_DIR / "usuario-8.pdf"
-    arquivo_2.write_bytes(b"%PDF-1.4 usuario-8")
+    arquivo_1 = _criar_pdf_temp(tmp_financeiro_dir, "usuario-7.pdf", b"%PDF-1.4 usuario-7")
+    arquivo_2 = _criar_pdf_temp(tmp_financeiro_dir, "usuario-8.pdf", b"%PDF-1.4 usuario-8")
 
     resultado_1 = processar_lote_financeiro_job(
         {
@@ -368,12 +460,11 @@ def test_usuarios_diferentes_mesma_competencia_nao_colidem(monkeypatch) -> None:
         assert total_usuario_8 == 1
 
 
-def test_pdf_invalido_marca_falha_e_continua_processamento() -> None:
+def test_pdf_invalido_marca_falha_e_continua_processamento(tmp_financeiro_dir: Path) -> None:
     with SessionLocal() as db:
         lote = criar_lote_financeiro(db, user_id=7, total_files=1)
 
-    arquivo = TEST_TEMP_DIR / "contracheque-invalido.pdf"
-    arquivo.write_bytes(b"isto nao e um pdf")
+    arquivo = _criar_pdf_temp(tmp_financeiro_dir, "contracheque-invalido.pdf", b"isto nao e um pdf")
 
     resultado = processar_lote_financeiro_job(
         {
