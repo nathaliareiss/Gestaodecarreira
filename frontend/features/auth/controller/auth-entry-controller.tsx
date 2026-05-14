@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 
 import { useLoginController } from "./use-login-controller"
+import { AuthHeroSection } from "@/features/auth/view/auth-hero-section"
 import { LoginCardView } from "@/features/auth/view/login-card-view"
 import { useUsuarioController } from "@/features/usuario/controller/use-usuario-controller"
 import { UsuarioFormView } from "@/features/usuario/view/usuario-form-view"
@@ -25,18 +26,25 @@ export function AuthEntryController({ modoInicial }: AuthEntryControllerProps) {
   }, [])
 
   return (
-    <main className="page-shell">
+    <main className="page-shell page-shell--auth">
       <div className="bg-orb bg-orb-a" />
       <div className="bg-orb bg-orb-b" />
 
-      <section className="hero hero--register">
-        <UsuarioHeroSection
-          entrandoDemo={cadastro.entrandoDemo}
-          onEntrarDemo={cadastro.entrarComDadosDeExemplo}
-          onAbrirLogin={() => setModo("login")}
-        />
+      <section className="hero hero--auth">
+        {modo === "cadastro" ? (
+          <UsuarioHeroSection
+            entrandoDemo={cadastro.entrandoDemo}
+            onEntrarDemo={cadastro.entrarComDadosDeExemplo}
+            onAbrirLogin={() => setModo("login")}
+          />
+        ) : (
+          <AuthHeroSection
+            entrandoDemo={login.entrandoDemo}
+            onEntrarDemo={login.entrarComDadosDeExemplo}
+          />
+        )}
 
-        <div className="side-panel side-panel--register">
+        <div className={`auth-panel ${modo === "cadastro" ? "auth-panel--register" : "auth-panel--login"}`}>
           {modo === "cadastro" ? (
             <UsuarioFormView
               cadastro={cadastro.cadastro}

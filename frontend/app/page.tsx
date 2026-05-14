@@ -13,5 +13,5 @@ export default async function HomePage() {
     redirect("/usuario")
   }
 
-  return <AuthEntryController modoInicial="cadastro" />
+  return <AuthEntryController modoInicial="login" />
 }
