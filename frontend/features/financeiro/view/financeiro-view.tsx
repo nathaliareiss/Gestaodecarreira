@@ -620,15 +620,16 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
     const url = `gestaodecarreira://import?token=${encodeURIComponent(token)}`
     return await new Promise<boolean>((resolve) => {
       let resolvido = false
-      const iframe = document.createElement("iframe")
-      iframe.setAttribute("aria-hidden", "true")
-      iframe.style.display = "none"
+      const link = document.createElement("a")
+      link.setAttribute("aria-hidden", "true")
+      link.rel = "noreferrer noopener"
+      link.style.display = "none"
 
       const limpar = () => {
         window.removeEventListener("blur", aoPerderFoco)
         document.removeEventListener("visibilitychange", aoMudarVisibilidade)
         window.clearTimeout(temporizador)
-        iframe.remove()
+        link.remove()
       }
 
       const concluir = (abriu: boolean) => {
@@ -659,8 +660,9 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
       document.addEventListener("visibilitychange", aoMudarVisibilidade, { once: true })
 
       try {
-        iframe.src = url
-        document.body.appendChild(iframe)
+        link.href = url
+        document.body.appendChild(link)
+        link.click()
       } catch {
         concluir(false)
       }
@@ -687,7 +689,7 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
       setImportacaoTemporaria(resposta)
       const abriuAssistente = await tentarAbrirAssistenteImportacao(resposta.token)
       if (!abriuAssistente) {
-        setErroImportacaoAutomatica(t.assistantLaunchError)
+        setErroImportacaoAutomatica(t.assistantLaunchErrorPrefix)
       }
     } catch (error) {
       setImportacaoTemporaria(null)
@@ -844,7 +846,7 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
           <div className="finance-auto-import-panel__cta-stack desktop-only">
             <div className="finance-auto-import-panel__cta-row">
               <a
-                className="ghost-button finance-auto-import-panel__secondary-action"
+                className="primary-button button--large finance-auto-import-panel__primary-action"
                 href={CAMINHO_DOWNLOAD_ASSISTENTE}
                 download={NOME_DOWNLOAD_ASSISTENTE}
               >
@@ -852,7 +854,7 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
               </a>
 
               <button
-                className="primary-button button--large finance-auto-import-panel__primary-action"
+                className="ghost-button button--large finance-auto-import-panel__secondary-action"
                 type="button"
                 onClick={() => void importarMeusContrachequesAutomaticamente()}
                 disabled={modoDemo || criandoImportacaoAutomatica}
@@ -878,10 +880,9 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
 
           {erroImportacaoAutomatica ? (
             <p className="finance-auto-import-panel__error" aria-live="polite">
-              <span>{erroImportacaoAutomatica}</span>
-              {erroImportacaoAutomatica === t.assistantLaunchError ? (
+              {erroImportacaoAutomatica === t.assistantLaunchErrorPrefix ? (
                 <>
-                  {" "}
+                  <span>{t.assistantLaunchErrorPrefix}</span>{" "}
                   <a
                     className="finance-auto-import-panel__error-link"
                     href={CAMINHO_DOWNLOAD_ASSISTENTE}
@@ -889,8 +890,11 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
                   >
                     {t.assistantInstallLink}
                   </a>
+                  <span>{t.assistantLaunchErrorSuffix}</span>
                 </>
-              ) : null}
+              ) : (
+                <span>{erroImportacaoAutomatica}</span>
+              )}
             </p>
           ) : null}
         </section>

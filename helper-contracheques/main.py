@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import argparse
+import os
 import logging
 import re
 import shutil
+import sys
 from datetime import datetime
 from pathlib import Path
 from urllib.parse import parse_qs, urljoin, urlparse
@@ -11,6 +13,11 @@ from urllib.parse import parse_qs, urljoin, urlparse
 import requests
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from playwright.sync_api import sync_playwright
+
+try:
+    import winreg
+except ImportError:  # pragma: no cover - only available on Windows
+    winreg = None
 
 from config import (
     BACKEND_URL,
@@ -73,6 +80,29 @@ def exibir_erro_amigavel(mensagem: str) -> None:
     print()
     print(mensagem)
     aguardar_enter_para_sair()
+
+
+def comando_protocolo_windows() -> str:
+    executavel = Path(sys.executable).resolve()
+    if getattr(sys, "frozen", False):
+        return f'"{executavel}" "%1"'
+
+    script = Path(__file__).resolve()
+    return f'"{executavel}" "{script}" "%1"'
+
+
+def registrar_protocolo_windows() -> None:
+    if os.name != "nt" or winreg is None:
+        return
+
+    try:
+        with winreg.CreateKey(winreg.HKEY_CURRENT_USER, r"Software\Classes\gestaodecarreira") as chave:
+            winreg.SetValueEx(chave, None, 0, winreg.REG_SZ, "URL:Gestão de Carreira")
+            winreg.SetValueEx(chave, "URL Protocol", 0, winreg.REG_SZ, "")
+            with winreg.CreateKey(chave, r"shell\open\command") as comando:
+                winreg.SetValueEx(comando, None, 0, winreg.REG_SZ, comando_protocolo_windows())
+    except OSError as erro:
+        log(f"[info] nao foi possivel registrar o protocolo gestaodecarreira: {erro}")
 
 
 def extrair_token_de_candidato(candidato: str) -> str:
@@ -323,6 +353,7 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     configurar_logger()
+    registrar_protocolo_windows()
     args = parse_args()
     token = resolver_token(args)
     if not token:

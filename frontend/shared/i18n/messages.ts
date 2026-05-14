@@ -138,6 +138,8 @@ export type LocaleTexts = {
     generateTemporaryTokenButton: string
     copyTokenButton: string
     assistantLaunchError: string
+    assistantLaunchErrorPrefix: string
+    assistantLaunchErrorSuffix: string
     batchTitle: string
     uploadPdfs: string
     demoDataOnly: string
@@ -377,7 +379,7 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       autoImportSectionTitle: "Importe seus contracheques automaticamente",
       autoImportSectionSubtitle:
         "Comece a automação por aqui. Se precisar, instale o assistente primeiro.",
-      autoImportButton: "Já tenho o assistente instalado: Iniciar",
+      autoImportButton: "Já tenho instalado: iniciar",
       autoImporting: "Abrindo assistente...",
       autoImportDesktopNotice: "O download para Windows ainda está sendo preparado.",
       autoImportMobileNotice: "No celular, volte ao computador para usar o assistente.",
@@ -390,7 +392,7 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       mobileImportNotice:
         "Não é possível fazer o download pelo celular. Importe manualmente ou entre usando um computador.",
       manualTokenReminderText:
-        "Pode ser necessário usar um token manualmente. Gere um token temporário, cole na janela do assistente e pressione Enter para iniciar.",
+        "Caso o assistente não abra automaticamente, gere um token temporário, cole na janela do assistente e pressione Enter.",
       manualTokenModalTitle: "Token temporário",
       manualTokenModalSubtitle:
         "Copie este token e cole no assistente se a abertura automática falhar.",
@@ -405,7 +407,9 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       assistantStep4: "Seus contracheques aparecem aqui automaticamente",
       generateTemporaryTokenButton: "Gerar token temporário",
       copyTokenButton: "Copiar token",
-      assistantLaunchError: "Assistente não encontrado. Instale o assistente e tente novamente.",
+      assistantLaunchError: "Não foi possível iniciar a importação agora. Tente novamente.",
+      assistantLaunchErrorPrefix: "Assistente não encontrado.",
+      assistantLaunchErrorSuffix: " e tente novamente.",
       batchTitle: "Lote de contracheques",
       uploadPdfs: "Enviar PDFs",
       demoDataOnly: "Apenas dados de demo",
@@ -647,7 +651,7 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       autoImportSectionTitle: "Import your pay stubs automatically",
       autoImportSectionSubtitle:
         "Start the automation here. If needed, install the assistant first.",
-      autoImportButton: "I already have the assistant installed: Start",
+      autoImportButton: "I already have it installed: Start",
       autoImporting: "Opening assistant...",
       autoImportDesktopNotice: "The Windows download is still being prepared.",
       autoImportMobileNotice: "On mobile, return to a computer to use the assistant.",
@@ -660,7 +664,7 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       mobileImportNotice:
         "You can't download the assistant from a phone. Import manually or use a computer.",
       manualTokenReminderText:
-        "You may need to use a manual token. Generate a temporary token, paste it into the assistant window, and press Enter to start.",
+        "If the assistant does not open automatically, generate a temporary token, paste it into the assistant window, and press Enter.",
       manualTokenModalTitle: "Temporary token",
       manualTokenModalSubtitle:
         "Copy this token and paste it into the assistant if automatic launch fails.",
@@ -675,7 +679,9 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       assistantStep4: "Your pay stubs appear here automatically",
       generateTemporaryTokenButton: "Generate temporary token",
       copyTokenButton: "Copy token",
-      assistantLaunchError: "Assistant not found. Install the assistant and try again.",
+      assistantLaunchError: "We couldn't start the import right now. Please try again.",
+      assistantLaunchErrorPrefix: "Assistant not found.",
+      assistantLaunchErrorSuffix: " and try again.",
       batchTitle: "Pay Stub Batch",
       uploadPdfs: "Upload PDFs",
       demoDataOnly: "Demo data only",
