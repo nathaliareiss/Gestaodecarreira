@@ -193,10 +193,13 @@ export function UsuarioPageController({
     }
 
     let ativo = true
-    setCarregandoHistorico(true)
 
     void (async () => {
       try {
+        if (ativo) {
+          setCarregandoHistorico(true)
+        }
+
         const ultimoHistorico = await buscarUltimoHistoricoFuncional(usuario.id)
         if (ativo) {
           setHistorico(ultimoHistorico)
