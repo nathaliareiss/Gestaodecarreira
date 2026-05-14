@@ -62,15 +62,6 @@ function formatarErroFinanceiro(
   contexto: "analise" | "lote" | "importacao" | "envio",
   textosFinanceiro?: Pick<FinanceTexts, "assistantLaunchError">,
 ) {
-  if (contexto === "importacao") {
-    return (
-      textosFinanceiro?.assistantLaunchError ??
-      (idioma === "en"
-        ? "We could not start the import right now. Please try again or check if the assistant is open."
-        : "Não foi possível iniciar a importação agora. Tente novamente ou verifique se o assistente está aberto.")
-    )
-  }
-
   if (error instanceof ApiResponseError) {
     if (error.status === 401) {
       return idioma === "en"
@@ -109,6 +100,15 @@ function formatarErroFinanceiro(
 
   if (error instanceof Error && error.message.trim().length > 0) {
     return error.message
+  }
+
+  if (contexto === "importacao") {
+    return (
+      textosFinanceiro?.assistantLaunchError ??
+      (idioma === "en"
+        ? "We couldn't start the import right now. Please try again."
+        : "Não foi possível iniciar a importação agora. Tente novamente.")
+    )
   }
 
   return idioma === "en"
@@ -168,29 +168,6 @@ async function copiarTextoParaClipboard(texto: string) {
   }
 
   return false
-}
-
-async function verificarDisponibilidadeAssistente() {
-  try {
-    const response = await fetch(CAMINHO_DOWNLOAD_ASSISTENTE, {
-      method: "HEAD",
-      cache: "no-store",
-    })
-
-    return response.ok
-  } catch {
-    return false
-  }
-}
-
-function iniciarDownloadAssistente() {
-  const link = document.createElement("a")
-  link.href = CAMINHO_DOWNLOAD_ASSISTENTE
-  link.download = NOME_DOWNLOAD_ASSISTENTE
-  link.rel = "noopener"
-  document.body.appendChild(link)
-  link.click()
-  link.remove()
 }
 
 function mensagemStatusBatch(
@@ -513,9 +490,8 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
   const [criandoImportacaoAutomatica, setCriandoImportacaoAutomatica] = useState(false)
   const [importacaoTemporaria, setImportacaoTemporaria] =
     useState<FinanceiroImportacaoTemporariaCriacaoResponse | null>(null)
-  const [mensagemImportacaoAutomatica, setMensagemImportacaoAutomatica] = useState<string | null>(null)
   const [mostrarTokenTemporario, setMostrarTokenTemporario] = useState(false)
-  const [opcoesAvancadasAbertas, setOpcoesAvancadasAbertas] = useState(false)
+  const [copiouTokenTemporario, setCopiouTokenTemporario] = useState(false)
   const [carregandoAnalisePersistida, setCarregandoAnalisePersistida] = useState(!modoDemo)
 
   const carregarAnalisePersistida = useCallback(async () => {
@@ -691,21 +667,6 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
     })
   }
 
-  async function instalarAssistenteImportacao() {
-    if (modoDemo) {
-      setErroImportacaoAutomatica(
-        language === "en"
-          ? "Demo mode does not download the assistant."
-          : "O modo demo não baixa o assistente.",
-      )
-      return
-    }
-
-    setErroImportacaoAutomatica(null)
-    setMensagemImportacaoAutomatica(null)
-    iniciarDownloadAssistente()
-  }
-
   async function importarMeusContrachequesAutomaticamente() {
     if (modoDemo) {
       setErroImportacaoAutomatica(
@@ -718,19 +679,15 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
 
     setCriandoImportacaoAutomatica(true)
     setErroImportacaoAutomatica(null)
-    setMensagemImportacaoAutomatica(null)
-    setImportacaoTemporaria(null)
     setMostrarTokenTemporario(false)
-    setOpcoesAvancadasAbertas(false)
+    setCopiouTokenTemporario(false)
 
     try {
       const resposta = await criarImportacaoTemporariaFinanceiro()
       setImportacaoTemporaria(resposta)
       const abriuAssistente = await tentarAbrirAssistenteImportacao(resposta.token)
       if (!abriuAssistente) {
-        setMostrarTokenTemporario(true)
-        setOpcoesAvancadasAbertas(true)
-        setMensagemImportacaoAutomatica(t.temporaryTokenReady)
+        setErroImportacaoAutomatica(t.assistantLaunchError)
       }
     } catch (error) {
       setImportacaoTemporaria(null)
@@ -752,15 +709,13 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
 
     setCriandoImportacaoAutomatica(true)
     setErroImportacaoAutomatica(null)
-    setMensagemImportacaoAutomatica(null)
     setMostrarTokenTemporario(false)
+    setCopiouTokenTemporario(false)
 
     try {
-      const resposta = importacaoTemporaria ?? (await criarImportacaoTemporariaFinanceiro())
+      const resposta = await criarImportacaoTemporariaFinanceiro()
       setImportacaoTemporaria(resposta)
       setMostrarTokenTemporario(true)
-      setOpcoesAvancadasAbertas(true)
-      setMensagemImportacaoAutomatica(t.temporaryTokenReady)
     } catch (error) {
       setImportacaoTemporaria(null)
       setErroImportacaoAutomatica(formatarErroFinanceiro(error, language, "importacao", t))
@@ -774,6 +729,38 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
       void carregarAnalisePersistida()
     })
   }, [carregarAnalisePersistida])
+
+  useEffect(() => {
+    if (!copiouTokenTemporario) {
+      return undefined
+    }
+
+    const timer = window.setTimeout(() => {
+      setCopiouTokenTemporario(false)
+    }, 1800)
+
+    return () => {
+      window.clearTimeout(timer)
+    }
+  }, [copiouTokenTemporario])
+
+  useEffect(() => {
+    if (!mostrarTokenTemporario) {
+      return undefined
+    }
+
+    const aoPressionarEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setMostrarTokenTemporario(false)
+        setCopiouTokenTemporario(false)
+      }
+    }
+
+    window.addEventListener("keydown", aoPressionarEscape)
+    return () => {
+      window.removeEventListener("keydown", aoPressionarEscape)
+    }
+  }, [mostrarTokenTemporario])
 
   useEffect(() => {
     if (batchId === null) {
@@ -854,90 +841,130 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
             <p className="finance-auto-import-panel__subtitle">{t.autoImportSectionSubtitle}</p>
           </div>
 
-          <div className="finance-auto-import-panel__cta-stack">
-            <button
-              className="primary-button button--large finance-auto-import-panel__primary-action"
-              type="button"
-              onClick={() => void importarMeusContrachequesAutomaticamente()}
-              disabled={modoDemo || criandoImportacaoAutomatica}
-            >
-              {criandoImportacaoAutomatica ? t.autoImporting : t.autoImportButton}
-            </button>
-
-            <button
-              className="ghost-button ghost-button--text finance-auto-import-panel__secondary-action"
-              type="button"
-              onClick={() => void instalarAssistenteImportacao()}
-              disabled={modoDemo}
-            >
-              {t.assistantDownloadButton}
-            </button>
-
-            <p className="finance-auto-import-panel__note">{t.autoImportFallbackHint}</p>
-          </div>
-
-          {mensagemImportacaoAutomatica ? (
-            <p className="finance-auto-import-panel__toast" aria-live="polite">
-              {mensagemImportacaoAutomatica}
-            </p>
-          ) : null}
-
-          {erroImportacaoAutomatica ? <p className="error-box">{erroImportacaoAutomatica}</p> : null}
-
-          <details
-            className="finance-auto-import-panel__advanced"
-            open={opcoesAvancadasAbertas}
-            onToggle={(event) => {
-              setOpcoesAvancadasAbertas(event.currentTarget.open)
-            }}
-          >
-            <summary>{t.advancedModeLabel}</summary>
-            <p className="helper finance-auto-import-panel__advanced-hint">{t.advancedModeHint}</p>
-            <div className="finance-auto-import-panel__advanced-actions">
-              <button
-                className="ghost-button"
-                type="button"
-                onClick={() => void gerarTokenTemporario()}
-                disabled={criandoImportacaoAutomatica}
+          <div className="finance-auto-import-panel__cta-stack desktop-only">
+            <div className="finance-auto-import-panel__cta-row">
+              <a
+                className="ghost-button ghost-button--text finance-auto-import-panel__secondary-action"
+                href={CAMINHO_DOWNLOAD_ASSISTENTE}
+                download={NOME_DOWNLOAD_ASSISTENTE}
               >
-                {t.generateTemporaryTokenButton}
+                {t.assistantDownloadButton}
+              </a>
+
+              <button
+                className="primary-button button--large finance-auto-import-panel__primary-action"
+                type="button"
+                onClick={() => void importarMeusContrachequesAutomaticamente()}
+                disabled={modoDemo || criandoImportacaoAutomatica}
+              >
+                {criandoImportacaoAutomatica ? t.autoImporting : t.autoImportButton}
               </button>
             </div>
+          </div>
 
-            {mostrarTokenTemporario && importacaoTemporaria ? (
-              <div className="finance-auto-import-panel__token-card">
-                <p className="finance-auto-import-panel__token-label">{t.manualTokenTitle}</p>
-                <code>{importacaoTemporaria.token}</code>
-                <div className="finance-auto-import-panel__token-actions">
-                  <button
-                    className="ghost-button"
-                    type="button"
-                    onClick={() => {
-                      if (!importacaoTemporaria) {
-                        return
-                      }
+          <p className="finance-auto-import-panel__mobile-message mobile-only">{t.mobileImportNotice}</p>
 
-                      void (async () => {
-                        try {
-                          const copiou = await copiarTextoParaClipboard(importacaoTemporaria.token)
-                          if (copiou) {
-                            setMensagemImportacaoAutomatica(t.copiedToast)
-                          }
-                        } catch {
-                          // Keep the fallback flow open even if clipboard access is blocked.
-                        }
-                      })()
-                    }}
-                    disabled={!importacaoTemporaria}
+          <div className="finance-auto-import-panel__manual-note">
+            <span>{t.manualTokenReminderText}</span>
+            <button
+              className="ghost-button ghost-button--text finance-auto-import-panel__manual-token-button"
+              type="button"
+              onClick={() => void gerarTokenTemporario()}
+              disabled={modoDemo || criandoImportacaoAutomatica}
+            >
+              {t.generateTemporaryTokenButton}
+            </button>
+          </div>
+
+          {erroImportacaoAutomatica ? (
+            <p className="finance-auto-import-panel__error" aria-live="polite">
+              <span>{erroImportacaoAutomatica}</span>
+              {erroImportacaoAutomatica === t.assistantLaunchError ? (
+                <>
+                  {" "}
+                  <a
+                    className="finance-auto-import-panel__error-link"
+                    href={CAMINHO_DOWNLOAD_ASSISTENTE}
+                    download={NOME_DOWNLOAD_ASSISTENTE}
                   >
-                    {t.copyTokenButton}
-                  </button>
-                </div>
-                <p className="finance-auto-import-panel__token-hint">{t.manualTokenHint}</p>
-              </div>
-            ) : null}
-          </details>
+                    {t.assistantInstallLink}
+                  </a>
+                </>
+              ) : null}
+            </p>
+          ) : null}
         </section>
+
+        {mostrarTokenTemporario && importacaoTemporaria ? (
+          <div
+            className="finance-auto-import-modal"
+            role="presentation"
+            onClick={() => {
+              setMostrarTokenTemporario(false)
+              setCopiouTokenTemporario(false)
+            }}
+          >
+            <div
+              className="finance-auto-import-modal__dialog"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="finance-auto-import-modal-title"
+              onClick={(event) => {
+                event.stopPropagation()
+              }}
+            >
+              <div className="finance-auto-import-modal__header">
+                <div>
+                  <p className="finance-auto-import-modal__eyebrow">{t.manualTokenModalTitle}</p>
+                  <h4 id="finance-auto-import-modal-title">{t.manualTokenModalTitle}</h4>
+                </div>
+                <button
+                  className="ghost-button finance-auto-import-modal__close"
+                  type="button"
+                  onClick={() => {
+                    setMostrarTokenTemporario(false)
+                    setCopiouTokenTemporario(false)
+                  }}
+                >
+                  {t.closeTokenModalButton}
+                </button>
+              </div>
+
+              <p className="finance-auto-import-modal__subtitle">{t.manualTokenModalSubtitle}</p>
+              <code className="finance-auto-import-modal__code">{importacaoTemporaria.token}</code>
+
+              <div className="finance-auto-import-modal__actions">
+                <button
+                  className="primary-button"
+                  type="button"
+                  onClick={() => {
+                    void (async () => {
+                      try {
+                        const copiou = await copiarTextoParaClipboard(importacaoTemporaria.token)
+                        setCopiouTokenTemporario(copiou)
+                      } catch {
+                        setCopiouTokenTemporario(false)
+                      }
+                    })()
+                  }}
+                >
+                  {t.copyTokenButton}
+                </button>
+              </div>
+
+              <p
+                className={
+                  copiouTokenTemporario
+                    ? "finance-auto-import-modal__feedback finance-auto-import-modal__feedback--success"
+                    : "finance-auto-import-modal__feedback"
+                }
+                aria-live="polite"
+              >
+                {copiouTokenTemporario ? t.tokenCopiedFeedback : t.manualTokenModalHint}
+              </p>
+            </div>
+          </div>
+        ) : null}
 
         <form className="upload-shell" onSubmit={enviarFormulario}>
           <div className="upload-shell__header">
