@@ -10,8 +10,16 @@ python -m venv .venv
 pip install -r requirements.txt
 python -m playwright install chromium
 copy .env.development.example .env.development
+python main.py
+```
+
+If you want to pass the token directly for internal tests:
+
+```powershell
 python main.py --token "SEU_TOKEN_TEMPORARIO"
 ```
+
+When you open the executable by double-clicking, the helper will ask for the temporary token in a simple interactive prompt.
 
 ## Gerar o exe
 

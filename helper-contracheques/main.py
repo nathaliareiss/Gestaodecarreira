@@ -47,6 +47,47 @@ def criar_diretorio_temporario() -> Path:
     return pasta
 
 
+def exibir_cabecalho_interativo() -> None:
+    print("==================================")
+    print("Gestão de Carreira - Assistente")
+    print("==================================")
+    print()
+
+
+def solicitar_token_interativo() -> str:
+    exibir_cabecalho_interativo()
+    try:
+        return input("Cole seu token temporário gerado no site:\n> ").strip()
+    except EOFError:
+        return ""
+
+
+def aguardar_enter_para_sair() -> None:
+    try:
+        input("\nPressione Enter para sair...")
+    except EOFError:
+        pass
+
+
+def exibir_erro_amigavel(mensagem: str) -> None:
+    print()
+    print(mensagem)
+    aguardar_enter_para_sair()
+
+
+def resolver_token(args: argparse.Namespace) -> str | None:
+    token_cli = (args.token or "").strip()
+    if token_cli:
+        return token_cli
+
+    token_interativo = solicitar_token_interativo()
+    if token_interativo:
+        return token_interativo
+
+    exibir_erro_amigavel("Token obrigatório para iniciar a importação.")
+    return None
+
+
 def texto_elemento(locator) -> str:
     partes: list[str] = []
     for nome in ("aria-label", "title", "href"):
@@ -92,7 +133,9 @@ def encontrar_alvos_download(page) -> list[tuple[str, object]]:
                 continue
 
             texto_normalizado = assinatura.lower()
-            if ".pdf" not in texto_normalizado and not any(palavra in texto_normalizado for palavra in DOWNLOAD_KEYWORDS):
+            if ".pdf" not in texto_normalizado and not any(
+                palavra in texto_normalizado for palavra in DOWNLOAD_KEYWORDS
+            ):
                 continue
 
             if assinatura in assinaturas:
@@ -192,7 +235,7 @@ def baixar_contracheques(page, context, pasta_saida: Path) -> list[Path]:
 
 def pedir_login_manual(page) -> None:
     log("[aguardando login] navegador aberto")
-    log("[aguardando login] faça login manual e vá até página de contracheques")
+    log("[aguardando login] faça login manual e vá até a página de contracheques")
 
     while True:
         try:
@@ -230,7 +273,7 @@ def abrir_navegador(playwright, headless: bool):
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Helper local para baixar e enviar contracheques.")
-    parser.add_argument("--token", required=True, help="Token temporario gerado pelo sistema.")
+    parser.add_argument("--token", default="", help="Token temporario gerado pelo sistema.")
     parser.add_argument("--backend-url", default=BACKEND_URL, help="URL do backend.")
     parser.add_argument("--portal-url", default=PORTAL_URL, help="URL inicial do portal gov.br.")
     parser.add_argument(
@@ -249,6 +292,9 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     configurar_logger()
     args = parse_args()
+    token = resolver_token(args)
+    if not token:
+        return 1
 
     pasta_saida = Path(args.download_dir).expanduser().resolve() if args.download_dir else criar_diretorio_temporario()
     pasta_saida.mkdir(parents=True, exist_ok=True)
@@ -266,22 +312,25 @@ def main() -> int:
 
             arquivos = baixar_contracheques(page, context, pasta_saida)
             if not arquivos:
+                exibir_erro_amigavel("Nenhum PDF foi encontrado para baixar.")
                 log("[falha] nenhum PDF encontrado para baixar")
                 return 1
 
             log(f"[enviando] {len(arquivos)} arquivo(s) para backend")
             resultado = upload_pdfs_para_backend(
                 arquivos,
-                args.token,
+                token,
                 backend_url=args.backend_url,
             )
             log(f"[concluído] batch_id={resultado.batch_id} status={resultado.status}")
 
         return 0
     except UploadError as erro:
+        exibir_erro_amigavel("Não foi possível concluir a importação agora. Verifique o assistente e tente novamente.")
         log(f"[falha] upload para backend: {erro}")
         return 1
     except Exception as erro:
+        exibir_erro_amigavel("Não foi possível concluir a importação agora. Verifique o assistente e tente novamente.")
         log(f"[falha] {erro}")
         return 1
     finally:
