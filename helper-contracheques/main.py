@@ -330,6 +330,56 @@ def pedir_login_manual(page) -> None:
         log("[aguardando login] nenhum botão de download ainda. Navegue até a lista e tente de novo.")
 
 
+def baixar_um_documento_baixar(page, context, locator, indice: int, total: int, pasta_saida: Path) -> Path:
+    log(f"Baixando {indice}/{total}...")
+
+    destino = pasta_saida / f"{indice:03d}_contracheque.pdf"
+
+    try:
+        with page.expect_download(timeout=DOWNLOAD_TIMEOUT_MS) as download_info:
+            locator.click(force=True)
+
+        download = download_info.value
+        nome_sugerido = download.suggested_filename or destino.name
+        destino = pasta_saida / f"{indice:03d}_{slugify(nome_sugerido)}"
+        if destino.suffix.lower() != ".pdf":
+            destino = destino.with_suffix(".pdf")
+        download.save_as(str(destino))
+        return destino
+    except PlaywrightTimeoutError:
+        try:
+            href = locator.get_attribute("href")
+        except Exception:
+            href = None
+
+        if not href and page.url.lower().split("?", 1)[0].endswith(".pdf"):
+            href = page.url
+
+        if not href:
+            raise RuntimeError("Botao encontrado, mas nenhum download direto foi detectado.")
+
+        sessao = criar_sessao_requests(context, page)
+        url = urljoin(page.url, href)
+        baixar_url_com_sessao(sessao, url, destino)
+        return destino
+
+
+def baixar_contracheques_baixar(page, context, pasta_saida: Path) -> list[Path]:
+    botoes = encontrar_botoes_baixar(page)
+    if not botoes:
+        return []
+
+    arquivos_baixados: list[Path] = []
+    for indice, botao in enumerate(botoes, start=1):
+        try:
+            arquivo = baixar_um_documento_baixar(page, context, botao, indice, len(botoes), pasta_saida)
+            arquivos_baixados.append(arquivo)
+        except Exception as erro:
+            log(f"[falha] botao BAIXAR {indice} -> {erro}")
+
+    return arquivos_baixados
+
+
 def abrir_navegador(playwright, headless: bool):
     tentativas = [
         ("Chromium", lambda: playwright.chromium.launch(headless=headless)),
