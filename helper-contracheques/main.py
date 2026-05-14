@@ -6,7 +6,7 @@ import re
 import shutil
 from datetime import datetime
 from pathlib import Path
-from urllib.parse import urljoin
+from urllib.parse import parse_qs, urljoin, urlparse
 
 import requests
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
@@ -75,10 +75,40 @@ def exibir_erro_amigavel(mensagem: str) -> None:
     aguardar_enter_para_sair()
 
 
+def extrair_token_de_candidato(candidato: str) -> str:
+    texto = candidato.strip()
+    if not texto:
+        return ""
+
+    if "://" not in texto and "token=" not in texto:
+        return texto
+
+    if texto.startswith("token="):
+        return texto.split("=", 1)[1].strip()
+
+    parsed = urlparse(texto)
+    parametros = parse_qs(parsed.query)
+    tokens = [item.strip() for item in parametros.get("token", []) if item.strip()]
+    if tokens:
+        return tokens[0]
+
+    if parsed.scheme == "" and parsed.path.strip():
+        return parsed.path.strip()
+
+    return ""
+
+
 def resolver_token(args: argparse.Namespace) -> str | None:
-    token_cli = (args.token or "").strip()
-    if token_cli:
-        return token_cli
+    candidatos = [
+        getattr(args, "token", ""),
+        getattr(args, "import_url", ""),
+        getattr(args, "import_uri", ""),
+    ]
+
+    for candidato in candidatos:
+        token = extrair_token_de_candidato(str(candidato or ""))
+        if token:
+            return token
 
     token_interativo = solicitar_token_interativo()
     if token_interativo:
@@ -273,7 +303,9 @@ def abrir_navegador(playwright, headless: bool):
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Helper local para baixar e enviar contracheques.")
+    parser.add_argument("import_uri", nargs="?", default="", help="URI opcional do protocolo gestaodecarreira://.")
     parser.add_argument("--token", default="", help="Token temporario gerado pelo sistema.")
+    parser.add_argument("--import-url", default="", help="URI opcional usada pelo protocolo gestaodecarreira://.")
     parser.add_argument("--backend-url", default=BACKEND_URL, help="URL do backend.")
     parser.add_argument("--portal-url", default=PORTAL_URL, help="URL inicial do portal gov.br.")
     parser.add_argument(

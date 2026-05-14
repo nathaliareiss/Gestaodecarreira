@@ -121,6 +121,7 @@ export type LocaleTexts = {
     autoImportHelper: string
     assistantDownloadButton: string
     assistantDownloadHint: string
+    autoImportFallbackHint: string
     assistantWindowsPreparing: string
     assistantStepsTitle: string
     assistantStep1: string
@@ -129,6 +130,11 @@ export type LocaleTexts = {
     assistantStep4: string
     advancedModeLabel: string
     advancedModeHint: string
+    generateTemporaryTokenButton: string
+    copyTokenButton: string
+    manualTokenTitle: string
+    manualTokenHint: string
+    temporaryTokenReady: string
     copyConnectionCodeButton: string
     tokenHidden: string
     copiedToast: string
@@ -371,16 +377,17 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
         "Envie um ou mais contracheques e acompanhe o progresso do lote enquanto os arquivos são processados.",
       autoImportSectionTitle: "Importe seus contracheques automaticamente",
       autoImportSectionSubtitle:
-        "Baixe o assistente uma vez. Depois disso, importar vira um clique.",
-      autoImportButton: "Já tem o assistente? Iniciar importação",
-      autoImporting: "Iniciando importação...",
+        "Comece a automação por aqui. Se precisar, instale o assistente primeiro.",
+      autoImportButton: "Importar meus contracheques automaticamente",
+      autoImporting: "Abrindo o assistente...",
       autoImportDesktopNotice: "O download para Windows ainda está sendo preparado.",
       autoImportMobileNotice: "No celular, volte ao computador para usar o assistente.",
       autoImportTokenLabel: "Código de conexão",
       autoImportExpiresLabel: "Expira em",
       autoImportHelper: "Use as opções avançadas só se precisar do código manualmente.",
-      assistantDownloadButton: "Baixar assistente para Windows",
-      assistantDownloadHint: "Download recomendado para a primeira configuração.",
+      assistantDownloadButton: "Instalar assistente de importação",
+      assistantDownloadHint: "Baixa só o assistente. Sem token e sem importação.",
+      autoImportFallbackHint: "Se nada abrir, use o plano B abaixo.",
       assistantWindowsPreparing: "Preparando o download para Windows.",
       assistantStepsTitle: "Como funciona",
       assistantStep1: "Baixe o assistente",
@@ -388,10 +395,15 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       assistantStep3: "Entre com segurança usando gov.br",
       assistantStep4: "Seus contracheques aparecem aqui automaticamente",
       advancedModeLabel: "Opções avançadas",
-      advancedModeHint: "Abra só se precisar copiar o código manualmente.",
+      advancedModeHint: "Abra apenas se o assistente não abrir automaticamente.",
+      generateTemporaryTokenButton: "Gerar token temporário",
+      copyTokenButton: "Copiar token",
+      manualTokenTitle: "Token temporário",
+      manualTokenHint: "Abra o assistente no computador e cole este token.",
+      temporaryTokenReady: "Token temporário pronto.",
       copyConnectionCodeButton: "Copiar código de conexão",
       tokenHidden: "Código protegido.",
-      copiedToast: "Importação pronta. Abra o assistente para continuar.",
+      copiedToast: "Token copiado. Agora abra o assistente e cole o código.",
       assistantLaunchError: "Não foi possível iniciar a importação agora. Tente novamente ou verifique se o assistente está aberto.",
       batchTitle: "Lote de contracheques",
       uploadPdfs: "Enviar PDFs",
@@ -633,16 +645,17 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
         "Upload one or more pay stubs, then watch the batch progress as the files are processed.",
       autoImportSectionTitle: "Import your pay stubs automatically",
       autoImportSectionSubtitle:
-        "Download the assistant once. After that, importing is one click.",
-      autoImportButton: "Already installed? Start import",
-      autoImporting: "Starting import...",
+        "Start the automation here. If needed, install the assistant first.",
+      autoImportButton: "Import my pay stubs automatically",
+      autoImporting: "Opening the assistant...",
       autoImportDesktopNotice: "The Windows download is still being prepared.",
       autoImportMobileNotice: "On mobile, return to a computer to use the assistant.",
       autoImportTokenLabel: "Connection code",
       autoImportExpiresLabel: "Expires at",
       autoImportHelper: "Use advanced options only if you need the code manually.",
-      assistantDownloadButton: "Download Windows assistant",
-      assistantDownloadHint: "Recommended for first-time setup.",
+      assistantDownloadButton: "Install import assistant",
+      assistantDownloadHint: "Download only. No token and no import yet.",
+      autoImportFallbackHint: "If nothing opens, use the backup below.",
       assistantWindowsPreparing: "Preparing the Windows download.",
       assistantStepsTitle: "How it works",
       assistantStep1: "Download the assistant",
@@ -650,10 +663,15 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       assistantStep3: "Sign in securely with gov.br",
       assistantStep4: "Your pay stubs appear here automatically",
       advancedModeLabel: "Advanced options",
-      advancedModeHint: "Open only if you need to copy the code manually.",
+      advancedModeHint: "Open only if the assistant does not open automatically.",
+      generateTemporaryTokenButton: "Generate temporary token",
+      copyTokenButton: "Copy token",
+      manualTokenTitle: "Temporary token",
+      manualTokenHint: "Open the assistant on your computer and paste this token.",
+      temporaryTokenReady: "Temporary token ready.",
       copyConnectionCodeButton: "Copy connection code",
       tokenHidden: "Protected code.",
-      copiedToast: "Import ready. Open the assistant to continue.",
+      copiedToast: "Token copied. Now open the assistant and paste the code.",
       assistantLaunchError: "We couldn't start the import right now. Please try again or check if the assistant is open.",
       batchTitle: "Pay Stub Batch",
       uploadPdfs: "Upload PDFs",

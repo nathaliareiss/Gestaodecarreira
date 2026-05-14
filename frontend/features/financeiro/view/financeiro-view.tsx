@@ -511,11 +511,11 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
   const [erroEvolucao, setErroEvolucao] = useState<string | null>(null)
   const [erroImportacaoAutomatica, setErroImportacaoAutomatica] = useState<string | null>(null)
   const [criandoImportacaoAutomatica, setCriandoImportacaoAutomatica] = useState(false)
-  const [assistenteWindowsDisponivel, setAssistenteWindowsDisponivel] = useState(false)
-  const [verificandoAssistenteWindows, setVerificandoAssistenteWindows] = useState(true)
   const [importacaoTemporaria, setImportacaoTemporaria] =
     useState<FinanceiroImportacaoTemporariaCriacaoResponse | null>(null)
   const [mensagemImportacaoAutomatica, setMensagemImportacaoAutomatica] = useState<string | null>(null)
+  const [mostrarTokenTemporario, setMostrarTokenTemporario] = useState(false)
+  const [opcoesAvancadasAbertas, setOpcoesAvancadasAbertas] = useState(false)
   const [carregandoAnalisePersistida, setCarregandoAnalisePersistida] = useState(!modoDemo)
 
   const carregarAnalisePersistida = useCallback(async () => {
@@ -640,7 +640,18 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
     }
   }
 
-  async function baixarAssistenteWindows() {
+  function abrirAssistenteImportacao(token: string) {
+    const url = `gestaodecarreira://import?token=${encodeURIComponent(token)}`
+    const link = document.createElement("a")
+    link.href = url
+    link.rel = "noopener"
+    link.target = "_self"
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+  }
+
+  async function instalarAssistenteImportacao() {
     if (modoDemo) {
       setErroImportacaoAutomatica(
         language === "en"
@@ -650,21 +661,12 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
       return
     }
 
-    const disponivel = assistenteWindowsDisponivel || (await verificarDisponibilidadeAssistente())
-    setAssistenteWindowsDisponivel(disponivel)
-    setVerificandoAssistenteWindows(false)
-
-    if (!disponivel) {
-      setErroImportacaoAutomatica(t.assistantWindowsPreparing)
-      return
-    }
-
     setErroImportacaoAutomatica(null)
     setMensagemImportacaoAutomatica(null)
     iniciarDownloadAssistente()
   }
 
-  async function iniciarImportacaoAutomatica() {
+  async function importarMeusContrachequesAutomaticamente() {
     if (modoDemo) {
       setErroImportacaoAutomatica(
         language === "en"
@@ -678,24 +680,48 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
     setErroImportacaoAutomatica(null)
     setMensagemImportacaoAutomatica(null)
     setImportacaoTemporaria(null)
+    setMostrarTokenTemporario(false)
+    setOpcoesAvancadasAbertas(false)
 
-    void (async () => {
-      try {
-        const resposta = await criarImportacaoTemporariaFinanceiro()
-        setImportacaoTemporaria(resposta)
-        try {
-          await copiarTextoParaClipboard(resposta.token)
-        } catch {
-          // If clipboard access fails, keep the import flow alive and let the user use advanced options.
-        }
-        setMensagemImportacaoAutomatica(t.copiedToast)
-      } catch (error) {
-        setImportacaoTemporaria(null)
-        setErroImportacaoAutomatica(formatarErroFinanceiro(error, language, "importacao", t))
-      } finally {
-        setCriandoImportacaoAutomatica(false)
-      }
-    })()
+    try {
+      const resposta = await criarImportacaoTemporariaFinanceiro()
+      setImportacaoTemporaria(resposta)
+      abrirAssistenteImportacao(resposta.token)
+    } catch (error) {
+      setImportacaoTemporaria(null)
+      setErroImportacaoAutomatica(formatarErroFinanceiro(error, language, "importacao", t))
+    } finally {
+      setCriandoImportacaoAutomatica(false)
+    }
+  }
+
+  async function gerarTokenTemporario() {
+    if (modoDemo) {
+      setErroImportacaoAutomatica(
+        language === "en"
+          ? "Demo mode does not start the import assistant."
+          : "O modo demo não inicia o assistente de importação.",
+      )
+      return
+    }
+
+    setCriandoImportacaoAutomatica(true)
+    setErroImportacaoAutomatica(null)
+    setMensagemImportacaoAutomatica(null)
+    setMostrarTokenTemporario(false)
+
+    try {
+      const resposta = importacaoTemporaria ?? (await criarImportacaoTemporariaFinanceiro())
+      setImportacaoTemporaria(resposta)
+      setMostrarTokenTemporario(true)
+      setOpcoesAvancadasAbertas(true)
+      setMensagemImportacaoAutomatica(t.temporaryTokenReady)
+    } catch (error) {
+      setImportacaoTemporaria(null)
+      setErroImportacaoAutomatica(formatarErroFinanceiro(error, language, "importacao", t))
+    } finally {
+      setCriandoImportacaoAutomatica(false)
+    }
   }
 
   useEffect(() => {
@@ -703,24 +729,6 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
       void carregarAnalisePersistida()
     })
   }, [carregarAnalisePersistida])
-
-  useEffect(() => {
-    let ativo = true
-
-    void (async () => {
-      const disponivel = await verificarDisponibilidadeAssistente()
-      if (!ativo) {
-        return
-      }
-
-      setAssistenteWindowsDisponivel(disponivel)
-      setVerificandoAssistenteWindows(false)
-    })()
-
-    return () => {
-      ativo = false
-    }
-  }, [])
 
   useEffect(() => {
     if (batchId === null) {
@@ -805,53 +813,23 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
             <button
               className="primary-button button--large finance-auto-import-panel__primary-action"
               type="button"
-              onClick={() => void baixarAssistenteWindows()}
-              disabled={modoDemo || verificandoAssistenteWindows || !assistenteWindowsDisponivel}
-            >
-              {t.assistantDownloadButton}
-            </button>
-
-            <button
-              className="ghost-button ghost-button--text finance-auto-import-panel__secondary-action"
-              type="button"
-              onClick={() => void iniciarImportacaoAutomatica()}
+              onClick={() => void importarMeusContrachequesAutomaticamente()}
               disabled={modoDemo || criandoImportacaoAutomatica}
             >
               {criandoImportacaoAutomatica ? t.autoImporting : t.autoImportButton}
             </button>
 
-            {!verificandoAssistenteWindows && !assistenteWindowsDisponivel ? (
-              <p className="finance-auto-import-panel__note">{t.assistantWindowsPreparing}</p>
-            ) : null}
-          </div>
+            <button
+              className="ghost-button ghost-button--text finance-auto-import-panel__secondary-action"
+              type="button"
+              onClick={() => void instalarAssistenteImportacao()}
+              disabled={modoDemo}
+            >
+              {t.assistantDownloadButton}
+            </button>
 
-          <p className="finance-auto-import-panel__list-label">{t.assistantStepsTitle}</p>
-          <ul className="finance-auto-import-panel__checklist">
-            <li className="finance-auto-import-panel__checklist-item">
-              <span className="finance-auto-import-panel__checkmark" aria-hidden="true">
-                ✓
-              </span>
-              <span>{t.assistantStep1}</span>
-            </li>
-            <li className="finance-auto-import-panel__checklist-item">
-              <span className="finance-auto-import-panel__checkmark" aria-hidden="true">
-                ✓
-              </span>
-              <span>{t.assistantStep2}</span>
-            </li>
-            <li className="finance-auto-import-panel__checklist-item">
-              <span className="finance-auto-import-panel__checkmark" aria-hidden="true">
-                ✓
-              </span>
-              <span>{t.assistantStep3}</span>
-            </li>
-            <li className="finance-auto-import-panel__checklist-item">
-              <span className="finance-auto-import-panel__checkmark" aria-hidden="true">
-                ✓
-              </span>
-              <span>{t.assistantStep4}</span>
-            </li>
-          </ul>
+            <p className="finance-auto-import-panel__note">{t.autoImportFallbackHint}</p>
+          </div>
 
           {mensagemImportacaoAutomatica ? (
             <p className="finance-auto-import-panel__toast" aria-live="polite">
@@ -861,25 +839,58 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
 
           {erroImportacaoAutomatica ? <p className="error-box">{erroImportacaoAutomatica}</p> : null}
 
-          <details className="finance-auto-import-panel__advanced">
+          <details
+            className="finance-auto-import-panel__advanced"
+            open={opcoesAvancadasAbertas}
+            onToggle={(event) => {
+              setOpcoesAvancadasAbertas(event.currentTarget.open)
+            }}
+          >
             <summary>{t.advancedModeLabel}</summary>
             <p className="helper finance-auto-import-panel__advanced-hint">{t.advancedModeHint}</p>
             <div className="finance-auto-import-panel__advanced-actions">
               <button
                 className="ghost-button"
                 type="button"
-                onClick={() => {
-                  if (!importacaoTemporaria) {
-                    return
-                  }
-
-                  void copiarTextoParaClipboard(importacaoTemporaria.token)
-                }}
-                disabled={!importacaoTemporaria}
+                onClick={() => void gerarTokenTemporario()}
+                disabled={criandoImportacaoAutomatica}
               >
-                {t.copyConnectionCodeButton}
+                {t.generateTemporaryTokenButton}
               </button>
             </div>
+
+            {mostrarTokenTemporario && importacaoTemporaria ? (
+              <div className="finance-auto-import-panel__token-card">
+                <p className="finance-auto-import-panel__token-label">{t.manualTokenTitle}</p>
+                <code>{importacaoTemporaria.token}</code>
+                <div className="finance-auto-import-panel__token-actions">
+                  <button
+                    className="ghost-button"
+                    type="button"
+                    onClick={() => {
+                      if (!importacaoTemporaria) {
+                        return
+                      }
+
+                      void (async () => {
+                        try {
+                          const copiou = await copiarTextoParaClipboard(importacaoTemporaria.token)
+                          if (copiou) {
+                            setMensagemImportacaoAutomatica(t.copiedToast)
+                          }
+                        } catch {
+                          // Keep the fallback flow open even if clipboard access is blocked.
+                        }
+                      })()
+                    }}
+                    disabled={!importacaoTemporaria}
+                  >
+                    {t.copyTokenButton}
+                  </button>
+                </div>
+                <p className="finance-auto-import-panel__token-hint">{t.manualTokenHint}</p>
+              </div>
+            ) : null}
           </details>
         </section>
 

@@ -19,6 +19,12 @@ If you want to pass the token directly for internal tests:
 python main.py --token "SEU_TOKEN_TEMPORARIO"
 ```
 
+You can also call the custom protocol used by the site:
+
+```powershell
+python main.py "gestaodecarreira://import?token=SEU_TOKEN_TEMPORARIO"
+```
+
 When you open the executable by double-clicking, the helper will ask for the temporary token in a simple interactive prompt.
 
 ## Gerar o exe
