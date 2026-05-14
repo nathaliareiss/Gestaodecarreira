@@ -27,6 +27,7 @@ from config import (
     DOWNLOAD_SELECTORS,
     DOWNLOAD_TIMEOUT_MS,
     DOWNLOAD_ROOT,
+    HELPER_VERSION,
     PORTAL_URL,
 )
 from upload_service import UploadError, upload_pdfs_para_backend
@@ -153,6 +154,7 @@ def exibir_diagnostico_inicial(exec_path: Path, origem: str, token: str | None, 
     print("====================================")
     print("Gestão de Carreira Assistente")
     print("====================================")
+    print(f"Versão: {HELPER_VERSION}")
     print(f"Executavel: {exec_path}")
     print(f"Origem: {origem}")
     print(f"PORTAL_URL carregada: {portal_url}")

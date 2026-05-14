@@ -30,11 +30,9 @@ if ($OneFile) {
 
 if ($Installer) {
     powershell.exe -ExecutionPolicy Bypass -File "scripts\generate-installer-icon.ps1"
-    Copy-Item -Force "dist\GestaoDeCarreira-Assistente.exe" "..\backend\static\downloads\GestaoDeCarreira-Setup.exe"
     $iscc = Get-Command iscc -ErrorAction SilentlyContinue
     if (-not $iscc) {
-        Write-Warning "Inno Setup nao encontrado no PATH. O arquivo publicado e um fallback do helper atualizado."
-        return
+        throw "Inno Setup nao encontrado no PATH."
     }
 
     & $iscc.Source "installer\GestaoDeCarreira-Setup.iss"
