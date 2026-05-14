@@ -57,7 +57,7 @@ def exibir_cabecalho_interativo() -> None:
 def solicitar_token_interativo() -> str:
     exibir_cabecalho_interativo()
     try:
-        return input("Cole seu token temporário gerado no site:\n> ").strip()
+        return input("Cole seu token temporário gerado no site e aperte Enter:\n> ").strip()
     except EOFError:
         return ""
 

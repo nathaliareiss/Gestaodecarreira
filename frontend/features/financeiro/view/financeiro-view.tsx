@@ -644,11 +644,15 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
     const url = `gestaodecarreira://import?token=${encodeURIComponent(token)}`
     return await new Promise<boolean>((resolve) => {
       let resolvido = false
+      const iframe = document.createElement("iframe")
+      iframe.setAttribute("aria-hidden", "true")
+      iframe.style.display = "none"
 
       const limpar = () => {
         window.removeEventListener("blur", aoPerderFoco)
         document.removeEventListener("visibilitychange", aoMudarVisibilidade)
         window.clearTimeout(temporizador)
+        iframe.remove()
       }
 
       const concluir = (abriu: boolean) => {
@@ -679,7 +683,8 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
       document.addEventListener("visibilitychange", aoMudarVisibilidade, { once: true })
 
       try {
-        window.location.assign(url)
+        iframe.src = url
+        document.body.appendChild(iframe)
       } catch {
         concluir(false)
       }
