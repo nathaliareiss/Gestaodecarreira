@@ -32,8 +32,8 @@ import type { SiteLanguage } from "@/shared/i18n/messages"
 type FinanceTexts = (typeof import("@/shared/i18n/messages").LOCALE_TEXTS)["pt-BR"]["finance"]
 
 const INTERVALO_POLLING_MS = 2000
-const CAMINHO_DOWNLOAD_ASSISTENTE = "/downloads/gestao-de-carreira-assistente.exe"
-const NOME_DOWNLOAD_ASSISTENTE = "GestaoDeCarreira-Assistente.exe"
+const CAMINHO_DOWNLOAD_ASSISTENTE = "/downloads/GestaoDeCarreira-Setup.exe"
+const NOME_DOWNLOAD_ASSISTENTE = "GestaoDeCarreira-Setup.exe"
 
 type FinanceiroViewProps = {
   modoDemo: boolean

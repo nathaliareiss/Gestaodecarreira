@@ -1,5 +1,6 @@
 Param(
-    [switch]$OneFile
+    [switch]$OneFile,
+    [switch]$Installer
 )
 
 $ErrorActionPreference = "Stop"
@@ -21,4 +22,14 @@ if ($OneFile) {
     .\.venv\Scripts\python.exe -m PyInstaller --clean --noconfirm --onefile --name GestaoDeCarreira-Assistente @iconArg main.py
 } else {
     .\.venv\Scripts\python.exe -m PyInstaller --clean --noconfirm helper.spec
+}
+
+if ($Installer) {
+    powershell.exe -ExecutionPolicy Bypass -File "scripts\generate-installer-icon.ps1"
+    $iscc = Get-Command iscc -ErrorAction SilentlyContinue
+    if (-not $iscc) {
+        throw "Inno Setup nao encontrado no PATH."
+    }
+
+    & $iscc.Source "installer\GestaoDeCarreira-Setup.iss"
 }

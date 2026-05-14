@@ -47,10 +47,30 @@ O arquivo final fica em:
 dist\GestaoDeCarreira-Assistente.exe
 ```
 
-Para publicar no frontend, copie o exe para:
+## Gerar o instalador
+
+Este projeto usa Inno Setup para empacotar o assistente em:
 
 ```text
-backend\static\downloads\gestao-de-carreira-assistente.exe
+dist\GestaoDeCarreira-Setup.exe
+```
+
+O instalador faz uma instalação por usuário em:
+
+```text
+%LOCALAPPDATA%\GestaoDeCarreira\Assistente
+```
+
+e registra o protocolo:
+
+```text
+gestaodecarreira://
+```
+
+Para publicar o instalador no frontend, copie o arquivo para:
+
+```text
+backend\static\downloads\GestaoDeCarreira-Setup.exe
 ```
 
 ## Dependencias
@@ -59,6 +79,7 @@ backend\static\downloads\gestao-de-carreira-assistente.exe
 - `requests`
 - `python-dotenv`
 - `pyinstaller`
+- `Inno Setup` para gerar o instalador
 
 ## Playwright
 
@@ -89,14 +110,14 @@ O executavel gerado deve ser distribuido junto com:
 - `.env.production` ao lado do `.exe`
 - o backend disponivel para receber os uploads
 
-Se quiser publicar o assistente como download do sistema, copie o arquivo para:
+Se quiser publicar o instalador como download do sistema, copie o arquivo para:
 
 ```text
-backend/static/downloads/gestao-de-carreira-assistente.exe
+backend/static/downloads/GestaoDeCarreira-Setup.exe
 ```
 
 Esse caminho e exposto em:
 
 ```text
-/downloads/gestao-de-carreira-assistente.exe
+/downloads/GestaoDeCarreira-Setup.exe
 ```

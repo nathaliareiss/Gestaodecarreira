@@ -401,7 +401,7 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       autoImportExpiresLabel: "Expira em",
       autoImportHelper: "Use as opções avançadas só se precisar do código manualmente.",
       assistantDownloadButton: "Instalar assistente",
-      assistantDownloadHint: "Baixa só o assistente. Sem token e sem importação.",
+      assistantDownloadHint: "Baixa o instalador. Sem token e sem importação.",
       assistantInstallLink: "Instale o assistente",
       mobileImportNotice:
         "Não é possível fazer o download pelo celular. Importe manualmente ou entre usando um computador.",
