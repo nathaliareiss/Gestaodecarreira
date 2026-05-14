@@ -844,7 +844,7 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
           <div className="finance-auto-import-panel__cta-stack desktop-only">
             <div className="finance-auto-import-panel__cta-row">
               <a
-                className="ghost-button ghost-button--text finance-auto-import-panel__secondary-action"
+                className="ghost-button finance-auto-import-panel__secondary-action"
                 href={CAMINHO_DOWNLOAD_ASSISTENTE}
                 download={NOME_DOWNLOAD_ASSISTENTE}
               >

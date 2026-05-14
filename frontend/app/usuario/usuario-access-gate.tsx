@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 
 import { carregarUsuarioAutenticado } from "@/features/auth/model/auth.repository"
 import type { HistoricoFuncionalAnalise } from "@/features/historico-funcional/model/historico-funcional.model"
+import { buscarUltimoHistoricoFuncional } from "@/features/historico-funcional/model/historico-funcional.repository"
 import { limparSessaoAutenticada } from "@/features/auth/model/auth-session"
 import { UsuarioPageController } from "@/features/usuario/controller/usuario-page-controller"
 import type { UsuarioConta } from "@/features/usuario/model/usuario.model"
@@ -78,6 +79,7 @@ export function UsuarioAccessGate() {
 
       try {
         const usuario = await carregarUsuarioAutenticado()
+        const historico = await buscarUltimoHistoricoFuncional(usuario.id)
 
         if (!ativo) {
           return
@@ -86,7 +88,7 @@ export function UsuarioAccessGate() {
         setEstado({
           status: "ready",
           usuario,
-          historico: null,
+          historico,
           modoDemo: false,
         })
       } catch (error) {

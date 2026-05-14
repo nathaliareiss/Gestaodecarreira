@@ -2,9 +2,10 @@
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 import type { HistoricoFuncionalAnalise } from "@/features/historico-funcional/model/historico-funcional.model"
+import { buscarUltimoHistoricoFuncional } from "@/features/historico-funcional/model/historico-funcional.repository"
 import { HistoricoFuncionalView } from "@/features/historico-funcional/view/historico-funcional-view"
 import { FinanceiroView } from "@/features/financeiro/view/financeiro-view"
 import {
@@ -80,12 +81,15 @@ export function UsuarioPageController({
   const [removendo, setRemovendo] = useState(false)
   const [saindo, setSaindo] = useState(false)
   const [indoParaCadastro, setIndoParaCadastro] = useState(false)
-  const dataExercicioExibida = usuario?.data_exercicio ?? historicoInicial?.data_exercicio ?? null
-  const nivelExibido = historicoInicial?.nivel_atual ?? "-"
-  const grauExibido = historicoInicial?.grau_atual ?? "-"
-  const resumoDemo = historicoInicial?.resumo_grafico ?? null
+  const [historico, setHistorico] = useState<HistoricoFuncionalAnalise | null>(historicoInicial)
+  const [carregandoHistorico, setCarregandoHistorico] = useState(false)
+  const historicoExibido = historico ?? historicoInicial
+  const dataExercicioExibida = usuario?.data_exercicio ?? historicoExibido?.data_exercicio ?? null
+  const nivelExibido = historicoExibido?.nivel_atual ?? "-"
+  const grauExibido = historicoExibido?.grau_atual ?? "-"
+  const resumoDemo = historicoExibido?.resumo_grafico ?? null
   const rotuloSair = saindo ? texts.dashboard.exitLabel : modoDemo ? texts.dashboard.exitDemo : texts.dashboard.exit
-  const indicadoresDemo = modoDemo && historicoInicial && resumoDemo ? [
+  const indicadoresDemo = modoDemo && historicoExibido && resumoDemo ? [
     {
       label: texts.dashboard.yearsWorked,
       value: formatarDuracaoEmIngles(resumoDemo.tempo_trabalhado_dias, language),
@@ -96,11 +100,11 @@ export function UsuarioPageController({
     },
     {
       label: texts.dashboard.nextProgression,
-      value: formatarDataEmIngles(historicoInicial.proxima_progressao_prevista, language),
+      value: formatarDataEmIngles(historicoExibido.proxima_progressao_prevista, language),
     },
     {
       label: texts.dashboard.retirementEstimate,
-      value: formatarDataEmIngles(historicoInicial.data_aposentadoria_prevista, language),
+      value: formatarDataEmIngles(historicoExibido.data_aposentadoria_prevista, language),
     },
   ] : []
 
@@ -167,6 +171,36 @@ export function UsuarioPageController({
       router.push("/")
     }
   }
+
+  useEffect(() => {
+    if (modoDemo || abaAtiva !== "perfil" || !usuario?.id) {
+      return
+    }
+
+    let ativo = true
+    setCarregandoHistorico(true)
+
+    void (async () => {
+      try {
+        const ultimoHistorico = await buscarUltimoHistoricoFuncional(usuario.id)
+        if (ativo) {
+          setHistorico(ultimoHistorico)
+        }
+      } catch {
+        if (ativo) {
+          setHistorico(null)
+        }
+      } finally {
+        if (ativo) {
+          setCarregandoHistorico(false)
+        }
+      }
+    })()
+
+    return () => {
+      ativo = false
+    }
+  }, [abaAtiva, modoDemo, usuario?.id])
 
   return (
     <main className="page-shell">
@@ -236,7 +270,7 @@ export function UsuarioPageController({
                 </span>
               </div>
 
-              {carregando ? (
+              {carregando || carregandoHistorico ? (
                 <div className="empty-state">
                   <p>{texts.dashboard.loadingSessionData}</p>
                 </div>
@@ -303,7 +337,7 @@ export function UsuarioPageController({
           ) : abaAtiva === "historico" ? (
             <HistoricoFuncionalView
               usuarioId={usuario?.id ?? null}
-              historicoInicial={historicoInicial}
+              historicoInicial={historicoExibido}
               modoDemo={modoDemo}
               onCreateAccount={() => void criarConta()}
               criandoConta={indoParaCadastro}
