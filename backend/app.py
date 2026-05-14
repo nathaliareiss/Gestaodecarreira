@@ -37,6 +37,7 @@ def criar_app() -> FastAPI:
             path=installer_path,
             filename=installer_filename,
             media_type="application/octet-stream",
+            headers={"Cache-Control": "no-store, max-age=0"},
         )
 
     @app.get("/downloads/GestaoDeCarreira-Setup.exe", include_in_schema=False)
@@ -48,6 +49,7 @@ def criar_app() -> FastAPI:
             path=installer_path,
             filename=installer_filename,
             media_type="application/octet-stream",
+            headers={"Cache-Control": "no-store, max-age=0"},
         )
 
     origens_cors = [
