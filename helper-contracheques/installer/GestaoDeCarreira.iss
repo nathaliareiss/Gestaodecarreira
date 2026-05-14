@@ -1,5 +1,5 @@
 #define AppName "Gestão de Carreira Assistente"
-#define AppVersion "1.0.2"
+#define AppVersion "1.0.3"
 #define AppPublisher "Gestão de Carreira"
 #define AppExeName "GestaoDeCarreira-Assistente.exe"
 
@@ -13,7 +13,7 @@ DefaultDirName={localappdata}\GestaoDeCarreira\Assistente
 DefaultGroupName={#AppName}
 DisableDirPage=yes
 DisableProgramGroupPage=yes
-OutputBaseFilename=GestaoDeCarreira-Setup
+OutputBaseFilename=GestaoDeCarreira-Setup-1.0.3
 OutputDir=..\..\backend\static\downloads
 SetupIconFile=..\assets\installer-icon.ico
 UninstallDisplayIcon={app}\{#AppExeName}
@@ -24,7 +24,7 @@ ArchitecturesInstallIn64BitMode=x64compatible
 PrivilegesRequired=lowest
 PrivilegesRequiredOverridesAllowed=dialog
 WizardStyle=modern
-VersionInfoVersion=1.0.2.0
+VersionInfoVersion=1.0.3.0
 VersionInfoTextVersion={#AppVersion}
 VersionInfoProductName={#AppName}
 VersionInfoProductVersion={#AppVersion}

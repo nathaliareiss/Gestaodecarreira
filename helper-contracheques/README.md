@@ -52,7 +52,7 @@ dist\GestaoDeCarreira-Assistente.exe
 Este projeto usa Inno Setup para empacotar o assistente em:
 
 ```text
-backend\static\downloads\GestaoDeCarreira-Setup.exe
+backend\static\downloads\GestaoDeCarreira-Setup-1.0.3.exe
 ```
 
 O instalador faz uma instalação por usuário em:
@@ -70,7 +70,7 @@ gestaodecarreira://
 Para publicar o instalador no frontend, copie o arquivo para:
 
 ```text
-backend\static\downloads\GestaoDeCarreira-Setup.exe
+backend\static\downloads\GestaoDeCarreira-Setup-1.0.3.exe
 ```
 
 ## Dependencias
@@ -113,11 +113,11 @@ O executavel gerado deve ser distribuido junto com:
 Se quiser publicar o instalador como download do sistema, copie o arquivo para:
 
 ```text
-backend/static/downloads/GestaoDeCarreira-Setup.exe
+backend/static/downloads/GestaoDeCarreira-Setup-1.0.3.exe
 ```
 
 Esse caminho e exposto em:
 
 ```text
-/downloads/GestaoDeCarreira-Setup.exe
+/downloads/GestaoDeCarreira-Setup-1.0.3.exe
 ```
