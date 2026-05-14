@@ -3,8 +3,10 @@ from __future__ import annotations
 from pathlib import Path
 
 from fastapi import FastAPI
+from fastapi import HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.routing import APIRoute
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from backend.config import AUTO_SYNC_DB_SCHEMA, CORS_ORIGINS, FRONTEND_BASE_URL
@@ -23,6 +25,30 @@ def criar_app() -> FastAPI:
         version="0.1.0",
     )
     downloads_dir = Path(__file__).resolve().parent / "static" / "downloads"
+    installer_filename = "GestaoDeCarreira-Setup-1.0.3.exe"
+    installer_path = downloads_dir / installer_filename
+
+    @app.get("/downloads/GestaoDeCarreira-Setup-1.0.3.exe", include_in_schema=False)
+    def baixar_instalador_versionado() -> FileResponse:
+        if not installer_path.is_file():
+            raise HTTPException(status_code=404, detail="Instalador nao encontrado.")
+
+        return FileResponse(
+            path=installer_path,
+            filename=installer_filename,
+            media_type="application/octet-stream",
+        )
+
+    @app.get("/downloads/GestaoDeCarreira-Setup.exe", include_in_schema=False)
+    def baixar_instalador_legado() -> FileResponse:
+        if not installer_path.is_file():
+            raise HTTPException(status_code=404, detail="Instalador nao encontrado.")
+
+        return FileResponse(
+            path=installer_path,
+            filename=installer_filename,
+            media_type="application/octet-stream",
+        )
 
     origens_cors = [
         origem
