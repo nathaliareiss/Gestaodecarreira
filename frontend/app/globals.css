@@ -454,6 +454,7 @@ html[data-theme="light"] .note-card {
   min-height: clamp(28rem, 62svh, 34rem);
   display: grid;
   align-items: center;
+  justify-items: stretch;
 }
 
 .auth-panel--login,
@@ -463,8 +464,9 @@ html[data-theme="light"] .note-card {
 
 .auth-panel .form-card--auth,
 .auth-panel .form-card--register {
-  width: min(100%, 30rem);
-  justify-self: center;
+  width: 100%;
+  max-width: none;
+  justify-self: stretch;
 }
 
 .auth-panel .form-card--auth {
@@ -792,6 +794,8 @@ html[data-theme="light"] .ghost-button {
 .auth-card-links--center {
   justify-content: center;
   text-align: center;
+  align-items: center;
+  width: 100%;
 }
 
 .auth-card-links .ghost-button--text {
@@ -2574,6 +2578,11 @@ html[data-language="en"] .language-toggle__dot {
     min-height: auto;
   }
 
+  .page-shell--auth {
+    min-height: auto;
+    display: block;
+  }
+
   .hero-links--auth .primary-button,
   .hero-links--auth .ghost-button,
   .auth-card__primary,
@@ -2750,5 +2759,9 @@ html[data-language="en"] .language-toggle__dot {
   .auth-card-links {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .auth-card-links--center {
+    align-items: center;
   }
 }
