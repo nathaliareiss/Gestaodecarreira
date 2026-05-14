@@ -3,10 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 
 from fastapi import FastAPI
-from fastapi import HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.routing import APIRoute
-from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from backend.config import AUTO_SYNC_DB_SCHEMA, CORS_ORIGINS, FRONTEND_BASE_URL
@@ -27,30 +25,6 @@ def criar_app() -> FastAPI:
     downloads_dir = Path(__file__).resolve().parent / "static" / "downloads"
     installer_filename = "GestaoDeCarreira-Setup-1.0.3.exe"
     installer_path = downloads_dir / installer_filename
-
-    @app.get("/downloads/GestaoDeCarreira-Setup-1.0.3.exe", include_in_schema=False)
-    def baixar_instalador_versionado() -> FileResponse:
-        if not installer_path.is_file():
-            raise HTTPException(status_code=404, detail="Instalador nao encontrado.")
-
-        return FileResponse(
-            path=installer_path,
-            filename=installer_filename,
-            media_type="application/octet-stream",
-            headers={"Cache-Control": "no-store, max-age=0"},
-        )
-
-    @app.get("/backend/static/downloads/GestaoDeCarreira-Setup-1.0.3.exe", include_in_schema=False)
-    def baixar_instalador_legado() -> FileResponse:
-        if not installer_path.is_file():
-            raise HTTPException(status_code=404, detail="Instalador nao encontrado.")
-
-        return FileResponse(
-            path=installer_path,
-            filename=installer_filename,
-            media_type="application/octet-stream",
-            headers={"Cache-Control": "no-store, max-age=0"},
-        )
 
     origens_cors = [
         origem
@@ -82,6 +56,15 @@ def criar_app() -> FastAPI:
         habilitar_rls_tabelas_publicas()
         if engine.dialect.name != "sqlite":
             sincronizar_usuario_table()
+
+        logger.info(
+            "Downloads do assistente verificados no startup",
+            extra={
+                "downloads_dir": str(downloads_dir),
+                "installer_path": str(installer_path),
+                "installer_exists": installer_path.is_file(),
+            },
+        )
 
         rotas_registradas = [
             route.path
