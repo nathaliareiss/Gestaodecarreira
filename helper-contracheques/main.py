@@ -441,20 +441,26 @@ def main() -> int:
             page.set_default_timeout(BROWSER_TIMEOUT_MS)
             page.goto(args.portal_url, wait_until="domcontentloaded")
 
-            pedir_login_manual(page)
+            if not wait_until_paystub_page_ready(page):
+                return 1
 
-            arquivos = baixar_contracheques(page, context, pasta_saida)
+            log("Página encontrada.")
+            log("Iniciando download automático dos contracheques...")
+
+            arquivos = baixar_contracheques_baixar(page, context, pasta_saida)
             if not arquivos:
                 exibir_erro_amigavel("Nenhum PDF foi encontrado para baixar.")
                 log("[falha] nenhum PDF encontrado para baixar")
                 return 1
 
+            log(f"Encontrados {len(arquivos)} contracheques.")
             log(f"[enviando] {len(arquivos)} arquivo(s) para backend")
             resultado = upload_pdfs_para_backend(
                 arquivos,
                 token,
                 backend_url=args.backend_url,
             )
+            log("Upload concluído.")
             log(f"[concluído] batch_id={resultado.batch_id} status={resultado.status}")
 
         return 0
