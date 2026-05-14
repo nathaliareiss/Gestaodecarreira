@@ -640,15 +640,50 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
     }
   }
 
-  function abrirAssistenteImportacao(token: string) {
+  async function tentarAbrirAssistenteImportacao(token: string) {
     const url = `gestaodecarreira://import?token=${encodeURIComponent(token)}`
-    const link = document.createElement("a")
-    link.href = url
-    link.rel = "noopener"
-    link.target = "_self"
-    document.body.appendChild(link)
-    link.click()
-    link.remove()
+    return await new Promise<boolean>((resolve) => {
+      let resolvido = false
+
+      const limpar = () => {
+        window.removeEventListener("blur", aoPerderFoco)
+        document.removeEventListener("visibilitychange", aoMudarVisibilidade)
+        window.clearTimeout(temporizador)
+      }
+
+      const concluir = (abriu: boolean) => {
+        if (resolvido) {
+          return
+        }
+
+        resolvido = true
+        limpar()
+        resolve(abriu)
+      }
+
+      const aoPerderFoco = () => {
+        concluir(true)
+      }
+
+      const aoMudarVisibilidade = () => {
+        if (document.hidden) {
+          concluir(true)
+        }
+      }
+
+      const temporizador = window.setTimeout(() => {
+        concluir(false)
+      }, 1200)
+
+      window.addEventListener("blur", aoPerderFoco, { once: true })
+      document.addEventListener("visibilitychange", aoMudarVisibilidade, { once: true })
+
+      try {
+        window.location.assign(url)
+      } catch {
+        concluir(false)
+      }
+    })
   }
 
   async function instalarAssistenteImportacao() {
@@ -686,7 +721,12 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
     try {
       const resposta = await criarImportacaoTemporariaFinanceiro()
       setImportacaoTemporaria(resposta)
-      abrirAssistenteImportacao(resposta.token)
+      const abriuAssistente = await tentarAbrirAssistenteImportacao(resposta.token)
+      if (!abriuAssistente) {
+        setMostrarTokenTemporario(true)
+        setOpcoesAvancadasAbertas(true)
+        setMensagemImportacaoAutomatica(t.temporaryTokenReady)
+      }
     } catch (error) {
       setImportacaoTemporaria(null)
       setErroImportacaoAutomatica(formatarErroFinanceiro(error, language, "importacao", t))
