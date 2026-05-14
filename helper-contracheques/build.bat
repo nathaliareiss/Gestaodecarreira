@@ -16,7 +16,6 @@ powershell.exe -ExecutionPolicy Bypass -File "scripts\generate-installer-icon.ps
 python -m PyInstaller --clean --noconfirm helper.spec
 
 if not exist "..\backend\static\downloads" mkdir "..\backend\static\downloads"
-copy /Y "dist\GestaoDeCarreira-Assistente.exe" "..\backend\static\downloads\gestao-de-carreira-assistente.exe"
 
 where iscc >nul 2>nul
 if %errorlevel%==0 (
@@ -27,4 +26,5 @@ if %errorlevel%==0 (
 
 echo.
 echo Build concluido. O executavel deve ficar em dist\GestaoDeCarreira-Assistente.exe
+echo O instalador deve ficar em backend\static\downloads\GestaoDeCarreira-Setup.exe
 endlocal
