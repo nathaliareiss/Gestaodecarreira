@@ -680,7 +680,7 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       autoImportExpiresLabel: "Expires at",
       autoImportHelper: "Use advanced options only if you need the code manually.",
       assistantDownloadButton: "Install assistant",
-      assistantDownloadHint: "Download only. No token and no import yet.",
+      assistantDownloadHint: "Download the installer. No token and no import yet.",
       assistantInstallLink: "Install the assistant",
       mobileImportNotice:
         "You can't download the assistant from a phone. Import manually or use a computer.",

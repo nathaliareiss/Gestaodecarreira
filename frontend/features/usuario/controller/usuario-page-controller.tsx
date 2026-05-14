@@ -62,20 +62,6 @@ function limparTextoExibicao(valor: string | null | undefined) {
   return texto && texto.length > 0 ? texto : "-"
 }
 
-function formatarCpf(valor: string | null | undefined) {
-  const texto = valor?.trim()
-  if (!texto) {
-    return "-"
-  }
-
-  const digitos = texto.replace(/\D/g, "")
-  if (digitos.length !== 11) {
-    return texto
-  }
-
-  return `${digitos.slice(0, 3)}.${digitos.slice(3, 6)}.${digitos.slice(6, 9)}-${digitos.slice(9, 11)}`
-}
-
 type UsuarioPageControllerProps = {
   usuarioInicial: UsuarioConta | null
   historicoInicial: HistoricoFuncionalAnalise | null
@@ -105,7 +91,6 @@ export function UsuarioPageController({
   const historicoExibido = historico ?? historicoInicial
   const nomeExibido = historicoExibido?.nome?.trim() || usuario?.nome || "-"
   const maspExibido = limparTextoExibicao(historicoExibido?.masp)
-  const cpfExibido = formatarCpf(historicoExibido?.cpf)
   const cargoExibido = limparTextoExibicao(historicoExibido?.cargo_atual)
   const simboloExibido = limparTextoExibicao(historicoExibido?.simbolo_atual)
   const dataNascimentoExibida = historicoExibido?.data_nascimento ?? null
@@ -340,10 +325,6 @@ export function UsuarioPageController({
                     <div className="result-block">
                       <span className="label">{texts.dashboard.registrationNumber}</span>
                       <strong>{maspExibido}</strong>
-                    </div>
-                    <div className="result-block">
-                      <span className="label">{texts.dashboard.cpf}</span>
-                      <strong>{cpfExibido}</strong>
                     </div>
                     <div className="result-block">
                       <span className="label">{texts.dashboard.birthDate}</span>
