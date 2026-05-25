@@ -9,6 +9,7 @@ build
 dist
 *.log
 backend/storage_data
+backend/temp_data
 backend/__pycache__
 frontend/__pycache__
 backend/.env
