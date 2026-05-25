@@ -28,6 +28,6 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: ./Gestaodecarreira/backend
-          file: ./backend/Dockerfile
+          file: ./Gestaodecarreira/backend/Dockerfile
           push: true
           tags: ghcr.io/nathaliareiss/gestao-carreira-backend:latest
