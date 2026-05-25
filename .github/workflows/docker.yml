@@ -27,6 +27,6 @@ jobs:
       - name: Build and Push
         uses: docker/build-push-action@v5
         with:
-          context: ./backend
+          context: ./GestaoDeCarreira/backend
           push: true
           tags: ghcr.io/nathaliareiss/gestao-carreira-backend:latest
