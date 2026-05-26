@@ -21,12 +21,14 @@ from backend.services.auth_service import (
     AUTH_COOKIE_MAX_AGE_SEGUNDOS,
     AUTH_COOKIE_NAME,
     autenticar_usuario,
+    confirmar_email_usuario,
     encerrar_sessao_usuario,
     extrair_token_autenticacao_opcional,
     obter_usuario_autenticado,
     obter_usuario_autenticado_por_token,
     redefinir_senha_usuario,
     reenviar_confirmacao_email,
+    registrar_sessao_usuario,
     solicitar_recuperacao_senha,
 )
 from backend.services.email_service import (
@@ -85,6 +87,22 @@ def _cookie_same_site(request: Request) -> str:
     return "none" if _cookie_deve_ser_seguro(request) else "lax"
 
 
+def _aplicar_cookie_autenticacao(
+    response: Response,
+    request: Request,
+    token_sessao: str,
+) -> None:
+    response.set_cookie(
+        key=AUTH_COOKIE_NAME,
+        value=token_sessao,
+        max_age=AUTH_COOKIE_MAX_AGE_SEGUNDOS,
+        path="/",
+        httponly=True,
+        secure=_cookie_deve_ser_seguro(request),
+        samesite=_cookie_same_site(request),
+    )
+
+
 @router.post("/login", response_model=UsuarioAuthResponse)
 def login(
     dados: UsuarioLoginRequest,
@@ -103,15 +121,7 @@ def login(
         )
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(erro)) from erro
 
-    response.set_cookie(
-        key=AUTH_COOKIE_NAME,
-        value=token_sessao,
-        max_age=AUTH_COOKIE_MAX_AGE_SEGUNDOS,
-        path="/",
-        httponly=True,
-        secure=_cookie_deve_ser_seguro(request),
-        samesite=_cookie_same_site(request),
-    )
+    _aplicar_cookie_autenticacao(response, request, token_sessao)
     logger.info(
         "Login concluido",
         extra={"request_id": request_id, "usuario_id": usuario.id},
@@ -194,6 +204,40 @@ def solicitar_recuperacao(
         "status": "ok",
         "message": "Se o email estiver cadastrado, voce vai receber o link de redefinicao.",
     }
+
+
+@router.post("/confirmar-email", response_model=UsuarioAuthResponse)
+def confirmar_email(
+    dados: UsuarioConfirmarRequest,
+    response: Response,
+    request: Request,
+    db: Session = Depends(get_db),
+) -> UsuarioAuthResponse:
+    request_id = _obter_request_id(request)
+    logger.info(
+        "Recebida solicitacao de confirmacao de email",
+        extra={"request_id": request_id, "token_recebido": bool(dados.token)},
+    )
+    try:
+        usuario = confirmar_email_usuario(db, dados)
+    except ValueError as erro:
+        logger.warning(
+            "Confirmacao de email recusada",
+            extra={"request_id": request_id, "motivo": str(erro), "token_recebido": bool(dados.token)},
+        )
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Este link expirou ou já foi utilizado.",
+        ) from erro
+
+    token_sessao = gerar_token_seguro()
+    registrar_sessao_usuario(db, usuario, token_sessao)
+    _aplicar_cookie_autenticacao(response, request, token_sessao)
+    logger.info(
+        "Email confirmado e sessao criada",
+        extra={"request_id": request_id, "usuario_id": usuario.id},
+    )
+    return UsuarioAuthResponse(usuario=UsuarioResponse.model_validate(usuario))
 
 
 @router.post("/reenviar-confirmacao-email")
