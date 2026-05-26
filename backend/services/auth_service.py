@@ -11,6 +11,7 @@ from backend.database.models import Usuario
 from backend.repositories.usuario_repository import (
     atualizar_usuario,
     obter_usuario_por_email,
+    obter_usuario_por_token,
     obter_usuario_por_redefinir_senha_token_hash,
     obter_usuario_por_sessao_token_hash,
     obter_usuario_por_login,
@@ -21,6 +22,7 @@ from backend.schemas.auth_schema import (
     UsuarioReenviarConfirmacaoRequest,
     UsuarioSolicitarRecuperacaoSenhaRequest,
 )
+from backend.schemas.usuario_schema import UsuarioConfirmarRequest
 from backend.services.security_service import gerar_hash_sha256, gerar_token_seguro
 
 AUTH_COOKIE_NAME = "gc_auth_token"
@@ -125,9 +127,21 @@ def encerrar_sessao_usuario(db: Session, token: str) -> None:
 
 def confirmar_email_usuario(
     db: Session,
-    dados: UsuarioReenviarConfirmacaoRequest,
-) -> tuple[Usuario, str]:
-    raise NotImplementedError
+    dados: UsuarioConfirmarRequest,
+) -> Usuario:
+    usuario = obter_usuario_por_token(db, dados.token)
+    if usuario is None:
+        raise ValueError("Token de confirmacao invalido ou expirado.")
+
+    usuario.email_confirmado = True
+    usuario.confirmado_em = datetime.now(timezone.utc)
+    usuario.token_confirmacao_email = gerar_token_seguro()
+    atualizar_usuario(db, usuario)
+    logger.info(
+        "Confirmacao de email concluida",
+        extra={"usuario_id": usuario.id},
+    )
+    return usuario
 
 
 def solicitar_recuperacao_senha(
