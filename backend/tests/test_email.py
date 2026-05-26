@@ -15,6 +15,7 @@ import smtplib
 from email.mime.text import MIMEText
 
 from backend.logger import logger
+from backend.services import email_service
 
 
 def main() -> None:
@@ -59,3 +60,19 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+
+def test_montar_link_confirmacao_usa_frontend_base_url(monkeypatch) -> None:
+    monkeypatch.setattr(email_service, "FRONTEND_BASE_URL", "https://frontend.example.com")
+
+    assert email_service._montar_link_confirmacao("token-123") == (
+        "https://frontend.example.com/confirmar-email?token=token-123"
+    )
+
+
+def test_montar_link_redefinicao_usa_frontend_base_url(monkeypatch) -> None:
+    monkeypatch.setattr(email_service, "FRONTEND_BASE_URL", "https://frontend.example.com")
+
+    assert email_service._montar_link_redefinicao("token-123") == (
+        "https://frontend.example.com/redefinir-senha?token=token-123"
+    )

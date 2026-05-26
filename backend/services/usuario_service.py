@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from backend.logger import logger
@@ -20,6 +21,49 @@ from backend.schemas.usuario_schema import UsuarioConfirmarRequest, UsuarioCreat
 from backend.services.security_service import gerar_hash_sha256, gerar_token_seguro
 
 
+def _mensagem_conflito_integridade(erro: IntegrityError) -> str | None:
+    orig = getattr(erro, "orig", None)
+    constraint_name = (
+        getattr(getattr(orig, "diag", None), "constraint_name", None)
+        or getattr(orig, "constraint_name", None)
+        or ""
+    ).lower()
+    detalhes = " ".join(
+        parte
+        for parte in (
+            str(erro),
+            str(orig),
+            str(getattr(orig, "diag", None)),
+            constraint_name,
+        )
+        if parte
+    ).lower()
+
+    if any(
+        trecho in detalhes
+        for trecho in (
+            "usuarios.email",
+            "usuarios_email_key",
+            "uq_usuarios_email",
+            "unique constraint failed: usuarios.email",
+        )
+    ) or constraint_name in {"usuarios_email_key", "uq_usuarios_email"}:
+        return "Ja existe um usuario cadastrado com este email."
+
+    if any(
+        trecho in detalhes
+        for trecho in (
+            "usuarios.login",
+            "usuarios_login_key",
+            "uq_usuarios_login",
+            "unique constraint failed: usuarios.login",
+        )
+    ) or constraint_name in {"usuarios_login_key", "uq_usuarios_login"}:
+        return "Ja existe um usuario cadastrado com este login."
+
+    return None
+
+
 def cadastrar_usuario(db: Session, cadastro: UsuarioCreateRequest) -> Usuario:
     nome = cadastro.nome.strip()
     apelido = cadastro.apelido.strip() or None
@@ -28,14 +72,23 @@ def cadastrar_usuario(db: Session, cadastro: UsuarioCreateRequest) -> Usuario:
     senha = cadastro.senha
     logger.info(
         "Iniciando cadastro de usuario",
+        extra={"email": email, "login": login},
     )
 
     email_existente = obter_usuario_por_email(db, email)
     if email_existente is not None:
+        logger.warning(
+            "Cadastro recusado porque o email ja existe",
+            extra={"email": email, "login": login, "usuario_existente_id": email_existente.id},
+        )
         raise ValueError("Ja existe um usuario cadastrado com este email.")
 
     login_existente = obter_usuario_por_login(db, login)
     if login_existente is not None:
+        logger.warning(
+            "Cadastro recusado porque o login ja existe",
+            extra={"email": email, "login": login, "usuario_existente_id": login_existente.id},
+        )
         raise ValueError("Ja existe um usuario cadastrado com este login.")
 
     usuario = Usuario(
@@ -50,20 +103,39 @@ def cadastrar_usuario(db: Session, cadastro: UsuarioCreateRequest) -> Usuario:
         criado_em=datetime.now(timezone.utc),
         confirmado_em=None,
     )
-    usuario = criar_usuario(db, usuario)
-
     try:
+        usuario = criar_usuario(db, usuario)
         db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        mensagem_conflito = _mensagem_conflito_integridade(exc)
+        if mensagem_conflito:
+            logger.warning(
+                "Falha de cadastro por conflito de integridade",
+                extra={"email": email, "login": login, "motivo": mensagem_conflito},
+            )
+            raise ValueError(mensagem_conflito) from exc
+
+        logger.exception(
+            "Falha ao concluir cadastro por integridade do banco",
+            extra={"email": email, "login": login},
+        )
+        raise RuntimeError(
+            "Nao foi possivel concluir o cadastro. Tente novamente."
+        ) from exc
     except Exception as exc:
         db.rollback()
-        logger.exception("Falha ao concluir cadastro")
+        logger.exception(
+            "Falha ao concluir cadastro",
+            extra={"email": email, "login": login},
+        )
         raise RuntimeError(
             "Nao foi possivel concluir o cadastro. Tente novamente."
         ) from exc
 
     logger.info(
         "Cadastro concluido",
-        extra={"usuario_id": usuario.id},
+        extra={"usuario_id": usuario.id, "email": email, "login": login},
     )
 
     return usuario

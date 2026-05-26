@@ -2,6 +2,8 @@ type RespostaErroApi = {
   detail?: string
 }
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL?.trim()?.replace(/\/$/, "")
+
 export class ApiResponseError extends Error {
   status: number
   url: string
@@ -19,7 +21,12 @@ function montarUrlApi(path: string) {
     return path
   }
 
-  return path.startsWith("/") ? path : `/${path}`
+  if (!API_BASE_URL) {
+    throw new Error("NEXT_PUBLIC_API_URL nao foi definido.")
+  }
+
+  const caminho = path.startsWith("/") ? path : `/${path}`
+  return new URL(caminho, API_BASE_URL).toString()
 }
 
 export async function apiFetch(path: string, init: RequestInit = {}) {

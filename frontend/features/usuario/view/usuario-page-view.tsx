@@ -10,6 +10,7 @@ type UsuarioPageViewProps = {
   carregando: boolean
   entrandoDemo: boolean
   erro: string | null
+  mensagem: string | null
   onSubmit: (evento: FormEvent<HTMLFormElement>) => void
   onEntrarDemo: () => void
   onAbrirLogin?: () => void
@@ -26,6 +27,7 @@ export function UsuarioPageView({
   carregando,
   entrandoDemo,
   erro,
+  mensagem,
   onSubmit,
   onEntrarDemo,
   onAbrirLogin,
@@ -53,6 +55,7 @@ export function UsuarioPageView({
             cadastro={cadastro}
             carregando={carregando}
             erro={erro}
+            mensagem={mensagem}
             onSubmit={onSubmit}
             onNomeChange={onNomeChange}
             onApelidoChange={onApelidoChange}

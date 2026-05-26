@@ -98,3 +98,63 @@ def test_login_com_senha_errada_retorna_401(monkeypatch) -> None:
 
     assert resposta.status_code == 401
     assert resposta.json() == {"detail": "Senha incorreta."}
+
+
+def test_solicitar_recuperacao_senha_retorna_200(monkeypatch) -> None:
+    usuario = criar_usuario_falso()
+
+    def solicitar_recuperacao_falso(db, dados):
+        assert dados.email == "maria@example.com"
+        return usuario, "token-redefinicao"
+
+    monkeypatch.setattr(auth_routes, "solicitar_recuperacao_senha", solicitar_recuperacao_falso)
+    monkeypatch.setattr(auth_routes, "enviar_email_recuperacao_senha", lambda **kwargs: None)
+
+    client = criar_client()
+    resposta = client.post(
+        "/auth/solicitar-recuperacao-senha",
+        json={"email": "maria@example.com"},
+    )
+
+    assert resposta.status_code == 200
+    assert resposta.json() == {
+        "status": "ok",
+        "message": "Se o email estiver cadastrado, voce vai receber o link de redefinicao.",
+    }
+
+
+def test_solicitar_recuperacao_senha_email_nao_cadastrado_retorna_200(monkeypatch) -> None:
+    def solicitar_recuperacao_falso(db, dados):
+        raise ValueError("Nao encontramos um usuario cadastrado com este email.")
+
+    monkeypatch.setattr(auth_routes, "solicitar_recuperacao_senha", solicitar_recuperacao_falso)
+
+    client = criar_client()
+    resposta = client.post(
+        "/auth/solicitar-recuperacao-senha",
+        json={"email": "inexistente@example.com"},
+    )
+
+    assert resposta.status_code == 200
+    assert resposta.json() == {
+        "status": "ok",
+        "message": "Se o email estiver cadastrado, voce vai receber o link de redefinicao.",
+    }
+
+
+def test_solicitar_recuperacao_senha_falha_tecnica_retorna_503(monkeypatch) -> None:
+    def solicitar_recuperacao_falso(db, dados):
+        raise RuntimeError("smtp fora do ar")
+
+    monkeypatch.setattr(auth_routes, "solicitar_recuperacao_senha", solicitar_recuperacao_falso)
+
+    client = criar_client()
+    resposta = client.post(
+        "/auth/solicitar-recuperacao-senha",
+        json={"email": "maria@example.com"},
+    )
+
+    assert resposta.status_code == 503
+    assert resposta.json() == {
+        "detail": "Nao foi possivel enviar o email de recuperacao agora. Tente novamente mais tarde."
+    }

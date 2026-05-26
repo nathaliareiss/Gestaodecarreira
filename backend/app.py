@@ -1,13 +1,24 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
+from urllib.parse import urlparse
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.routing import APIRoute
 from fastapi.staticfiles import StaticFiles
 
-from backend.config import AUTO_SYNC_DB_SCHEMA, CORS_ORIGINS, FRONTEND_BASE_URL
+from backend.config import (
+    AUTO_SYNC_DB_SCHEMA,
+    CORS_ORIGINS,
+    FRONTEND_BASE_URL,
+    SECRET_KEY,
+    SMTP_FROM,
+    SMTP_FROM_EMAIL,
+    SMTP_HOST,
+    SMTP_USER,
+)
 from backend.database import models as database_models  # noqa: F401
 from backend.database.database import Base, engine
 from backend.database.create_tables import habilitar_rls_tabelas_publicas, sincronizar_usuario_table
@@ -15,6 +26,65 @@ from backend.logger import logger
 from backend.middleware.error_middleware import registrar_middleware_de_erros
 from backend.middleware.metrics_middleware import registrar_middleware_de_metricas
 from backend.routes import router as api_router
+
+
+def _resumir_database_url(url: str) -> dict[str, str | int | None]:
+    if not url:
+        return {"definida": False}
+
+    partes = urlparse(url)
+    return {
+        "definida": True,
+        "scheme": partes.scheme,
+        "host": partes.hostname,
+        "porta": partes.port,
+        "banco": partes.path.lstrip("/") or None,
+    }
+
+
+def _validar_configuracao_autenticacao_email() -> None:
+    faltando: list[str] = []
+
+    if not os.getenv("DATABASE_URL", "").strip():
+        faltando.append("DATABASE_URL")
+
+    if not FRONTEND_BASE_URL:
+        faltando.append("FRONTEND_BASE_URL")
+
+    if not CORS_ORIGINS:
+        faltando.append("CORS_ORIGINS")
+
+    if not SMTP_HOST:
+        faltando.append("SMTP_HOST")
+
+    if not os.getenv("SMTP_PORT", "").strip():
+        faltando.append("SMTP_PORT")
+
+    if not SMTP_USER:
+        faltando.append("SMTP_USER")
+
+    if not os.getenv("SMTP_PASSWORD", "").strip():
+        faltando.append("SMTP_PASSWORD")
+
+    if not (SMTP_FROM or SMTP_FROM_EMAIL):
+        faltando.append("SMTP_FROM")
+
+    if not SECRET_KEY:
+        faltando.append("SECRET_KEY")
+
+    logger.info(
+        "Configuracao de autenticacao e email avaliada",
+        extra={
+            "campos_faltantes": faltando,
+            "database": _resumir_database_url(os.getenv("DATABASE_URL", "")),
+        },
+    )
+
+    if faltando:
+        logger.warning(
+            "Configuracao de autenticacao e email incompleta",
+            extra={"campos_faltantes": faltando},
+        )
 
 
 def criar_app() -> FastAPI:
@@ -94,6 +164,7 @@ def criar_app() -> FastAPI:
                 ),
             },
         )
+        _validar_configuracao_autenticacao_email()
 
     return app
 

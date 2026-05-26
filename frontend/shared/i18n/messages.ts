@@ -61,6 +61,8 @@ export type LocaleTexts = {
     afterRegistration: string
     requiredFields: string
     passwordMinLength: string
+    emailAlreadyRegistered: string
+    loginAlreadyRegistered: string
     successMessage: string
     unexpectedSave: string
   }
@@ -106,7 +108,6 @@ export type LocaleTexts = {
     viewOnly: string
     reloadLastSaved: string
     noSession: string
-    goToLogin: string
   }
   finance: {
     title: string
@@ -329,8 +330,10 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       afterRegistration: "Depois do cadastro, você receberá um e-mail para confirmar o acesso.",
       requiredFields: "Preencha nome, e-mail, data de exercício, login e senha.",
       passwordMinLength: "A senha precisa ter pelo menos 6 caracteres.",
+      emailAlreadyRegistered: "Este email já está cadastrado.",
+      loginAlreadyRegistered: "Este login já está cadastrado.",
       successMessage: "Cadastro concluído com sucesso. Agora você pode entrar com seu login.",
-      unexpectedSave: "Falha inesperada ao salvar.",
+      unexpectedSave: "Não foi possível criar a conta agora. Tente novamente.",
     },
     dashboard: {
       careerDashboard: "Painel de carreira",
@@ -601,8 +604,10 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       afterRegistration: "After registration, you will receive an email to confirm access.",
       requiredFields: "Fill in name, email, start date, login, and password.",
       passwordMinLength: "The password must be at least 6 characters long.",
+      emailAlreadyRegistered: "This email is already registered.",
+      loginAlreadyRegistered: "This login is already registered.",
       successMessage: "Registration completed successfully. You can now sign in with your login.",
-      unexpectedSave: "Unexpected failure while saving.",
+      unexpectedSave: "We could not create the account right now. Please try again.",
     },
     dashboard: {
       careerDashboard: "Career Dashboard",
@@ -644,10 +649,8 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       grade: "Grade",
       demoHighlights: "Demo Highlights",
       viewOnly: "View Only",
-      loading: "Loading...",
       reloadLastSaved: "Reload Last Saved",
       noSession: "No active session was found. Sign in again to view your data.",
-      goToLogin: "Go to Login",
     },
     finance: {
       title: "Finance",

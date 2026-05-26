@@ -40,20 +40,20 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 def _enviar_email_confirmacao_com_erro_isolado(destinatario: str, nome: str, token: str) -> None:
     try:
         enviar_email_confirmacao(destinatario=destinatario, nome=nome, token=token)
-    except Exception:
+    except Exception as erro:
         logger.exception(
             "Falha no reenvio do email de confirmacao em background",
-            extra={"destinatario": destinatario},
+            extra={"destinatario": destinatario, "erro_tipo": type(erro).__name__},
         )
 
 
 def _enviar_email_recuperacao_com_erro_isolado(destinatario: str, nome: str, token: str) -> None:
     try:
         enviar_email_recuperacao_senha(destinatario=destinatario, nome=nome, token=token)
-    except Exception:
+    except Exception as erro:
         logger.exception(
             "Falha no envio do email de recuperacao em background",
-            extra={"destinatario": destinatario},
+            extra={"destinatario": destinatario, "erro_tipo": type(erro).__name__},
         )
 
 
@@ -161,13 +161,22 @@ def solicitar_recuperacao(
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
 ) -> dict[str, str]:
-    logger.info("Recebida solicitacao de recuperacao de senha")
+    logger.info(
+        "Recebida solicitacao de recuperacao de senha",
+        extra={"email": dados.email.strip().lower()},
+    )
     try:
         usuario, token = solicitar_recuperacao_senha(db, dados)
     except ValueError:
-        logger.info("Solicitacao de recuperacao ignorada porque o email nao esta cadastrado")
+        logger.info(
+            "Solicitacao de recuperacao ignorada porque o email nao esta cadastrado",
+            extra={"email": dados.email.strip().lower()},
+        )
     except RuntimeError as erro:
-        logger.exception("Falha ao solicitar recuperacao de senha")
+        logger.exception(
+            "Falha ao solicitar recuperacao de senha",
+            extra={"email": dados.email.strip().lower(), "erro_tipo": type(erro).__name__},
+        )
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Nao foi possivel enviar o email de recuperacao agora. Tente novamente mais tarde.",
@@ -199,7 +208,7 @@ def reenviar_confirmacao(
     except ValueError as erro:
         logger.warning(
             "Reenvio de confirmacao recusado",
-            extra={"motivo": str(erro)},
+            extra={"motivo": str(erro), "identificador": dados.identificador.strip()},
         )
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(erro)) from erro
 
@@ -230,7 +239,7 @@ def redefinir_senha(
     except ValueError as erro:
         logger.warning(
             "Redefinicao de senha recusada",
-            extra={"motivo": str(erro)},
+            extra={"motivo": str(erro), "token_recebido": bool(dados.token)},
         )
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(erro)) from erro
 

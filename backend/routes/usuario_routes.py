@@ -30,10 +30,10 @@ def _obter_request_id(request: Request) -> str:
 def _enviar_email_confirmacao_com_erro_isolado(destinatario: str, nome: str, token: str) -> None:
     try:
         enviar_email_confirmacao(destinatario=destinatario, nome=nome, token=token)
-    except Exception:
+    except Exception as erro:
         logger.exception(
             "Falha no envio do email de confirmacao em background",
-            extra={"destinatario": destinatario},
+            extra={"destinatario": destinatario, "erro_tipo": type(erro).__name__},
         )
 
 
@@ -49,10 +49,16 @@ def criar_usuario(
     try:
         usuario = cadastrar_usuario(db, cadastro)
     except ValueError as erro:
-        logger.warning("Cadastro recusado", extra={"request_id": request_id})
+        logger.warning(
+            "Cadastro recusado",
+            extra={"request_id": request_id, "motivo": str(erro)},
+        )
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(erro)) from erro
     except RuntimeError as erro:
-        logger.exception("Falha ao cadastrar usuario", extra={"request_id": request_id})
+        logger.exception(
+            "Falha ao cadastrar usuario",
+            extra={"request_id": request_id, "erro_tipo": type(erro).__name__},
+        )
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Nao foi possivel concluir o cadastro agora. Tente novamente mais tarde.",

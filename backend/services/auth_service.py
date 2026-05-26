@@ -34,7 +34,7 @@ def _hash_token(valor: str) -> str:
 def autenticar_usuario(db: Session, dados: UsuarioLoginRequest) -> tuple[Usuario, str]:
     identificador = dados.login.strip()
     senha = dados.senha
-    logger.info("Processando autenticacao")
+    logger.info("Processando autenticacao", extra={"identificador": identificador})
 
     if "@" in identificador:
         usuario = obter_usuario_por_email(db, identificador.lower())
@@ -124,10 +124,13 @@ def solicitar_recuperacao_senha(
     dados: UsuarioSolicitarRecuperacaoSenhaRequest,
 ) -> tuple[Usuario, str]:
     email = dados.email.strip().lower()
-    logger.info("Processando recuperacao de senha")
+    logger.info("Processando recuperacao de senha", extra={"email": email})
     usuario = obter_usuario_por_email(db, email)
     if usuario is None:
-        logger.warning("Recuperacao solicitada para email nao cadastrado")
+        logger.warning(
+            "Recuperacao solicitada para email nao cadastrado",
+            extra={"email": email},
+        )
         raise ValueError("Nao encontramos um usuario cadastrado com este email.")
 
     token = gerar_token_seguro()
@@ -138,7 +141,7 @@ def solicitar_recuperacao_senha(
     db.commit()
     logger.info(
         "Recuperacao de senha preparada",
-        extra={"usuario_id": usuario.id},
+        extra={"usuario_id": usuario.id, "email": email},
     )
     return usuario, token
 

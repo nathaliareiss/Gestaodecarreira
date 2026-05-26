@@ -9,6 +9,7 @@ export function UsuarioController() {
     carregando,
     entrandoDemo,
     erro,
+    mensagem,
     enviarFormulario,
     entrarComDadosDeExemplo,
     atualizarCampo,
@@ -20,6 +21,7 @@ export function UsuarioController() {
       carregando={carregando}
       entrandoDemo={entrandoDemo}
       erro={erro}
+      mensagem={mensagem}
       onSubmit={enviarFormulario}
       onEntrarDemo={entrarComDadosDeExemplo}
       onNomeChange={(valor) => atualizarCampo("nome", valor)}

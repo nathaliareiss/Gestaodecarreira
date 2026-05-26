@@ -14,6 +14,7 @@ from backend.config import (
     EMAIL_CONFIRMATION_SUBJECT,
     EMAIL_RECOVERY_SUBJECT,
     FRONTEND_BASE_URL,
+    SMTP_FROM,
     SMTP_FROM_EMAIL,
     SMTP_FROM_NAME,
     SMTP_HOST,
@@ -41,7 +42,7 @@ def _validar_configuracao_smtp() -> None:
 
 def _montar_envio_email(destinatario: str, assunto: str, texto: str, html: str) -> EmailMessage:
     mensagem = EmailMessage()
-    remetente_email = RESEND_FROM_EMAIL or SMTP_FROM_EMAIL or SMTP_USER or "no-reply@localhost"
+    remetente_email = RESEND_FROM_EMAIL or SMTP_FROM_EMAIL or SMTP_FROM or SMTP_USER or "no-reply@localhost"
     remetente_nome = SMTP_FROM_NAME or "Gestao de Carreira"
 
     mensagem["Subject"] = assunto
@@ -87,7 +88,11 @@ def _enviar_via_smtp(mensagem: EmailMessage) -> None:
     except smtplib.SMTPAuthenticationError as erro:
         logger.error(
             "Credenciais SMTP recusadas",
-            extra={"destinatario": mensagem["To"], "host": SMTP_HOST},
+            extra={
+                "destinatario": mensagem["To"],
+                "host": SMTP_HOST,
+                "erro_tipo": type(erro).__name__,
+            },
         )
         registrar_envio_email(
             "smtp",
@@ -100,7 +105,12 @@ def _enviar_via_smtp(mensagem: EmailMessage) -> None:
     except OSError as erro:
         logger.error(
             "Falha ao conectar ao servidor SMTP",
-            extra={"destinatario": mensagem["To"], "host": SMTP_HOST, "porta": SMTP_PORT},
+            extra={
+                "destinatario": mensagem["To"],
+                "host": SMTP_HOST,
+                "porta": SMTP_PORT,
+                "erro_tipo": type(erro).__name__,
+            },
         )
         registrar_envio_email(
             "smtp",
@@ -111,7 +121,11 @@ def _enviar_via_smtp(mensagem: EmailMessage) -> None:
     except smtplib.SMTPException as erro:
         logger.error(
             "Falha ao enviar email pelo SMTP",
-            extra={"destinatario": mensagem["To"], "host": SMTP_HOST},
+            extra={
+                "destinatario": mensagem["To"],
+                "host": SMTP_HOST,
+                "erro_tipo": type(erro).__name__,
+            },
         )
         registrar_envio_email(
             "smtp",
@@ -161,7 +175,7 @@ def _enviar_via_resend(mensagem: EmailMessage) -> None:
     except requests.RequestException as erro:
         logger.error(
             "Falha ao enviar email via Resend",
-            extra={"destinatario": mensagem["To"]},
+            extra={"destinatario": mensagem["To"], "erro_tipo": type(erro).__name__},
         )
         registrar_envio_email("resend", "connection_error", perf_counter() - inicio)
         raise RuntimeError("Nao foi possivel enviar o email via Resend.") from erro
@@ -179,7 +193,11 @@ def _enviar_mensagem(mensagem: EmailMessage) -> None:
         except Exception as erro:
             logger.warning(
                 "Resend falhou, tentando SMTP como fallback",
-                extra={"destinatario": mensagem["To"], "erro": str(erro)},
+                extra={
+                    "destinatario": mensagem["To"],
+                    "erro": str(erro),
+                    "erro_tipo": type(erro).__name__,
+                },
             )
             if SMTP_HOST:
                 _enviar_via_smtp(mensagem)
@@ -193,7 +211,11 @@ def _enviar_mensagem(mensagem: EmailMessage) -> None:
         if RESEND_API_KEY:
             logger.warning(
                 "SMTP falhou, tentando Resend como fallback",
-                extra={"destinatario": mensagem["To"], "erro": str(erro)},
+                extra={
+                    "destinatario": mensagem["To"],
+                    "erro": str(erro),
+                    "erro_tipo": type(erro).__name__,
+                },
             )
             _enviar_via_resend(mensagem)
             return

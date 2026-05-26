@@ -66,7 +66,6 @@ export function AuthEntryController({ modoInicial }: AuthEntryControllerProps) {
               dados={login.dados}
               recuperacao={login.recuperacao}
               carregando={login.carregando}
-              entrandoDemo={login.entrandoDemo}
               reenviandoConfirmacao={login.reenviandoConfirmacao}
               recuperando={login.recuperando}
               erro={login.erro}

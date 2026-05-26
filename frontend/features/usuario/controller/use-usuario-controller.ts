@@ -9,6 +9,7 @@ import {
 } from "../model/usuario.model"
 import { criarUsuario } from "../model/usuario.repository"
 import { salvarSessaoDemo } from "@/shared/auth/session"
+import { ApiResponseError } from "@/shared/api/client"
 import { useLanguage } from "@/shared/i18n/language-provider"
 
 export function useUsuarioController() {
@@ -85,7 +86,18 @@ export function useUsuarioController() {
       })
       setMensagem(registerTexts.successMessage)
     } catch (error) {
-      setErro(error instanceof Error ? error.message : registerTexts.unexpectedSave)
+      if (error instanceof ApiResponseError && error.status === 409) {
+        const mensagemErro = error.message.toLowerCase()
+        if (mensagemErro.includes("login")) {
+          setErro(registerTexts.loginAlreadyRegistered)
+        } else if (mensagemErro.includes("email")) {
+          setErro(registerTexts.emailAlreadyRegistered)
+        } else {
+          setErro(registerTexts.unexpectedSave)
+        }
+      } else {
+        setErro(registerTexts.unexpectedSave)
+      }
     } finally {
       setCarregando(false)
     }
