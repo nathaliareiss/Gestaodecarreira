@@ -49,11 +49,11 @@ CORS_ORIGINS = _ler_lista_csv("CORS_ORIGINS")
 FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL", "").rstrip("/")
 EMAIL_CONFIRMATION_SUBJECT = os.getenv(
     "EMAIL_CONFIRMATION_SUBJECT",
-    "Confirme seu cadastro",
+    "Confirme seu cadastro no Career Flow",
 ).strip()
 EMAIL_RECOVERY_SUBJECT = os.getenv(
     "EMAIL_RECOVERY_SUBJECT",
-    "Redefina sua senha",
+    "Redefina sua senha no Career Flow",
 ).strip()
 SMTP_HOST = os.getenv("SMTP_HOST", "").strip()
 SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))

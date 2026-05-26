@@ -131,6 +131,64 @@ html[data-theme="light"] .form-card--login .login-input:-webkit-autofill:active 
   transition: background-color 9999s ease-out 0s, color 9999s ease-out 0s;
 }
 
+.form-card--register .password-field {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: rgba(2, 8, 20, 0.55);
+  overflow: hidden;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.form-card--register .password-field:focus-within {
+  border-color: rgba(94, 234, 212, 0.7);
+  background: rgba(8, 16, 30, 0.82);
+}
+
+.form-card--register .password-field input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.form-card--register .password-field input:focus {
+  border: 0;
+  background: transparent;
+}
+
+.form-card--register .password-field__toggle {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  border: 0;
+  border-left: 1px solid rgba(148, 163, 184, 0.18);
+  background: transparent;
+  color: var(--muted);
+  padding: 0;
+  transition: color 0.2s ease, background 0.2s ease;
+}
+
+.form-card--register .password-field__toggle:hover {
+  color: #f8fbff;
+  background: rgba(255, 255, 255, 0.05);
+  transform: none;
+}
+
+.form-card--register .password-field__toggle:focus-visible {
+  outline: 2px solid rgba(94, 234, 212, 0.7);
+  outline-offset: -2px;
+}
+
+.form-card--register .password-field__toggle svg {
+  width: 1.05rem;
+  height: 1.05rem;
+}
+
 html[data-theme="light"] .form-card--register input {
   color: #f8fbff !important;
   -webkit-text-fill-color: #f8fbff !important;

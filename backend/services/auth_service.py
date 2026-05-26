@@ -53,16 +53,20 @@ def autenticar_usuario(db: Session, dados: UsuarioLoginRequest) -> tuple[Usuario
         raise ValueError("Confirme seu email antes de entrar.")
 
     token_sessao = gerar_token_seguro()
-    usuario.sessao_token_hash = _hash_token(token_sessao)
-    usuario.sessao_expira_em = datetime.now(timezone.utc) + timedelta(days=7)
-    db.add(usuario)
-    db.commit()
+    registrar_sessao_usuario(db, usuario, token_sessao)
     logger.info(
         "Autenticacao concluida",
         extra={"usuario_id": usuario.id},
     )
 
     return usuario, token_sessao
+
+
+def registrar_sessao_usuario(db: Session, usuario: Usuario, token_sessao: str) -> None:
+    usuario.sessao_token_hash = _hash_token(token_sessao)
+    usuario.sessao_expira_em = datetime.now(timezone.utc) + timedelta(days=7)
+    db.add(usuario)
+    db.commit()
 
 
 def extrair_token_autenticacao(request: Request) -> str:
@@ -117,6 +121,13 @@ def encerrar_sessao_usuario(db: Session, token: str) -> None:
         "Sessao encerrada",
         extra={"usuario_id": usuario.id},
     )
+
+
+def confirmar_email_usuario(
+    db: Session,
+    dados: UsuarioReenviarConfirmacaoRequest,
+) -> tuple[Usuario, str]:
+    raise NotImplementedError
 
 
 def solicitar_recuperacao_senha(
