@@ -7,9 +7,10 @@ import re
 import shutil
 import sys
 import time
+import unicodedata
 from datetime import datetime
 from pathlib import Path
-from urllib.parse import parse_qs, urljoin, urlparse
+from urllib.parse import parse_qs, urlencode, urljoin, urlparse
 
 import requests
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
@@ -42,6 +43,58 @@ def configurar_logger() -> None:
 
 def log(mensagem: str) -> None:
     LOGGER.info(mensagem)
+
+
+def normalizar_texto(valor: str) -> str:
+    texto = unicodedata.normalize("NFKD", valor or "")
+    texto = "".join(caractere for caractere in texto if not unicodedata.combining(caractere))
+    return re.sub(r"\s+", " ", texto).strip().casefold()
+
+
+def sanitizar_candidato_para_log(candidato: str) -> str:
+    texto = candidato.strip()
+    if not texto:
+        return texto
+
+    if "token=" not in texto.casefold():
+        return texto
+
+    if texto.startswith("token="):
+        return "token=[oculto]"
+
+    parsed = urlparse(texto)
+    if parsed.scheme:
+        parametros = parse_qs(parsed.query, keep_blank_values=True)
+        if "token" in parametros:
+            parametros["token"] = ["[oculto]" for _ in parametros["token"]]
+            query = urlencode(parametros, doseq=True)
+            return parsed._replace(query=query).geturl()
+
+    return re.sub(r"(?i)(token=)[^&#\s]+", r"\1[oculto]", texto)
+
+
+def sanitizar_argv_para_log(argv: list[str]) -> list[str]:
+    resultado: list[str] = []
+    ocultar_proximo = False
+
+    for argumento in argv:
+        if ocultar_proximo:
+            resultado.append("[oculto]")
+            ocultar_proximo = False
+            continue
+
+        if argumento == "--token":
+            resultado.append(argumento)
+            ocultar_proximo = True
+            continue
+
+        if argumento.startswith("--token="):
+            resultado.append("--token=[oculto]")
+            continue
+
+        resultado.append(sanitizar_candidato_para_log(argumento))
+
+    return resultado
 
 
 def slugify(valor: str, limite: int = 80) -> str:
