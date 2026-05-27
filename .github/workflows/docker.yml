@@ -30,8 +30,9 @@ jobs:
           context: ./backend
           file: ./backend/Dockerfile
           push: true
-          tags: ghcr.io/nathaliareiss/gestao-carreira-backend:latest
-                ghcr.io/nathaliareiss/gestao-carreira-backend:${{ github.sha }}
+          tags: |
+            ghcr.io/nathaliareiss/gestao-carreira-backend:latest
+            ghcr.io/nathaliareiss/gestao-carreira-backend:${{ github.sha }}
 
       - name: Trigger Dokploy redeploy
         if: success()
