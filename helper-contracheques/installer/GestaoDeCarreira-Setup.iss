@@ -49,7 +49,7 @@ Name: "{group}\{#AppName}"; Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"
 Name: "{userdesktop}\{#AppName}"; Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\{#AppExeName}"; Description: "Abrir {#AppName}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\{#AppExeName}"; Description: "Abrir {#AppName}"; Flags: nowait skipifsilent
 
 [Registry]
 Root: HKCU; Subkey: "Software\Classes\gestaodecarreira"; ValueType: string; ValueName: ""; ValueData: "URL:Gestão de Carreira"; Flags: uninsdeletekey
