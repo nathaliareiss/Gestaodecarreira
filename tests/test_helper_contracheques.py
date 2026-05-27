@@ -118,6 +118,62 @@ class HelperContrachequesTests(unittest.TestCase):
 
         self.assertTrue(helper.pagina_consultar_contracheque_pronta(page))
 
+    def test_detecta_pagina_pronta_quando_texto_baixar_esta_visivel(self):
+        page = FakePage(
+            url="https://portal.exemplo/outra",
+            title="Outra tela",
+            selectors={
+                "body": FakeCollection(inner_text="Algo diferente"),
+                "text=BAIXAR": FakeCollection([FakeElement("BAIXAR")]),
+                "text=EXIBIR": FakeCollection([]),
+                "a:has-text('BAIXAR')": FakeCollection([FakeElement("BAIXAR")]),
+                "a:has-text('EXIBIR')": FakeCollection([]),
+                "button:has-text('BAIXAR')": FakeCollection([]),
+                "button:has-text('EXIBIR')": FakeCollection([]),
+                "[role='button']:has-text('BAIXAR')": FakeCollection([]),
+                "[role='button']:has-text('EXIBIR')": FakeCollection([]),
+                "input[value*='BAIXAR' i]": FakeCollection([]),
+                "input[value*='EXIBIR' i]": FakeCollection([]),
+            },
+        )
+
+        self.assertTrue(helper.pagina_consultar_contracheque_pronta(page))
+
+    def test_encontra_alvos_download_com_texto_e_link_estilizado(self):
+        page = FakePage(
+            url="https://portal.exemplo/contracheques",
+            title="Contracheques",
+            selectors={
+                "body": FakeCollection(inner_text="Lista de contracheques"),
+                "text=BAIXAR": FakeCollection([FakeElement("BAIXAR")]),
+                "text=EXIBIR": FakeCollection([FakeElement("EXIBIR")]),
+                "a:has-text('BAIXAR')": FakeCollection(
+                    [
+                        FakeElement(
+                            "BAIXAR",
+                            attrs={
+                                "href": "https://portal.exemplo/arquivo.pdf",
+                                "aria-label": "Baixar contracheque",
+                            },
+                        ),
+                    ],
+                ),
+                "a:has-text('EXIBIR')": FakeCollection([FakeElement("EXIBIR")]),
+                "button:has-text('BAIXAR')": FakeCollection([]),
+                "button:has-text('EXIBIR')": FakeCollection([]),
+                "[role='button']:has-text('BAIXAR')": FakeCollection([]),
+                "[role='button']:has-text('EXIBIR')": FakeCollection([]),
+                "input[value*='BAIXAR' i]": FakeCollection([FakeElement("", attrs={"value": "BAIXAR"})]),
+                "input[value*='EXIBIR' i]": FakeCollection([]),
+            },
+        )
+
+        alvos = helper.encontrar_alvos_download(page)
+        self.assertGreaterEqual(len(alvos), 1)
+        assinaturas = [assinatura for assinatura, _ in alvos]
+        self.assertTrue(any("BAIXAR" in assinatura for assinatura in assinaturas))
+        self.assertTrue(any("EXIBIR" in assinatura for assinatura in assinaturas))
+
     def test_detecta_pagina_pronta_quando_ha_botao_baixar_visivel(self):
         page = FakePage(
             url="https://portal.exemplo/outra",

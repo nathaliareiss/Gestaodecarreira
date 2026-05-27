@@ -51,9 +51,20 @@ exe = EXE(
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
-    runtime_tmpdir=r"C:\ProgramData\GestaoDeCarreiraAssistente",
     codesign_identity=None,
     entitlements_file=None,
     icon=str(icon_path) if icon_path.is_file() else None,
     version=str(version_info_path) if version_info_path.is_file() else None,
+    exclude_binaries=True,
+)
+
+coll = COLLECT(
+    exe,
+    a.binaries,
+    a.zipfiles,
+    a.datas,
+    strip=False,
+    upx=True,
+    upx_exclude=[],
+    name="GestaoDeCarreira-Assistente",
 )

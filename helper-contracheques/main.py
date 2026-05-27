@@ -331,6 +331,113 @@ def _contar_textos_visiveis(page, termos: list[str]) -> int:
     return sum(1 for termo in termos if normalizar_texto(termo) in texto)
 
 
+def _contar_selector(page, seletor: str) -> int:
+    try:
+        return page.locator(seletor).count()
+    except Exception:
+        return 0
+
+
+def _resumo_elemento_download(locator, seletor_base: str) -> dict[str, object]:
+    assinatura = texto_elemento(locator)[:220]
+    return {
+        "seletor": seletor_base,
+        "assinatura": assinatura,
+        "visivel": True,
+    }
+
+
+def _coletar_amostras_download(page, limite: int = 10) -> list[dict[str, object]]:
+    seletores = [
+        "text=BAIXAR",
+        "a:has-text('BAIXAR')",
+        "button:has-text('BAIXAR')",
+        "[role='button']:has-text('BAIXAR')",
+        "input[value*='BAIXAR' i]",
+        "text=EXIBIR",
+        "a:has-text('EXIBIR')",
+        "button:has-text('EXIBIR')",
+        "[role='button']:has-text('EXIBIR')",
+        "input[value*='EXIBIR' i]",
+    ]
+
+    amostras: list[dict[str, object]] = []
+    vistos: set[str] = set()
+
+    for seletor in seletores:
+        try:
+            locator = page.locator(seletor)
+        except Exception:
+            continue
+
+        try:
+            total = locator.count()
+        except Exception:
+            continue
+
+        for indice in range(total):
+            if len(amostras) >= limite:
+                return amostras
+
+            try:
+                item = locator.nth(indice)
+            except Exception:
+                continue
+
+            try:
+                if not item.is_visible():
+                    continue
+            except Exception:
+                continue
+
+            resumo = _resumo_elemento_download(item, seletor)
+            chave = normalizar_texto(f"{resumo['seletor']}|{resumo['assinatura']}")
+            if chave in vistos:
+                continue
+            vistos.add(chave)
+            amostras.append(resumo)
+
+    return amostras
+
+
+def log_diagnostico_download(page, prefixo: str = "[debug]") -> None:
+    contagens = {
+        "text_baixar": _contar_selector(page, "text=BAIXAR"),
+        "text_exibir": _contar_selector(page, "text=EXIBIR"),
+        "a_baixar": _contar_selector(page, "a:has-text('BAIXAR')"),
+        "button_baixar": _contar_selector(page, "button:has-text('BAIXAR')"),
+        "role_button_baixar": _contar_selector(page, "[role='button']:has-text('BAIXAR')"),
+        "input_baixar": _contar_selector(page, "input[value*='BAIXAR' i]"),
+        "a_exibir": _contar_selector(page, "a:has-text('EXIBIR')"),
+        "button_exibir": _contar_selector(page, "button:has-text('EXIBIR')"),
+        "role_button_exibir": _contar_selector(page, "[role='button']:has-text('EXIBIR')"),
+        "input_exibir": _contar_selector(page, "input[value*='EXIBIR' i]"),
+    }
+
+    log(
+        f"{prefixo} "
+        f"text=BAIXAR={contagens['text_baixar']} | "
+        f"text=EXIBIR={contagens['text_exibir']} | "
+        f"a:has-text('BAIXAR')={contagens['a_baixar']} | "
+        f"button:has-text('BAIXAR')={contagens['button_baixar']} | "
+        f"[role='button']:has-text('BAIXAR')={contagens['role_button_baixar']} | "
+        f"input[value*='BAIXAR']={contagens['input_baixar']} | "
+        f"a:has-text('EXIBIR')={contagens['a_exibir']} | "
+        f"button:has-text('EXIBIR')={contagens['button_exibir']} | "
+        f"[role='button']:has-text('EXIBIR')={contagens['role_button_exibir']} | "
+        f"input[value*='EXIBIR']={contagens['input_exibir']}"
+    )
+
+    amostras = _coletar_amostras_download(page, limite=10)
+    for indice, amostra in enumerate(amostras, start=1):
+        log(
+            f"{prefixo} alvo[{indice}] "
+            f"seletor={amostra['seletor']} | "
+            f"visivel={'sim' if amostra['visivel'] else 'nao'} | "
+            f"assinatura={amostra['assinatura']}"
+        )
+
+
 def diagnostico_pagina_contracheque(page) -> dict[str, object]:
     botoes_baixar = encontrar_botoes_baixar(page)
     botoes_exibir = encontrar_botoes_exibir(page)
@@ -341,6 +448,8 @@ def diagnostico_pagina_contracheque(page) -> dict[str, object]:
         "title": "",
         "botoes_baixar_visiveis": len(botoes_baixar),
         "botoes_exibir_visiveis": len(botoes_exibir),
+        "text_baixar": _contar_selector(page, "text=BAIXAR"),
+        "text_exibir": _contar_selector(page, "text=EXIBIR"),
         "tem_consultar_contracheque": "consultar contracheque" in texto,
         "tem_mes_ano": "mes/ano" in texto or "mes ano" in texto,
         "tem_mensal": "mensal" in texto,
@@ -357,9 +466,9 @@ def diagnostico_pagina_contracheque(page) -> dict[str, object]:
     return diagnostico
 
 
-def _parece_alvo_download(locator, assinatura: str) -> bool:
+def _parece_alvo_por_termos(locator, assinatura: str, termos: tuple[str, ...]) -> bool:
     texto = normalizar_texto(assinatura)
-    if any(termo in texto for termo in DOWNLOAD_KEYWORDS):
+    if any(termo in texto for termo in termos):
         return True
 
     for nome in ("aria-label", "title", "href", "download"):
@@ -376,20 +485,42 @@ def _parece_alvo_download(locator, assinatura: str) -> bool:
             return True
         if ".pdf" in texto_atributo:
             return True
-        if any(termo in texto_atributo for termo in DOWNLOAD_KEYWORDS):
+        if any(termo in texto_atributo for termo in termos):
             return True
 
     return False
 
 
-def encontrar_alvos_download(page) -> list[tuple[str, object]]:
+def encontrar_alvos_download(page, agressivo: bool = False) -> list[tuple[str, object]]:
     seletores = [
-        *DOWNLOAD_SELECTORS,
-        "button",
-        "a",
-        "[role='button']",
-        "[download]",
+        "button:has-text('BAIXAR')",
+        "a:has-text('BAIXAR')",
+        "input[value*='BAIXAR' i]",
+        "[role='button']:has-text('BAIXAR')",
+        "text=BAIXAR",
+        "button:has-text('EXIBIR')",
+        "a:has-text('EXIBIR')",
+        "input[value*='EXIBIR' i]",
+        "[role='button']:has-text('EXIBIR')",
+        "text=EXIBIR",
+        "a[href*='pdf' i]",
+        "a[href*='download' i]",
+        "a[href*='contracheque' i]",
+        "a[download]",
+        "button[download]",
     ]
+
+    if agressivo:
+        seletores.extend(
+            [
+                *DOWNLOAD_SELECTORS,
+                "button",
+                "a",
+                "[role='button']",
+                "input[type='button']",
+                "input[type='submit']",
+            ],
+        )
 
     candidatos: list[tuple[str, object]] = []
     vistos: set[str] = set()
@@ -405,7 +536,10 @@ def encontrar_alvos_download(page) -> list[tuple[str, object]]:
             chave = normalizar_texto(assinatura)
             if chave in vistos:
                 continue
-            if not _parece_alvo_download(item, assinatura):
+            if "exib" in normalizar_texto(seletor):
+                if not _parece_alvo_por_termos(item, assinatura, ("exib",)):
+                    continue
+            elif not _parece_alvo_por_termos(item, assinatura, DOWNLOAD_KEYWORDS):
                 continue
             vistos.add(chave)
             candidatos.append((assinatura, item))
@@ -448,38 +582,7 @@ def encontrar_botoes_consultar(page) -> list[object]:
 
 
 def encontrar_botoes_exibir(page) -> list[object]:
-    seletores = [
-        "button:has-text('EXIBIR')",
-        "a:has-text('EXIBIR')",
-        "button:has-text('Exibir')",
-        "a:has-text('Exibir')",
-        "button[aria-label*='exib' i]",
-        "a[aria-label*='exib' i]",
-        "[title*='exib' i]",
-        "[role='button']:has-text('EXIBIR')",
-        "[role='button']:has-text('Exibir')",
-    ]
-
-    candidatos: list[object] = []
-    vistos: set[str] = set()
-
-    for seletor in seletores:
-        try:
-            locator = page.locator(seletor)
-        except Exception:
-            continue
-
-        for item in _locators_visiveis(locator):
-            assinatura = texto_elemento(item) or seletor
-            chave = normalizar_texto(assinatura)
-            if chave in vistos:
-                continue
-            if "exib" not in chave:
-                continue
-            vistos.add(chave)
-            candidatos.append(item)
-
-    return candidatos
+    return [item for _, item in encontrar_alvos_download(page) if "exib" in normalizar_texto(texto_elemento(item))]
 
 
 def pagina_consultar_contracheque_pronta(page) -> bool:
@@ -487,7 +590,10 @@ def pagina_consultar_contracheque_pronta(page) -> bool:
     if not texto:
         return False
 
-    if len(encontrar_botoes_baixar(page)) > 0:
+    if _contar_selector(page, "text=BAIXAR") > 0:
+        return True
+
+    if _contar_selector(page, "text=EXIBIR") > 0:
         return True
 
     sinais = 0
@@ -523,6 +629,7 @@ def wait_until_paystub_page_ready(page) -> bool:
 
     while time.monotonic() < prazo:
         if pagina_consultar_contracheque_pronta(page):
+            log_diagnostico_download(page)
             diagnostico = diagnostico_pagina_contracheque(page)
             log(
                 "[debug] "
@@ -539,6 +646,7 @@ def wait_until_paystub_page_ready(page) -> bool:
 
         agora = time.monotonic()
         if agora - ultimo_log >= 5:
+            log_diagnostico_download(page)
             diagnostico = diagnostico_pagina_contracheque(page)
             log(
                 "[debug] "
@@ -696,6 +804,8 @@ def encontrar_botoes_baixar(page) -> list[object]:
 def baixar_contracheques(page, context, pasta_saida: Path) -> list[Path]:
     alvos = encontrar_alvos_download(page)
     if not alvos:
+        if pagina_consultar_contracheque_pronta(page):
+            log_diagnostico_download(page)
         return []
 
     arquivos_baixados: list[Path] = []
@@ -778,24 +888,89 @@ def baixar_contracheques_baixar(page, context, pasta_saida: Path) -> list[Path]:
     return arquivos_baixados
 
 
+def encontrar_botoes_baixar(page) -> list[object]:
+    return [item for assinatura, item in encontrar_alvos_download(page) if "baix" in normalizar_texto(assinatura)]
+
+
+def encontrar_botoes_exibir(page) -> list[object]:
+    return [item for assinatura, item in encontrar_alvos_download(page, agressivo=True) if "exib" in normalizar_texto(assinatura)]
+
+
+def baixar_contracheques_baixar(page, context, pasta_saida: Path) -> list[Path]:
+    log("Procurando botões BAIXAR...")
+    log_diagnostico_download(page)
+
+    botoes = encontrar_botoes_baixar(page)
+    if not botoes and clicar_botao_consultar(page):
+        log("Atualizando lista após clicar em CONSULTAR...")
+        botoes = encontrar_botoes_baixar(page)
+
+    if not botoes:
+        exibir = encontrar_botoes_exibir(page)
+        if exibir:
+            log("Encontrei EXIBIR, tentando abrir os contracheques antes de baixar...")
+            try:
+                exibir[0].click(force=True)
+                page.wait_for_timeout(1500)
+            except Exception as erro:
+                log(f"[falha] botao EXIBIR -> {erro}")
+            log_diagnostico_download(page)
+            botoes = encontrar_botoes_baixar(page)
+
+    if not botoes and solicitar_continuacao_manual("Se você já está vendo os botões BAIXAR, pressione Enter para continuar."):
+        log("Fazendo varredura agressiva de links clicáveis...")
+        log_diagnostico_download(page)
+        botoes = [item for assinatura, item in encontrar_alvos_download(page, agressivo=True) if "baix" in normalizar_texto(assinatura)]
+
+    if not botoes:
+        return []
+
+    arquivos_baixados: list[Path] = []
+    for indice, botao in enumerate(botoes, start=1):
+        try:
+            arquivo = baixar_um_documento_baixar(page, context, botao, indice, len(botoes), pasta_saida)
+            arquivos_baixados.append(arquivo)
+        except Exception as erro:
+            log(f"[falha] botao BAIXAR {indice} -> {erro}")
+
+    return arquivos_baixados
+
+
+def iniciar_playwright():
+    log("Carregando Playwright...")
+    inicio = time.perf_counter()
+    from playwright.sync_api import sync_playwright
+
+    log(f"[tempo] Playwright carregado em {time.perf_counter() - inicio:.2f}s")
+    return sync_playwright()
+
+
 def abrir_navegador(playwright, headless: bool):
-    tentativas = [
-        ("Chromium", lambda: playwright.chromium.launch(headless=headless)),
-        ("Edge", lambda: playwright.chromium.launch(headless=headless, channel="msedge")),
-        ("Chrome", lambda: playwright.chromium.launch(headless=headless, channel="chrome")),
-    ]
+    if os.name == "nt":
+        tentativas = [
+            ("Microsoft Edge", lambda: playwright.chromium.launch(headless=headless, channel="msedge")),
+            ("Google Chrome", lambda: playwright.chromium.launch(headless=headless, channel="chrome")),
+            ("Chromium do Playwright", lambda: playwright.chromium.launch(headless=headless)),
+        ]
+    else:
+        tentativas = [
+            ("Chromium do Playwright", lambda: playwright.chromium.launch(headless=headless)),
+            ("Google Chrome", lambda: playwright.chromium.launch(headless=headless, channel="chrome")),
+        ]
 
     ultimo_erro: Exception | None = None
     for nome, abrir in tentativas:
         try:
             log(f"[info] abrindo navegador: {nome}")
-            return abrir()
+            browser = abrir()
+            log(f"[info] navegador aberto com sucesso: {nome}")
+            return browser
         except Exception as erro:
             ultimo_erro = erro
-            log(f"[info] falha ao abrir {nome}")
+            log(f"[info] falha ao abrir {nome}: {erro}")
 
     raise RuntimeError(
-        "Nao foi possivel abrir um navegador. Instale o Chromium do Playwright ou tenha Edge/Chrome instalados.",
+        "Nao foi possivel abrir um navegador. O Microsoft Edge ou o Google Chrome precisam estar instalados, ou o Chromium do Playwright precisa estar disponivel.",
     ) from ultimo_erro
 
 
@@ -820,6 +995,9 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> int:
+    inicio_programa = time.perf_counter()
+    print("Iniciando assistente...", flush=True)
+    print("Preparando navegador...", flush=True)
     configurar_logger()
     registrar_protocolo_windows()
     args = parse_args()
@@ -829,32 +1007,29 @@ def main() -> int:
     if not token:
         return 1
 
+    log(f"[tempo] programa_iniciado={time.perf_counter() - inicio_programa:.2f}s")
     exibir_diagnostico_inicial(Path(sys.executable).resolve(), origem_token, token, args.portal_url)
+    log("Se o navegador demorar, aguarde alguns segundos.")
+    log("Faça login no Portal do Servidor e vá até a tela com os botões BAIXAR.")
 
     pasta_saida = Path(args.download_dir).expanduser().resolve() if args.download_dir else criar_diretorio_temporario()
     pasta_saida.mkdir(parents=True, exist_ok=True)
 
-    inicio_upload_import = time.perf_counter()
-    from upload_service import UploadError, upload_pdfs_para_backend
-    log(f"[tempo] import_upload_service={time.perf_counter() - inicio_upload_import:.2f}s")
-
     browser = None
     try:
         log("Carregando navegador automático...")
-        inicio_import_playwright = time.perf_counter()
-        from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
-        from playwright.sync_api import sync_playwright
-
-        log(f"[tempo] import_playwright={time.perf_counter() - inicio_import_playwright:.2f}s")
-
-        with sync_playwright() as playwright:
+        with iniciar_playwright() as playwright:
+            inicio_navegador = time.perf_counter()
             log("Abrindo navegador...")
             browser = abrir_navegador(playwright, args.headless)
+            log(f"[tempo] navegador_aberto={time.perf_counter() - inicio_navegador:.2f}s")
             context = browser.new_context(accept_downloads=True)
             page = context.new_page()
             page.set_default_timeout(BROWSER_TIMEOUT_MS)
             log("Abrindo Portal do Servidor...")
+            inicio_portal = time.perf_counter()
             page.goto(args.portal_url, wait_until="domcontentloaded")
+            log(f"[tempo] portal_aberto={time.perf_counter() - inicio_portal:.2f}s")
             log("Aguardando login...")
 
             if not wait_until_paystub_page_ready(page):
@@ -874,6 +1049,9 @@ def main() -> int:
                 log("[falha] nenhum PDF encontrado para baixar")
                 return 1
 
+            inicio_upload_import = time.perf_counter()
+            from upload_service import upload_pdfs_para_backend
+            log(f"[tempo] import_upload_service={time.perf_counter() - inicio_upload_import:.2f}s")
             log(f"Encontrados {len(arquivos)} contracheques.")
             log(f"[enviando] {len(arquivos)} arquivo(s) para backend")
             resultado = upload_pdfs_para_backend(
@@ -885,10 +1063,6 @@ def main() -> int:
             log(f"[concluído] batch_id={resultado.batch_id} status={resultado.status}")
 
         return 0
-    except UploadError as erro:
-        exibir_erro_amigavel("Não foi possível concluir a importação agora. Verifique o assistente e tente novamente.")
-        log(f"[falha] upload para backend: {erro}")
-        return 1
     except Exception as erro:
         exibir_erro_amigavel("Não foi possível concluir a importação agora. Verifique o assistente e tente novamente.")
         log(f"[falha] {erro}")

@@ -31,6 +31,6 @@ if %errorlevel%==0 (
 )
 
 echo.
-echo Build concluido. O executavel deve ficar em dist\GestaoDeCarreira-Assistente.exe
+echo Build concluido. O executavel deve ficar em dist\GestaoDeCarreira-Assistente\GestaoDeCarreira-Assistente.exe
 echo O instalador real deve ficar em backend\static\downloads\GestaoDeCarreira-Setup-1.0.4.exe
 endlocal

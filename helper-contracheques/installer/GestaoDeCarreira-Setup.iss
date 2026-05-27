@@ -42,7 +42,7 @@ Name: "brazilianportuguese"; MessagesFile: "compiler:Languages\BrazilianPortugue
 Name: "desktopicon"; Description: "Criar ícone na área de trabalho"; GroupDescription: "Ícones adicionais:"; Flags: unchecked
 
 [Files]
-Source: "..\dist\GestaoDeCarreira-Assistente.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\dist\GestaoDeCarreira-Assistente\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
 Name: "{group}\{#AppName}"; Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"

@@ -5,8 +5,6 @@ import time
 
 def main() -> int:
     inicio = time.perf_counter()
-    print("Iniciando assistente...", flush=True)
-    print("Carregando navegador automático...", flush=True)
 
     import main as helper_main
 

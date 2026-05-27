@@ -38,13 +38,13 @@ Use o script de build:
 Ou rode o PyInstaller direto:
 
 ```powershell
-pyinstaller --onefile --name GestaoDeCarreira-Assistente main.py
+pyinstaller --noconfirm helper.spec
 ```
 
 O arquivo final fica em:
 
 ```text
-dist\GestaoDeCarreira-Assistente.exe
+dist\GestaoDeCarreira-Assistente\GestaoDeCarreira-Assistente.exe
 ```
 
 ## Gerar o instalador
