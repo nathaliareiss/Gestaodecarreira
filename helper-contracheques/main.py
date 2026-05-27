@@ -493,6 +493,11 @@ def _parece_alvo_por_termos(locator, assinatura: str, termos: tuple[str, ...]) -
 
 def encontrar_alvos_download(page, agressivo: bool = False) -> list[tuple[str, object]]:
     seletores = [
+        "a",
+        "button",
+        "[role='button']",
+        "input[type='button']",
+        "input[type='submit']",
         "button:has-text('BAIXAR')",
         "a:has-text('BAIXAR')",
         "input[value*='BAIXAR' i]",
@@ -596,6 +601,9 @@ def pagina_consultar_contracheque_pronta(page) -> bool:
     if _contar_selector(page, "text=EXIBIR") > 0:
         return True
 
+    if len(encontrar_alvos_download(page)) > 0:
+        return True
+
     sinais = 0
     if "consultar contracheque" in texto:
         sinais += 1
@@ -607,8 +615,6 @@ def pagina_consultar_contracheque_pronta(page) -> bool:
         sinais += 1
     if len(encontrar_botoes_exibir(page)) > 0:
         sinais += 1
-    if len(encontrar_alvos_download(page)) > 0:
-        sinais += 2
 
     return sinais >= 3
 
