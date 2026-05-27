@@ -23,7 +23,7 @@ if ($OneFile) {
     if (Test-Path "version_info.txt") {
         $versionArg = @("--version-file", "version_info.txt")
     }
-    .\.venv\Scripts\python.exe -m PyInstaller --clean --noconfirm --onefile --name GestaoDeCarreira-Assistente @versionArg @iconArg main.py
+    .\.venv\Scripts\python.exe -m PyInstaller --clean --noconfirm --onefile --name GestaoDeCarreira-Assistente @versionArg @iconArg bootstrap.py
 } else {
     .\.venv\Scripts\python.exe -m PyInstaller --clean --noconfirm helper.spec
 }

@@ -12,10 +12,6 @@ from datetime import datetime
 from pathlib import Path
 from urllib.parse import parse_qs, urlencode, urljoin, urlparse
 
-import requests
-from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
-from playwright.sync_api import sync_playwright
-
 try:
     import winreg
 except ImportError:  # pragma: no cover - only available on Windows
@@ -31,7 +27,6 @@ from config import (
     HELPER_VERSION,
     PORTAL_URL,
 )
-from upload_service import UploadError, upload_pdfs_para_backend
 
 
 LOGGER = logging.getLogger("helper-contracheques")
@@ -565,6 +560,8 @@ def wait_until_paystub_page_ready(page) -> bool:
 
 
 def criar_sessao_requests(context, page) -> requests.Session:
+    import requests
+
     sessao = requests.Session()
     try:
         sessao.headers.update({"User-Agent": page.evaluate("navigator.userAgent")})
@@ -583,6 +580,8 @@ def criar_sessao_requests(context, page) -> requests.Session:
 
 
 def baixar_url_com_sessao(sessao: requests.Session, url: str, destino: Path) -> None:
+    import requests
+
     resposta = sessao.get(url, timeout=DOWNLOAD_TIMEOUT_MS / 1000, stream=True)
     if not resposta.ok:
         raise RuntimeError(f"Falha ao baixar {url} ({resposta.status_code}).")
@@ -614,7 +613,15 @@ def baixar_um_documento(page, context, alvo, indice: int, total: int, pasta_said
             destino = destino.with_suffix(".pdf")
         download.save_as(str(destino))
         return destino
-    except PlaywrightTimeoutError:
+    except Exception as erro_download:
+        try:
+            from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
+        except Exception:
+            PlaywrightTimeoutError = Exception  # type: ignore[assignment]
+
+        if not isinstance(erro_download, PlaywrightTimeoutError):
+            raise
+
         href = None
         try:
             href = locator.get_attribute("href")
@@ -725,7 +732,15 @@ def baixar_um_documento_baixar(page, context, locator, indice: int, total: int, 
             destino = destino.with_suffix(".pdf")
         download.save_as(str(destino))
         return destino
-    except PlaywrightTimeoutError:
+    except Exception as erro_download:
+        try:
+            from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
+        except Exception:
+            PlaywrightTimeoutError = Exception  # type: ignore[assignment]
+
+        if not isinstance(erro_download, PlaywrightTimeoutError):
+            raise
+
         try:
             href = locator.get_attribute("href")
         except Exception:
@@ -819,14 +834,26 @@ def main() -> int:
     pasta_saida = Path(args.download_dir).expanduser().resolve() if args.download_dir else criar_diretorio_temporario()
     pasta_saida.mkdir(parents=True, exist_ok=True)
 
+    inicio_upload_import = time.perf_counter()
+    from upload_service import UploadError, upload_pdfs_para_backend
+    log(f"[tempo] import_upload_service={time.perf_counter() - inicio_upload_import:.2f}s")
+
     browser = None
     try:
+        log("Carregando navegador automático...")
+        inicio_import_playwright = time.perf_counter()
+        from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
+        from playwright.sync_api import sync_playwright
+
+        log(f"[tempo] import_playwright={time.perf_counter() - inicio_import_playwright:.2f}s")
+
         with sync_playwright() as playwright:
             log("Abrindo navegador...")
             browser = abrir_navegador(playwright, args.headless)
             context = browser.new_context(accept_downloads=True)
             page = context.new_page()
             page.set_default_timeout(BROWSER_TIMEOUT_MS)
+            log("Abrindo Portal do Servidor...")
             page.goto(args.portal_url, wait_until="domcontentloaded")
             log("Aguardando login...")
 

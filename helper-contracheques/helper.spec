@@ -14,7 +14,7 @@ if icon_path.is_file():
 
 
 a = Analysis(
-    ["main.py"],
+    ["bootstrap.py"],
     pathex=[str(project_dir)],
     binaries=[],
     datas=datas,
