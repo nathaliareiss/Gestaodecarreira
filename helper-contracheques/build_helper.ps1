@@ -32,7 +32,20 @@ if ($Installer) {
     powershell.exe -ExecutionPolicy Bypass -File "scripts\generate-installer-icon.ps1"
     $iscc = Get-Command iscc -ErrorAction SilentlyContinue
     if (-not $iscc) {
-        throw "Inno Setup nao encontrado no PATH."
+        $candidatePaths = @(
+            "C:\Program Files (x86)\Inno Setup 6\ISCC.exe",
+            "C:\Program Files\Inno Setup 6\ISCC.exe"
+        )
+        foreach ($candidate in $candidatePaths) {
+            if (Test-Path $candidate) {
+                $iscc = [pscustomobject]@{ Source = $candidate }
+                break
+            }
+        }
+    }
+
+    if (-not $iscc) {
+        throw "Inno Setup nao encontrado no PATH nem nos locais padrao."
     }
 
     & $iscc.Source "installer\GestaoDeCarreira-Setup.iss"

@@ -21,7 +21,13 @@ where iscc >nul 2>nul
 if %errorlevel%==0 (
   iscc installer\GestaoDeCarreira-Setup.iss
 ) else (
-  echo Inno Setup nao encontrado. O instalador real nao foi gerado.
+  if exist "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" (
+    "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer\GestaoDeCarreira-Setup.iss
+  ) else if exist "C:\Program Files\Inno Setup 6\ISCC.exe" (
+    "C:\Program Files\Inno Setup 6\ISCC.exe" installer\GestaoDeCarreira-Setup.iss
+  ) else (
+    echo Inno Setup nao encontrado. O instalador real nao foi gerado.
+  )
 )
 
 echo.
