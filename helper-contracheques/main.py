@@ -305,6 +305,63 @@ def _locators_visiveis(locator) -> list[object]:
     return itens
 
 
+def _texto_visivel_na_pagina(page, termo: str) -> bool:
+    return normalizar_texto(termo) in normalizar_texto(texto_da_pagina(page))
+
+
+def _contar_elementos_visiveis_com_texto(page, termos: list[str]) -> int:
+    seletores = ["button", "a", "[role='button']"]
+    encontrados: list[str] = []
+
+    for seletor in seletores:
+        try:
+            locator = page.locator(seletor)
+        except Exception:
+            continue
+
+        for item in _locators_visiveis(locator):
+            assinatura = normalizar_texto(texto_elemento(item))
+            if not assinatura:
+                continue
+
+            if any(normalizar_texto(termo) in assinatura for termo in termos):
+                if assinatura not in encontrados:
+                    encontrados.append(assinatura)
+
+    return len(encontrados)
+
+
+def _contar_textos_visiveis(page, termos: list[str]) -> int:
+    texto = normalizar_texto(texto_da_pagina(page))
+    return sum(1 for termo in termos if normalizar_texto(termo) in texto)
+
+
+def diagnostico_pagina_contracheque(page) -> dict[str, object]:
+    botoes_baixar = encontrar_botoes_baixar(page)
+    botoes_exibir = encontrar_botoes_exibir(page)
+    texto = normalizar_texto(texto_da_pagina(page))
+
+    diagnostico = {
+        "url": getattr(page, "url", ""),
+        "title": "",
+        "botoes_baixar_visiveis": len(botoes_baixar),
+        "botoes_exibir_visiveis": len(botoes_exibir),
+        "tem_consultar_contracheque": "consultar contracheque" in texto,
+        "tem_mes_ano": "mes/ano" in texto or "mes ano" in texto,
+        "tem_mensal": "mensal" in texto,
+        "tem_consultar": _contar_elementos_visiveis_com_texto(page, ["consultar"]),
+        "tem_baixar": len(botoes_baixar),
+        "tem_exibir": len(botoes_exibir),
+    }
+
+    try:
+        diagnostico["title"] = page.title()
+    except Exception:
+        diagnostico["title"] = ""
+
+    return diagnostico
+
+
 def _parece_alvo_download(locator, assinatura: str) -> bool:
     texto = normalizar_texto(assinatura)
     if any(termo in texto for termo in DOWNLOAD_KEYWORDS):
@@ -395,27 +452,64 @@ def encontrar_botoes_consultar(page) -> list[object]:
     return candidatos
 
 
+def encontrar_botoes_exibir(page) -> list[object]:
+    seletores = [
+        "button:has-text('EXIBIR')",
+        "a:has-text('EXIBIR')",
+        "button:has-text('Exibir')",
+        "a:has-text('Exibir')",
+        "button[aria-label*='exib' i]",
+        "a[aria-label*='exib' i]",
+        "[title*='exib' i]",
+        "[role='button']:has-text('EXIBIR')",
+        "[role='button']:has-text('Exibir')",
+    ]
+
+    candidatos: list[object] = []
+    vistos: set[str] = set()
+
+    for seletor in seletores:
+        try:
+            locator = page.locator(seletor)
+        except Exception:
+            continue
+
+        for item in _locators_visiveis(locator):
+            assinatura = texto_elemento(item) or seletor
+            chave = normalizar_texto(assinatura)
+            if chave in vistos:
+                continue
+            if "exib" not in chave:
+                continue
+            vistos.add(chave)
+            candidatos.append(item)
+
+    return candidatos
+
+
 def pagina_consultar_contracheque_pronta(page) -> bool:
     texto = normalizar_texto(texto_da_pagina(page))
     if not texto:
         return False
 
-    url = normalizar_texto(getattr(page, "url", ""))
-    tem_contracheque = "contracheque" in texto or "holerite" in texto or "contracheque" in url
-    tem_acao = any(termo in texto for termo in ("baixar", "consultar", "download", "pdf"))
-    tem_periodo = "competencia" in texto or "mes/ano" in texto or "mes ano" in texto
-    tem_periodo = tem_periodo or ("mes" in texto and "ano" in texto)
-
-    if tem_contracheque and (tem_acao or tem_periodo or bool(encontrar_botoes_consultar(page))):
+    if len(encontrar_botoes_baixar(page)) > 0:
         return True
 
-    if tem_contracheque and encontrar_alvos_download(page):
-        return True
+    sinais = 0
+    if "consultar contracheque" in texto:
+        sinais += 1
+    if "mes/ano" in texto or "mes ano" in texto or ("mes" in texto and "ano" in texto):
+        sinais += 1
+    if "mensal" in texto:
+        sinais += 1
+    if len(encontrar_botoes_consultar(page)) > 0:
+        sinais += 1
+    if len(encontrar_botoes_exibir(page)) > 0:
+        sinais += 1
+    if len(encontrar_alvos_download(page)) > 0:
+        sinais += 2
 
-    if tem_acao and tem_periodo:
-        return True
-
-    return False
+    return sinais >= 3
 
 
 def solicitar_continuacao_manual(mensagem: str) -> bool:
@@ -427,24 +521,47 @@ def solicitar_continuacao_manual(mensagem: str) -> bool:
 
 
 def wait_until_paystub_page_ready(page) -> bool:
-    log("Aguardando a página de contracheques...")
-    prazo = time.monotonic() + 180
+    log("Após login, vá até Contracheque.")
+    log("Procurando botões BAIXAR...")
+    prazo = time.monotonic() + 45
     ultimo_log = 0.0
 
     while time.monotonic() < prazo:
         if pagina_consultar_contracheque_pronta(page):
+            diagnostico = diagnostico_pagina_contracheque(page)
+            log(
+                "[debug] "
+                f"url={diagnostico['url']} | "
+                f"title={diagnostico['title']} | "
+                f"baixar={diagnostico['botoes_baixar_visiveis']} | "
+                f"exibir={diagnostico['botoes_exibir_visiveis']} | "
+                f"consultar_contracheque={'sim' if diagnostico['tem_consultar_contracheque'] else 'nao'} | "
+                f"mes_ano={'sim' if diagnostico['tem_mes_ano'] else 'nao'} | "
+                f"mensal={'sim' if diagnostico['tem_mensal'] else 'nao'}"
+            )
             log("Página de contracheques encontrada.")
             return True
 
         agora = time.monotonic()
         if agora - ultimo_log >= 5:
+            diagnostico = diagnostico_pagina_contracheque(page)
+            log(
+                "[debug] "
+                f"url={diagnostico['url']} | "
+                f"title={diagnostico['title']} | "
+                f"baixar={diagnostico['botoes_baixar_visiveis']} | "
+                f"exibir={diagnostico['botoes_exibir_visiveis']} | "
+                f"consultar_contracheque={'sim' if diagnostico['tem_consultar_contracheque'] else 'nao'} | "
+                f"mes_ano={'sim' if diagnostico['tem_mes_ano'] else 'nao'} | "
+                f"mensal={'sim' if diagnostico['tem_mensal'] else 'nao'}"
+            )
             log("Ainda não identifiquei a tela de contracheques.")
             ultimo_log = agora
 
         page.wait_for_timeout(1000)
 
     log("Não consegui identificar a página de contracheques automaticamente.")
-    return solicitar_continuacao_manual("Se você já está na página de contracheques, pressione Enter para continuar.")
+    return solicitar_continuacao_manual("Se você já está vendo os botões BAIXAR, pressione Enter para continuar.")
 
 
 def criar_sessao_requests(context, page) -> requests.Session:
@@ -535,7 +652,38 @@ def clicar_botao_consultar(page) -> bool:
 
 
 def encontrar_botoes_baixar(page) -> list[object]:
-    return [locator for _, locator in encontrar_alvos_download(page)]
+    seletores = [
+        "button:has-text('BAIXAR')",
+        "a:has-text('BAIXAR')",
+        "button:has-text('Baixar')",
+        "a:has-text('Baixar')",
+        "button[aria-label*='baix' i]",
+        "a[aria-label*='baix' i]",
+        "[title*='baix' i]",
+        "[role='button']:has-text('BAIXAR')",
+        "[role='button']:has-text('Baixar')",
+    ]
+
+    candidatos: list[object] = []
+    vistos: set[str] = set()
+
+    for seletor in seletores:
+        try:
+            locator = page.locator(seletor)
+        except Exception:
+            continue
+
+        for item in _locators_visiveis(locator):
+            assinatura = texto_elemento(item) or seletor
+            chave = normalizar_texto(assinatura)
+            if chave in vistos:
+                continue
+            if "baixar" not in chave:
+                continue
+            vistos.add(chave)
+            candidatos.append(item)
+
+    return candidatos
 
 
 def baixar_contracheques(page, context, pasta_saida: Path) -> list[Path]:
@@ -596,8 +744,10 @@ def baixar_um_documento_baixar(page, context, locator, indice: int, total: int, 
 
 
 def baixar_contracheques_baixar(page, context, pasta_saida: Path) -> list[Path]:
+    log("Procurando botões BAIXAR...")
     botoes = encontrar_botoes_baixar(page)
     if not botoes and clicar_botao_consultar(page):
+        log("Atualizando lista após clicar em CONSULTAR...")
         botoes = encontrar_botoes_baixar(page)
     if not botoes:
         return []
@@ -672,11 +822,13 @@ def main() -> int:
     browser = None
     try:
         with sync_playwright() as playwright:
+            log("Abrindo navegador...")
             browser = abrir_navegador(playwright, args.headless)
             context = browser.new_context(accept_downloads=True)
             page = context.new_page()
             page.set_default_timeout(BROWSER_TIMEOUT_MS)
             page.goto(args.portal_url, wait_until="domcontentloaded")
+            log("Aguardando login...")
 
             if not wait_until_paystub_page_ready(page):
                 return 1

@@ -42,7 +42,7 @@ Source: "..\dist\{#AppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 Name: "{group}\{#AppName}"; Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"
 
 [Run]
-Filename: "{app}\{#AppExeName}"; Description: "Abrir {#AppName}"; Flags: nowait skipifsilent
+Filename: "{app}\{#AppExeName}"; Description: "Abrir {#AppName} agora"; Flags: postinstall nowait skipifsilent
 
 [Registry]
 Root: HKCU; Subkey: "Software\Classes\gestaodecarreira"; ValueType: string; ValueName: ""; ValueData: "URL:Gestão de Carreira"; Flags: uninsdeletekey

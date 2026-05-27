@@ -100,15 +100,34 @@ class HelperContrachequesTests(unittest.TestCase):
         self.assertEqual(resultado[2], "[oculto]")
         self.assertEqual(resultado[3], "gestaodecarreira://importar?token=%5Boculto%5D")
 
-    def test_detecta_pagina_de_contracheques_por_texto_e_botao_consultar(self):
+    def test_detecta_pagina_de_contracheques_por_sinais_fortes(self):
         page = FakePage(
             url="https://portal.exemplo/contracheques",
             title="Portal do Servidor",
             selectors={
-                "body": FakeCollection(inner_text="Portal do Servidor\nMês/Ano\nConsultar contracheque"),
-                "button:has-text('Consultar')": FakeCollection(
-                    [FakeElement("Consultar", attrs={"title": "Consultar"})],
-                ),
+                "body": FakeCollection(inner_text="Consultar contracheque\nMês/Ano\nMensal\nCONSULTAR\nEXIBIR\nBAIXAR"),
+                "button:has-text('Consultar')": FakeCollection([FakeElement("Consultar")]),
+                "button:has-text('CONSULTAR')": FakeCollection([FakeElement("CONSULTAR")]),
+                "button:has-text('EXIBIR')": FakeCollection([FakeElement("EXIBIR")]),
+                "button:has-text('BAIXAR')": FakeCollection([FakeElement("BAIXAR")]),
+                "button": FakeCollection([FakeElement("BAIXAR"), FakeElement("EXIBIR"), FakeElement("CONSULTAR")]),
+                "a": FakeCollection([]),
+                "[role='button']": FakeCollection([]),
+            },
+        )
+
+        self.assertTrue(helper.pagina_consultar_contracheque_pronta(page))
+
+    def test_detecta_pagina_pronta_quando_ha_botao_baixar_visivel(self):
+        page = FakePage(
+            url="https://portal.exemplo/outra",
+            title="Outra tela",
+            selectors={
+                "body": FakeCollection(inner_text="Algo diferente"),
+                "button:has-text('BAIXAR')": FakeCollection([FakeElement("BAIXAR")]),
+                "button": FakeCollection([FakeElement("BAIXAR")]),
+                "a": FakeCollection([]),
+                "[role='button']": FakeCollection([]),
             },
         )
 
