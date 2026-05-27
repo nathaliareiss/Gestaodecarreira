@@ -617,7 +617,7 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
   }
 
   async function tentarAbrirAssistenteImportacao(token: string) {
-    const url = `gestaodecarreira://import?token=${encodeURIComponent(token)}`
+    const url = `gestaodecarreira://importar?token=${encodeURIComponent(token)}`
     return await new Promise<boolean>((resolve) => {
       let resolvido = false
       const link = document.createElement("a")

@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import argparse
-import os
 import logging
+import os
 import re
 import shutil
 import sys
@@ -119,6 +119,7 @@ def exibir_cabecalho_interativo() -> None:
 def solicitar_token_interativo() -> str:
     exibir_cabecalho_interativo()
     try:
+        print("Não consegui receber o token automaticamente.")
         return input("Cole seu token temporário gerado no site e aperte Enter:\n> ").strip()
     except EOFError:
         return ""
@@ -183,6 +184,13 @@ def extrair_token_de_candidato(candidato: str) -> str:
     return ""
 
 
+def registrar_diagnostico_de_entrada(args: argparse.Namespace) -> None:
+    log(f"[args] sys.argv={sanitizar_argv_para_log(sys.argv)}")
+    log(f"[args] token_cli={'sim' if bool(str(getattr(args, 'token', '')).strip()) else 'nao'}")
+    log(f"[args] import_url={'sim' if bool(str(getattr(args, 'import_url', '')).strip()) else 'nao'}")
+    log(f"[args] import_uri={'sim' if bool(str(getattr(args, 'import_uri', '')).strip()) else 'nao'}")
+
+
 def resolver_token(args: argparse.Namespace) -> tuple[str | None, str]:
     candidatos = [
         ("cli", getattr(args, "token", "")),
@@ -191,14 +199,21 @@ def resolver_token(args: argparse.Namespace) -> tuple[str | None, str]:
     ]
 
     for origem, candidato in candidatos:
-        token = extrair_token_de_candidato(str(candidato or ""))
+        texto_candidato = str(candidato or "").strip()
+        log(f"[token] origem={origem} informado={'sim' if texto_candidato else 'nao'}")
+        token = extrair_token_de_candidato(texto_candidato)
+        log(f"[token] origem={origem} extraido={'sim' if token else 'nao'}")
         if token:
             return token, origem
 
+    log("Não consegui receber o token automaticamente.")
+    log("[token] entrando no modo manual")
     token_interativo = solicitar_token_interativo()
     if token_interativo:
+        log("[token] origem=manual extraido=sim")
         return token_interativo, "manual"
 
+    log("[token] origem=manual extraido=nao")
     exibir_erro_amigavel("Token obrigatório para iniciar a importação.")
     return None, "manual"
 
@@ -245,52 +260,191 @@ def elemento_visivel(locator) -> bool:
         return False
 
 
-def pagina_consultar_contracheque_pronta(page) -> bool:
-    elementos = [
-        page.get_by_text("Consultar contracheque"),
-        page.get_by_text("Mês/Ano"),
-        page.get_by_role("button", name="CONSULTAR"),
-        page.get_by_role("button", name="BAIXAR"),
-    ]
+def texto_da_pagina(page) -> str:
+    partes: list[str] = []
 
-    return all(elemento_visivel(locator) for locator in elementos)
+    try:
+        corpo = page.locator("body").inner_text(timeout=3000)
+        if isinstance(corpo, str) and corpo.strip():
+            partes.append(corpo.strip())
+    except Exception:
+        pass
+
+    try:
+        titulo = page.title()
+        if isinstance(titulo, str) and titulo.strip():
+            partes.append(titulo.strip())
+    except Exception:
+        pass
+
+    try:
+        url = page.url
+        if isinstance(url, str) and url.strip():
+            partes.append(url.strip())
+    except Exception:
+        pass
+
+    return " ".join(partes)
 
 
-def wait_until_paystub_page_ready(page) -> bool:
-    log("Aguardando página correta...")
-    prazo = time.monotonic() + 10 * 60
-
-    while time.monotonic() < prazo:
-        if pagina_consultar_contracheque_pronta(page):
-            log("Página Consultar contracheque encontrada.")
-            return True
-
-        log("Aguardando você acessar a página Consultar contracheque...")
-        page.wait_for_timeout(1000)
-
-    log("Página Consultar contracheque não encontrada.")
-    exibir_erro_amigavel("Página Consultar contracheque não encontrada.")
-    return False
-
-
-def encontrar_botoes_baixar(page) -> list[object]:
-    locator = page.get_by_role("button", name="BAIXAR")
-
+def _locators_visiveis(locator) -> list[object]:
     try:
         total = locator.count()
     except Exception:
         return []
 
-    botoes: list[object] = []
+    itens: list[object] = []
     for indice in range(total):
         item = locator.nth(indice)
         try:
             if item.is_visible():
-                botoes.append(item)
+                itens.append(item)
         except Exception:
             continue
 
-    return botoes
+    return itens
+
+
+def _parece_alvo_download(locator, assinatura: str) -> bool:
+    texto = normalizar_texto(assinatura)
+    if any(termo in texto for termo in DOWNLOAD_KEYWORDS):
+        return True
+
+    for nome in ("aria-label", "title", "href", "download"):
+        try:
+            valor = locator.get_attribute(nome)
+        except Exception:
+            valor = None
+
+        if not isinstance(valor, str) or not valor.strip():
+            continue
+
+        texto_atributo = normalizar_texto(valor)
+        if nome == "download":
+            return True
+        if ".pdf" in texto_atributo:
+            return True
+        if any(termo in texto_atributo for termo in DOWNLOAD_KEYWORDS):
+            return True
+
+    return False
+
+
+def encontrar_alvos_download(page) -> list[tuple[str, object]]:
+    seletores = [
+        *DOWNLOAD_SELECTORS,
+        "button",
+        "a",
+        "[role='button']",
+        "[download]",
+    ]
+
+    candidatos: list[tuple[str, object]] = []
+    vistos: set[str] = set()
+
+    for seletor in dict.fromkeys(seletores):
+        try:
+            locator = page.locator(seletor)
+        except Exception:
+            continue
+
+        for item in _locators_visiveis(locator):
+            assinatura = texto_elemento(item) or seletor
+            chave = normalizar_texto(assinatura)
+            if chave in vistos:
+                continue
+            if not _parece_alvo_download(item, assinatura):
+                continue
+            vistos.add(chave)
+            candidatos.append((assinatura, item))
+
+    return candidatos
+
+
+def encontrar_botoes_consultar(page) -> list[object]:
+    seletores = [
+        "button:has-text('Consultar')",
+        "a:has-text('Consultar')",
+        "button:has-text('CONSULTAR')",
+        "a:has-text('CONSULTAR')",
+        "button[aria-label*='consult' i]",
+        "a[aria-label*='consult' i]",
+        "[title*='consult' i]",
+        "[role='button']:has-text('Consultar')",
+    ]
+
+    candidatos: list[object] = []
+    vistos: set[str] = set()
+
+    for seletor in seletores:
+        try:
+            locator = page.locator(seletor)
+        except Exception:
+            continue
+
+        for item in _locators_visiveis(locator):
+            assinatura = texto_elemento(item) or seletor
+            chave = normalizar_texto(assinatura)
+            if chave in vistos:
+                continue
+            if "consult" not in chave:
+                continue
+            vistos.add(chave)
+            candidatos.append(item)
+
+    return candidatos
+
+
+def pagina_consultar_contracheque_pronta(page) -> bool:
+    texto = normalizar_texto(texto_da_pagina(page))
+    if not texto:
+        return False
+
+    url = normalizar_texto(getattr(page, "url", ""))
+    tem_contracheque = "contracheque" in texto or "holerite" in texto or "contracheque" in url
+    tem_acao = any(termo in texto for termo in ("baixar", "consultar", "download", "pdf"))
+    tem_periodo = "competencia" in texto or "mes/ano" in texto or "mes ano" in texto
+    tem_periodo = tem_periodo or ("mes" in texto and "ano" in texto)
+
+    if tem_contracheque and (tem_acao or tem_periodo or bool(encontrar_botoes_consultar(page))):
+        return True
+
+    if tem_contracheque and encontrar_alvos_download(page):
+        return True
+
+    if tem_acao and tem_periodo:
+        return True
+
+    return False
+
+
+def solicitar_continuacao_manual(mensagem: str) -> bool:
+    try:
+        input(f"{mensagem}\n")
+        return True
+    except EOFError:
+        return False
+
+
+def wait_until_paystub_page_ready(page) -> bool:
+    log("Aguardando a página de contracheques...")
+    prazo = time.monotonic() + 180
+    ultimo_log = 0.0
+
+    while time.monotonic() < prazo:
+        if pagina_consultar_contracheque_pronta(page):
+            log("Página de contracheques encontrada.")
+            return True
+
+        agora = time.monotonic()
+        if agora - ultimo_log >= 5:
+            log("Ainda não identifiquei a tela de contracheques.")
+            ultimo_log = agora
+
+        page.wait_for_timeout(1000)
+
+    log("Não consegui identificar a página de contracheques automaticamente.")
+    return solicitar_continuacao_manual("Se você já está na página de contracheques, pressione Enter para continuar.")
 
 
 def criar_sessao_requests(context, page) -> requests.Session:
@@ -362,6 +516,28 @@ def baixar_um_documento(page, context, alvo, indice: int, total: int, pasta_said
         return destino
 
 
+def clicar_botao_consultar(page) -> bool:
+    botoes = encontrar_botoes_consultar(page)
+    if not botoes:
+        return False
+
+    botao = botoes[0]
+    assinatura = texto_elemento(botao) or "botão Consultar"
+    log(f"[info] clicando em {assinatura[:120]}")
+
+    try:
+        botao.click(force=True)
+        page.wait_for_timeout(1500)
+        return True
+    except Exception as erro:
+        log(f"[falha] botao consultar -> {erro}")
+        return False
+
+
+def encontrar_botoes_baixar(page) -> list[object]:
+    return [locator for _, locator in encontrar_alvos_download(page)]
+
+
 def baixar_contracheques(page, context, pasta_saida: Path) -> list[Path]:
     alvos = encontrar_alvos_download(page)
     if not alvos:
@@ -379,21 +555,10 @@ def baixar_contracheques(page, context, pasta_saida: Path) -> list[Path]:
     return arquivos_baixados
 
 
-def pedir_login_manual(page) -> None:
+def pedir_login_manual(_page) -> bool:
     log("[aguardando login] navegador aberto")
     log("[aguardando login] faça login manual e vá até a página de contracheques")
-
-    while True:
-        try:
-            input("Quando estiver na página de contracheques, pressione ENTER para procurar downloads...")
-        except EOFError:
-            break
-
-        page.wait_for_timeout(1000)
-        if encontrar_alvos_download(page):
-            return
-
-        log("[aguardando login] nenhum botão de download ainda. Navegue até a lista e tente de novo.")
+    return solicitar_continuacao_manual("Se você já está na página de contracheques, pressione Enter para continuar.")
 
 
 def baixar_um_documento_baixar(page, context, locator, indice: int, total: int, pasta_saida: Path) -> Path:
@@ -432,6 +597,8 @@ def baixar_um_documento_baixar(page, context, locator, indice: int, total: int, 
 
 def baixar_contracheques_baixar(page, context, pasta_saida: Path) -> list[Path]:
     botoes = encontrar_botoes_baixar(page)
+    if not botoes and clicar_botao_consultar(page):
+        botoes = encontrar_botoes_baixar(page)
     if not botoes:
         return []
 
@@ -491,6 +658,8 @@ def main() -> int:
     configurar_logger()
     registrar_protocolo_windows()
     args = parse_args()
+    registrar_diagnostico_de_entrada(args)
+
     token, origem_token = resolver_token(args)
     if not token:
         return 1
@@ -512,10 +681,15 @@ def main() -> int:
             if not wait_until_paystub_page_ready(page):
                 return 1
 
-            log("Página encontrada.")
+            log("Página pronta.")
             log("Iniciando download automático dos contracheques...")
 
             arquivos = baixar_contracheques_baixar(page, context, pasta_saida)
+            if not arquivos:
+                log("Não consegui encontrar botões de download automaticamente.")
+                if pedir_login_manual(page):
+                    arquivos = baixar_contracheques_baixar(page, context, pasta_saida)
+
             if not arquivos:
                 exibir_erro_amigavel("Nenhum PDF foi encontrado para baixar.")
                 log("[falha] nenhum PDF encontrado para baixar")
