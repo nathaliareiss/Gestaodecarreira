@@ -76,3 +76,41 @@ def test_montar_link_redefinicao_usa_frontend_base_url(monkeypatch) -> None:
     assert email_service._montar_link_redefinicao("token-123") == (
         "https://frontend.example.com/redefinir-senha?token=token-123"
     )
+
+
+def test_enviar_email_confirmacao_monta_template_html(monkeypatch) -> None:
+    capturado = {}
+
+    def enviar_falso(mensagem):
+        capturado["mensagem"] = mensagem
+
+    monkeypatch.setattr(email_service, "FRONTEND_BASE_URL", "https://frontend.example.com")
+    monkeypatch.setattr(email_service, "_enviar_mensagem", enviar_falso)
+
+    email_service.enviar_email_confirmacao("maria@example.com", "Maria", "token-123")
+
+    mensagem = capturado["mensagem"]
+    html = mensagem.get_body(preferencelist=("html",)).get_content()
+    assert mensagem["Subject"] == "Confirme seu cadastro no Career Flow"
+    assert "Career Flow" in html
+    assert "Clique para confirmar seu cadastro" in html
+    assert "https://frontend.example.com/confirmar-email?token=token-123" in html
+
+
+def test_enviar_email_recuperacao_monta_template_html(monkeypatch) -> None:
+    capturado = {}
+
+    def enviar_falso(mensagem):
+        capturado["mensagem"] = mensagem
+
+    monkeypatch.setattr(email_service, "FRONTEND_BASE_URL", "https://frontend.example.com")
+    monkeypatch.setattr(email_service, "_enviar_mensagem", enviar_falso)
+
+    email_service.enviar_email_recuperacao_senha("maria@example.com", "Maria", "token-456")
+
+    mensagem = capturado["mensagem"]
+    html = mensagem.get_body(preferencelist=("html",)).get_content()
+    assert mensagem["Subject"] == "Redefina sua senha no Career Flow"
+    assert "Career Flow" in html
+    assert "Criar nova senha" in html
+    assert "https://frontend.example.com/redefinir-senha?token=token-456" in html

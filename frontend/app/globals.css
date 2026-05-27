@@ -223,6 +223,13 @@ code {
   margin-bottom: 0;
 }
 
+.page-shell--confirm-email {
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  padding-block: 4rem;
+}
+
 .bg-orb {
   position: absolute;
   inset: auto;
@@ -982,6 +989,89 @@ html[data-theme="light"] .success-box {
 
 html[data-theme="light"] .results-card {
   background: var(--surface-strong);
+}
+
+.confirm-email-card {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 34rem);
+  padding: 2.2rem;
+  display: grid;
+  gap: 1rem;
+  justify-items: center;
+  text-align: center;
+  background: linear-gradient(180deg, rgba(8, 16, 30, 0.96), rgba(8, 16, 30, 0.84));
+  border: 1px solid rgba(94, 234, 212, 0.16);
+  box-shadow: 0 28px 60px rgba(2, 6, 23, 0.35);
+}
+
+html[data-theme="light"] .confirm-email-card {
+  background: var(--surface-strong);
+}
+
+.confirm-email-card__brand {
+  margin-bottom: 0.1rem;
+}
+
+.confirm-email-card__title {
+  margin: 0;
+  font-size: clamp(1.8rem, 4vw, 2.4rem);
+  letter-spacing: -0.04em;
+}
+
+.confirm-email-card__subtitle {
+  margin: 0;
+  max-width: 30ch;
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+.confirm-email-card__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.85rem 1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(94, 234, 212, 0.2);
+  background: rgba(15, 118, 110, 0.12);
+  color: var(--text);
+}
+
+.confirm-email-card__spinner {
+  width: 0.95rem;
+  height: 0.95rem;
+  border-radius: 999px;
+  border: 2px solid rgba(94, 234, 212, 0.35);
+  border-top-color: var(--accent);
+  animation: spin 0.8s linear infinite;
+}
+
+.confirm-email-card__success-note,
+.confirm-email-card__hint {
+  margin: 0;
+  max-width: 30ch;
+  line-height: 1.65;
+  color: var(--muted);
+}
+
+.confirm-email-card__success-note {
+  color: #bbf7d0;
+}
+
+html[data-theme="light"] .confirm-email-card__success-note {
+  color: #047857;
+}
+
+.confirm-email-card__actions {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.35rem;
+}
+
+.confirm-email-card__button {
+  min-width: min(100%, 18rem);
 }
 
 .results-grid {
@@ -2602,6 +2692,16 @@ html[data-language="en"] .language-toggle__dot {
 
   50% {
     transform: translateY(-10px);
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
   }
 }
 

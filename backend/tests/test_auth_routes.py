@@ -158,3 +158,42 @@ def test_solicitar_recuperacao_senha_falha_tecnica_retorna_503(monkeypatch) -> N
     assert resposta.json() == {
         "detail": "Nao foi possivel enviar o email de recuperacao agora. Tente novamente mais tarde."
     }
+
+
+def test_confirmar_email_retorna_200_e_cria_sessao(monkeypatch) -> None:
+    usuario = criar_usuario_falso()
+
+    def confirmar_email_falso(db, dados):
+        assert dados.token == "token-confirmacao"
+        return usuario
+
+    gravacoes_sessao: list[tuple[object, object, str]] = []
+
+    def registrar_sessao_falso(db, usuario_recebido, token_sessao):
+        gravacoes_sessao.append((db, usuario_recebido, token_sessao))
+
+    monkeypatch.setattr(auth_routes, "confirmar_email_usuario", confirmar_email_falso)
+    monkeypatch.setattr(auth_routes, "registrar_sessao_usuario", registrar_sessao_falso)
+
+    client = criar_client()
+    resposta = client.post("/auth/confirmar-email", json={"token": "token-confirmacao"})
+
+    assert resposta.status_code == 200
+    corpo = resposta.json()
+    assert corpo["usuario"]["id"] == 1
+    assert corpo["usuario"]["email_confirmado"] is True
+    assert gravacoes_sessao
+    assert "gc_auth_token=" in resposta.headers.get("set-cookie", "")
+
+
+def test_confirmar_email_com_token_invalido_retorna_404(monkeypatch) -> None:
+    def confirmar_email_falso(db, dados):
+        raise ValueError("Token de confirmacao invalido ou expirado.")
+
+    monkeypatch.setattr(auth_routes, "confirmar_email_usuario", confirmar_email_falso)
+
+    client = criar_client()
+    resposta = client.post("/auth/confirmar-email", json={"token": "token-expirado"})
+
+    assert resposta.status_code == 404
+    assert resposta.json() == {"detail": "Este link expirou ou já foi utilizado."}

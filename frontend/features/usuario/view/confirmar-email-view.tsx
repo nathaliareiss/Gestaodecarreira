@@ -3,47 +3,45 @@
 import Link from "next/link"
 import { useEffect, useState } from "react"
 
-import type { UsuarioConta } from "../model/usuario.model"
-import { confirmarUsuarioPorToken } from "../model/usuario.repository"
+import { ApiResponseError } from "@/shared/api/client"
+import { confirmarEmailUsuario } from "@/features/auth/model/auth.repository"
 
 type ConfirmarEmailViewProps = {
   token: string | null
 }
 
+type EstadoConfirmacao = "carregando" | "sucesso" | "token_invalido" | "token_ausente" | "erro"
+
 export function ConfirmarEmailView({ token }: ConfirmarEmailViewProps) {
-  const [usuario, setUsuario] = useState<UsuarioConta | null>(null)
-  const [erro, setErro] = useState<string | null>(null)
-  const [carregando, setCarregando] = useState(true)
+  const [estado, setEstado] = useState<EstadoConfirmacao>(token ? "carregando" : "token_ausente")
 
   useEffect(() => {
     let ativo = true
 
     async function confirmar() {
       if (!token) {
-        setErro("Missing token.")
-        setCarregando(false)
+        if (ativo) {
+          setEstado("token_ausente")
+        }
         return
       }
 
       try {
-        const confirmado = await confirmarUsuarioPorToken(token)
-        if (!ativo) {
-          return
-        }
-
-        setUsuario(confirmado)
-        setErro(null)
-      } catch (error) {
-        if (!ativo) {
-          return
-        }
-
-        setUsuario(null)
-        setErro(error instanceof Error ? error.message : "Unable to confirm this email.")
-      } finally {
+        await confirmarEmailUsuario(token)
         if (ativo) {
-          setCarregando(false)
+          setEstado("sucesso")
         }
+      } catch (erro) {
+        if (!ativo) {
+          return
+        }
+
+        if (erro instanceof ApiResponseError && erro.status === 404) {
+          setEstado("token_invalido")
+          return
+        }
+
+        setEstado("erro")
       }
     }
 
@@ -54,61 +52,72 @@ export function ConfirmarEmailView({ token }: ConfirmarEmailViewProps) {
     }
   }, [token])
 
+  const conteudo = {
+    carregando: {
+      titulo: "Confirmando seu cadastro...",
+      subtitulo: "Estamos validando o seu link de confirma\u00e7\u00e3o. Isso leva apenas alguns segundos.",
+    },
+    sucesso: {
+      titulo: "Cadastro confirmado com sucesso",
+      subtitulo: "Seu acesso foi validado. Agora voc\u00ea j\u00e1 pode entrar na sua conta.",
+    },
+    token_ausente: {
+      titulo: "Link inv\u00e1lido ou incompleto.",
+      subtitulo: "Abra novamente o email de confirma\u00e7\u00e3o para acessar o link completo.",
+    },
+    token_invalido: {
+      titulo: "Este link expirou ou j\u00e1 foi utilizado.",
+      subtitulo: "Se precisar, solicite um novo email de confirma\u00e7\u00e3o na tela de cadastro.",
+    },
+    erro: {
+      titulo: "N\u00e3o foi poss\u00edvel confirmar agora. Tente novamente.",
+      subtitulo: "Houve uma falha t\u00e9cnica ao validar seu cadastro. Tente mais tarde.",
+    },
+  }[estado]
+
+  const acaoPrincipal =
+    estado === "sucesso" ? (
+      <Link className="primary-button button--large confirm-email-card__button" href="/usuario">
+        Ir para a p\u00e1gina de usu\u00e1rio
+      </Link>
+    ) : (
+      <Link className="primary-button button--large confirm-email-card__button" href="/login">
+        Ir para o login
+      </Link>
+    )
+
   return (
-    <main className="page-shell">
+    <main className="page-shell page-shell--confirm-email">
       <div className="bg-orb bg-orb-a" />
       <div className="bg-orb bg-orb-b" />
 
-      <section className="hero">
-        <div className="hero-copy">
-          <p className="eyebrow">Email Confirmation</p>
-          <h1>Validate access with one click on the email link.</h1>
-        </div>
+      <section className="card confirm-email-card" aria-live="polite">
+        <p className="eyebrow confirm-email-card__brand">Career Flow</p>
+        <h1 className="confirm-email-card__title">{conteudo.titulo}</h1>
+        <p className="confirm-email-card__subtitle">{conteudo.subtitulo}</p>
 
-        <div className="hero-grid">
-          <article className="mini-card">
-            <h2>Status</h2>
-            <p>{carregando ? "Processing" : usuario ? "Email confirmed" : erro ?? "Pending"}</p>
-          </article>
-          <article className="mini-card">
-            <h2>Next Step</h2>
-            <p>Return to the user page and review the saved data.</p>
-          </article>
-        </div>
-      </section>
-
-      <section className="workbench">
-        <section className="card results-card">
-          <div className="card-header">
-            <div>
-              <p className="eyebrow">Result</p>
-              <h2>Confirmation Complete</h2>
-            </div>
-            <span className="status-pill">{usuario ? "OK" : "Pending"}</span>
+        {estado === "carregando" ? (
+          <div className="confirm-email-card__status">
+            <span className="confirm-email-card__spinner" aria-hidden="true" />
+            <span>Confirmando seu cadastro...</span>
           </div>
+        ) : null}
 
-          {carregando ? (
-            <div className="empty-state">
-              <p>Confirming user...</p>
-            </div>
-          ) : usuario ? (
-            <div className="empty-state">
-              <p>
-                The email <strong>{usuario.email}</strong> was confirmed successfully.
-              </p>
-              <Link className="primary-button" href="/usuario">
-                Go to User Page
-              </Link>
-            </div>
-          ) : (
-            <div className="empty-state">
-              <p>{erro ?? "Waiting for confirmation..."}</p>
-              <Link className="primary-button" href="/usuario">
-                Back to User Page
-              </Link>
-            </div>
-          )}
-        </section>
+        {estado === "sucesso" ? (
+          <p className="confirm-email-card__success-note">
+            Seu acesso foi liberado com seguran\u00e7a.
+          </p>
+        ) : null}
+
+        {estado === "token_ausente" || estado === "token_invalido" || estado === "erro" ? (
+          <p className="confirm-email-card__hint">
+            {estado === "erro"
+              ? "Se o problema continuar, tente abrir o link novamente a partir do email mais recente."
+              : "Se precisar, solicite um novo email de confirma\u00e7\u00e3o na tela de cadastro."}
+          </p>
+        ) : null}
+
+        <div className="confirm-email-card__actions">{acaoPrincipal}</div>
       </section>
     </main>
   )

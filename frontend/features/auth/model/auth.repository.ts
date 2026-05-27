@@ -56,6 +56,21 @@ export async function solicitarRecuperacaoSenha(
   )
 }
 
+export async function confirmarEmailUsuario(token: string): Promise<UsuarioAuthResponse> {
+  const response = await apiFetch("/api/auth/confirmar-email", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ token }),
+  })
+
+  return parseApiResponse<UsuarioAuthResponse>(
+    response,
+    "Nao foi possivel confirmar o e-mail.",
+  )
+}
+
 export async function reenviarConfirmacaoEmail(
   dados: UsuarioReenviarConfirmacaoEmail,
 ): Promise<{ status: string; message: string }> {

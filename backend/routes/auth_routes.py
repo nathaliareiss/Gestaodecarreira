@@ -16,7 +16,7 @@ from backend.schemas.auth_schema import (
     UsuarioReenviarConfirmacaoRequest,
     UsuarioSolicitarRecuperacaoSenhaRequest,
 )
-from backend.schemas.usuario_schema import UsuarioResponse
+from backend.schemas.usuario_schema import UsuarioConfirmarRequest, UsuarioResponse
 from backend.services.auth_service import (
     AUTH_COOKIE_MAX_AGE_SEGUNDOS,
     AUTH_COOKIE_NAME,
@@ -31,6 +31,7 @@ from backend.services.auth_service import (
     registrar_sessao_usuario,
     solicitar_recuperacao_senha,
 )
+from backend.services.security_service import gerar_token_seguro
 from backend.services.email_service import (
     enviar_email_confirmacao,
     enviar_email_recuperacao_senha,
@@ -227,7 +228,7 @@ def confirmar_email(
         )
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Este link expirou ou já foi utilizado.",
+            detail="Este link expirou ou j\u00e1 foi utilizado.",
         ) from erro
 
     token_sessao = gerar_token_seguro()

@@ -156,6 +156,7 @@ def confirmar_usuario(db: Session, dados: UsuarioConfirmarRequest) -> Usuario:
 
     usuario.email_confirmado = True
     usuario.confirmado_em = datetime.now(timezone.utc)
+    usuario.token_confirmacao_email = gerar_token_seguro()
     logger.info(
         "Confirmacao de email concluida",
         extra={"usuario_id": usuario.id},
