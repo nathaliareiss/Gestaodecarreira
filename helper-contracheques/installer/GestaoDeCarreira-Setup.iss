@@ -33,7 +33,7 @@ VersionInfoProductName={#AppName}
 VersionInfoProductVersion={#AppVersion}
 VersionInfoCompany={#AppPublisher}
 VersionInfoDescription=Instalador do assistente Windows de importação de contracheques.
-VersionInfoCopyright=Copyright (C) 2026 Gestao de Carreira
+VersionInfoCopyright=Copyright (C) 2026 Gestão de Carreira
 
 [Languages]
 Name: "brazilianportuguese"; MessagesFile: "compiler:Languages\BrazilianPortuguese.isl"
@@ -47,6 +47,9 @@ Source: "..\dist\{#AppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 [Icons]
 Name: "{group}\{#AppName}"; Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"
 Name: "{userdesktop}\{#AppName}"; Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"; Tasks: desktopicon
+
+[Run]
+Filename: "{app}\{#AppExeName}"; Description: "Abrir {#AppName}"; Flags: nowait postinstall skipifsilent
 
 [Registry]
 Root: HKCU; Subkey: "Software\Classes\gestaodecarreira"; ValueType: string; ValueName: ""; ValueData: "URL:Gestão de Carreira"; Flags: uninsdeletekey

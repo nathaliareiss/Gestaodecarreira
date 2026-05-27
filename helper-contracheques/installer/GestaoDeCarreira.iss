@@ -41,6 +41,9 @@ Source: "..\dist\{#AppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 [Icons]
 Name: "{group}\{#AppName}"; Filename: "{app}\{#AppExeName}"; WorkingDir: "{app}"
 
+[Run]
+Filename: "{app}\{#AppExeName}"; Description: "Abrir {#AppName}"; Flags: nowait postinstall skipifsilent
+
 [Registry]
 Root: HKCU; Subkey: "Software\Classes\gestaodecarreira"; ValueType: string; ValueName: ""; ValueData: "URL:Gestão de Carreira"; Flags: uninsdeletekey
 Root: HKCU; Subkey: "Software\Classes\gestaodecarreira"; ValueType: string; ValueName: "URL Protocol"; ValueData: ""; Flags: uninsdeletekey
