@@ -1297,6 +1297,14 @@ def encontrar_alvos_download(page, agressivo: bool = False) -> list[tuple[str, o
         vistos.add(chave)
         candidatos.append((assinatura, item))
 
+    for item in encontrar_botoes_exibir(page):
+        assinatura = texto_elemento(item) or "exibir"
+        chave = normalizar_texto(assinatura)
+        if chave in vistos:
+            continue
+        vistos.add(chave)
+        candidatos.append((assinatura, item))
+
     if agressivo:
         extras = [
             "button",
