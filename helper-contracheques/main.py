@@ -1232,10 +1232,15 @@ def encontrar_botoes_exibir(page) -> list[object]:
     candidatos: list[object] = []
     vistos: set[str] = set()
     seletores = [
+        lambda: page.get_by_role("button", name=re.compile(r"exibir", re.I)),
         lambda: page.locator("button:has-text('Exibir')"),
+        lambda: page.locator("button:has-text('EXIBIR')"),
         lambda: page.locator("a:has-text('Exibir')"),
+        lambda: page.locator("a:has-text('EXIBIR')"),
         lambda: page.locator("[role='button']:has-text('Exibir')"),
+        lambda: page.locator("[role='button']:has-text('EXIBIR')"),
         lambda: page.locator("text=Exibir"),
+        lambda: page.locator("text=EXIBIR"),
     ]
 
     for factory in seletores:
