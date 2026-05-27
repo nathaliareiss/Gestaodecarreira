@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import re
 import sys
 from pathlib import Path
 import unittest
@@ -70,6 +71,27 @@ class FakePage:
 
     def locator(self, selector: str):
         return self._selectors.get(selector, FakeCollection())
+
+    def get_by_role(self, role: str, name=None):
+        if role != "button":
+            return FakeCollection()
+
+        if hasattr(name, "search"):
+            pattern = name
+        else:
+            pattern = re.compile(re.escape(str(name or "")), re.I)
+
+        encontrados: list[FakeElement] = []
+        for collection in self._selectors.values():
+            for indice in range(collection.count()):
+                item = collection.nth(indice)
+                texto = item.text_content() or ""
+                aria = item.get_attribute("aria-label") or ""
+                titulo = item.get_attribute("title") or ""
+                if pattern.search(texto) or pattern.search(aria) or pattern.search(titulo):
+                    encontrados.append(item)
+
+        return FakeCollection(encontrados)
 
     def title(self):
         return self._title
