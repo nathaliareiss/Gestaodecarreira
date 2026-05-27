@@ -1089,5 +1089,278 @@ def main() -> int:
                 pass
 
 
+def _locator_count(locator) -> int:
+    try:
+        return locator.count()
+    except Exception:
+        return 0
+
+
+def _primeiros_elementos_visiveis(locator, limite: int = 10) -> list[object]:
+    try:
+        total = locator.count()
+    except Exception:
+        return []
+
+    itens: list[object] = []
+    for indice in range(min(total, limite)):
+        try:
+            item = locator.nth(indice)
+        except Exception:
+            continue
+        try:
+            if item.is_visible():
+                itens.append(item)
+        except Exception:
+            continue
+    return itens
+
+
+def _resumo_elemento_debug(locator) -> tuple[str, str, str]:
+    tag = "desconhecido"
+    html = ""
+    try:
+        tag = locator.evaluate("(el) => el.tagName")
+    except Exception:
+        try:
+            tag = locator.get_attribute("tagName") or tag
+        except Exception:
+            pass
+
+    try:
+        html = locator.evaluate("(el) => el.outerHTML")
+        if isinstance(html, str):
+            html = re.sub(r"\s+", " ", html).strip()
+            if len(html) > 220:
+                html = html[:220] + "..."
+    except Exception:
+        try:
+            html = texto_elemento(locator)[:220]
+        except Exception:
+            html = ""
+
+    try:
+        visivel = "sim" if locator.is_visible() else "nao"
+    except Exception:
+        visivel = "desconhecido"
+
+    return tag, html, visivel
+
+
+def log_diagnostico_download(page, prefixo: str = "[debug]") -> None:
+    baixar_role = _locator_count(page.get_by_role("button", name=re.compile(r"baixar", re.I)))
+    baixar_button = _locator_count(page.locator("button:has-text('Baixar')"))
+    baixar_text = _locator_count(page.locator("text=Baixar"))
+    baixar_role_button = _locator_count(page.locator("[role='button']:has-text('Baixar')"))
+    exibir_button = _locator_count(page.locator("button:has-text('Exibir')"))
+    exibir_text = _locator_count(page.locator("text=Exibir"))
+
+    log(
+        f"{prefixo} "
+        f"baixar(get_by_role,re.I)={baixar_role} | "
+        f"baixar(button:has-text('Baixar'))={baixar_button} | "
+        f"baixar(text=Baixar)={baixar_text} | "
+        f"baixar([role='button']:has-text('Baixar'))={baixar_role_button} | "
+        f"exibir(button:has-text('Exibir'))={exibir_button} | "
+        f"exibir(text=Exibir)={exibir_text}"
+    )
+
+    amostras: list[object] = []
+    for locator in (
+        page.get_by_role("button", name=re.compile(r"baixar", re.I)),
+        page.locator("button:has-text('Baixar')"),
+        page.locator("text=Baixar"),
+        page.locator("[role='button']:has-text('Baixar')"),
+    ):
+        amostras.extend(_primeiros_elementos_visiveis(locator, limite=10))
+
+    vistos: set[str] = set()
+    for indice, item in enumerate(amostras[:10], start=1):
+        assinatura = texto_elemento(item) or "baixar"
+        chave = normalizar_texto(assinatura)
+        if chave in vistos:
+            continue
+        vistos.add(chave)
+        tag, html, visivel = _resumo_elemento_debug(item)
+        log(
+            f"{prefixo} alvo[{indice}] tag={tag} | visivel={visivel} | html={html}"
+        )
+
+
+def _locators_baixar_robustos(page) -> list[tuple[str, object]]:
+    candidatos: list[tuple[str, object]] = []
+    vistos: set[str] = set()
+
+    seletores = [
+        ("get_by_role(button, /baixar/i)", lambda: page.get_by_role("button", name=re.compile(r"baixar", re.I))),
+        ("button:has-text('Baixar')", lambda: page.locator("button:has-text('Baixar')")),
+        ("a:has-text('Baixar')", lambda: page.locator("a:has-text('Baixar')")),
+        ("[role='button']:has-text('Baixar')", lambda: page.locator("[role='button']:has-text('Baixar')")),
+        ("text=Baixar", lambda: page.locator("text=Baixar")),
+        ("input[value*='Baixar' i]", lambda: page.locator("input[value*='Baixar' i]")),
+        ("a[href*='pdf' i]", lambda: page.locator("a[href*='pdf' i]")),
+        ("a[href*='download' i]", lambda: page.locator("a[href*='download' i]")),
+        ("a[href*='contracheque' i]", lambda: page.locator("a[href*='contracheque' i]")),
+        ("a[download]", lambda: page.locator("a[download]")),
+        ("button[download]", lambda: page.locator("button[download]")),
+    ]
+
+    for nome, factory in seletores:
+        try:
+            locator = factory()
+        except Exception:
+            continue
+
+        for item in _primeiros_elementos_visiveis(locator, limite=100):
+            assinatura = texto_elemento(item) or nome
+            chave = normalizar_texto(assinatura)
+            if chave in vistos:
+                continue
+            if "baix" not in chave and "download" not in chave and ".pdf" not in chave:
+                continue
+            vistos.add(chave)
+            candidatos.append((assinatura, item))
+
+    return candidatos
+
+
+def encontrar_botoes_baixar(page) -> list[object]:
+    return [item for _, item in _locators_baixar_robustos(page)]
+
+
+def encontrar_botoes_exibir(page) -> list[object]:
+    candidatos: list[object] = []
+    vistos: set[str] = set()
+    seletores = [
+        lambda: page.locator("button:has-text('Exibir')"),
+        lambda: page.locator("a:has-text('Exibir')"),
+        lambda: page.locator("[role='button']:has-text('Exibir')"),
+        lambda: page.locator("text=Exibir"),
+    ]
+
+    for factory in seletores:
+        try:
+            locator = factory()
+        except Exception:
+            continue
+
+        for item in _primeiros_elementos_visiveis(locator, limite=100):
+            assinatura = texto_elemento(item) or "exibir"
+            chave = normalizar_texto(assinatura)
+            if chave in vistos:
+                continue
+            vistos.add(chave)
+            candidatos.append(item)
+
+    return candidatos
+
+
+def pagina_consultar_contracheque_pronta(page) -> bool:
+    if _locator_count(page.get_by_role("button", name=re.compile(r"baixar", re.I))) > 0:
+        return True
+    if _locator_count(page.locator("button:has-text('Baixar')")) > 0:
+        return True
+    if _locator_count(page.locator("text=Baixar")) > 0:
+        return True
+    if _locator_count(page.locator("button:has-text('Exibir')")) > 0:
+        return True
+    if _locator_count(page.locator("text=Exibir")) > 0:
+        return True
+    if len(encontrar_botoes_baixar(page)) > 0:
+        return True
+    if len(encontrar_botoes_exibir(page)) > 0:
+        return True
+
+    texto = normalizar_texto(texto_da_pagina(page))
+    if not texto:
+        return False
+
+    sinais = 0
+    if "consultar contracheque" in texto:
+        sinais += 1
+    if "mes/ano" in texto or "mes ano" in texto or ("mes" in texto and "ano" in texto):
+        sinais += 1
+    if "mensal" in texto:
+        sinais += 1
+
+    return sinais >= 3
+
+
+def encontrar_alvos_download(page, agressivo: bool = False) -> list[tuple[str, object]]:
+    candidatos: list[tuple[str, object]] = []
+    vistos: set[str] = set()
+
+    for assinatura, item in _locators_baixar_robustos(page):
+        chave = normalizar_texto(assinatura)
+        if chave in vistos:
+            continue
+        vistos.add(chave)
+        candidatos.append((assinatura, item))
+
+    if agressivo:
+        extras = [
+            "button",
+            "a",
+            "[role='button']",
+            "input[type='button']",
+            "input[type='submit']",
+        ]
+        for seletor in extras:
+            try:
+                locator = page.locator(seletor)
+            except Exception:
+                continue
+            for item in _primeiros_elementos_visiveis(locator, limite=100):
+                assinatura = texto_elemento(item) or seletor
+                chave = normalizar_texto(assinatura)
+                if chave in vistos:
+                    continue
+                if any(termo in chave for termo in DOWNLOAD_KEYWORDS) or ".pdf" in chave:
+                    vistos.add(chave)
+                    candidatos.append((assinatura, item))
+
+    return candidatos
+
+
+def baixar_contracheques_baixar(page, context, pasta_saida: Path) -> list[Path]:
+    log("Procurando botões BAIXAR...")
+    log_diagnostico_download(page)
+
+    botoes = encontrar_botoes_baixar(page)
+    if not botoes and clicar_botao_consultar(page):
+        log("Atualizando lista após clicar em CONSULTAR...")
+        botoes = encontrar_botoes_baixar(page)
+
+    if not botoes:
+        exibir = encontrar_botoes_exibir(page)
+        if exibir:
+            log("Encontrei EXIBIR, tentando abrir os contracheques antes de baixar...")
+            try:
+                exibir[0].click(force=True)
+                page.wait_for_timeout(1500)
+            except Exception as erro:
+                log(f"[falha] botao EXIBIR -> {erro}")
+            log_diagnostico_download(page)
+            botoes = encontrar_botoes_baixar(page)
+
+    if not botoes and solicitar_continuacao_manual("Se você já está vendo os botões BAIXAR, pressione Enter para continuar."):
+        log("Fazendo varredura agressiva de links clicáveis...")
+        log_diagnostico_download(page)
+        botoes = [item for _, item in encontrar_alvos_download(page, agressivo=True)]
+
+    if not botoes:
+        return []
+
+    arquivos_baixados: list[Path] = []
+    for indice, botao in enumerate(botoes, start=1):
+        try:
+            arquivo = baixar_um_documento_baixar(page, context, botao, indice, len(botoes), pasta_saida)
+            arquivos_baixados.append(arquivo)
+        except Exception as erro:
+            log(f"[falha] botao BAIXAR {indice} -> {erro}")
+
+    return arquivos_baixados
+
+
 if __name__ == "__main__":
     raise SystemExit(main())
