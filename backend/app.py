@@ -106,11 +106,11 @@ def criar_app() -> FastAPI:
     if not origens_cors:
         origens_cors = [FRONTEND_BASE_URL] if FRONTEND_BASE_URL else ["http://localhost:3000"]
 
-    @app.get("/downloads/GestaoDeCarreira-Setup-1.0.4.exe")
+    @app.get("/downloads/GestaoDeCarreira-Setup-latest.exe")
     def baixar_instalador_legado() -> RedirectResponse:
         return RedirectResponse(url="/downloads/GestaoDeCarreira-Setup-latest.exe", status_code=307)
 
-    @app.get("/downloads/GestaoDeCarreira-Setup-1.0.5.exe")
+    @app.get("/downloads/GestaoDeCarreira-Setup-latest.exe")
     def baixar_instalador_legado_105() -> RedirectResponse:
         return RedirectResponse(url="/downloads/GestaoDeCarreira-Setup-latest.exe", status_code=307)
 
