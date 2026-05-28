@@ -33,6 +33,7 @@ import portal_automation
 
 
 LOGGER = logging.getLogger("helper-contracheques")
+DEBUG_MODE = False
 
 
 def configurar_logger() -> None:
@@ -40,7 +41,20 @@ def configurar_logger() -> None:
 
 
 def log(mensagem: str) -> None:
+    if not DEBUG_MODE and mensagem.startswith("["):
+        return
     LOGGER.info(mensagem)
+
+
+def debug_log(mensagem: str) -> None:
+    if DEBUG_MODE:
+        LOGGER.info(mensagem)
+
+
+def definir_modo_debug(ativo: bool) -> None:
+    global DEBUG_MODE
+    DEBUG_MODE = ativo
+    os.environ["HELPER_DEBUG"] = "1" if ativo else "0"
 
 
 def normalizar_texto(valor: str) -> str:

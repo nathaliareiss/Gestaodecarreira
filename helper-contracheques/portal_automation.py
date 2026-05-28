@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import re
 import time
 import unicodedata
@@ -34,7 +35,18 @@ def normalizar_texto(valor: str) -> str:
 
 
 def _log(mensagem: str) -> None:
-    print(mensagem, flush=True)
+    if debug_ativo():
+        print(mensagem, flush=True)
+
+
+def _debug(mensagem: str) -> None:
+    if debug_ativo():
+        print(mensagem, flush=True)
+
+
+def debug_ativo() -> bool:
+    valor = os.getenv("HELPER_DEBUG", "").strip().lower()
+    return valor in {"1", "true", "sim", "yes", "on"}
 
 
 def primeiros_dia_mes_ha_n_meses(n: int) -> date:
@@ -111,6 +123,42 @@ def encontrar_qualquer_pagina_viva(page: Page) -> Page:
     return page
 
 
+def iterar_contextos_page(page: Page):
+    vistos: set[int] = set()
+    contextos: list[tuple[str, object]] = []
+
+    def adicionar(rotulo: str, contexto) -> None:
+        chave = id(contexto)
+        if chave in vistos:
+            return
+        vistos.add(chave)
+        contextos.append((rotulo, contexto))
+
+    try:
+        adicionar("page", page)
+    except Exception:
+        pass
+
+    try:
+        for indice, p in enumerate(getattr(page.context, "pages", []) or []):
+            adicionar(f"context.page[{indice}]", p)
+            try:
+                for frame_indice, frame in enumerate(getattr(p, "frames", []) or []):
+                    adicionar(f"context.page[{indice}].frame[{frame_indice}]", frame)
+            except Exception:
+                continue
+    except Exception:
+        pass
+
+    try:
+        for indice, frame in enumerate(getattr(page, "frames", []) or []):
+            adicionar(f"page.frame[{indice}]", frame)
+    except Exception:
+        pass
+
+    return contextos
+
+
 def fechar_avisos_se_existirem(page: Page) -> None:
     try:
         candidatos = [
@@ -150,16 +198,15 @@ def encontrar_contexto_lista(page: Page):
         except Exception:
             pass
 
-    try:
-        for fr in page.frames:
-            for sel in seletores_linhas:
-                try:
-                    if fr.locator(sel).count() > 0:
-                        return fr
-                except Exception:
-                    continue
-    except Exception:
-        pass
+    for _, contexto in iterar_contextos_page(page):
+        if contexto is page:
+            continue
+        for sel in seletores_linhas:
+            try:
+                if contexto.locator(sel).count() > 0:
+                    return contexto
+            except Exception:
+                continue
 
     return page
 
@@ -221,14 +268,13 @@ def esperar_lista_em_alguma_frame(page: Page, timeout_ms: int):
 
 
 def encontrar_pagina_com_lista_flexivel(page: Page) -> Page:
-    contexto = page.context
     seletores_linhas = [
         "tr.z-listitem",
         ".z-listbox-body tr",
         "table tbody tr",
     ]
 
-    for p in contexto.pages:
+    for _, p in iterar_contextos_page(page):
         try:
             for sel in seletores_linhas:
                 if p.locator(sel).count() > 0:
@@ -268,6 +314,35 @@ def criar_sessao_requests(context, page) -> "requests.Session":
     return sessao
 
 
+def diagnostico_abrangente(page) -> dict[str, int]:
+    total_contextos = 0
+    total_frames = 0
+    total_linhas = 0
+    total_botoes = 0
+
+    for _, contexto in iterar_contextos_page(page):
+        total_contextos += 1
+        try:
+            total_frames += len(getattr(contexto, "frames", []) or [])
+        except Exception:
+            pass
+        try:
+            total_botoes += contexto.locator("button").count()
+        except Exception:
+            pass
+        try:
+            total_linhas += localizar_linhas_documento(contexto).count()
+        except Exception:
+            pass
+
+    return {
+        "contextos": total_contextos,
+        "frames": total_frames,
+        "linhas": total_linhas,
+        "botoes": total_botoes,
+    }
+
+
 def baixar_url_com_sessao(sessao, url: str, destino: Path) -> None:
     resposta = sessao.get(url, timeout=DOWNLOAD_TIMEOUT_MS / 1000, stream=True)
     if not resposta.ok:
@@ -295,9 +370,11 @@ def clicar_baixar_na_linha(
         nome_base = f"{competencia}_{tipo}".replace("/", "-").replace(" ", "_")
         nome_base = normalizar_nome_arquivo(nome_base)
 
-        btn = linha.locator("button:has-text('Baixar')")
+        btn = linha.locator("button.btn-outline-primary2, button:has-text('Baixar'), button.text-uppercase")
         if btn.count() == 0:
             btn = linha.get_by_role("button", name=re.compile(r"baixar", re.I))
+        if btn.count() == 0:
+            btn = linha.locator("button").filter(has_text=re.compile(r"baixar", re.I))
 
         if btn.count() == 0:
             _log(f"Botão Baixar não encontrado para {competencia} - {tipo}")
