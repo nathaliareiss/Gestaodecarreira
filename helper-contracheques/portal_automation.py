@@ -278,7 +278,7 @@ def encontrar_pagina_com_lista_flexivel(page: Page) -> Page:
         try:
             for sel in seletores_linhas:
                 if p.locator(sel).count() > 0:
-                    return p
+                    return page
         except Exception:
             continue
     return page
