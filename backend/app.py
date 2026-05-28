@@ -96,7 +96,7 @@ def criar_app() -> FastAPI:
     downloads_dir = Path(__file__).resolve().parent / "static" / "downloads"
     installer_filename = "GestaoDeCarreira-Setup-latest.exe"
     installer_path = downloads_dir / installer_filename
-    installer_legacy_path = downloads_dir / "GestaoDeCarreira-Setup-1.0.4.exe"
+    installer_legacy_path = downloads_dir / "GestaoDeCarreira-Setup-1.0.5.exe"
 
     origens_cors = [
         origem
@@ -108,6 +108,10 @@ def criar_app() -> FastAPI:
 
     @app.get("/downloads/GestaoDeCarreira-Setup-1.0.4.exe")
     def baixar_instalador_legado() -> RedirectResponse:
+        return RedirectResponse(url="/downloads/GestaoDeCarreira-Setup-latest.exe", status_code=307)
+
+    @app.get("/downloads/GestaoDeCarreira-Setup-1.0.5.exe")
+    def baixar_instalador_legado_105() -> RedirectResponse:
         return RedirectResponse(url="/downloads/GestaoDeCarreira-Setup-latest.exe", status_code=307)
 
     app.add_middleware(

@@ -1,17 +1,25 @@
 Param(
     [switch]$OneFile,
-    [switch]$Installer
+    [switch]$Installer,
+    [switch]$InstallBrowsers
 )
 
 $ErrorActionPreference = "Stop"
+$scriptDir = $PSScriptRoot
 
-if (-not (Test-Path ".venv")) {
-    python -m venv .venv
+if (-not (Test-Path (Join-Path $scriptDir ".venv"))) {
+    python -m venv (Join-Path $scriptDir ".venv")
 }
 
-.\.venv\Scripts\python.exe -m pip install --upgrade pip
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
-.\.venv\Scripts\python.exe -m playwright install chromium
+& (Join-Path $scriptDir ".venv\Scripts\python.exe") -m pip install --upgrade pip
+& (Join-Path $scriptDir ".venv\Scripts\python.exe") -m pip install -r (Join-Path $scriptDir "requirements.txt")
+
+if ($InstallBrowsers) {
+    Write-Host "Instalando navegadores do Playwright..."
+    & (Join-Path $scriptDir ".venv\Scripts\python.exe") -m playwright install chromium
+} else {
+    Write-Host "Pulando instalacao do Chromium do Playwright; o helper usa Edge como padrao."
+}
 
 $iconArg = @()
 if (Test-Path "assets\helper-contracheques.ico") {
@@ -20,16 +28,17 @@ if (Test-Path "assets\helper-contracheques.ico") {
 
 if ($OneFile) {
     $versionArg = @()
-    if (Test-Path "version_info.txt") {
-        $versionArg = @("--version-file", "version_info.txt")
+    $versionInfoPath = Join-Path $scriptDir "version_info.txt"
+    if (Test-Path $versionInfoPath) {
+        $versionArg = @("--version-file", $versionInfoPath)
     }
-    .\.venv\Scripts\python.exe -m PyInstaller --clean --noconfirm --onefile --name GestaoDeCarreira-Assistente @versionArg @iconArg bootstrap.py
+    & (Join-Path $scriptDir ".venv\Scripts\python.exe") -m PyInstaller --clean --noconfirm --onefile --name GestaoDeCarreira-Assistente @versionArg @iconArg (Join-Path $scriptDir "bootstrap.py")
 } else {
-    .\.venv\Scripts\python.exe -m PyInstaller --clean --noconfirm helper.spec
+    & (Join-Path $scriptDir ".venv\Scripts\python.exe") -m PyInstaller --clean --noconfirm (Join-Path $scriptDir "helper.spec")
 }
 
 if ($Installer) {
-    powershell.exe -ExecutionPolicy Bypass -File "scripts\generate-installer-icon.ps1"
+    powershell.exe -ExecutionPolicy Bypass -File (Join-Path $scriptDir "scripts\generate-installer-icon.ps1")
     $iscc = Get-Command iscc -ErrorAction SilentlyContinue
     if (-not $iscc) {
         $candidatePaths = @(
@@ -48,10 +57,10 @@ if ($Installer) {
         throw "Inno Setup nao encontrado no PATH nem nos locais padrao."
     }
 
-    & $iscc.Source "installer\GestaoDeCarreira-Setup.iss"
+    & $iscc.Source (Join-Path $scriptDir "installer\GestaoDeCarreira-Setup.iss")
 
-    $installerBuildRoot = "..\dist\installer"
-    $downloadsRoot = "..\backend\static\downloads"
+    $installerBuildRoot = Join-Path $scriptDir "dist\installer"
+    $downloadsRoot = Join-Path (Split-Path $scriptDir -Parent) "backend\static\downloads"
 
     if (-not (Test-Path $downloadsRoot)) {
         New-Item -ItemType Directory -Force -Path $downloadsRoot | Out-Null
