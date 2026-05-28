@@ -29,6 +29,8 @@ from config import (
     PORTAL_URL,
 )
 
+import portal_automation
+
 
 LOGGER = logging.getLogger("helper-contracheques")
 
@@ -635,6 +637,31 @@ def wait_until_paystub_page_ready(page) -> bool:
     ultimo_log = 0.0
 
     while time.monotonic() < prazo:
+        try:
+            portal_automation.fechar_avisos_se_existirem(page)
+        except Exception:
+            pass
+
+        try:
+            contexto = portal_automation.esperar_lista_em_alguma_frame(page, timeout_ms=2000)
+            if portal_automation.localizar_linhas_documento(contexto).count() > 0:
+                log_diagnostico_download(page)
+                diagnostico = diagnostico_pagina_contracheque(page)
+                log(
+                    "[debug] "
+                    f"url={diagnostico['url']} | "
+                    f"title={diagnostico['title']} | "
+                    f"baixar={diagnostico['botoes_baixar_visiveis']} | "
+                    f"exibir={diagnostico['botoes_exibir_visiveis']} | "
+                    f"consultar_contracheque={'sim' if diagnostico['tem_consultar_contracheque'] else 'nao'} | "
+                    f"mes_ano={'sim' if diagnostico['tem_mes_ano'] else 'nao'} | "
+                    f"mensal={'sim' if diagnostico['tem_mensal'] else 'nao'}"
+                )
+                log("Página de contracheques encontrada.")
+                return True
+        except Exception:
+            pass
+
         if pagina_consultar_contracheque_pronta(page):
             log_diagnostico_download(page)
             diagnostico = diagnostico_pagina_contracheque(page)
@@ -1927,44 +1954,40 @@ def baixar_contracheques_baixar(page, context, pasta_saida: Path) -> list[Path]:
     salvar_diagnostico_portal_contracheque(page)
     log_diagnostico_download(page)
 
-    botoes = encontrar_botoes_baixar(page)
-    if not botoes and clicar_botao_consultar(page):
-        log("Atualizando lista após clicar em CONSULTAR...")
-        _aguardar_pagina_estabilizar(page)
-        salvar_diagnostico_portal_contracheque(page)
-        log_diagnostico_download(page)
-        botoes = encontrar_botoes_baixar(page)
+    vistos: set[str] = set()
+    pasta_mensais = pasta_saida / "mensais_ultimos_60_meses"
+    pasta_decimo = pasta_saida / "decimo_terceiro"
+    pasta_mensais.mkdir(parents=True, exist_ok=True)
+    pasta_decimo.mkdir(parents=True, exist_ok=True)
 
-    if not botoes:
-        exibir = encontrar_botoes_exibir(page)
-        if exibir:
-            log("Encontrei EXIBIR, tentando abrir os contracheques antes de baixar...")
-            try:
-                _clicar_locator_download(exibir[0])
-                _aguardar_pagina_estabilizar(page)
-            except Exception as erro:
-                log(f"[falha] botao EXIBIR -> {erro}")
-            salvar_diagnostico_portal_contracheque(page)
-            log_diagnostico_download(page)
-            botoes = encontrar_botoes_baixar(page)
+    pagina_atual = portal_automation.encontrar_pagina_com_lista_flexivel(page)
+    total_baixados = 0
 
-    if not botoes and solicitar_continuacao_manual("Se você já está vendo os botões BAIXAR, pressione Enter para continuar."):
-        log("Fazendo varredura agressiva de links clicáveis...")
-        salvar_diagnostico_portal_contracheque(page)
-        log_diagnostico_download(page)
-        botoes = [item for _, item in encontrar_alvos_download(page, agressivo=True)]
-
-    if not botoes:
-        return []
-
-    arquivos_baixados: list[Path] = []
-    for indice, botao in enumerate(botoes, start=1):
+    while True:
         try:
-            arquivo = baixar_um_documento_baixar(page, context, botao, indice, len(botoes), pasta_saida)
-            arquivos_baixados.append(arquivo)
+            pagina_atual = portal_automation.encontrar_pagina_com_lista_flexivel(pagina_atual)
+            total_baixados += portal_automation.processar_pagina(
+                pagina_atual,
+                pasta_mensais,
+                pasta_decimo,
+                vistos,
+                context=context,
+            )
         except Exception as erro:
-            log(f"[falha] botao BAIXAR {indice} -> {erro}")
+            log(f"[falha] processar_pagina -> {erro}")
+            break
 
+        try:
+            avancou = portal_automation.ir_para_proxima_pagina(pagina_atual)
+        except Exception as erro:
+            log(f"[falha] ir_para_proxima_pagina -> {erro}")
+            break
+
+        if not avancou:
+            break
+
+    arquivos_baixados = sorted(p for p in pasta_saida.rglob("*.pdf") if p.is_file())
+    log(f"[info] total_baixados={total_baixados} | arquivos_encontrados={len(arquivos_baixados)}")
     return arquivos_baixados
 
 
