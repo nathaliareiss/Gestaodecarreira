@@ -499,9 +499,9 @@ def solicitar_continuacao_manual(mensagem: str) -> bool:
 
 
 def wait_until_paystub_page_ready(page) -> bool:
-    log("Após login, vá até Contracheque.")
+    log("Faça login no navegador aberto. Depois vá até a tela de contracheques. O assistente continuará automaticamente.")
     log("Procurando botões BAIXAR...")
-    prazo = time.monotonic() + 45
+    prazo = time.monotonic() + (15 * 60)
     ultimo_log = 0.0
 
     while time.monotonic() < prazo:
@@ -689,7 +689,7 @@ def baixar_contracheques(page, context, pasta_saida: Path) -> list[Path]:
 
 def pedir_login_manual(_page) -> bool:
     log("[aguardando login] navegador aberto")
-    log("[aguardando login] faça login manual e vá até a página de contracheques")
+    log("[aguardando login] faça login no navegador aberto. Depois vá até a tela de contracheques. O assistente continuará automaticamente.")
     return solicitar_continuacao_manual("Se você já está na página de contracheques, pressione Enter para continuar.")
 
 
@@ -883,53 +883,61 @@ def main() -> int:
     pasta_saida.mkdir(parents=True, exist_ok=True)
 
     browser = None
+    resultado = 1
     try:
         log("Carregando navegador automático...")
         with iniciar_playwright() as playwright:
-            inicio_navegador = time.perf_counter()
-            log("Abrindo navegador...")
-            browser = abrir_navegador(playwright, args.headless)
-            log(f"[tempo] navegador_aberto={time.perf_counter() - inicio_navegador:.2f}s")
-            context = browser.new_context(accept_downloads=True)
-            page = context.new_page()
-            page.set_default_timeout(BROWSER_TIMEOUT_MS)
-            log("Abrindo Portal do Servidor...")
-            inicio_portal = time.perf_counter()
-            page.goto(args.portal_url, wait_until="domcontentloaded")
-            log(f"[tempo] portal_aberto={time.perf_counter() - inicio_portal:.2f}s")
-            log("Aguardando login...")
+            try:
+                inicio_navegador = time.perf_counter()
+                log("Abrindo navegador...")
+                browser = abrir_navegador(playwright, args.headless)
+                log(f"[tempo] navegador_aberto={time.perf_counter() - inicio_navegador:.2f}s")
+                context = browser.new_context(accept_downloads=True)
+                page = context.new_page()
+                page.set_default_timeout(BROWSER_TIMEOUT_MS)
+                log("Abrindo Portal do Servidor...")
+                inicio_portal = time.perf_counter()
+                page.goto(args.portal_url, wait_until="domcontentloaded")
+                log(f"[tempo] portal_aberto={time.perf_counter() - inicio_portal:.2f}s")
+                log("Aguardando login...")
 
-            if not wait_until_paystub_page_ready(page):
-                return 1
+                if not wait_until_paystub_page_ready(page):
+                    raise RuntimeError("Não consegui confirmar a tela de contracheques.")
 
-            log("Página pronta.")
-            log("Iniciando download automático dos contracheques...")
+                log("Página pronta.")
+                log("Iniciando download automático dos contracheques...")
 
-            arquivos = baixar_contracheques_baixar(page, context, pasta_saida)
-            if not arquivos:
-                log("Não consegui encontrar botões de download automaticamente.")
-                if pedir_login_manual(page):
-                    arquivos = baixar_contracheques_baixar(page, context, pasta_saida)
+                arquivos = baixar_contracheques_baixar(page, context, pasta_saida)
+                if not arquivos:
+                    log("Não consegui encontrar botões de download automaticamente.")
+                    if pedir_login_manual(page):
+                        arquivos = baixar_contracheques_baixar(page, context, pasta_saida)
 
-            if not arquivos:
-                exibir_erro_amigavel("Nenhum PDF foi encontrado para baixar.")
-                log("[falha] nenhum PDF encontrado para baixar")
-                return 1
+                if not arquivos:
+                    raise RuntimeError("Nenhum PDF foi encontrado para baixar.")
 
-            inicio_upload_import = time.perf_counter()
-            from upload_service import upload_pdfs_para_backend
-            log(f"[tempo] import_upload_service={time.perf_counter() - inicio_upload_import:.2f}s")
-            log(f"Encontrados {len(arquivos)} contracheques.")
-            log(f"[enviando] {len(arquivos)} arquivo(s) para backend")
-            resultado = upload_pdfs_para_backend(
-                arquivos,
-                token,
-                backend_url=args.backend_url,
-            )
-            log("Upload concluído.")
-            log(f"[concluído] batch_id={resultado.batch_id} status={resultado.status}")
+                inicio_upload_import = time.perf_counter()
+                from upload_service import upload_pdfs_para_backend
+                log(f"[tempo] import_upload_service={time.perf_counter() - inicio_upload_import:.2f}s")
+                log(f"Encontrados {len(arquivos)} contracheques.")
+                log(f"[enviando] {len(arquivos)} arquivo(s) para backend")
+                resultado_upload = upload_pdfs_para_backend(
+                    arquivos,
+                    token,
+                    backend_url=args.backend_url,
+                )
+                log("Upload concluído.")
+                log(f"[concluído] batch_id={resultado_upload.batch_id} status={resultado_upload.status}")
+                resultado = 0
+            except Exception as erro:
+                exibir_erro_amigavel("Ocorreu um erro, mas o navegador ficará aberto para diagnóstico. Pressione Enter para fechar.")
+                log(f"[falha] {erro}")
+                try:
+                    solicitar_continuacao_manual("Ocorreu um erro, mas o navegador ficará aberto para diagnóstico. Pressione Enter para fechar.")
+                except Exception:
+                    pass
 
-        return 0
+        return resultado
     except Exception as erro:
         exibir_erro_amigavel("Não foi possível concluir a importação agora. Verifique o assistente e tente novamente.")
         log(f"[falha] {erro}")
