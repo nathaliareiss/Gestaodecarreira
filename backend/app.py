@@ -7,6 +7,7 @@ from urllib.parse import urlparse
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.routing import APIRoute
+from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from backend.config import (
@@ -95,6 +96,7 @@ def criar_app() -> FastAPI:
     downloads_dir = Path(__file__).resolve().parent / "static" / "downloads"
     installer_filename = "GestaoDeCarreira-Setup-latest.exe"
     installer_path = downloads_dir / installer_filename
+    installer_legacy_path = downloads_dir / "GestaoDeCarreira-Setup-1.0.4.exe"
 
     origens_cors = [
         origem
@@ -103,6 +105,11 @@ def criar_app() -> FastAPI:
     ]
     if not origens_cors:
         origens_cors = [FRONTEND_BASE_URL] if FRONTEND_BASE_URL else ["http://localhost:3000"]
+
+    @app.get("/downloads/GestaoDeCarreira-Setup-1.0.4.exe")
+    def baixar_instalador_legado() -> RedirectResponse:
+        return RedirectResponse(url="/downloads/GestaoDeCarreira-Setup-latest.exe", status_code=307)
+
     app.add_middleware(
         CORSMiddleware,
         allow_origins=origens_cors,
@@ -132,7 +139,9 @@ def criar_app() -> FastAPI:
             extra={
                 "downloads_dir": str(downloads_dir),
                 "installer_path": str(installer_path),
+                "installer_legacy_path": str(installer_legacy_path),
                 "installer_exists": installer_path.is_file(),
+                "installer_legacy_exists": installer_legacy_path.is_file(),
             },
         )
 

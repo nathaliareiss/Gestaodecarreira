@@ -8,6 +8,9 @@ The build also copies the same file to:
 
 `GestaoDeCarreira-Setup-latest.exe`
 
+For compatibility, the backend also redirects the legacy path
+`/downloads/GestaoDeCarreira-Setup-1.0.4.exe` to the latest installer.
+
 The backend mounts this folder at `/downloads`, so the frontend can fetch:
 
 `/downloads/GestaoDeCarreira-Setup-latest.exe`
