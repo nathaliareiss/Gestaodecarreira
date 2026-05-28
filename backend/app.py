@@ -96,7 +96,7 @@ def criar_app() -> FastAPI:
     downloads_dir = Path(__file__).resolve().parent / "static" / "downloads"
     installer_filename = "GestaoDeCarreira-Setup-latest.exe"
     installer_path = downloads_dir / installer_filename
-    installer_legacy_path = downloads_dir / "GestaoDeCarreira-Setup-1.0.5.exe"
+    installer_legacy_path = downloads_dir / "GestaoDeCarreira-Setup.exe"
 
     origens_cors = [
         origem
