@@ -403,44 +403,6 @@ def _coletar_amostras_download(page, limite: int = 10) -> list[dict[str, object]
     return amostras
 
 
-def log_diagnostico_download(page, prefixo: str = "[debug]") -> None:
-    contagens = {
-        "text_baixar": _contar_selector(page, "text=BAIXAR"),
-        "text_exibir": _contar_selector(page, "text=EXIBIR"),
-        "a_baixar": _contar_selector(page, "a:has-text('BAIXAR')"),
-        "button_baixar": _contar_selector(page, "button:has-text('BAIXAR')"),
-        "role_button_baixar": _contar_selector(page, "[role='button']:has-text('BAIXAR')"),
-        "input_baixar": _contar_selector(page, "input[value*='BAIXAR' i]"),
-        "a_exibir": _contar_selector(page, "a:has-text('EXIBIR')"),
-        "button_exibir": _contar_selector(page, "button:has-text('EXIBIR')"),
-        "role_button_exibir": _contar_selector(page, "[role='button']:has-text('EXIBIR')"),
-        "input_exibir": _contar_selector(page, "input[value*='EXIBIR' i]"),
-    }
-
-    log(
-        f"{prefixo} "
-        f"text=BAIXAR={contagens['text_baixar']} | "
-        f"text=EXIBIR={contagens['text_exibir']} | "
-        f"a:has-text('BAIXAR')={contagens['a_baixar']} | "
-        f"button:has-text('BAIXAR')={contagens['button_baixar']} | "
-        f"[role='button']:has-text('BAIXAR')={contagens['role_button_baixar']} | "
-        f"input[value*='BAIXAR']={contagens['input_baixar']} | "
-        f"a:has-text('EXIBIR')={contagens['a_exibir']} | "
-        f"button:has-text('EXIBIR')={contagens['button_exibir']} | "
-        f"[role='button']:has-text('EXIBIR')={contagens['role_button_exibir']} | "
-        f"input[value*='EXIBIR']={contagens['input_exibir']}"
-    )
-
-    amostras = _coletar_amostras_download(page, limite=10)
-    for indice, amostra in enumerate(amostras, start=1):
-        log(
-            f"{prefixo} alvo[{indice}] "
-            f"seletor={amostra['seletor']} | "
-            f"visivel={'sim' if amostra['visivel'] else 'nao'} | "
-            f"assinatura={amostra['assinatura']}"
-        )
-
-
 def diagnostico_pagina_contracheque(page) -> dict[str, object]:
     botoes_baixar = encontrar_botoes_baixar(page)
     botoes_exibir = encontrar_botoes_exibir(page)
@@ -494,67 +456,6 @@ def _parece_alvo_por_termos(locator, assinatura: str, termos: tuple[str, ...]) -
     return False
 
 
-def encontrar_alvos_download(page, agressivo: bool = False) -> list[tuple[str, object]]:
-    seletores = [
-        "a",
-        "button",
-        "[role='button']",
-        "input[type='button']",
-        "input[type='submit']",
-        "button:has-text('BAIXAR')",
-        "a:has-text('BAIXAR')",
-        "input[value*='BAIXAR' i]",
-        "[role='button']:has-text('BAIXAR')",
-        "text=BAIXAR",
-        "button:has-text('EXIBIR')",
-        "a:has-text('EXIBIR')",
-        "input[value*='EXIBIR' i]",
-        "[role='button']:has-text('EXIBIR')",
-        "text=EXIBIR",
-        "a[href*='pdf' i]",
-        "a[href*='download' i]",
-        "a[href*='contracheque' i]",
-        "a[download]",
-        "button[download]",
-    ]
-
-    if agressivo:
-        seletores.extend(
-            [
-                *DOWNLOAD_SELECTORS,
-                "button",
-                "a",
-                "[role='button']",
-                "input[type='button']",
-                "input[type='submit']",
-            ],
-        )
-
-    candidatos: list[tuple[str, object]] = []
-    vistos: set[str] = set()
-
-    for seletor in dict.fromkeys(seletores):
-        try:
-            locator = page.locator(seletor)
-        except Exception:
-            continue
-
-        for item in _locators_visiveis(locator):
-            assinatura = texto_elemento(item) or seletor
-            chave = normalizar_texto(assinatura)
-            if chave in vistos:
-                continue
-            if "exib" in normalizar_texto(seletor):
-                if not _parece_alvo_por_termos(item, assinatura, ("exib",)):
-                    continue
-            elif not _parece_alvo_por_termos(item, assinatura, DOWNLOAD_KEYWORDS):
-                continue
-            vistos.add(chave)
-            candidatos.append((assinatura, item))
-
-    return candidatos
-
-
 def encontrar_botoes_consultar(page) -> list[object]:
     seletores = [
         "button:has-text('Consultar')",
@@ -587,39 +488,6 @@ def encontrar_botoes_consultar(page) -> list[object]:
             candidatos.append(item)
 
     return candidatos
-
-
-def encontrar_botoes_exibir(page) -> list[object]:
-    return [item for _, item in encontrar_alvos_download(page) if "exib" in normalizar_texto(texto_elemento(item))]
-
-
-def pagina_consultar_contracheque_pronta(page) -> bool:
-    texto = normalizar_texto(texto_da_pagina(page))
-    if not texto:
-        return False
-
-    if _contar_selector(page, "text=BAIXAR") > 0:
-        return True
-
-    if _contar_selector(page, "text=EXIBIR") > 0:
-        return True
-
-    if len(encontrar_alvos_download(page)) > 0:
-        return True
-
-    sinais = 0
-    if "consultar contracheque" in texto:
-        sinais += 1
-    if "mes/ano" in texto or "mes ano" in texto or ("mes" in texto and "ano" in texto):
-        sinais += 1
-    if "mensal" in texto:
-        sinais += 1
-    if len(encontrar_botoes_consultar(page)) > 0:
-        sinais += 1
-    if len(encontrar_botoes_exibir(page)) > 0:
-        sinais += 1
-
-    return sinais >= 3
 
 
 def solicitar_continuacao_manual(mensagem: str) -> bool:
@@ -798,41 +666,6 @@ def clicar_botao_consultar(page) -> bool:
     except Exception as erro:
         log(f"[falha] botao consultar -> {erro}")
         return False
-
-
-def encontrar_botoes_baixar(page) -> list[object]:
-    seletores = [
-        "button:has-text('BAIXAR')",
-        "a:has-text('BAIXAR')",
-        "button:has-text('Baixar')",
-        "a:has-text('Baixar')",
-        "button[aria-label*='baix' i]",
-        "a[aria-label*='baix' i]",
-        "[title*='baix' i]",
-        "[role='button']:has-text('BAIXAR')",
-        "[role='button']:has-text('Baixar')",
-    ]
-
-    candidatos: list[object] = []
-    vistos: set[str] = set()
-
-    for seletor in seletores:
-        try:
-            locator = page.locator(seletor)
-        except Exception:
-            continue
-
-        for item in _locators_visiveis(locator):
-            assinatura = texto_elemento(item) or seletor
-            chave = normalizar_texto(assinatura)
-            if chave in vistos:
-                continue
-            if "baixar" not in chave:
-                continue
-            vistos.add(chave)
-            candidatos.append(item)
-
-    return candidatos
 
 
 def baixar_contracheques(page, context, pasta_saida: Path) -> list[Path]:
