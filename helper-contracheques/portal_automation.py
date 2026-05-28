@@ -464,19 +464,14 @@ def processar_pagina(page: Page, pasta_mensais: Path, pasta_decimo: Path, vistos
 
         info = extrair_info_documento(f"{competencia} {tipo}")
 
-        deve_baixar = False
+        deve_baixar = True
         pasta_destino = pasta_mensais
         tipo_lower = tipo.lower()
 
         if info.is_decimo_terceiro or "13" in tipo_lower or "décimo" in tipo_lower or "decimo" in tipo_lower:
-            deve_baixar = True
             pasta_destino = pasta_decimo
-        elif "mensal" in tipo_lower and dentro_dos_ultimos_60_meses(info.ano, info.mes):
-            deve_baixar = True
+        elif "mensal" in tipo_lower:
             pasta_destino = pasta_mensais
-
-        if not deve_baixar:
-            continue
 
         ok = clicar_baixar_na_linha(
             page=page,

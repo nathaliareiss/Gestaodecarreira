@@ -83,6 +83,55 @@ class FakeCollection:
         return self._inner_text
 
 
+class FakeRow:
+    def __init__(self, competencia: str, tipo: str, *, button_text: str = "Baixar"):
+        self._competencia = competencia
+        self._tipo = tipo
+        self._button_text = button_text
+
+    def locator(self, selector: str, **kwargs):
+        if selector == "td":
+            return FakeCollection(
+                [
+                    FakeElement(self._competencia),
+                    FakeElement(self._tipo),
+                    FakeElement(self._button_text),
+                ],
+            )
+
+        if "button" in selector:
+            has_text = kwargs.get("has_text")
+            if has_text is None:
+                return FakeCollection([FakeElement(self._button_text)])
+
+            if hasattr(has_text, "search"):
+                pattern = has_text
+            else:
+                pattern = re.compile(re.escape(str(has_text or "")), re.I)
+
+            if pattern.search(self._button_text):
+                return FakeCollection([FakeElement(self._button_text)])
+            return FakeCollection([])
+
+        if "a[href]" in selector:
+            return FakeCollection([])
+
+        return FakeCollection([])
+
+    def get_by_role(self, role: str, name=None):  # noqa: ARG002
+        if role != "button":
+            return FakeCollection()
+
+        if hasattr(name, "search"):
+            pattern = name
+        else:
+            pattern = re.compile(re.escape(str(name or "")), re.I)
+
+        if pattern.search(self._button_text):
+            return FakeCollection([FakeElement(self._button_text)])
+        return FakeCollection([])
+
+
 class FakePage:
     def __init__(self, *, url: str, title: str, selectors: dict[str, FakeCollection]):
         self.url = url
@@ -332,6 +381,92 @@ class HelperContrachequesTests(unittest.TestCase):
         botoes = helper.encontrar_botoes_baixar(page)
         self.assertGreaterEqual(len(botoes), 1)
         self.assertTrue(helper.pagina_consultar_contracheque_pronta(page))
+
+    def test_processar_pagina_baixa_mensal_antigo_sem_limite_de_60_meses(self):
+        page = FakePage(
+            url="https://portal.exemplo/contracheques",
+            title="Contracheques",
+            selectors={
+                "tr.z-listitem": FakeCollection(
+                    [
+                        FakeRow("01/2019", "Mensal"),
+                    ],
+                ),
+                ".z-listbox-body tr": FakeCollection([]),
+                "table tbody tr": FakeCollection([]),
+                "body": FakeCollection(inner_text="01/2019 Mensal Baixar"),
+            },
+        )
+
+        pasta_mensais = Path("C:/gdc-test/mensais")
+        pasta_decimo = Path("C:/gdc-test/decimo")
+        vistos: set[str] = set()
+        chamadas: list[tuple[str, Path]] = []
+
+        original = helper.portal_automation.clicar_baixar_na_linha
+
+        def fake_clicar_baixar_na_linha(*, pasta_destino, competencia, tipo, **kwargs):
+            chamadas.append((f"{competencia}|{tipo}", pasta_destino))
+            return True
+
+        helper.portal_automation.clicar_baixar_na_linha = fake_clicar_baixar_na_linha
+        try:
+            total = helper.portal_automation.processar_pagina(
+                page,
+                pasta_mensais,
+                pasta_decimo,
+                vistos,
+                context=object(),
+            )
+        finally:
+            helper.portal_automation.clicar_baixar_na_linha = original
+
+        self.assertEqual(total, 1)
+        self.assertEqual(len(chamadas), 1)
+        self.assertTrue(str(chamadas[0][1]).endswith("mensais"))
+
+    def test_processar_pagina_manda_decimo_para_pasta_separada(self):
+        page = FakePage(
+            url="https://portal.exemplo/contracheques",
+            title="Contracheques",
+            selectors={
+                "tr.z-listitem": FakeCollection(
+                    [
+                        FakeRow("12/2025", "13º Salário"),
+                    ],
+                ),
+                ".z-listbox-body tr": FakeCollection([]),
+                "table tbody tr": FakeCollection([]),
+                "body": FakeCollection(inner_text="12/2025 13º Salário Baixar"),
+            },
+        )
+
+        pasta_mensais = Path("C:/gdc-test/mensais")
+        pasta_decimo = Path("C:/gdc-test/decimo")
+        vistos: set[str] = set()
+        chamadas: list[tuple[str, Path]] = []
+
+        original = helper.portal_automation.clicar_baixar_na_linha
+
+        def fake_clicar_baixar_na_linha(*, pasta_destino, competencia, tipo, **kwargs):
+            chamadas.append((f"{competencia}|{tipo}", pasta_destino))
+            return True
+
+        helper.portal_automation.clicar_baixar_na_linha = fake_clicar_baixar_na_linha
+        try:
+            total = helper.portal_automation.processar_pagina(
+                page,
+                pasta_mensais,
+                pasta_decimo,
+                vistos,
+                context=object(),
+            )
+        finally:
+            helper.portal_automation.clicar_baixar_na_linha = original
+
+        self.assertEqual(total, 1)
+        self.assertEqual(len(chamadas), 1)
+        self.assertTrue(str(chamadas[0][1]).endswith("decimo"))
 
 
 if __name__ == "__main__":
