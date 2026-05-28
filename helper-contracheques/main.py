@@ -786,18 +786,6 @@ def baixar_contracheques_baixar(page, context, pasta_saida: Path) -> list[Path]:
         log("Atualizando lista após clicar em CONSULTAR...")
         botoes = encontrar_botoes_baixar(page)
 
-    if not botoes:
-        exibir = encontrar_botoes_exibir(page)
-        if exibir:
-            log("Encontrei EXIBIR, tentando abrir os contracheques antes de baixar...")
-            try:
-                exibir[0].click(force=True)
-                page.wait_for_timeout(1500)
-            except Exception as erro:
-                log(f"[falha] botao EXIBIR -> {erro}")
-            log_diagnostico_download(page)
-            botoes = encontrar_botoes_baixar(page)
-
     if not botoes and solicitar_continuacao_manual("Se voce ja estiver vendo a lista de contracheques, pressione Enter para continuar."):
         log("Fazendo varredura agressiva de links clicáveis...")
         log_diagnostico_download(page)
@@ -1227,18 +1215,6 @@ def baixar_contracheques_baixar(page, context, pasta_saida: Path) -> list[Path]:
     if not botoes and clicar_botao_consultar(page):
         log("Atualizando lista após clicar em CONSULTAR...")
         botoes = encontrar_botoes_baixar(page)
-
-    if not botoes:
-        exibir = encontrar_botoes_exibir(page)
-        if exibir:
-            log("Encontrei EXIBIR, tentando abrir os contracheques antes de baixar...")
-            try:
-                exibir[0].click(force=True)
-                page.wait_for_timeout(1500)
-            except Exception as erro:
-                log(f"[falha] botao EXIBIR -> {erro}")
-            log_diagnostico_download(page)
-            botoes = encontrar_botoes_baixar(page)
 
     if not botoes and solicitar_continuacao_manual("Se voce ja estiver vendo a lista de contracheques, pressione Enter para continuar."):
         log("Fazendo varredura agressiva de links clicáveis...")

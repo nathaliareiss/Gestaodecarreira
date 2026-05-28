@@ -345,6 +345,7 @@ def diagnostico_abrangente(page) -> dict[str, int]:
 
 def _candidatos_botoes_baixar_na_linha(linha):
     return [
+        ("css.text-uppercase.btn-outline-primary2", linha.locator("button.text-uppercase.btn-outline-primary2", has_text=re.compile(r"baixar", re.I))),
         ("css.btn-outline-primary2", linha.locator("button.btn-outline-primary2", has_text=re.compile(r"baixar", re.I))),
         ("texto.Baixar", linha.locator("button:has-text('Baixar')")),
         ("regex.baixar", linha.locator("button", has_text=re.compile(r"baixar", re.I))),
@@ -361,6 +362,7 @@ def _candidatos_botoes_exibir_na_linha(linha):
 
 def _selecionar_primeiro_botao_visivel(candidatos):
     total = 0
+    primeiro_encontrado = None
     for rotulo, locator in candidatos:
         try:
             quantidade = locator.count()
@@ -371,10 +373,16 @@ def _selecionar_primeiro_botao_visivel(candidatos):
         for indice in range(quantidade):
             try:
                 botao = locator.nth(indice)
+                if primeiro_encontrado is None:
+                    primeiro_encontrado = (botao, rotulo)
                 if botao.is_visible():
                     return botao, rotulo, total
             except Exception:
                 continue
+
+    if primeiro_encontrado is not None:
+        botao, rotulo = primeiro_encontrado
+        return botao, rotulo, total
 
     return None, None, total
 

@@ -32,10 +32,10 @@ if %errorlevel%==0 (
 
 echo.
 echo Build concluido. O executavel deve ficar em dist\GestaoDeCarreira-Assistente\GestaoDeCarreira-Assistente.exe
-if exist "..\dist\installer\GestaoDeCarreira-Setup-1.0.7.exe" (
-  copy /Y "..\dist\installer\GestaoDeCarreira-Setup-1.0.7.exe" "..\backend\static\downloads\GestaoDeCarreira-Setup-1.0.7.exe" >nul
-  copy /Y "..\dist\installer\GestaoDeCarreira-Setup-1.0.7.exe" "..\backend\static\downloads\GestaoDeCarreira-Setup-latest.exe" >nul
+if exist "..\dist\installer\GestaoDeCarreira-Setup-1.0.8.exe" (
+  copy /Y "..\dist\installer\GestaoDeCarreira-Setup-1.0.8.exe" "..\backend\static\downloads\GestaoDeCarreira-Setup-1.0.8.exe" >nul
+  copy /Y "..\dist\installer\GestaoDeCarreira-Setup-1.0.8.exe" "..\backend\static\downloads\GestaoDeCarreira-Setup-latest.exe" >nul
 )
-echo O instalador real deve ficar em backend\static\downloads\GestaoDeCarreira-Setup-1.0.7.exe
+echo O instalador real deve ficar em backend\static\downloads\GestaoDeCarreira-Setup-1.0.8.exe
 echo O alias atual fica em backend\static\downloads\GestaoDeCarreira-Setup-latest.exe
 endlocal

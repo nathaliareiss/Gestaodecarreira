@@ -95,14 +95,35 @@ def clicar_baixar_na_linha(
     context=None,
 ) -> bool:
     candidatos = base._candidatos_botoes_baixar_na_linha(linha)
-    botao, origem, total = base._selecionar_primeiro_botao_visivel(candidatos)
+    botao = None
+    origem = None
+    total = 0
+
+    for rotulo, locator in candidatos:
+        try:
+            quantidade = locator.count()
+        except Exception:
+            continue
+
+        total += quantidade
+        _log(f"[linha] {competencia} | {tipo} | {rotulo}={quantidade}")
+
+        if botao is None and quantidade > 0:
+            botao = locator.first
+            origem = rotulo
+
     _log(f"Botoes Baixar nesta linha: {total}")
 
     if botao is None:
         _log(f"Botao Baixar nao encontrado para {competencia} - {tipo}")
         return False
 
-    _log(f"Usando botao Baixar ({origem}) para {competencia} - {tipo}")
+    try:
+        bbox = botao.bounding_box()
+    except Exception:
+        bbox = None
+
+    _log(f"Usando botao Baixar ({origem}) para {competencia} - {tipo} | bbox={bbox}")
     return _baixar_com_botao_na_linha(
         page=page,
         linha=linha,

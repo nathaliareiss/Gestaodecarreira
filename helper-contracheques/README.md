@@ -52,7 +52,7 @@ dist\GestaoDeCarreira-Assistente\GestaoDeCarreira-Assistente.exe
 Este projeto usa Inno Setup para empacotar o assistente em:
 
 ```text
-backend\static\downloads\GestaoDeCarreira-Setup-1.0.7.exe
+backend\static\downloads\GestaoDeCarreira-Setup-1.0.8.exe
 ```
 
 O instalador faz uma instalação por usuário em:

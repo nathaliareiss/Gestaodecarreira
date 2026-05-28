@@ -2,7 +2,7 @@
 
 Place the public Windows installer here as:
 
-`GestaoDeCarreira-Setup-1.0.7.exe`
+`GestaoDeCarreira-Setup-1.0.8.exe`
 
 The build also copies the same file to:
 
@@ -10,8 +10,9 @@ The build also copies the same file to:
 
 For compatibility, the backend also redirects the legacy paths
 `/downloads/GestaoDeCarreira-Setup-1.0.4.exe`,
-`/downloads/GestaoDeCarreira-Setup-1.0.5.exe`, and
-`/downloads/GestaoDeCarreira-Setup-1.0.6.exe` to the latest installer.
+`/downloads/GestaoDeCarreira-Setup-1.0.5.exe`,
+`/downloads/GestaoDeCarreira-Setup-1.0.6.exe`, and
+`/downloads/GestaoDeCarreira-Setup-1.0.7.exe` to the latest installer.
 
 The backend mounts this folder at `/downloads`, so the frontend can fetch:
 
