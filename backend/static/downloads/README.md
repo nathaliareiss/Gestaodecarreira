@@ -2,7 +2,7 @@
 
 Place the public Windows installer here as:
 
-`GestaoDeCarreira-Setup-1.0.5.exe`
+`GestaoDeCarreira-Setup-1.0.6.exe`
 
 The build also copies the same file to:
 
