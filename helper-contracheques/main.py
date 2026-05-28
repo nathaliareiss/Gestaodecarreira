@@ -1909,6 +1909,8 @@ def resolver_token(args: argparse.Namespace) -> tuple[str | None, str]:
         debug_log(f"[token] origem={origem} extraido={'sim' if token else 'nao'}")
         if token:
             debug_log(f"[token] origem_do_token={origem}")
+            if origem != "manual":
+                print("Conectei automaticamente com o site.", flush=True)
             return token, origem
 
     print("Nao consegui conectar automaticamente com o site. Cole o token temporario para continuar.", flush=True)
