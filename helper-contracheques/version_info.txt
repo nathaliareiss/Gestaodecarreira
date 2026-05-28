@@ -17,11 +17,11 @@ VSVersionInfo(
         [
           StringStruct('CompanyName', 'Gestao de Carreira'),
           StringStruct('FileDescription', 'Gestao de Carreira Assistente'),
-          StringStruct('FileVersion', '1.0.4.0'),
+          StringStruct('FileVersion', '1.0.5.0'),
           StringStruct('InternalName', 'GestaoDeCarreira-Assistente'),
           StringStruct('OriginalFilename', 'GestaoDeCarreira-Assistente.exe'),
           StringStruct('ProductName', 'Gestao de Carreira Assistente'),
-          StringStruct('ProductVersion', '1.0.4'),
+          StringStruct('ProductVersion', '1.0.5'),
         ]
       )
     ]),

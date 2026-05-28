@@ -52,7 +52,7 @@ dist\GestaoDeCarreira-Assistente\GestaoDeCarreira-Assistente.exe
 Este projeto usa Inno Setup para empacotar o assistente em:
 
 ```text
-backend\static\downloads\GestaoDeCarreira-Setup-1.0.4.exe
+backend\static\downloads\GestaoDeCarreira-Setup-1.0.5.exe
 ```
 
 O instalador faz uma instalação por usuário em:
@@ -70,7 +70,7 @@ gestaodecarreira://
 Para publicar o instalador no frontend, copie o arquivo para:
 
 ```text
-backend\static\downloads\GestaoDeCarreira-Setup-1.0.4.exe
+backend\static\downloads\GestaoDeCarreira-Setup-latest.exe
 ```
 
 ## Dependencias
@@ -91,16 +91,16 @@ python -m playwright install chromium
 
 O helper tenta abrir nesta ordem:
 
-1. Chromium do Playwright;
-2. Microsoft Edge;
-3. Google Chrome.
+1. Microsoft Edge;
+2. Google Chrome;
+3. Chromium do Playwright.
 
 ## Arquivos principais
 
 - `main.py`: fluxo principal
 - `config.py`: ambiente e URLs
 - `upload_service.py`: envio dos PDFs
-- `helper.spec`: build one-file do PyInstaller
+- `helper.spec`: build onedir do PyInstaller
 - `build.bat`: build automatizado
 
 ## Publicacao
@@ -113,11 +113,11 @@ O executavel gerado deve ser distribuido junto com:
 Se quiser publicar o instalador como download do sistema, copie o arquivo para:
 
 ```text
-backend/static/downloads/GestaoDeCarreira-Setup-1.0.4.exe
+backend/static/downloads/GestaoDeCarreira-Setup-latest.exe
 ```
 
 Esse caminho e exposto em:
 
 ```text
-/downloads/GestaoDeCarreira-Setup-1.0.4.exe
+/downloads/GestaoDeCarreira-Setup-latest.exe
 ```

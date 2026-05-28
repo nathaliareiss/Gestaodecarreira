@@ -1855,5 +1855,390 @@ def baixar_contracheques_baixar(page, context, pasta_saida: Path) -> list[Path]:
     return arquivos_baixados
 
 
+def exibir_cabecalho_interativo() -> None:
+    print("==================================")
+    print("Gestao de Carreira - Assistente")
+    print("==================================")
+    print()
+
+
+def solicitar_token_interativo() -> str:
+    try:
+        return input("Cole o token temporario para continuar:\n> ").strip()
+    except EOFError:
+        return ""
+
+
+def registrar_diagnostico_de_entrada(args: argparse.Namespace) -> None:
+    debug_log(f"[entrada] sys.argv={sanitizar_argv_para_log(sys.argv)}")
+    debug_log(f"[entrada] token_cli={'sim' if bool(str(getattr(args, 'token', '')).strip()) else 'nao'}")
+    debug_log(f"[entrada] import_url={'sim' if bool(str(getattr(args, 'import_url', '')).strip()) else 'nao'}")
+    debug_log(f"[entrada] import_uri={'sim' if bool(str(getattr(args, 'import_uri', '')).strip()) else 'nao'}")
+    debug_log(
+        f"[entrada] recebido_via_protocolo={'sim' if bool(str(getattr(args, 'import_url', '')).strip() or str(getattr(args, 'import_uri', '')).strip()) else 'nao'}",
+    )
+
+
+def resolver_token(args: argparse.Namespace) -> tuple[str | None, str]:
+    candidatos = [
+        ("cli", getattr(args, "token", "")),
+        ("protocolo", getattr(args, "import_url", "")),
+        ("protocolo", getattr(args, "import_uri", "")),
+    ]
+
+    for origem, candidato in candidatos:
+        texto_candidato = str(candidato or "").strip()
+        debug_log(f"[token] origem={origem} informado={'sim' if texto_candidato else 'nao'}")
+        token = extrair_token_de_candidato(texto_candidato)
+        debug_log(f"[token] origem={origem} extraido={'sim' if token else 'nao'}")
+        if token:
+            debug_log(f"[token] origem_do_token={origem}")
+            return token, origem
+
+    print("Nao consegui conectar automaticamente com o site. Cole o token temporario para continuar.", flush=True)
+    debug_log("[token] entrando no modo manual")
+    token_interativo = solicitar_token_interativo()
+    if token_interativo:
+        debug_log("[token] origem_do_token=manual")
+        return token_interativo, "manual"
+
+    debug_log("[token] origem=manual extraido=nao")
+    print("Token necessario para continuar. O assistente sera encerrado.", flush=True)
+    return None, "manual"
+
+
+def exibir_diagnostico_inicial(exec_path: Path, origem: str, token: str | None, portal_url: str) -> None:
+    if not DEBUG_MODE:
+        return
+
+    debug_log("====================================")
+    debug_log("Gestao de Carreira Assistente")
+    debug_log("====================================")
+    debug_log(f"Versao: {HELPER_VERSION}")
+    debug_log(f"Executavel: {exec_path}")
+    debug_log(f"Origem: {origem}")
+    debug_log(f"PORTAL_URL carregada: {portal_url}")
+    debug_log(f"Token recebido: {'sim' if token else 'nao'}")
+    debug_log("====================================")
+
+
+def iniciar_playwright():
+    debug_log("Carregando Playwright...")
+    inicio = time.perf_counter()
+    from playwright.sync_api import sync_playwright
+
+    debug_log(f"[tempo] Playwright carregado em {time.perf_counter() - inicio:.2f}s")
+    return sync_playwright()
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Helper local para baixar e enviar contracheques.")
+    parser.add_argument("import_uri", nargs="?", default="", help="URI opcional do protocolo gestaodecarreira://.")
+    parser.add_argument("--token", default="", help="Token temporario gerado pelo sistema.")
+    parser.add_argument("--import-url", default="", help="URI opcional usada pelo protocolo gestaodecarreira://.")
+    parser.add_argument("--backend-url", default=BACKEND_URL, help="URL do backend.")
+    parser.add_argument("--portal-url", default=PORTAL_URL, help="URL inicial do portal gov.br.")
+    parser.add_argument(
+        "--download-dir",
+        default="",
+        help="Pasta opcional para guardar PDFs antes do envio. Se vazio, usa pasta temporaria do helper.",
+    )
+    parser.add_argument(
+        "--headless",
+        action="store_true",
+        help="Executa navegador sem interface. Nao recomendado para login manual.",
+    )
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Mostra logs tecnicos de diagnostico.",
+    )
+    return parser.parse_args()
+
+
+def _imprimir_diagnostico_portal(page) -> None:
+    if not DEBUG_MODE:
+        return
+
+    diagnostico = portal_automation.diagnostico_abrangente(page)
+    debug_log(
+        "[debug] "
+        f"contextos={diagnostico['contextos']} | "
+        f"frames={diagnostico['frames']} | "
+        f"linhas={diagnostico['linhas']} | "
+        f"botoes={diagnostico['botoes']}"
+    )
+
+
+def log_diagnostico_download(page, prefixo: str = "[debug]") -> None:
+    if not DEBUG_MODE:
+        return
+
+    print(f"url= {getattr(page, 'url', '')}", flush=True)
+    try:
+        title = page.title()
+    except Exception:
+        title = ""
+    print(f"title= {title}", flush=True)
+    print(f"buttons= {_contar_em_contextos(page, 'button')}", flush=True)
+    print(f"baixar_text= {_contar_texto_em_contextos(page, re.compile(r'baixar', re.I))}", flush=True)
+    print(
+        f"baixar_button= {_contar_em_contextos(page, 'button', has_text=re.compile(r'baixar', re.I))}",
+        flush=True,
+    )
+    print(
+        f"baixar_css= {_contar_em_contextos(page, 'button.btn-outline-primary2', has_text=re.compile(r'baixar', re.I))}",
+        flush=True,
+    )
+    print(f"exibir_text= {_contar_texto_em_contextos(page, re.compile(r'exibir', re.I))}", flush=True)
+    print(
+        f"exibir_button= {_contar_em_contextos(page, 'button', has_text=re.compile(r'exibir', re.I))}",
+        flush=True,
+    )
+
+    for rotulo, contexto in _contextos_de_diagnostico(page):
+        try:
+            url_contexto = getattr(contexto, "url", "")
+        except Exception:
+            url_contexto = ""
+
+        try:
+            baixar_re = _locator_count(contexto.locator("button", has_text=re.compile(r"baixar", re.I)))
+        except Exception:
+            baixar_re = 0
+
+        try:
+            baixar_css = _locator_count(
+                contexto.locator("button.btn-outline-primary2", has_text=re.compile(r"baixar", re.I)),
+            )
+        except Exception:
+            baixar_css = 0
+
+        try:
+            exibir_re = _locator_count(contexto.locator("button", has_text=re.compile(r"exibir", re.I)))
+        except Exception:
+            exibir_re = 0
+
+        try:
+            text_baixar = _locator_count(contexto.get_by_text(re.compile(r"baixar", re.I)))
+        except Exception:
+            text_baixar = 0
+
+        print(
+            f"[dom] {rotulo} url={url_contexto} baixar_re={baixar_re} "
+            f"baixar_css={baixar_css} exibir_re={exibir_re} text_baixar={text_baixar}",
+            flush=True,
+        )
+        _dump_botoes_contexto(rotulo, contexto)
+
+
+def wait_until_paystub_page_ready(page) -> bool:
+    print("Faça login normalmente no Portal do Servidor.", flush=True)
+    print("Depois abra a página de download de contracheque e deixe o resto comigo.", flush=True)
+    print("Estou procurando seus contracheques disponíveis...", flush=True)
+
+    prazo = time.monotonic() + (15 * 60)
+    proximo_status = time.monotonic()
+
+    while time.monotonic() < prazo:
+        try:
+            portal_automation.fechar_avisos_se_existirem(page)
+        except Exception:
+            pass
+
+        try:
+            page.wait_for_load_state("networkidle", timeout=10000)
+        except Exception:
+            pass
+
+        try:
+            page.wait_for_timeout(1000)
+        except Exception:
+            pass
+
+        diagnostico = portal_automation.diagnostico_abrangente(page)
+        if diagnostico["linhas"] > 0 or pagina_consultar_contracheque_pronta(page):
+            _imprimir_diagnostico_portal(page)
+            if DEBUG_MODE:
+                log_diagnostico_download(page)
+            print("Encontrei a lista de contracheques.", flush=True)
+            return True
+
+        agora = time.monotonic()
+        if agora >= proximo_status:
+            print("Ainda estou aguardando a lista de contracheques...", flush=True)
+            if DEBUG_MODE:
+                _imprimir_diagnostico_portal(page)
+                log_diagnostico_download(page)
+            proximo_status = agora + 60
+
+    print(
+        "Nao encontrei a lista de contracheques ainda. Se ela ja apareceu para voce, pressione Enter para continuar.",
+        flush=True,
+    )
+    if solicitar_continuacao_manual("Se voce ja esta na tela de contracheques, pressione Enter para continuar."):
+        salvar_diagnostico_portal_contracheque(page)
+        _imprimir_diagnostico_portal(page)
+        if DEBUG_MODE:
+            log_diagnostico_download(page)
+        return True
+    return False
+
+
+def pedir_login_manual(_page) -> bool:
+    return solicitar_continuacao_manual("Se voce ja esta vendo a lista de contracheques, pressione Enter para continuar.")
+
+
+def baixar_contracheques_baixar(page, context, pasta_saida: Path) -> list[Path]:
+    print("Estou procurando seus contracheques disponiveis...", flush=True)
+    _aguardar_pagina_estabilizar(page)
+
+    diagnostico = portal_automation.diagnostico_abrangente(page)
+    pagina_pronta = diagnostico["linhas"] > 0 or pagina_consultar_contracheque_pronta(page)
+
+    if not pagina_pronta:
+        print(
+            "Nao encontrei a lista de contracheques ainda. Se ela ja apareceu para voce, pressione Enter para continuar.",
+            flush=True,
+        )
+        if not solicitar_continuacao_manual("Se voce ja esta vendo a lista de contracheques, pressione Enter para continuar."):
+            return []
+        salvar_diagnostico_portal_contracheque(page)
+
+    _imprimir_diagnostico_portal(page)
+    if DEBUG_MODE:
+        salvar_diagnostico_portal_contracheque(page)
+        log_diagnostico_download(page)
+
+    arquivos_antes = {
+        p.resolve()
+        for p in pasta_saida.rglob("*.pdf")
+        if p.is_file()
+    }
+    vistos: set[str] = set()
+    pasta_mensais = pasta_saida / "mensais_ultimos_60_meses"
+    pasta_decimo = pasta_saida / "decimo_terceiro"
+    pasta_mensais.mkdir(parents=True, exist_ok=True)
+    pasta_decimo.mkdir(parents=True, exist_ok=True)
+
+    pagina_atual = portal_automation.encontrar_pagina_com_lista_flexivel(page)
+    total_baixados = 0
+
+    while True:
+        try:
+            total_baixados += portal_automation.processar_pagina(
+                pagina_atual,
+                pasta_mensais,
+                pasta_decimo,
+                vistos,
+                context=context,
+            )
+        except Exception as erro:
+            log(f"[falha] processar_pagina -> {erro}")
+            break
+
+        try:
+            avancou = portal_automation.ir_para_proxima_pagina(pagina_atual)
+        except Exception as erro:
+            log(f"[falha] ir_para_proxima_pagina -> {erro}")
+            break
+
+        if not avancou:
+            break
+
+    arquivos_baixados = sorted(
+        p
+        for p in pasta_saida.rglob("*.pdf")
+        if p.is_file() and p.resolve() not in arquivos_antes
+    )
+    log(f"[info] total_baixados={total_baixados} | arquivos_encontrados={len(arquivos_baixados)}")
+    return arquivos_baixados
+
+
+def main() -> int:
+    inicio_programa = time.perf_counter()
+    configurar_logger()
+    args = parse_args()
+    definir_modo_debug(getattr(args, "debug", False))
+
+    print("Iniciando o assistente do Career Flow...", flush=True)
+    print("Vou abrir o Portal do Servidor para você.", flush=True)
+
+    registrar_protocolo_windows()
+    registrar_diagnostico_de_entrada(args)
+
+    token, origem_token = resolver_token(args)
+    if not token:
+        return 1
+
+    debug_log(f"[tempo] programa_iniciado={time.perf_counter() - inicio_programa:.2f}s")
+    exibir_diagnostico_inicial(Path(sys.executable).resolve(), origem_token, token, args.portal_url)
+    print("Abrindo navegador seguro para você fazer login...", flush=True)
+
+    pasta_saida = Path(args.download_dir).expanduser().resolve() if args.download_dir else criar_diretorio_temporario()
+    pasta_saida.mkdir(parents=True, exist_ok=True)
+
+    browser = None
+    resultado = 1
+    try:
+        with iniciar_playwright() as playwright:
+            try:
+                inicio_navegador = time.perf_counter()
+                browser = abrir_navegador(playwright, args.headless)
+                debug_log(f"[tempo] navegador_aberto={time.perf_counter() - inicio_navegador:.2f}s")
+                context = browser.new_context(accept_downloads=True)
+                page = context.new_page()
+                page.set_default_timeout(BROWSER_TIMEOUT_MS)
+                print("Abrindo o Portal do Servidor...", flush=True)
+                inicio_portal = time.perf_counter()
+                page.goto(args.portal_url, wait_until="domcontentloaded")
+                debug_log(f"[tempo] portal_aberto={time.perf_counter() - inicio_portal:.2f}s")
+
+                if not wait_until_paystub_page_ready(page):
+                    raise RuntimeError("Nao consegui confirmar a tela de contracheques.")
+
+                print("Agora vou baixar os seus contracheques.", flush=True)
+                arquivos = baixar_contracheques_baixar(page, context, pasta_saida)
+                if not arquivos:
+                    raise RuntimeError("Nenhum PDF foi encontrado para baixar.")
+
+                inicio_upload_import = time.perf_counter()
+                from upload_service import upload_pdfs_para_backend
+                debug_log(f"[tempo] import_upload_service={time.perf_counter() - inicio_upload_import:.2f}s")
+                print(f"Encontrei {len(arquivos)} contracheques.", flush=True)
+                print("Enviando os arquivos para o sistema.", flush=True)
+                resultado_upload = upload_pdfs_para_backend(
+                    arquivos,
+                    token,
+                    backend_url=args.backend_url,
+                )
+                print("Concluido com sucesso.", flush=True)
+                debug_log(f"[concluido] batch_id={resultado_upload.batch_id} status={resultado_upload.status}")
+                resultado = 0
+            except Exception as erro:
+                exibir_erro_amigavel("Ocorreu um erro, mas o navegador ficará aberto para diagnóstico. Pressione Enter para fechar.")
+                debug_log(f"[falha] {erro}")
+
+        return resultado
+    except Exception as erro:
+        exibir_erro_amigavel("Nao foi possivel concluir a importacao agora. Verifique o assistente e tente novamente.")
+        debug_log(f"[falha] {erro}")
+        return 1
+    finally:
+        try:
+            if browser is not None:
+                browser.close()
+        except Exception:
+            pass
+
+        if args.download_dir:
+            debug_log(f"[info] PDFs mantidos em {pasta_saida}")
+        else:
+            try:
+                shutil.rmtree(pasta_saida)
+            except Exception:
+                pass
+
+
 if __name__ == "__main__":
     raise SystemExit(main())
