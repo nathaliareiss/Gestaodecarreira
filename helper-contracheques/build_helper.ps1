@@ -50,15 +50,20 @@ if ($Installer) {
 
     & $iscc.Source "installer\GestaoDeCarreira-Setup.iss"
 
+    $installerBuildRoot = "..\dist\installer"
     $downloadsRoot = "..\backend\static\downloads"
+
     if (-not (Test-Path $downloadsRoot)) {
         New-Item -ItemType Directory -Force -Path $downloadsRoot | Out-Null
     }
 
+    $installerDir = (Resolve-Path $installerBuildRoot).Path
     $downloadsDir = (Resolve-Path $downloadsRoot).Path
-    $versionedInstaller = Join-Path $downloadsDir "GestaoDeCarreira-Setup-1.0.5.exe"
+    $versionedInstaller = Join-Path $installerDir "GestaoDeCarreira-Setup-1.0.5.exe"
+    $publishedInstaller = Join-Path $downloadsDir "GestaoDeCarreira-Setup-1.0.5.exe"
     $latestInstaller = Join-Path $downloadsDir "GestaoDeCarreira-Setup-latest.exe"
     if (Test-Path $versionedInstaller) {
+        Copy-Item -Force $versionedInstaller $publishedInstaller
         Copy-Item -Force $versionedInstaller $latestInstaller
     }
 }
