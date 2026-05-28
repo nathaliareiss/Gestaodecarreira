@@ -29,7 +29,7 @@ from config import (
     PORTAL_URL,
 )
 
-import portal_automation
+import portal_automation_runtime as portal_automation
 
 
 LOGGER = logging.getLogger("helper-contracheques")

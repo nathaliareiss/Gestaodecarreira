@@ -84,10 +84,18 @@ class FakeCollection:
 
 
 class FakeRow:
-    def __init__(self, competencia: str, tipo: str, *, button_text: str = "Baixar"):
+    def __init__(
+        self,
+        competencia: str,
+        tipo: str,
+        *,
+        button_text: str = "Baixar",
+        buttons: list[str] | None = None,
+    ):
         self._competencia = competencia
         self._tipo = tipo
         self._button_text = button_text
+        self._buttons = buttons or [button_text]
 
     def locator(self, selector: str, **kwargs):
         if selector == "td":
@@ -102,15 +110,16 @@ class FakeRow:
         if "button" in selector:
             has_text = kwargs.get("has_text")
             if has_text is None:
-                return FakeCollection([FakeElement(self._button_text)])
+                return FakeCollection([FakeElement(text) for text in self._buttons])
 
             if hasattr(has_text, "search"):
                 pattern = has_text
             else:
                 pattern = re.compile(re.escape(str(has_text or "")), re.I)
 
-            if pattern.search(self._button_text):
-                return FakeCollection([FakeElement(self._button_text)])
+            filtrados = [FakeElement(text) for text in self._buttons if pattern.search(text)]
+            if filtrados:
+                return FakeCollection(filtrados)
             return FakeCollection([])
 
         if "a[href]" in selector:
@@ -127,8 +136,9 @@ class FakeRow:
         else:
             pattern = re.compile(re.escape(str(name or "")), re.I)
 
-        if pattern.search(self._button_text):
-            return FakeCollection([FakeElement(self._button_text)])
+        filtrados = [FakeElement(text) for text in self._buttons if pattern.search(text)]
+        if filtrados:
+            return FakeCollection(filtrados)
         return FakeCollection([])
 
 
@@ -381,6 +391,40 @@ class HelperContrachequesTests(unittest.TestCase):
         botoes = helper.encontrar_botoes_baixar(page)
         self.assertGreaterEqual(len(botoes), 1)
         self.assertTrue(helper.pagina_consultar_contracheque_pronta(page))
+
+    def test_clicar_baixar_na_linha_prioriza_baixar_sobre_exibir(self):
+        page = FakePage(
+            url="https://portal.exemplo/contracheques",
+            title="Contracheques",
+            selectors={
+                "body": FakeCollection(inner_text="04/2026 Mensal Exibir Baixar"),
+            },
+        )
+        linha = FakeRow("04/2026", "Mensal", buttons=["Exibir", "Baixar"])
+        pasta = Path("C:/gdc-test/mensais")
+        chamadas: list[str] = []
+
+        original = helper.portal_automation._baixar_com_botao_na_linha
+
+        def fake_baixar_com_botao_na_linha(*, botao, **kwargs):
+            chamadas.append(botao.inner_text())
+            return True
+
+        helper.portal_automation._baixar_com_botao_na_linha = fake_baixar_com_botao_na_linha
+        try:
+            ok = helper.portal_automation.clicar_baixar_na_linha(
+                page=page,
+                linha=linha,
+                pasta_destino=pasta,
+                competencia="04/2026",
+                tipo="Mensal",
+                context=object(),
+            )
+        finally:
+            helper.portal_automation._baixar_com_botao_na_linha = original
+
+        self.assertTrue(ok)
+        self.assertEqual(chamadas, ["Baixar"])
 
     def test_processar_pagina_baixa_mensal_antigo_sem_limite_de_60_meses(self):
         page = FakePage(

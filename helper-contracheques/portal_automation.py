@@ -343,6 +343,60 @@ def diagnostico_abrangente(page) -> dict[str, int]:
     }
 
 
+def _candidatos_botoes_baixar_na_linha(linha):
+    return [
+        ("css.btn-outline-primary2", linha.locator("button.btn-outline-primary2", has_text=re.compile(r"baixar", re.I))),
+        ("texto.Baixar", linha.locator("button:has-text('Baixar')")),
+        ("regex.baixar", linha.locator("button", has_text=re.compile(r"baixar", re.I))),
+    ]
+
+
+def _candidatos_botoes_exibir_na_linha(linha):
+    return [
+        ("css.btn-primary2", linha.locator("button.btn-primary2", has_text=re.compile(r"exibir", re.I))),
+        ("texto.Exibir", linha.locator("button:has-text('Exibir')")),
+        ("regex.exibir", linha.locator("button", has_text=re.compile(r"exibir", re.I))),
+    ]
+
+
+def _selecionar_primeiro_botao_visivel(candidatos):
+    total = 0
+    for rotulo, locator in candidatos:
+        try:
+            quantidade = locator.count()
+        except Exception:
+            continue
+
+        total += quantidade
+        for indice in range(quantidade):
+            try:
+                botao = locator.nth(indice)
+                if botao.is_visible():
+                    return botao, rotulo, total
+            except Exception:
+                continue
+
+    return None, None, total
+
+
+def _restaurar_contexto_lista(page: Page, url_antes: str) -> None:
+    try:
+        if page.url == url_antes:
+            return
+
+        try:
+            page.go_back(timeout=5000)
+        except Exception:
+            page.goto(url_antes, wait_until="domcontentloaded", timeout=10000)
+
+        try:
+            page.wait_for_timeout(1000)
+        except Exception:
+            pass
+    except Exception:
+        pass
+
+
 def baixar_url_com_sessao(sessao, url: str, destino: Path) -> None:
     resposta = sessao.get(url, timeout=DOWNLOAD_TIMEOUT_MS / 1000, stream=True)
     if not resposta.ok:
