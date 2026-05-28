@@ -1880,13 +1880,18 @@ def solicitar_token_interativo() -> str:
 
 
 def registrar_diagnostico_de_entrada(args: argparse.Namespace) -> None:
-    debug_log(f"[entrada] sys.argv={sanitizar_argv_para_log(sys.argv)}")
-    debug_log(f"[entrada] token_cli={'sim' if bool(str(getattr(args, 'token', '')).strip()) else 'nao'}")
-    debug_log(f"[entrada] import_url={'sim' if bool(str(getattr(args, 'import_url', '')).strip()) else 'nao'}")
-    debug_log(f"[entrada] import_uri={'sim' if bool(str(getattr(args, 'import_uri', '')).strip()) else 'nao'}")
-    debug_log(
-        f"[entrada] recebido_via_protocolo={'sim' if bool(str(getattr(args, 'import_url', '')).strip() or str(getattr(args, 'import_uri', '')).strip()) else 'nao'}",
-    )
+    argv_sanitizado = sanitizar_argv_para_log(sys.argv)
+    caminho_protocolo = ""
+    if len(sys.argv) > 1:
+        caminho_protocolo = str(sys.argv[1] or "")
+
+    log(f"argv_count={len(sys.argv)}")
+    log(f"argv[1] comeca com gestaodecarreira:// = {'sim' if caminho_protocolo.lower().startswith('gestaodecarreira://') else 'nao'}")
+    log(f"token_cli={'sim' if bool(str(getattr(args, 'token', '')).strip()) else 'nao'}")
+    log(f"import_url={'sim' if bool(str(getattr(args, 'import_url', '')).strip()) else 'nao'}")
+    log(f"import_uri={'sim' if bool(str(getattr(args, 'import_uri', '')).strip()) else 'nao'}")
+    log(f"via_protocolo={'sim' if bool(str(getattr(args, 'import_url', '')).strip() or str(getattr(args, 'import_uri', '')).strip()) else 'nao'}")
+    debug_log(f"[entrada] sys.argv={argv_sanitizado}")
 
 
 def resolver_token(args: argparse.Namespace) -> tuple[str | None, str]:
@@ -1918,18 +1923,18 @@ def resolver_token(args: argparse.Namespace) -> tuple[str | None, str]:
 
 
 def exibir_diagnostico_inicial(exec_path: Path, origem: str, token: str | None, portal_url: str) -> None:
-    if not DEBUG_MODE:
-        return
+    print("====================================", flush=True)
+    print("Gestao de Carreira Assistente", flush=True)
+    print("====================================", flush=True)
+    print(f"Versao: {HELPER_VERSION}", flush=True)
+    print(f"Executavel: {exec_path}", flush=True)
+    print(f"Origem: {origem}", flush=True)
+    print(f"PORTAL_URL carregada: {portal_url}", flush=True)
+    print(f"Token recebido: {'sim' if token else 'nao'}", flush=True)
+    print("====================================", flush=True)
 
-    debug_log("====================================")
-    debug_log("Gestao de Carreira Assistente")
-    debug_log("====================================")
-    debug_log(f"Versao: {HELPER_VERSION}")
-    debug_log(f"Executavel: {exec_path}")
-    debug_log(f"Origem: {origem}")
-    debug_log(f"PORTAL_URL carregada: {portal_url}")
-    debug_log(f"Token recebido: {'sim' if token else 'nao'}")
-    debug_log("====================================")
+    if DEBUG_MODE:
+        debug_log(f"[entrada] origem={origem}")
 
 
 def iniciar_playwright():

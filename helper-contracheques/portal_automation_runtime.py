@@ -19,8 +19,6 @@ encontrar_contexto_lista = base.encontrar_contexto_lista
 localizar_linhas_documento = base.localizar_linhas_documento
 esperar_lista_em_alguma_frame = base.esperar_lista_em_alguma_frame
 extrair_info_documento = base.extrair_info_documento
-encontrar_pagina_com_lista_flexivel = base.encontrar_pagina_com_lista_flexivel
-fechar_avisos_se_existirem = base.fechar_avisos_se_existirem
 diagnostico_abrangente = base.diagnostico_abrangente
 
 
@@ -116,34 +114,6 @@ def clicar_baixar_na_linha(
     )
 
 
-def clicar_exibir_na_linha(
-    page: Page,
-    linha,
-    pasta_destino: Path,
-    competencia: str,
-    tipo: str,
-    context=None,
-) -> bool:
-    candidatos = base._candidatos_botoes_exibir_na_linha(linha)
-    botao, origem, total = base._selecionar_primeiro_botao_visivel(candidatos)
-    _log(f"Botões Exibir nesta linha: {total}")
-
-    if botao is None:
-        _log(f"Botao Exibir nao encontrado para {competencia} - {tipo}")
-        return False
-
-    _log(f"Usando fallback Exibir ({origem}) para {competencia} - {tipo}")
-    return _baixar_com_botao_na_linha(
-        page=page,
-        linha=linha,
-        botao=botao,
-        pasta_destino=pasta_destino,
-        competencia=competencia,
-        tipo=tipo,
-        context=context,
-    )
-
-
 def processar_pagina(page: Page, pasta_mensais: Path, pasta_decimo: Path, vistos: set[str], context=None) -> int:
     try:
         page.wait_for_load_state("networkidle", timeout=10_000)
@@ -204,18 +174,11 @@ def processar_pagina(page: Page, pasta_mensais: Path, pasta_decimo: Path, vistos
         )
 
         if not ok:
-            ok = clicar_exibir_na_linha(
-                page=page,
-                linha=linha,
-                pasta_destino=pasta_destino,
-                competencia=competencia,
-                tipo=tipo,
-                context=context,
-            )
+            _log(f"Botao Baixar nao encontrado; pulando linha {i + 1}")
+            continue
 
-        if ok:
-            vistos.add(chave)
-            total_baixados += 1
+        vistos.add(chave)
+        total_baixados += 1
 
     return total_baixados
 

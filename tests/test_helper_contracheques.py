@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import importlib.util
 import re
 import sys
@@ -249,6 +250,17 @@ class HelperContrachequesTests(unittest.TestCase):
             "abc123",
         )
         self.assertEqual(helper.extrair_token_de_candidato("token=abc123"), "abc123")
+
+    def test_resolver_token_prioriza_protocolo_e_sanitiza_entrada_posicional(self):
+        args = argparse.Namespace(
+            token="",
+            import_url="",
+            import_uri="gestaodecarreira://importar?token=TESTE123",
+        )
+
+        token, origem = helper.resolver_token(args)
+        self.assertEqual(token, "TESTE123")
+        self.assertEqual(origem, "protocolo")
 
     def test_sanitizar_argv_para_log_oculta_token(self):
         resultado = helper.sanitizar_argv_para_log(

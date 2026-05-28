@@ -618,6 +618,11 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
 
   async function tentarAbrirAssistenteImportacao(token: string) {
     const url = `gestaodecarreira://importar?token=${encodeURIComponent(token)}`
+    if (process.env.NODE_ENV !== "production") {
+      const tokenMascarado = token ? `${token.slice(0, 4)}...${token.slice(-4)}` : "[vazio]"
+      console.debug("[assistente] protocolo=", `gestaodecarreira://importar?token=${tokenMascarado}`)
+      console.debug("[assistente] url_montada=", url.replace(token, "[oculto]"))
+    }
     return await new Promise<boolean>((resolve) => {
       let resolvido = false
       const link = document.createElement("a")
