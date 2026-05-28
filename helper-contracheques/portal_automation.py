@@ -350,14 +350,6 @@ def _candidatos_botoes_baixar_na_linha(linha):
     ]
 
 
-def _candidatos_botoes_exibir_na_linha(linha):
-    return [
-        ("css.btn-primary2", linha.locator("button.btn-primary2", has_text=re.compile(r"exibir", re.I))),
-        ("texto.Exibir", linha.locator("button:has-text('Exibir')")),
-        ("regex.exibir", linha.locator("button", has_text=re.compile(r"exibir", re.I))),
-    ]
-
-
 def _selecionar_primeiro_botao_visivel(candidatos):
     total = 0
     primeiro_encontrado = None
@@ -430,7 +422,7 @@ def clicar_baixar_na_linha(
         nome_base = f"{competencia}_{tipo}".replace("/", "-").replace(" ", "_")
         nome_base = normalizar_nome_arquivo(nome_base)
 
-        btn = linha.locator("button.btn-outline-primary2, button:has-text('Baixar'), button.text-uppercase")
+        btn = linha.locator("button.btn-outline-primary2", has_text=re.compile(r"baixar", re.I))
         if btn.count() == 0:
             btn = linha.get_by_role("button", name=re.compile(r"baixar", re.I))
         if btn.count() == 0:
