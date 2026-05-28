@@ -8,6 +8,7 @@ import shutil
 import sys
 import time
 import unicodedata
+import tempfile
 from datetime import datetime
 from pathlib import Path
 from urllib.parse import parse_qs, urlencode, urljoin, urlparse
@@ -1358,6 +1359,598 @@ def baixar_contracheques_baixar(page, context, pasta_saida: Path) -> list[Path]:
 
     if not botoes and solicitar_continuacao_manual("Se você já está vendo os botões BAIXAR, pressione Enter para continuar."):
         log("Fazendo varredura agressiva de links clicáveis...")
+        log_diagnostico_download(page)
+        botoes = [item for _, item in encontrar_alvos_download(page, agressivo=True)]
+
+    if not botoes:
+        return []
+
+    arquivos_baixados: list[Path] = []
+    for indice, botao in enumerate(botoes, start=1):
+        try:
+            arquivo = baixar_um_documento_baixar(page, context, botao, indice, len(botoes), pasta_saida)
+            arquivos_baixados.append(arquivo)
+        except Exception as erro:
+            log(f"[falha] botao BAIXAR {indice} -> {erro}")
+
+    return arquivos_baixados
+
+
+def _contextos_de_diagnostico(page) -> list[tuple[str, object]]:
+    contextos: list[tuple[str, object]] = [("page", page)]
+    frames = getattr(page, "frames", None) or []
+    indice = 0
+
+    for frame in frames:
+        try:
+            if getattr(frame, "parent_frame", None) is None:
+                continue
+        except Exception:
+            pass
+
+        indice += 1
+        contextos.append((f"frame[{indice}]", frame))
+
+    return contextos
+
+
+def _contar_em_contextos(page, selector: str, **kwargs) -> int:
+    total = 0
+    for _, contexto in _contextos_de_diagnostico(page):
+        try:
+            locator = contexto.locator(selector, **kwargs)
+        except TypeError:
+            locator = contexto.locator(selector)
+        except Exception:
+            continue
+        total += _locator_count(locator)
+    return total
+
+
+def _contar_texto_em_contextos(page, padrao) -> int:
+    total = 0
+    for _, contexto in _contextos_de_diagnostico(page):
+        try:
+            locator = contexto.get_by_text(padrao)
+        except Exception:
+            continue
+        total += _locator_count(locator)
+    return total
+
+
+def _caminho_debug_portal_contracheque(nome_arquivo: str) -> Path:
+    candidatos = [
+        Path.cwd(),
+        Path.home() / "Desktop",
+        Path.home() / "Downloads",
+        Path.home(),
+        Path(tempfile.gettempdir()),
+    ]
+
+    for base in candidatos:
+        try:
+            base.mkdir(parents=True, exist_ok=True)
+            teste = base / ".gdc_write_test"
+            teste.write_text("ok", encoding="utf-8")
+            try:
+                teste.unlink()
+            except Exception:
+                pass
+            return base / nome_arquivo
+        except Exception:
+            continue
+
+    return Path(tempfile.gettempdir()) / nome_arquivo
+
+
+def _seguro_texto(locator) -> str:
+    try:
+        texto = locator.inner_text(timeout=1000)
+        if isinstance(texto, str) and texto.strip():
+            return texto.strip()
+    except Exception:
+        pass
+
+    try:
+        texto = locator.text_content() or ""
+        if isinstance(texto, str) and texto.strip():
+            return texto.strip()
+    except Exception:
+        pass
+
+    return ""
+
+
+def _detalhes_elemento(locator) -> dict[str, object]:
+    detalhes: dict[str, object] = {
+        "tagName": "desconhecido",
+        "id": "",
+        "class": "",
+        "inner_text": "",
+        "is_visible": "desconhecido",
+        "is_enabled": "desconhecido",
+        "bounding_box": None,
+    }
+
+    for atributo in ("id", "class"):
+        try:
+            valor = locator.get_attribute(atributo)
+        except Exception:
+            valor = None
+        if isinstance(valor, str):
+            detalhes[atributo] = valor
+
+    try:
+        detalhes["tagName"] = locator.evaluate("(el) => el.tagName")
+    except Exception:
+        try:
+            detalhes["tagName"] = locator.get_attribute("tagName") or detalhes["tagName"]
+        except Exception:
+            pass
+
+    detalhes["inner_text"] = _seguro_texto(locator)
+
+    try:
+        detalhes["is_visible"] = locator.is_visible()
+    except Exception:
+        pass
+
+    try:
+        detalhes["is_enabled"] = locator.is_enabled()
+    except Exception:
+        pass
+
+    try:
+        detalhes["bounding_box"] = locator.bounding_box()
+    except Exception:
+        pass
+
+    return detalhes
+
+
+def _chave_elemento(locator) -> str:
+    detalhes = _detalhes_elemento(locator)
+    return normalizar_texto(
+        "|".join(
+            [
+                str(detalhes.get("tagName", "")),
+                str(detalhes.get("id", "")),
+                str(detalhes.get("class", "")),
+                str(detalhes.get("inner_text", "")),
+                str(detalhes.get("bounding_box", "")),
+            ],
+        ),
+    )
+
+
+def _dump_botoes_contexto(rotulo: str, contexto) -> None:
+    try:
+        total = contexto.locator("button").count()
+    except Exception:
+        total = 0
+
+    print(f"[dom] {rotulo} buttons={total}", flush=True)
+    for indice in range(total):
+        try:
+            locator = contexto.locator("button").nth(indice)
+        except Exception:
+            continue
+
+        detalhes = _detalhes_elemento(locator)
+        print(
+            "[dom] "
+            f"{rotulo} button[{indice + 1}/{total}] "
+            f"tagName={detalhes['tagName']} | "
+            f"id={detalhes['id']} | "
+            f"class={detalhes['class']} | "
+            f"inner_text={detalhes['inner_text']} | "
+            f"is_visible={detalhes['is_visible']} | "
+            f"is_enabled={detalhes['is_enabled']} | "
+            f"bounding_box={detalhes['bounding_box']}",
+            flush=True,
+        )
+
+
+def _aguardar_pagina_estabilizar(page) -> None:
+    try:
+        page.wait_for_load_state("networkidle", timeout=10000)
+    except Exception:
+        pass
+
+    try:
+        page.wait_for_timeout(1000)
+    except Exception:
+        pass
+
+
+def salvar_diagnostico_portal_contracheque(page) -> None:
+    caminho_html = _caminho_debug_portal_contracheque("debug_portal_contracheque.html")
+    caminho_png = _caminho_debug_portal_contracheque("debug_portal_contracheque.png")
+
+    try:
+        html = page.content()
+        caminho_html.write_text(html, encoding="utf-8")
+        log(f"[debug] html salvo em {caminho_html}")
+    except Exception as erro:
+        log(f"[debug] falha ao salvar html -> {erro}")
+
+    try:
+        page.screenshot(path=str(caminho_png), full_page=True)
+        log(f"[debug] screenshot salvo em {caminho_png}")
+    except Exception as erro:
+        log(f"[debug] falha ao salvar screenshot -> {erro}")
+
+
+def log_diagnostico_download(page, prefixo: str = "[debug]") -> None:
+    print(f"url= {getattr(page, 'url', '')}", flush=True)
+    try:
+        title = page.title()
+    except Exception:
+        title = ""
+    print(f"title= {title}", flush=True)
+    print(f"buttons= {_contar_em_contextos(page, 'button')}", flush=True)
+    print(f"baixar_text= {_contar_texto_em_contextos(page, re.compile(r'baixar', re.I))}", flush=True)
+    print(
+        f"baixar_button= {_contar_em_contextos(page, 'button', has_text=re.compile(r'baixar', re.I))}",
+        flush=True,
+    )
+    print(
+        f"baixar_css= {_contar_em_contextos(page, 'button.btn-outline-primary2', has_text=re.compile(r'baixar', re.I))}",
+        flush=True,
+    )
+    print(f"exibir_text= {_contar_texto_em_contextos(page, re.compile(r'exibir', re.I))}", flush=True)
+    print(
+        f"exibir_button= {_contar_em_contextos(page, 'button', has_text=re.compile(r'exibir', re.I))}",
+        flush=True,
+    )
+
+    for rotulo, contexto in _contextos_de_diagnostico(page):
+        try:
+            url_contexto = getattr(contexto, "url", "")
+        except Exception:
+            url_contexto = ""
+
+        try:
+            baixar_re = _locator_count(contexto.locator("button", has_text=re.compile(r"baixar", re.I)))
+        except Exception:
+            baixar_re = 0
+
+        try:
+            baixar_css = _locator_count(
+                contexto.locator("button.btn-outline-primary2", has_text=re.compile(r"baixar", re.I)),
+            )
+        except Exception:
+            baixar_css = 0
+
+        try:
+            exibir_re = _locator_count(contexto.locator("button", has_text=re.compile(r"exibir", re.I)))
+        except Exception:
+            exibir_re = 0
+
+        try:
+            text_baixar = _locator_count(contexto.get_by_text(re.compile(r"baixar", re.I)))
+        except Exception:
+            text_baixar = 0
+
+        print(
+            f"[dom] {rotulo} url={url_contexto} baixar_re={baixar_re} "
+            f"baixar_css={baixar_css} exibir_re={exibir_re} text_baixar={text_baixar}",
+            flush=True,
+        )
+        _dump_botoes_contexto(rotulo, contexto)
+
+
+def _locators_baixar_robustos(page) -> list[tuple[str, object]]:
+    candidatos: list[tuple[str, object]] = []
+    vistos: set[str] = set()
+
+    seletores = [
+        ("button.btn-outline-primary2", lambda contexto: contexto.locator("button.btn-outline-primary2", has_text=re.compile(r"baixar", re.I))),
+        ("button has_text baixar", lambda contexto: contexto.locator("button", has_text=re.compile(r"baixar", re.I))),
+        ("button:has-text('Baixar')", lambda contexto: contexto.locator("button:has-text('Baixar')")),
+        ("a:has-text('Baixar')", lambda contexto: contexto.locator("a:has-text('Baixar')")),
+        ("[role='button']:has-text('Baixar')", lambda contexto: contexto.locator("[role='button']:has-text('Baixar')")),
+        ("text=Baixar", lambda contexto: contexto.get_by_text(re.compile(r"baixar", re.I))),
+        ("input[value*='Baixar' i]", lambda contexto: contexto.locator("input[value*='Baixar' i]")),
+        ("a[href*='pdf' i]", lambda contexto: contexto.locator("a[href*='pdf' i]")),
+        ("a[href*='download' i]", lambda contexto: contexto.locator("a[href*='download' i]")),
+        ("a[href*='contracheque' i]", lambda contexto: contexto.locator("a[href*='contracheque' i]")),
+        ("a[download]", lambda contexto: contexto.locator("a[download]")),
+        ("button[download]", lambda contexto: contexto.locator("button[download]")),
+    ]
+
+    for rotulo, factory in seletores:
+        for contexto_rotulo, contexto in _contextos_de_diagnostico(page):
+            try:
+                locator = factory(contexto)
+            except Exception:
+                continue
+
+            try:
+                total = locator.count()
+            except Exception:
+                continue
+
+            for indice in range(total):
+                try:
+                    item = locator.nth(indice)
+                except Exception:
+                    continue
+
+                try:
+                    visivel = item.is_visible()
+                except Exception:
+                    visivel = False
+
+                try:
+                    bbox = item.bounding_box()
+                except Exception:
+                    bbox = None
+
+                if not visivel and not bbox:
+                    continue
+
+                chave = _chave_elemento(item)
+                if chave in vistos:
+                    continue
+                vistos.add(chave)
+                assinatura = texto_elemento(item) or f"{contexto_rotulo}:{rotulo}"
+                candidatos.append((assinatura, item))
+
+    return candidatos
+
+
+def encontrar_botoes_baixar(page) -> list[object]:
+    return [item for _, item in _locators_baixar_robustos(page)]
+
+
+def _locators_exibir_robustos(page) -> list[tuple[str, object]]:
+    candidatos: list[tuple[str, object]] = []
+    vistos: set[str] = set()
+
+    seletores = [
+        ("button.btn-primary2", lambda contexto: contexto.locator("button.btn-primary2", has_text=re.compile(r"exibir", re.I))),
+        ("button has_text exibir", lambda contexto: contexto.locator("button", has_text=re.compile(r"exibir", re.I))),
+        ("button:has-text('Exibir')", lambda contexto: contexto.locator("button:has-text('Exibir')")),
+        ("a:has-text('Exibir')", lambda contexto: contexto.locator("a:has-text('Exibir')")),
+        ("[role='button']:has-text('Exibir')", lambda contexto: contexto.locator("[role='button']:has-text('Exibir')")),
+        ("text=Exibir", lambda contexto: contexto.get_by_text(re.compile(r"exibir", re.I))),
+    ]
+
+    for rotulo, factory in seletores:
+        for contexto_rotulo, contexto in _contextos_de_diagnostico(page):
+            try:
+                locator = factory(contexto)
+            except Exception:
+                continue
+
+            try:
+                total = locator.count()
+            except Exception:
+                continue
+
+            for indice in range(total):
+                try:
+                    item = locator.nth(indice)
+                except Exception:
+                    continue
+
+                try:
+                    visivel = item.is_visible()
+                except Exception:
+                    visivel = False
+
+                try:
+                    bbox = item.bounding_box()
+                except Exception:
+                    bbox = None
+
+                if not visivel and not bbox:
+                    continue
+
+                chave = _chave_elemento(item)
+                if chave in vistos:
+                    continue
+                vistos.add(chave)
+                assinatura = texto_elemento(item) or f"{contexto_rotulo}:{rotulo}"
+                candidatos.append((assinatura, item))
+
+    return candidatos
+
+
+def encontrar_botoes_exibir(page) -> list[object]:
+    return [item for _, item in _locators_exibir_robustos(page)]
+
+
+def pagina_consultar_contracheque_pronta(page) -> bool:
+    if len(encontrar_botoes_baixar(page)) > 0:
+        return True
+    if len(encontrar_botoes_exibir(page)) > 0:
+        return True
+    if _contar_texto_em_contextos(page, re.compile(r"baixar", re.I)) > 0:
+        return True
+    if _contar_texto_em_contextos(page, re.compile(r"exibir", re.I)) > 0:
+        return True
+
+    texto = normalizar_texto(texto_da_pagina(page))
+    if not texto:
+        return False
+
+    sinais = 0
+    if "consultar contracheque" in texto:
+        sinais += 1
+    if "mes/ano" in texto or "mes ano" in texto or ("mes" in texto and "ano" in texto):
+        sinais += 1
+    if "mensal" in texto:
+        sinais += 1
+
+    return sinais >= 3
+
+
+def encontrar_alvos_download(page, agressivo: bool = False) -> list[tuple[str, object]]:
+    candidatos: list[tuple[str, object]] = []
+    vistos: set[str] = set()
+
+    for assinatura, item in _locators_baixar_robustos(page):
+        chave = _chave_elemento(item)
+        if chave in vistos:
+            continue
+        vistos.add(chave)
+        candidatos.append((assinatura, item))
+
+    for assinatura, item in _locators_exibir_robustos(page):
+        chave = _chave_elemento(item)
+        if chave in vistos:
+            continue
+        vistos.add(chave)
+        candidatos.append((assinatura, item))
+
+    if agressivo:
+        extras = [
+            "button",
+            "a",
+            "[role='button']",
+            "input[type='button']",
+            "input[type='submit']",
+        ]
+        for seletor in extras:
+            for contexto_rotulo, contexto in _contextos_de_diagnostico(page):
+                try:
+                    locator = contexto.locator(seletor)
+                except Exception:
+                    continue
+
+                try:
+                    total = locator.count()
+                except Exception:
+                    continue
+
+                for indice in range(total):
+                    try:
+                        item = locator.nth(indice)
+                    except Exception:
+                        continue
+
+                    try:
+                        visivel = item.is_visible()
+                    except Exception:
+                        visivel = False
+
+                    try:
+                        bbox = item.bounding_box()
+                    except Exception:
+                        bbox = None
+
+                    if not visivel and not bbox:
+                        continue
+
+                    chave = _chave_elemento(item)
+                    if chave in vistos:
+                        continue
+
+                    assinatura = texto_elemento(item) or f"{contexto_rotulo}:{seletor}"
+                    chave_textual = normalizar_texto(assinatura)
+                    if any(termo in chave_textual for termo in DOWNLOAD_KEYWORDS) or ".pdf" in chave_textual:
+                        vistos.add(chave)
+                        candidatos.append((assinatura, item))
+
+    return candidatos
+
+
+def _clicar_locator_download(locator) -> None:
+    try:
+        locator.scroll_into_view_if_needed(timeout=5000)
+    except Exception:
+        pass
+
+    try:
+        locator.click(force=True)
+        return
+    except Exception:
+        try:
+            bbox = locator.bounding_box()
+        except Exception:
+            bbox = None
+
+        if bbox:
+            locator.click(force=True)
+            return
+
+        raise
+
+
+def baixar_um_documento_baixar(page, context, locator, indice: int, total: int, pasta_saida: Path) -> Path:
+    log(f"Baixando {indice}/{total}...")
+
+    destino = pasta_saida / f"{indice:03d}_contracheque.pdf"
+
+    try:
+        with page.expect_download(timeout=DOWNLOAD_TIMEOUT_MS) as download_info:
+            _clicar_locator_download(locator)
+
+        download = download_info.value
+        nome_sugerido = download.suggested_filename or destino.name
+        destino = pasta_saida / f"{indice:03d}_{slugify(nome_sugerido)}"
+        if destino.suffix.lower() != ".pdf":
+            destino = destino.with_suffix(".pdf")
+        download.save_as(str(destino))
+        return destino
+    except Exception as erro_download:
+        try:
+            from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
+        except Exception:
+            PlaywrightTimeoutError = Exception  # type: ignore[assignment]
+
+        if not isinstance(erro_download, PlaywrightTimeoutError):
+            raise
+
+        try:
+            href = locator.get_attribute("href")
+        except Exception:
+            href = None
+
+        if not href and page.url.lower().split("?", 1)[0].endswith(".pdf"):
+            href = page.url
+
+        if not href:
+            raise RuntimeError("Botao encontrado, mas nenhum download direto foi detectado.")
+
+        sessao = criar_sessao_requests(context, page)
+        url = urljoin(page.url, href)
+        baixar_url_com_sessao(sessao, url, destino)
+        return destino
+
+
+def baixar_contracheques_baixar(page, context, pasta_saida: Path) -> list[Path]:
+    log("Procurando botões BAIXAR...")
+    _aguardar_pagina_estabilizar(page)
+    salvar_diagnostico_portal_contracheque(page)
+    log_diagnostico_download(page)
+
+    botoes = encontrar_botoes_baixar(page)
+    if not botoes and clicar_botao_consultar(page):
+        log("Atualizando lista após clicar em CONSULTAR...")
+        _aguardar_pagina_estabilizar(page)
+        salvar_diagnostico_portal_contracheque(page)
+        log_diagnostico_download(page)
+        botoes = encontrar_botoes_baixar(page)
+
+    if not botoes:
+        exibir = encontrar_botoes_exibir(page)
+        if exibir:
+            log("Encontrei EXIBIR, tentando abrir os contracheques antes de baixar...")
+            try:
+                _clicar_locator_download(exibir[0])
+                _aguardar_pagina_estabilizar(page)
+            except Exception as erro:
+                log(f"[falha] botao EXIBIR -> {erro}")
+            salvar_diagnostico_portal_contracheque(page)
+            log_diagnostico_download(page)
+            botoes = encontrar_botoes_baixar(page)
+
+    if not botoes and solicitar_continuacao_manual("Se você já está vendo os botões BAIXAR, pressione Enter para continuar."):
+        log("Fazendo varredura agressiva de links clicáveis...")
+        salvar_diagnostico_portal_contracheque(page)
         log_diagnostico_download(page)
         botoes = [item for _, item in encontrar_alvos_download(page, agressivo=True)]
 

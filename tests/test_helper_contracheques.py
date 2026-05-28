@@ -41,6 +41,26 @@ class FakeElement:
     def is_visible(self):
         return self._visible
 
+    def is_enabled(self):
+        return True
+
+    def bounding_box(self):
+        if not self._visible:
+            return None
+        return {"x": 0, "y": 0, "width": 100, "height": 24}
+
+    def inner_text(self, timeout: int | None = None):  # noqa: ARG002
+        return self._text
+
+    def evaluate(self, expression: str):  # noqa: ARG002
+        if "tagName" in expression:
+            return self._attrs.get("tagName", "BUTTON")
+        if "outerHTML" in expression:
+            attrs = " ".join(f'{k}="{v}"' for k, v in self._attrs.items() if k != "tagName")
+            tag = self._attrs.get("tagName", "button").lower()
+            return f"<{tag} {attrs}>{self._text}</{tag}>"
+        return None
+
 
 class FakeCollection:
     def __init__(self, elements: list[FakeElement] | None = None, inner_text: str = ""):
@@ -68,9 +88,37 @@ class FakePage:
         self.url = url
         self._title = title
         self._selectors = selectors
+        self.frames = []
 
-    def locator(self, selector: str):
-        return self._selectors.get(selector, FakeCollection())
+    def locator(self, selector: str, **kwargs):
+        collection = self._selectors.get(selector, FakeCollection())
+        has_text = kwargs.get("has_text")
+        if has_text is None:
+            return collection
+
+        if hasattr(has_text, "search"):
+            pattern = has_text
+        else:
+            pattern = re.compile(re.escape(str(has_text or "")), re.I)
+
+        filtrados: list[FakeElement] = []
+        for indice in range(collection.count()):
+            item = collection.nth(indice)
+            texto = " ".join(
+                filter(
+                    None,
+                    [
+                        item.text_content() or "",
+                        item.get_attribute("aria-label") or "",
+                        item.get_attribute("title") or "",
+                        item.get_attribute("href") or "",
+                    ],
+                ),
+            )
+            if pattern.search(texto):
+                filtrados.append(item)
+
+        return FakeCollection(filtrados)
 
     def get_by_role(self, role: str, name=None):
         if role != "button":
@@ -93,8 +141,43 @@ class FakePage:
 
         return FakeCollection(encontrados)
 
+    def get_by_text(self, pattern):
+        encontrados: list[FakeElement] = []
+        if hasattr(pattern, "search"):
+            matcher = pattern
+        else:
+            matcher = re.compile(re.escape(str(pattern or "")), re.I)
+
+        for collection in self._selectors.values():
+            for indice in range(collection.count()):
+                item = collection.nth(indice)
+                texto = " ".join(
+                    filter(
+                        None,
+                        [
+                            item.text_content() or "",
+                            item.get_attribute("aria-label") or "",
+                            item.get_attribute("title") or "",
+                            item.get_attribute("href") or "",
+                        ],
+                    ),
+                )
+                if matcher.search(texto):
+                    encontrados.append(item)
+
+        return FakeCollection(encontrados)
+
     def title(self):
         return self._title
+
+    def content(self):
+        return "<html><body></body></html>"
+
+    def screenshot(self, path: str, full_page: bool = True):  # noqa: ARG002
+        Path(path).write_bytes(b"fake-png")
+
+    def wait_for_load_state(self, state: str, timeout: int | None = None):  # noqa: ARG002
+        return None
 
     def wait_for_timeout(self, timeout: int):  # noqa: ARG002
         return None
@@ -234,6 +317,21 @@ class HelperContrachequesTests(unittest.TestCase):
         alvos = helper.encontrar_alvos_download(page)
         self.assertEqual(len(alvos), 1)
         self.assertIn("BAIXAR", alvos[0][0])
+
+    def test_detecta_botao_baixar_pelo_css_real_do_portal(self):
+        page = FakePage(
+            url="https://portal.exemplo/contracheques",
+            title="Contracheques",
+            selectors={
+                "button.btn-outline-primary2": FakeCollection([FakeElement("Baixar", attrs={"class": "text-uppercase btn btn-sm btn-outline-primary2"})]),
+                "button": FakeCollection([FakeElement("Exibir", attrs={"class": "text-uppercase btn btn-sm btn-primary2"}), FakeElement("Baixar", attrs={"class": "text-uppercase btn btn-sm btn-outline-primary2"})]),
+                "body": FakeCollection(inner_text="04/2026 Mensal Exibir Baixar"),
+            },
+        )
+
+        botoes = helper.encontrar_botoes_baixar(page)
+        self.assertGreaterEqual(len(botoes), 1)
+        self.assertTrue(helper.pagina_consultar_contracheque_pronta(page))
 
 
 if __name__ == "__main__":
