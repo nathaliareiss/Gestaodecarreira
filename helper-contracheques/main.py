@@ -109,6 +109,23 @@ def sanitizar_argv_para_log(argv: list[str]) -> list[str]:
     return resultado
 
 
+def extrair_token_uri(uri: str) -> str:
+    texto = str(uri or "").strip()
+    if not texto:
+        return ""
+
+    parsed = urlparse(texto)
+    query = parse_qs(parsed.query)
+    token = query.get("token", [None])[0]
+    if token:
+        return token.strip()
+
+    if texto.startswith("token="):
+        return texto.split("=", 1)[1].strip()
+
+    return ""
+
+
 def slugify(valor: str, limite: int = 80) -> str:
     texto = re.sub(r"[^\w\-\. ]+", "", valor, flags=re.UNICODE).strip().replace(" ", "_")
     texto = re.sub(r"_+", "_", texto)
@@ -178,17 +195,21 @@ def extrair_token_de_candidato(candidato: str) -> str:
     if not texto:
         return ""
 
+    token_uri = extrair_token_uri(texto)
+    if token_uri:
+        return token_uri
+
     if "://" not in texto and "token=" not in texto:
         return texto
-
-    if texto.startswith("token="):
-        return texto.split("=", 1)[1].strip()
 
     parsed = urlparse(texto)
     parametros = parse_qs(parsed.query)
     tokens = [item.strip() for item in parametros.get("token", []) if item.strip()]
     if tokens:
         return tokens[0]
+
+    if texto.startswith("token="):
+        return texto.split("=", 1)[1].strip()
 
     if parsed.scheme == "" and parsed.path.strip():
         return parsed.path.strip()
@@ -1868,6 +1889,12 @@ def registrar_diagnostico_de_entrada(args: argparse.Namespace) -> None:
     log(f"import_url={'sim' if bool(str(getattr(args, 'import_url', '')).strip()) else 'nao'}")
     log(f"import_uri={'sim' if bool(str(getattr(args, 'import_uri', '')).strip()) else 'nao'}")
     log(f"via_protocolo={'sim' if bool(str(getattr(args, 'import_url', '')).strip() or str(getattr(args, 'import_uri', '')).strip()) else 'nao'}")
+    print(f"[debug] argv_count={len(sys.argv)}", flush=True)
+    for indice, argumento in enumerate(argv_sanitizado):
+        valor = argumento[:80]
+        if len(argumento) > 80:
+            valor += "..."
+        print(f"[debug] argv[{indice}]={valor}", flush=True)
     debug_log(f"[entrada] sys.argv={argv_sanitizado}")
 
 
@@ -2027,8 +2054,8 @@ def log_diagnostico_download(page, prefixo: str = "[debug]") -> None:
 
 
 def wait_until_paystub_page_ready(page) -> bool:
-    print("Entre no Portal do Servidor normalmente.", flush=True)
-    print("Depois entre na pagina de contracheques e deixe o resto comigo.", flush=True)
+    print("Faça login normalmente no Portal do Servidor.", flush=True)
+    print("Depois abra a página de download de contracheque e deixe o resto comigo 🙂", flush=True)
     print("Estou procurando seus contracheques disponiveis...", flush=True)
 
     prazo = time.monotonic() + (15 * 60)
@@ -2055,19 +2082,19 @@ def wait_until_paystub_page_ready(page) -> bool:
             _imprimir_diagnostico_portal(page)
             if DEBUG_MODE:
                 log_diagnostico_download(page)
-            print("Encontrei a lista de contracheques.", flush=True)
+            print("Encontrei sua lista de contracheques.", flush=True)
             return True
 
         agora = time.monotonic()
         if agora >= proximo_status:
-            print("Ainda nao achei a lista de contracheques...", flush=True)
+            print("Ainda não encontrei sua lista de contracheques...", flush=True)
             if DEBUG_MODE:
                 _imprimir_diagnostico_portal(page)
                 log_diagnostico_download(page)
             proximo_status = agora + 60
 
     print(
-        "Nao encontrei a lista de contracheques ainda. Se ela ja apareceu para voce, pressione Enter para continuar.",
+        "Ainda não encontrei sua lista de contracheques. Se ela já apareceu para você, pressione Enter para continuar.",
         flush=True,
     )
     if solicitar_continuacao_manual("Se voce ja estiver vendo a lista de contracheques, pressione Enter para continuar."):
@@ -2084,7 +2111,7 @@ def pedir_login_manual(_page) -> bool:
 
 
 def baixar_contracheques_baixar(page, context, pasta_saida: Path) -> list[Path]:
-    print("Estou procurando seus contracheques disponiveis...", flush=True)
+    print("Estou procurando seus contracheques disponíveis...", flush=True)
     _aguardar_pagina_estabilizar(page)
 
     diagnostico = portal_automation.diagnostico_abrangente(page)
@@ -2092,7 +2119,7 @@ def baixar_contracheques_baixar(page, context, pasta_saida: Path) -> list[Path]:
 
     if not pagina_pronta:
         print(
-            "Nao encontrei a lista de contracheques ainda. Se ela ja apareceu para voce, pressione Enter para continuar.",
+            "Ainda não encontrei sua lista de contracheques. Se ela já apareceu para você, pressione Enter para continuar.",
             flush=True,
         )
         if not solicitar_continuacao_manual("Se voce ja estiver vendo a lista de contracheques, pressione Enter para continuar."):
@@ -2155,8 +2182,8 @@ def main() -> int:
     args = parse_args()
     definir_modo_debug(getattr(args, "debug", False))
 
-    print("Iniciando o assistente do Career Flow...", flush=True)
-    print("Vou abrir o Portal do Servidor para você.", flush=True)
+    print("Iniciando assistente...", flush=True)
+    print("Preparando navegador...", flush=True)
 
     registrar_protocolo_windows()
     registrar_diagnostico_de_entrada(args)
@@ -2165,9 +2192,12 @@ def main() -> int:
     if not token:
         return 1
 
+    print(f"[debug] origem_token={origem_token}", flush=True)
+    print(f"[debug] token_recebido={'sim' if token else 'nao'}", flush=True)
+
     debug_log(f"[tempo] programa_iniciado={time.perf_counter() - inicio_programa:.2f}s")
     exibir_diagnostico_inicial(Path(sys.executable).resolve(), origem_token, token, args.portal_url)
-    print("Abrindo o navegador seguro para voce fazer login...", flush=True)
+    print("Abrindo navegador seguro para você fazer login...", flush=True)
 
     pasta_saida = Path(args.download_dir).expanduser().resolve() if args.download_dir else criar_diretorio_temporario()
     pasta_saida.mkdir(parents=True, exist_ok=True)
@@ -2183,7 +2213,7 @@ def main() -> int:
                 context = browser.new_context(accept_downloads=True)
                 page = context.new_page()
                 page.set_default_timeout(BROWSER_TIMEOUT_MS)
-                print("Abrindo o Portal do Servidor para voce...", flush=True)
+                print("Abrindo o Portal do Servidor...", flush=True)
                 inicio_portal = time.perf_counter()
                 page.goto(args.portal_url, wait_until="domcontentloaded")
                 debug_log(f"[tempo] portal_aberto={time.perf_counter() - inicio_portal:.2f}s")
@@ -2191,7 +2221,7 @@ def main() -> int:
                 if not wait_until_paystub_page_ready(page):
                     raise RuntimeError("Nao consegui confirmar a tela de contracheques.")
 
-                print("Estou baixando seus contracheques agora.", flush=True)
+                print("Estou procurando seus contracheques disponíveis...", flush=True)
                 arquivos = baixar_contracheques_baixar(page, context, pasta_saida)
                 if not arquivos:
                     raise RuntimeError("Nenhum PDF foi encontrado para baixar.")

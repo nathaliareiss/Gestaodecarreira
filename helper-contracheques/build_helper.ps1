@@ -68,8 +68,8 @@ if ($Installer) {
 
     $installerDir = (Resolve-Path $installerBuildRoot).Path
     $downloadsDir = (Resolve-Path $downloadsRoot).Path
-    $versionedInstaller = Join-Path $installerDir "GestaoDeCarreira-Setup-1.0.8.exe"
-    $publishedInstaller = Join-Path $downloadsDir "GestaoDeCarreira-Setup-1.0.8.exe"
+    $versionedInstaller = Join-Path $installerDir "GestaoDeCarreira-Setup-1.0.9.exe"
+    $publishedInstaller = Join-Path $downloadsDir "GestaoDeCarreira-Setup-1.0.9.exe"
     $latestInstaller = Join-Path $downloadsDir "GestaoDeCarreira-Setup-latest.exe"
     if (Test-Path $versionedInstaller) {
         Copy-Item -Force $versionedInstaller $publishedInstaller

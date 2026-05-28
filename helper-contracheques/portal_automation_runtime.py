@@ -171,6 +171,7 @@ def processar_pagina(page: Page, pasta_mensais: Path, pasta_decimo: Path, vistos
 
         _log(f"Processando linha {i + 1}/{total_linhas}")
         _log(f"Competencia: {competencia} | Tipo: {tipo}")
+        _log(f"[linha] competencia={competencia} tipo={tipo}")
 
         chave = f"{competencia}|{tipo}".lower()
         if chave in vistos:

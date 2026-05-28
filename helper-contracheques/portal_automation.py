@@ -345,9 +345,7 @@ def diagnostico_abrangente(page) -> dict[str, int]:
 
 def _candidatos_botoes_baixar_na_linha(linha):
     return [
-        ("css.text-uppercase.btn-outline-primary2", linha.locator("button.text-uppercase.btn-outline-primary2", has_text=re.compile(r"baixar", re.I))),
         ("css.btn-outline-primary2", linha.locator("button.btn-outline-primary2", has_text=re.compile(r"baixar", re.I))),
-        ("texto.Baixar", linha.locator("button:has-text('Baixar')")),
         ("regex.baixar", linha.locator("button", has_text=re.compile(r"baixar", re.I))),
     ]
 

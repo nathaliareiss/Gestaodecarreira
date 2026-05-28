@@ -32,7 +32,7 @@ import type { SiteLanguage } from "@/shared/i18n/messages"
 type FinanceTexts = (typeof import("@/shared/i18n/messages").LOCALE_TEXTS)["pt-BR"]["finance"]
 
 const INTERVALO_POLLING_MS = 2000
-const CAMINHO_DOWNLOAD_ASSISTENTE = "/downloads/GestaoDeCarreira-Setup-latest.exe?v=1.0.8"
+const CAMINHO_DOWNLOAD_ASSISTENTE = "/downloads/GestaoDeCarreira-Setup-latest.exe?v=1.0.9"
 const NOME_DOWNLOAD_ASSISTENTE = "GestaoDeCarreira-Setup-latest.exe"
 
 type FinanceiroViewProps = {
@@ -662,7 +662,7 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
 
       const tentarFalhaControlada = window.setTimeout(() => {
         try {
-          window.location.assign(url)
+          window.location.href = url
         } catch {
           // Mantemos a tentativa final silenciosa; o timeout principal decide o resultado.
         }
@@ -678,10 +678,10 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
       try {
         link.href = url
         document.body.appendChild(link)
-        link.click()
+        window.location.href = url
       } catch {
         try {
-          window.location.assign(url)
+          window.location.href = url
         } catch {
           concluir(false)
         }

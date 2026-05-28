@@ -113,7 +113,7 @@ def obter_backend_url() -> str:
 
 
 BACKEND_URL = obter_backend_url()
-HELPER_VERSION = "1.0.8"
+HELPER_VERSION = "1.0.9"
 PORTAL_URL = "https://www.portaldoservidor.mg.gov.br/"
 UPLOAD_ENDPOINT = os.getenv(
     "UPLOAD_ENDPOINT",
