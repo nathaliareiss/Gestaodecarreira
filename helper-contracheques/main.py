@@ -1954,6 +1954,11 @@ def baixar_contracheques_baixar(page, context, pasta_saida: Path) -> list[Path]:
     salvar_diagnostico_portal_contracheque(page)
     log_diagnostico_download(page)
 
+    arquivos_antes = {
+        p.resolve()
+        for p in pasta_saida.rglob("*.pdf")
+        if p.is_file()
+    }
     vistos: set[str] = set()
     pasta_mensais = pasta_saida / "mensais_ultimos_60_meses"
     pasta_decimo = pasta_saida / "decimo_terceiro"
@@ -1986,7 +1991,11 @@ def baixar_contracheques_baixar(page, context, pasta_saida: Path) -> list[Path]:
         if not avancou:
             break
 
-    arquivos_baixados = sorted(p for p in pasta_saida.rglob("*.pdf") if p.is_file())
+    arquivos_baixados = sorted(
+        p
+        for p in pasta_saida.rglob("*.pdf")
+        if p.is_file() and p.resolve() not in arquivos_antes
+    )
     log(f"[info] total_baixados={total_baixados} | arquivos_encontrados={len(arquivos_baixados)}")
     return arquivos_baixados
 
