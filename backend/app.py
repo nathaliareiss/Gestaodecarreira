@@ -114,6 +114,10 @@ def criar_app() -> FastAPI:
     def baixar_instalador_legado_105() -> RedirectResponse:
         return RedirectResponse(url="/downloads/GestaoDeCarreira-Setup-latest.exe", status_code=307)
 
+    @app.get("/downloads/GestaoDeCarreira-Setup-1.0.6.exe")
+    def baixar_instalador_legado_106() -> RedirectResponse:
+        return RedirectResponse(url="/downloads/GestaoDeCarreira-Setup-latest.exe", status_code=307)
+
     app.add_middleware(
         CORSMiddleware,
         allow_origins=origens_cors,
