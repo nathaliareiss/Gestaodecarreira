@@ -628,11 +628,14 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
       const link = document.createElement("a")
       link.setAttribute("aria-hidden", "true")
       link.rel = "noreferrer noopener"
+      link.referrerPolicy = "no-referrer"
+      link.target = "_self"
       link.style.display = "none"
 
       const limpar = () => {
         window.removeEventListener("blur", aoPerderFoco)
         document.removeEventListener("visibilitychange", aoMudarVisibilidade)
+        window.clearTimeout(tentarFalhaControlada)
         window.clearTimeout(temporizador)
         link.remove()
       }
@@ -657,6 +660,14 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
         }
       }
 
+      const tentarFalhaControlada = window.setTimeout(() => {
+        try {
+          window.location.assign(url)
+        } catch {
+          // Mantemos a tentativa final silenciosa; o timeout principal decide o resultado.
+        }
+      }, 250)
+
       const temporizador = window.setTimeout(() => {
         concluir(false)
       }, 1200)
@@ -669,7 +680,11 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
         document.body.appendChild(link)
         link.click()
       } catch {
-        concluir(false)
+        try {
+          window.location.assign(url)
+        } catch {
+          concluir(false)
+        }
       }
     })
   }

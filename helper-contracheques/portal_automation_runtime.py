@@ -96,7 +96,7 @@ def clicar_baixar_na_linha(
 ) -> bool:
     candidatos = base._candidatos_botoes_baixar_na_linha(linha)
     botao, origem, total = base._selecionar_primeiro_botao_visivel(candidatos)
-    _log(f"Botões Baixar nesta linha: {total}")
+    _log(f"Botoes Baixar nesta linha: {total}")
 
     if botao is None:
         _log(f"Botao Baixar nao encontrado para {competencia} - {tipo}")

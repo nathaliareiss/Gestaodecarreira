@@ -514,7 +514,7 @@ def solicitar_continuacao_manual(mensagem: str) -> bool:
 
 def wait_until_paystub_page_ready(page) -> bool:
     log("Faça login no navegador aberto. Depois vá até a tela de contracheques. O assistente continuará automaticamente.")
-    log("Procurando botões BAIXAR...")
+    log("Estou procurando seus contracheques disponiveis...")
     prazo = time.monotonic() + (15 * 60)
     ultimo_log = 0.0
 
@@ -580,7 +580,7 @@ def wait_until_paystub_page_ready(page) -> bool:
         page.wait_for_timeout(1000)
 
     log("Não consegui identificar a página de contracheques automaticamente.")
-    return solicitar_continuacao_manual("Se você já está vendo os botões BAIXAR, pressione Enter para continuar.")
+    return solicitar_continuacao_manual("Se voce ja estiver vendo a lista de contracheques, pressione Enter para continuar.")
 
 
 def criar_sessao_requests(context, page) -> requests.Session:
@@ -704,7 +704,7 @@ def baixar_contracheques(page, context, pasta_saida: Path) -> list[Path]:
 def pedir_login_manual(_page) -> bool:
     log("[aguardando login] navegador aberto")
     log("[aguardando login] faça login no navegador aberto. Depois vá até a tela de contracheques. O assistente continuará automaticamente.")
-    return solicitar_continuacao_manual("Se você já está na página de contracheques, pressione Enter para continuar.")
+    return solicitar_continuacao_manual("Se voce ja estiver na pagina de contracheques, pressione Enter para continuar.")
 
 
 def baixar_um_documento_baixar(page, context, locator, indice: int, total: int, pasta_saida: Path) -> Path:
@@ -750,7 +750,7 @@ def baixar_um_documento_baixar(page, context, locator, indice: int, total: int, 
 
 
 def baixar_contracheques_baixar(page, context, pasta_saida: Path) -> list[Path]:
-    log("Procurando botões BAIXAR...")
+    log("Estou procurando seus contracheques disponiveis...")
     botoes = encontrar_botoes_baixar(page)
     if not botoes and clicar_botao_consultar(page):
         log("Atualizando lista após clicar em CONSULTAR...")
@@ -778,7 +778,7 @@ def encontrar_botoes_exibir(page) -> list[object]:
 
 
 def baixar_contracheques_baixar(page, context, pasta_saida: Path) -> list[Path]:
-    log("Procurando botões BAIXAR...")
+    log("Estou procurando seus contracheques disponiveis...")
     log_diagnostico_download(page)
 
     botoes = encontrar_botoes_baixar(page)
@@ -798,7 +798,7 @@ def baixar_contracheques_baixar(page, context, pasta_saida: Path) -> list[Path]:
             log_diagnostico_download(page)
             botoes = encontrar_botoes_baixar(page)
 
-    if not botoes and solicitar_continuacao_manual("Se você já está vendo os botões BAIXAR, pressione Enter para continuar."):
+    if not botoes and solicitar_continuacao_manual("Se voce ja estiver vendo a lista de contracheques, pressione Enter para continuar."):
         log("Fazendo varredura agressiva de links clicáveis...")
         log_diagnostico_download(page)
         botoes = [item for assinatura, item in encontrar_alvos_download(page, agressivo=True) if "baix" in normalizar_texto(assinatura)]
@@ -891,7 +891,8 @@ def main() -> int:
     log(f"[tempo] programa_iniciado={time.perf_counter() - inicio_programa:.2f}s")
     exibir_diagnostico_inicial(Path(sys.executable).resolve(), origem_token, token, args.portal_url)
     log("Se o navegador demorar, aguarde alguns segundos.")
-    log("Faça login no Portal do Servidor e vá até a tela com os botões BAIXAR.")
+    log("Faça login normalmente no Portal do Servidor.")
+    log("Depois abra a pagina de contracheques e deixe o resto comigo.")
 
     pasta_saida = Path(args.download_dir).expanduser().resolve() if args.download_dir else criar_diretorio_temporario()
     pasta_saida.mkdir(parents=True, exist_ok=True)
@@ -1219,7 +1220,7 @@ def encontrar_alvos_download(page, agressivo: bool = False) -> list[tuple[str, o
 
 
 def baixar_contracheques_baixar(page, context, pasta_saida: Path) -> list[Path]:
-    log("Procurando botões BAIXAR...")
+    log("Estou procurando seus contracheques disponiveis...")
     log_diagnostico_download(page)
 
     botoes = encontrar_botoes_baixar(page)
@@ -1239,7 +1240,7 @@ def baixar_contracheques_baixar(page, context, pasta_saida: Path) -> list[Path]:
             log_diagnostico_download(page)
             botoes = encontrar_botoes_baixar(page)
 
-    if not botoes and solicitar_continuacao_manual("Se você já está vendo os botões BAIXAR, pressione Enter para continuar."):
+    if not botoes and solicitar_continuacao_manual("Se voce ja estiver vendo a lista de contracheques, pressione Enter para continuar."):
         log("Fazendo varredura agressiva de links clicáveis...")
         log_diagnostico_download(page)
         botoes = [item for _, item in encontrar_alvos_download(page, agressivo=True)]
@@ -1814,7 +1815,7 @@ def baixar_um_documento_baixar(page, context, locator, indice: int, total: int, 
 
 
 def baixar_contracheques_baixar(page, context, pasta_saida: Path) -> list[Path]:
-    log("Procurando botões BAIXAR...")
+    log("Estou procurando seus contracheques disponiveis...")
     _aguardar_pagina_estabilizar(page)
     salvar_diagnostico_portal_contracheque(page)
     log_diagnostico_download(page)
@@ -2188,7 +2189,7 @@ def main() -> int:
 
     debug_log(f"[tempo] programa_iniciado={time.perf_counter() - inicio_programa:.2f}s")
     exibir_diagnostico_inicial(Path(sys.executable).resolve(), origem_token, token, args.portal_url)
-    print("Abrindo navegador seguro para você fazer login...", flush=True)
+    print("Abrindo o navegador seguro para voce fazer login...", flush=True)
 
     pasta_saida = Path(args.download_dir).expanduser().resolve() if args.download_dir else criar_diretorio_temporario()
     pasta_saida.mkdir(parents=True, exist_ok=True)
@@ -2204,7 +2205,7 @@ def main() -> int:
                 context = browser.new_context(accept_downloads=True)
                 page = context.new_page()
                 page.set_default_timeout(BROWSER_TIMEOUT_MS)
-                print("Abrindo o Portal do Servidor...", flush=True)
+                print("Abrindo o Portal do Servidor para voce...", flush=True)
                 inicio_portal = time.perf_counter()
                 page.goto(args.portal_url, wait_until="domcontentloaded")
                 debug_log(f"[tempo] portal_aberto={time.perf_counter() - inicio_portal:.2f}s")
@@ -2212,7 +2213,7 @@ def main() -> int:
                 if not wait_until_paystub_page_ready(page):
                     raise RuntimeError("Nao consegui confirmar a tela de contracheques.")
 
-                print("Agora vou baixar os seus contracheques.", flush=True)
+                print("Estou baixando seus contracheques agora.", flush=True)
                 arquivos = baixar_contracheques_baixar(page, context, pasta_saida)
                 if not arquivos:
                     raise RuntimeError("Nenhum PDF foi encontrado para baixar.")
