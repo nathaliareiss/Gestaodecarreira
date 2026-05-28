@@ -1649,9 +1649,19 @@ def pagina_consultar_contracheque_pronta(page) -> bool:
         return True
     if len(encontrar_botoes_exibir(page)) > 0:
         return True
+    if _contar_em_contextos(page, "button", has_text=re.compile(r"consultar", re.I)) > 0:
+        return True
+    if _contar_texto_em_contextos(page, re.compile(r"m[eê]s/ano", re.I)) > 0:
+        return True
     if _contar_texto_em_contextos(page, re.compile(r"baixar", re.I)) > 0:
         return True
     if _contar_texto_em_contextos(page, re.compile(r"exibir", re.I)) > 0:
+        return True
+    if _contar_selector(page, "tr.z-listitem") > 0:
+        return True
+    if _contar_selector(page, ".z-listbox-body tr") > 0:
+        return True
+    if _contar_selector(page, "table tbody tr") > 0:
         return True
 
     texto = normalizar_texto(texto_da_pagina(page))
@@ -2033,9 +2043,9 @@ def log_diagnostico_download(page, prefixo: str = "[debug]") -> None:
 
 
 def wait_until_paystub_page_ready(page) -> bool:
-    print("Faça login normalmente no Portal do Servidor.", flush=True)
-    print("Depois abra a página de download de contracheque e deixe o resto comigo.", flush=True)
-    print("Estou procurando seus contracheques disponíveis...", flush=True)
+    print("Entre no Portal do Servidor normalmente.", flush=True)
+    print("Depois entre na pagina de contracheques e deixe o resto comigo.", flush=True)
+    print("Estou procurando seus contracheques disponiveis...", flush=True)
 
     prazo = time.monotonic() + (15 * 60)
     proximo_status = time.monotonic()
@@ -2066,7 +2076,7 @@ def wait_until_paystub_page_ready(page) -> bool:
 
         agora = time.monotonic()
         if agora >= proximo_status:
-            print("Ainda estou aguardando a lista de contracheques...", flush=True)
+            print("Ainda nao achei a lista de contracheques...", flush=True)
             if DEBUG_MODE:
                 _imprimir_diagnostico_portal(page)
                 log_diagnostico_download(page)
@@ -2076,7 +2086,7 @@ def wait_until_paystub_page_ready(page) -> bool:
         "Nao encontrei a lista de contracheques ainda. Se ela ja apareceu para voce, pressione Enter para continuar.",
         flush=True,
     )
-    if solicitar_continuacao_manual("Se voce ja esta na tela de contracheques, pressione Enter para continuar."):
+    if solicitar_continuacao_manual("Se voce ja estiver vendo a lista de contracheques, pressione Enter para continuar."):
         salvar_diagnostico_portal_contracheque(page)
         _imprimir_diagnostico_portal(page)
         if DEBUG_MODE:
@@ -2086,7 +2096,7 @@ def wait_until_paystub_page_ready(page) -> bool:
 
 
 def pedir_login_manual(_page) -> bool:
-    return solicitar_continuacao_manual("Se voce ja esta vendo a lista de contracheques, pressione Enter para continuar.")
+    return solicitar_continuacao_manual("Se voce ja estiver vendo a lista de contracheques, pressione Enter para continuar.")
 
 
 def baixar_contracheques_baixar(page, context, pasta_saida: Path) -> list[Path]:
@@ -2101,7 +2111,7 @@ def baixar_contracheques_baixar(page, context, pasta_saida: Path) -> list[Path]:
             "Nao encontrei a lista de contracheques ainda. Se ela ja apareceu para voce, pressione Enter para continuar.",
             flush=True,
         )
-        if not solicitar_continuacao_manual("Se voce ja esta vendo a lista de contracheques, pressione Enter para continuar."):
+        if not solicitar_continuacao_manual("Se voce ja estiver vendo a lista de contracheques, pressione Enter para continuar."):
             return []
         salvar_diagnostico_portal_contracheque(page)
 
