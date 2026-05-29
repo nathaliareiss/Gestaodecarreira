@@ -348,7 +348,7 @@ class HelperContrachequesTests(unittest.TestCase):
         self.assertGreaterEqual(len(alvos), 1)
         assinaturas = [assinatura for assinatura, _ in alvos]
         self.assertTrue(any("BAIXAR" in assinatura for assinatura in assinaturas))
-        self.assertTrue(any("EXIBIR" in assinatura for assinatura in assinaturas))
+        self.assertFalse(any("EXIBIR" in assinatura for assinatura in assinaturas))
 
     def test_detecta_pagina_pronta_quando_ha_botao_baixar_visivel(self):
         page = FakePage(
