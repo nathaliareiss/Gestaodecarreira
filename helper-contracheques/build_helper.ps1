@@ -6,6 +6,28 @@ Param(
 
 $ErrorActionPreference = "Stop"
 $scriptDir = $PSScriptRoot
+$repoRoot = Split-Path $scriptDir -Parent
+$appVersion = "1.0.9"
+
+Set-Location $scriptDir
+
+$pathsToClean = @(
+    (Join-Path $repoRoot "build"),
+    (Join-Path $repoRoot "dist"),
+    (Join-Path $scriptDir "build"),
+    (Join-Path $scriptDir "dist\GestaoDeCarreira-Assistente"),
+    (Join-Path $scriptDir "dist\installer")
+)
+
+foreach ($path in $pathsToClean) {
+    if (Test-Path $path) {
+        try {
+            Remove-Item -LiteralPath $path -Recurse -Force
+        } catch {
+            Write-Warning "Nao foi possivel limpar '$path': $($_.Exception.Message)"
+        }
+    }
+}
 
 if (-not (Test-Path (Join-Path $scriptDir ".venv"))) {
     python -m venv (Join-Path $scriptDir ".venv")
@@ -60,7 +82,7 @@ if ($Installer) {
     & $iscc.Source (Join-Path $scriptDir "installer\GestaoDeCarreira-Setup.iss")
 
     $installerBuildRoot = Join-Path $scriptDir "dist\installer"
-    $downloadsRoot = Join-Path (Split-Path $scriptDir -Parent) "backend\static\downloads"
+    $downloadsRoot = Join-Path $repoRoot "backend\static\downloads"
 
     if (-not (Test-Path $downloadsRoot)) {
         New-Item -ItemType Directory -Force -Path $downloadsRoot | Out-Null
@@ -68,8 +90,8 @@ if ($Installer) {
 
     $installerDir = (Resolve-Path $installerBuildRoot).Path
     $downloadsDir = (Resolve-Path $downloadsRoot).Path
-    $versionedInstaller = Join-Path $installerDir "GestaoDeCarreira-Setup-1.0.9.exe"
-    $publishedInstaller = Join-Path $downloadsDir "GestaoDeCarreira-Setup-1.0.9.exe"
+    $versionedInstaller = Join-Path $installerDir "GestaoDeCarreira-Setup-$appVersion.exe"
+    $publishedInstaller = Join-Path $downloadsDir "GestaoDeCarreira-Setup-$appVersion.exe"
     $latestInstaller = Join-Path $downloadsDir "GestaoDeCarreira-Setup-latest.exe"
     if (Test-Path $versionedInstaller) {
         Copy-Item -Force $versionedInstaller $publishedInstaller

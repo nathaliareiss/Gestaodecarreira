@@ -35,6 +35,9 @@ VersionInfoCopyright=Copyright (C) 2026 Gestão de Carreira
 [Languages]
 Name: "brazilianportuguese"; MessagesFile: "compiler:Languages\BrazilianPortuguese.isl"
 
+[InstallDelete]
+Type: filesandordirs; Name: "{app}\*"
+
 [Files]
 Source: "..\dist\GestaoDeCarreira-Assistente\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 

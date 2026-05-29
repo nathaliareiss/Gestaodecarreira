@@ -3,6 +3,13 @@ setlocal enabledelayedexpansion
 
 cd /d "%~dp0"
 
+set "APP_VERSION=1.0.9"
+
+if exist "..\build" rmdir /S /Q "..\build"
+if exist "..\dist" rmdir /S /Q "..\dist"
+if exist "dist\GestaoDeCarreira-Assistente" rmdir /S /Q "dist\GestaoDeCarreira-Assistente"
+if exist "dist\installer" rmdir /S /Q "dist\installer"
+
 if not exist ".venv" (
   python -m venv .venv
 )
@@ -32,10 +39,10 @@ if %errorlevel%==0 (
 
 echo.
 echo Build concluido. O executavel deve ficar em dist\GestaoDeCarreira-Assistente\GestaoDeCarreira-Assistente.exe
-if exist "..\dist\installer\GestaoDeCarreira-Setup-1.0.9.exe" (
-  copy /Y "..\dist\installer\GestaoDeCarreira-Setup-1.0.9.exe" "..\backend\static\downloads\GestaoDeCarreira-Setup-1.0.9.exe" >nul
-  copy /Y "..\dist\installer\GestaoDeCarreira-Setup-1.0.9.exe" "..\backend\static\downloads\GestaoDeCarreira-Setup-latest.exe" >nul
+if exist "dist\installer\GestaoDeCarreira-Setup-%APP_VERSION%.exe" (
+  copy /Y "dist\installer\GestaoDeCarreira-Setup-%APP_VERSION%.exe" "..\backend\static\downloads\GestaoDeCarreira-Setup-%APP_VERSION%.exe" >nul
+  copy /Y "dist\installer\GestaoDeCarreira-Setup-%APP_VERSION%.exe" "..\backend\static\downloads\GestaoDeCarreira-Setup-latest.exe" >nul
 )
-echo O instalador real deve ficar em backend\static\downloads\GestaoDeCarreira-Setup-1.0.9.exe
+echo O instalador real deve ficar em backend\static\downloads\GestaoDeCarreira-Setup-%APP_VERSION%.exe
 echo O alias atual fica em backend\static\downloads\GestaoDeCarreira-Setup-latest.exe
 endlocal
