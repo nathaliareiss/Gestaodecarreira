@@ -689,6 +689,51 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
     })
   }
 
+  function iniciarDownloadAssistente() {
+    const link = document.createElement("a")
+    link.href = CAMINHO_DOWNLOAD_ASSISTENTE
+    link.download = NOME_DOWNLOAD_ASSISTENTE
+    link.rel = "noreferrer noopener"
+    link.style.display = "none"
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+  }
+
+  async function baixarAssistenteComTokenTemporario() {
+    if (modoDemo) {
+      setErroImportacaoAutomatica(
+        language === "en"
+          ? "Demo mode does not start the import assistant."
+          : "O modo demo não inicia o assistente de importação.",
+      )
+      return
+    }
+
+    setCriandoImportacaoAutomatica(true)
+    setErroImportacaoAutomatica(null)
+    setMostrarTokenTemporario(false)
+    setCopiouTokenTemporario(false)
+
+    try {
+      const resposta = await criarImportacaoTemporariaFinanceiro()
+      setImportacaoTemporaria(resposta)
+      const copiou = await copiarTextoParaClipboard(resposta.token).catch(() => false)
+      setCopiouTokenTemporario(copiou)
+
+      if (!copiou) {
+        setMostrarTokenTemporario(true)
+      }
+
+      iniciarDownloadAssistente()
+    } catch (error) {
+      setImportacaoTemporaria(null)
+      setErroImportacaoAutomatica(formatarErroFinanceiro(error, language, "importacao", t))
+    } finally {
+      setCriandoImportacaoAutomatica(false)
+    }
+  }
+
   async function importarMeusContrachequesAutomaticamente() {
     if (modoDemo) {
       setErroImportacaoAutomatica(
@@ -865,13 +910,14 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
 
           <div className="finance-auto-import-panel__cta-stack desktop-only">
             <div className="finance-auto-import-panel__cta-row">
-              <a
+              <button
                 className="primary-button button--large finance-auto-import-panel__primary-action"
-                href={CAMINHO_DOWNLOAD_ASSISTENTE}
-                download={NOME_DOWNLOAD_ASSISTENTE}
+                type="button"
+                onClick={() => void baixarAssistenteComTokenTemporario()}
+                disabled={modoDemo || criandoImportacaoAutomatica}
               >
                 {t.assistantDownloadButton}
-              </a>
+              </button>
 
               <button
                 className="ghost-button button--large finance-auto-import-panel__secondary-action"
