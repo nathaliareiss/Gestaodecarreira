@@ -33,7 +33,7 @@ import type { SiteLanguage } from "@/shared/i18n/messages"
 type FinanceTexts = (typeof import("@/shared/i18n/messages").LOCALE_TEXTS)["pt-BR"]["finance"]
 
 const INTERVALO_POLLING_MS = 2000
-const CAMINHO_DOWNLOAD_ASSISTENTE = "/downloads/Assistente-contracheque-Setup.exe?v=2.0.0"
+const CAMINHO_DOWNLOAD_ASSISTENTE = "/downloads/Assistente-contracheque-Setup.exe?v=2.0.1"
 const NOME_DOWNLOAD_ASSISTENTE = "Assistente-contracheque-Setup.exe"
 
 type FinanceiroViewProps = {
