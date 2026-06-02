@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from decimal import Decimal
 
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 from sqlalchemy.orm import selectinload
 
@@ -173,15 +173,12 @@ def remover_contracheques_salvos_por_usuario(
         select(func.count()).select_from(Paycheck).where(Paycheck.user_id == user_id)
     ) or 0
 
-    batches = list(
-        db.scalars(
-            select(PayrollBatch).where(PayrollBatch.user_id == user_id)
-        ).all()
+    paychecks_ids_stmt = select(Paycheck.id).where(Paycheck.user_id == user_id)
+    db.execute(
+        delete(PaycheckItem).where(PaycheckItem.paycheck_id.in_(paychecks_ids_stmt))
     )
-
-    for lote in batches:
-        db.delete(lote)
-
+    db.execute(delete(Paycheck).where(Paycheck.user_id == user_id))
+    db.execute(delete(PayrollBatch).where(PayrollBatch.user_id == user_id))
     db.commit()
 
     return {
