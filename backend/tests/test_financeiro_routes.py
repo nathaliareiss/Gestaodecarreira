@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import func, select
 
 from backend.database.database import SessionLocal
-from backend.database.models import PayrollBatch, Paycheck, PaycheckItem
+from backend.database.models import PayrollBatch, Paycheck, PaycheckItem, Usuario
 from backend.routes import financeiro_routes
 
 
@@ -21,6 +21,25 @@ def criar_client() -> TestClient:
     app.include_router(financeiro_routes.router)
     app.dependency_overrides[financeiro_routes.obter_usuario_autenticado] = lambda: SimpleNamespace(id=7)
     return TestClient(app)
+
+
+def _assegurar_usuario(db: Session, usuario_id: int) -> None:
+    usuario = db.get(Usuario, usuario_id)
+    if usuario is not None:
+        return
+
+    db.add(
+        Usuario(
+            id=usuario_id,
+            nome=f"Usuario {usuario_id}",
+            email=f"usuario{usuario_id}@example.com",
+            login=f"usuario{usuario_id}",
+            senha_hash="hash-teste",
+            token_confirmacao_email=f"token-{usuario_id}",
+            email_confirmado=True,
+        )
+    )
+    db.commit()
 
 
 def test_analisar_contracheque_retorna_json_estruturado() -> None:
@@ -57,6 +76,7 @@ def test_analisar_contracheque_retorna_json_estruturado() -> None:
 
 def _criar_lote_com_paychecks(user_id: int, registros: list[dict[str, object]]) -> int:
     with SessionLocal() as db:
+        _assegurar_usuario(db, user_id)
         lote = PayrollBatch(
             user_id=user_id,
             total_files=len(registros),
@@ -103,6 +123,7 @@ def _criar_lote_com_paychecks(user_id: int, registros: list[dict[str, object]]) 
 
 def _criar_batch_vazio(user_id: int, status: str = "processing") -> int:
     with SessionLocal() as db:
+        _assegurar_usuario(db, user_id)
         lote = PayrollBatch(
             user_id=user_id,
             total_files=1,
