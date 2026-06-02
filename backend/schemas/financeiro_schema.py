@@ -55,6 +55,7 @@ class LoteFinanceiroStatusResponse(BaseModel):
     status: Literal["pending", "processing", "completed", "failed"]
     last_error_message: str | None = None
     failure_messages: list[str] = Field(default_factory=list)
+    missing_competencies: list[str] = Field(default_factory=list)
     processed: int = Field(ge=0, default=0)
     duplicated: int = Field(ge=0, default=0)
     failed: int = Field(ge=0, default=0)

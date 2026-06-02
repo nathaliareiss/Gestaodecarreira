@@ -7,7 +7,7 @@ import uuid
 from decimal import Decimal
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, File, Header, HTTPException, UploadFile, status
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Header, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
 
 from backend.database.database import get_db
@@ -20,6 +20,7 @@ from backend.queue.tasks.financeiro_tasks import (
 from backend.repositories.financeiro_repository import (
     atualizar_lote_financeiro,
     criar_lote_financeiro,
+    obter_paychecks_por_batch_id,
     marcar_importacao_temporaria_como_usada,
     obter_lote_financeiro_por_id,
     obter_paychecks_por_usuario_id,
@@ -44,6 +45,7 @@ from backend.services.financeiro_importacao_service import (
 from backend.services.financeiro_batch_service import (
     calcular_evolucao_salarial_lote,
     calcular_evolucao_salarial_por_usuario,
+    detectar_competencias_faltantes_por_paychecks,
 )
 from backend.services.auth_service import obter_usuario_autenticado
 
@@ -113,6 +115,7 @@ async def _processar_upload_lote_financeiro(
     arquivos: list[UploadFile],
     user_id: int,
     db: Session,
+    background_tasks: BackgroundTasks | None = None,
 ) -> LoteFinanceiroUploadResponse:
     if not arquivos:
         raise HTTPException(
@@ -213,6 +216,18 @@ async def _processar_upload_lote_financeiro(
                 "estrategia": "um_job_por_pdf",
             },
         )
+
+        if background_tasks is not None:
+            background_tasks.add_task(processar_lote_financeiro_job, payload_json)
+            agendado = True
+            try:
+                atualizar_lote_financeiro(db, lote, status="processing")
+            except Exception as erro_status:
+                logger.warning(
+                    "Nao foi possivel atualizar o status do lote financeiro",
+                    extra={"batch_id": lote.id, "erro": str(erro_status)},
+                )
+            return LoteFinanceiroUploadResponse(batch_id=lote.id, status="processing")
 
         resultado_direto = processar_lote_financeiro_job(payload_json)
         return LoteFinanceiroUploadResponse(
@@ -332,6 +347,7 @@ def validar_importacao_temporaria_financeira_route(
     status_code=status.HTTP_201_CREATED,
 )
 async def upload_lote_financeiro_importacao_temporaria(
+    background_tasks: BackgroundTasks,
     arquivos: list[UploadFile] = File(...),
     x_import_token: str = Header(..., alias="X-Import-Token"),
     db: Session = Depends(get_db),
@@ -348,6 +364,7 @@ async def upload_lote_financeiro_importacao_temporaria(
         arquivos=arquivos,
         user_id=importacao.user_id,
         db=db,
+        background_tasks=background_tasks,
     )
     marcar_importacao_temporaria_como_usada(db, importacao)
     return resposta
@@ -359,6 +376,7 @@ async def upload_lote_financeiro_importacao_temporaria(
     status_code=status.HTTP_201_CREATED,
 )
 async def upload_lote_financeiro(
+    background_tasks: BackgroundTasks,
     arquivos: list[UploadFile] = File(...),
     current_user=Depends(obter_usuario_autenticado),
     db: Session = Depends(get_db),
@@ -367,6 +385,7 @@ async def upload_lote_financeiro(
         arquivos=arquivos,
         user_id=current_user.id,
         db=db,
+        background_tasks=background_tasks,
     )
 
 
@@ -396,6 +415,11 @@ def obter_status_lote_financeiro(
         status=lote.status,
         last_error_message=lote.last_error_message or None,
         failure_messages=_carregar_mensagens_erro_lote(lote.failure_messages),
+        missing_competencies=(
+            detectar_competencias_faltantes_por_paychecks(obter_paychecks_por_batch_id(db, batch_id))
+            if lote.status in {"completed", "failed"}
+            else []
+        ),
         processed=lote.processed_files,
         duplicated=lote.duplicated_files,
         failed=lote.failed_files,

@@ -62,6 +62,7 @@ function normalizarStatusLote(
         ? resposta.last_error_message
         : null,
     failure_messages: listaDeStringsSegura(resposta?.failure_messages),
+    missing_competencies: listaDeStringsSegura(resposta?.missing_competencies),
     processed: numeroSeguro(resposta?.processed),
     duplicated: numeroSeguro(resposta?.duplicated),
     failed: numeroSeguro(resposta?.failed),

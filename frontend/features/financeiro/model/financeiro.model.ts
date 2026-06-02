@@ -33,6 +33,7 @@ export type FinanceiroBatchStatusResponse = {
   status: FinanceiroBatchStatus
   last_error_message: string | null
   failure_messages: string[]
+  missing_competencies: string[]
   processed?: number
   duplicated?: number
   failed?: number

@@ -33,7 +33,7 @@ import type { SiteLanguage } from "@/shared/i18n/messages"
 type FinanceTexts = (typeof import("@/shared/i18n/messages").LOCALE_TEXTS)["pt-BR"]["finance"]
 
 const INTERVALO_POLLING_MS = 2000
-const CAMINHO_DOWNLOAD_ASSISTENTE = "/downloads/Assistente-contracheque-Setup.exe?v=2.0.5"
+const CAMINHO_DOWNLOAD_ASSISTENTE = "/downloads/Assistente-contracheque-Setup.exe?v=2.0.7"
 const NOME_DOWNLOAD_ASSISTENTE = "Assistente-contracheque-Setup.exe"
 
 type FinanceiroViewProps = {
@@ -220,6 +220,14 @@ function resumoProgressoLote(
   }
 
   return `${processados} ${textosFinanceiro.processed}, ${duplicados} ${textosFinanceiro.duplicated}, ${falhas} ${textosFinanceiro.failed}.`
+}
+
+function formatarAvisoMesesFaltantes(
+  meses: string[],
+  textoModelo: string,
+): string {
+  const lista = meses.join(", ")
+  return textoModelo.replace("{{months}}", lista)
 }
 
 function resumoEvolucaoSalarial(
@@ -920,8 +928,13 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
   const evolucaoSemDados = Boolean(evolucaoSalarial && serieEvolucao.length === 0)
   const totalContrachequesSalvos = listaSegura(contrachequesSalvos).length
   const mensagensErroLote = listaSegura(batchStatus?.failure_messages)
+  const mesesFaltantesLote = listaSegura(batchStatus?.missing_competencies)
   const erroPrincipalLote = batchStatus?.last_error_message ?? null
   const possuiEvolucao = Boolean(evolucaoSalarial && serieEvolucao.length > 0)
+  const avisoMesesFaltantes =
+    mesesFaltantesLote.length > 0
+      ? formatarAvisoMesesFaltantes(mesesFaltantesLote, t.missingPaycheckMonthsWarning)
+      : ""
 
   return (
     <section className="analysis-card card">
@@ -1225,6 +1238,13 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
                 </div>
               </div>
             </div>
+
+            {batchStatus && isBatchTerminalStatus(batchStatus.status) && mesesFaltantesLote.length > 0 ? (
+              <div className="error-box">
+                <p className="error-box__title">{t.missingPaycheckMonthsTitle}</p>
+                <p>{avisoMesesFaltantes}</p>
+              </div>
+            ) : null}
 
             {(batchStatus.duplicated_count ?? batchStatus.duplicated ?? 0) > 0 ? (
               <p className="helper">{t.somePaychecksAlreadyExisted}</p>

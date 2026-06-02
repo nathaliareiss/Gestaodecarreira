@@ -451,6 +451,9 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       total: "Total",
       somePaychecksAlreadyExisted: "Alguns contracheques já existiam e foram ignorados.",
       workerKeptGoingAfterFailures: "O processamento continuou mesmo após falhas, então o lote ainda pode terminar com resultados parciais.",
+      missingPaycheckMonthsTitle: "Folhas faltantes",
+      missingPaycheckMonthsWarning:
+        "Houve um erro ao captar as folhas dos meses {{months}}. Envie manualmente ou veja a análise sem esses meses.",
       primaryIssue: "Problema principal",
       primaryIssueNotAvailable: "Problema principal indisponível.",
       clearPaychecksButton: "Limpar PDFs",
@@ -731,6 +734,9 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       total: "Total",
       somePaychecksAlreadyExisted: "Some paychecks already existed and were ignored.",
       workerKeptGoingAfterFailures: "Processing continued after failures, so the batch can still finish with partial results.",
+      missingPaycheckMonthsTitle: "Missing pay stubs",
+      missingPaycheckMonthsWarning:
+        "There was an issue capturing the sheets for these months: {{months}}. Please upload them manually or review the analysis without those months.",
       primaryIssue: "Primary issue",
       primaryIssueNotAvailable: "Primary issue not available.",
       clearPaychecksButton: "Clear PDFs",

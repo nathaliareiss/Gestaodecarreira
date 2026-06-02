@@ -37,6 +37,36 @@ ZERO = Decimal("0.00")
 THRESHOLD_CRESCIMENTO_RELEVANTE = Decimal("1.00")
 
 
+def detectar_competencias_faltantes_por_paychecks(paychecks: list[Paycheck]) -> list[str]:
+    competencias_unicas = sorted(
+        {
+            (int(paycheck.ano), int(paycheck.mes))
+            for paycheck in paychecks
+            if int(getattr(paycheck, "ano", 0) or 0) > 0 and 1 <= int(getattr(paycheck, "mes", 0) or 0) <= 12
+        }
+    )
+
+    if len(competencias_unicas) < 2:
+        return []
+
+    faltantes: list[str] = []
+
+    def proximo_mes(ano: int, mes: int) -> tuple[int, int]:
+        if mes >= 12:
+            return ano + 1, 1
+        return ano, mes + 1
+
+    anterior_ano, anterior_mes = competencias_unicas[0]
+    for ano_atual, mes_atual in competencias_unicas[1:]:
+        cursor_ano, cursor_mes = proximo_mes(anterior_ano, anterior_mes)
+        while (cursor_ano, cursor_mes) != (ano_atual, mes_atual):
+            faltantes.append(f"{cursor_mes:02d}/{cursor_ano}")
+            cursor_ano, cursor_mes = proximo_mes(cursor_ano, cursor_mes)
+        anterior_ano, anterior_mes = ano_atual, mes_atual
+
+    return faltantes
+
+
 def _para_decimal(valor: object) -> Decimal:
     if isinstance(valor, Decimal):
         return valor
