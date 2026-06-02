@@ -1271,6 +1271,55 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
               >
                 {t.clearPaychecksButton}
               </button>
+              {mostrandoConfirmacaoLimpeza ? (
+                <>
+                  <div
+                    className="finance-clear-paychecks-popover__backdrop"
+                    role="presentation"
+                    onClick={() => {
+                      if (!apagandoContracheques) {
+                        setMostrandoConfirmacaoLimpeza(false)
+                      }
+                    }}
+                  />
+                  <div
+                    className="finance-clear-paychecks-popover"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="finance-clear-paychecks-modal-title"
+                  >
+                    <div className="finance-auto-import-modal__dialog finance-clear-paychecks-modal__dialog">
+                      <div className="finance-auto-import-modal__header">
+                        <div>
+                          <p className="finance-auto-import-modal__eyebrow">{t.clearPaychecksConfirmTitle}</p>
+                          <h4 id="finance-clear-paychecks-modal-title">{t.clearPaychecksConfirmTitle}</h4>
+                        </div>
+                      </div>
+
+                      <p className="finance-clear-paychecks-modal__subtitle">{t.clearPaychecksConfirmText}</p>
+
+                      <div className="finance-auto-import-modal__actions finance-clear-paychecks-modal__actions">
+                        <button
+                          className="ghost-button finance-clear-paychecks-modal__cancel"
+                          type="button"
+                          onClick={() => setMostrandoConfirmacaoLimpeza(false)}
+                          disabled={apagandoContracheques}
+                        >
+                          {t.clearPaychecksNo}
+                        </button>
+                        <button
+                          className="primary-button finance-clear-paychecks-modal__confirm"
+                          type="button"
+                          onClick={() => void confirmarLimpezaDosContracheques()}
+                          disabled={apagandoContracheques}
+                        >
+                          {apagandoContracheques ? t.clearPaychecksLoading : t.clearPaychecksYes}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              ) : null}
             </div>
           ) : null}
 
@@ -1401,55 +1450,6 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
             </>
           ) : null}
 
-          {mostrandoConfirmacaoLimpeza ? (
-            <div
-              className="finance-auto-import-modal finance-clear-paychecks-modal"
-              role="presentation"
-              onClick={() => {
-                if (!apagandoContracheques) {
-                  setMostrandoConfirmacaoLimpeza(false)
-                }
-              }}
-            >
-              <div
-                className="finance-auto-import-modal__dialog finance-clear-paychecks-modal__dialog"
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="finance-clear-paychecks-modal-title"
-                onClick={(event) => {
-                  event.stopPropagation()
-                }}
-              >
-                <div className="finance-auto-import-modal__header">
-                  <div>
-                    <p className="finance-auto-import-modal__eyebrow">{t.clearPaychecksConfirmTitle}</p>
-                    <h4 id="finance-clear-paychecks-modal-title">{t.clearPaychecksConfirmTitle}</h4>
-                  </div>
-                </div>
-
-                <p className="finance-clear-paychecks-modal__subtitle">{t.clearPaychecksConfirmText}</p>
-
-                <div className="finance-auto-import-modal__actions finance-clear-paychecks-modal__actions">
-                  <button
-                    className="ghost-button finance-clear-paychecks-modal__cancel"
-                    type="button"
-                    onClick={() => setMostrandoConfirmacaoLimpeza(false)}
-                    disabled={apagandoContracheques}
-                  >
-                    {t.clearPaychecksNo}
-                  </button>
-                  <button
-                    className="primary-button finance-clear-paychecks-modal__confirm"
-                    type="button"
-                    onClick={() => void confirmarLimpezaDosContracheques()}
-                    disabled={apagandoContracheques}
-                  >
-                    {apagandoContracheques ? t.clearPaychecksLoading : t.clearPaychecksYes}
-                  </button>
-                </div>
-              </div>
-            </div>
-          ) : null}
         </section>
       </div>
     </section>

@@ -1622,8 +1622,10 @@ html[data-theme="dark"] .finance-auto-import-panel {
 }
 
 .finance-saved-paychecks-actions {
+  position: relative;
   display: flex;
   justify-content: flex-end;
+  align-items: flex-start;
   margin-top: 0.55rem;
 }
 
@@ -1737,6 +1739,24 @@ html[data-theme="light"] .finance-saved-paychecks__clear-button {
 .finance-clear-paychecks-modal__dialog {
   width: min(100%, 32rem);
   border-color: rgba(239, 68, 68, 0.18);
+}
+
+.finance-clear-paychecks-popover {
+  position: absolute;
+  top: calc(100% + 0.75rem);
+  right: 0;
+  z-index: 75;
+  width: min(32rem, calc(100vw - 2rem));
+}
+
+.finance-clear-paychecks-popover__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: default;
 }
 
 .finance-clear-paychecks-modal__subtitle {
