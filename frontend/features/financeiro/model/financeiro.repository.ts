@@ -10,6 +10,7 @@ import type {
   FinanceiroImportacaoTemporariaCriacaoResponse,
   FinanceiroImportacaoTemporariaValidacaoRequest,
   FinanceiroImportacaoTemporariaValidacaoResponse,
+  FinanceiroLimpezaContrachequesResponse,
 } from "./financeiro.model"
 
 function listaDeStringsSegura(valor: unknown): string[] {
@@ -247,6 +248,22 @@ export async function obterContrachequesSalvos(): Promise<FinanceiroContracheque
   )
 
   return Array.isArray(dados) ? dados : []
+}
+
+export async function limparContrachequesSalvos(): Promise<FinanceiroLimpezaContrachequesResponse> {
+  const response = await apiFetch("/api/financeiro/contracheques", {
+    method: "DELETE",
+  })
+
+  const dados = await parseApiResponse<Partial<FinanceiroLimpezaContrachequesResponse> | null>(
+    response,
+    "We could not clear the saved pay stubs.",
+  )
+
+  return {
+    deleted_batches: numeroSeguro(dados?.deleted_batches),
+    deleted_paychecks: numeroSeguro(dados?.deleted_paychecks),
+  }
 }
 
 export async function obterEvolucaoSalarialLote(

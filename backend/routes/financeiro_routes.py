@@ -23,6 +23,7 @@ from backend.repositories.financeiro_repository import (
     marcar_importacao_temporaria_como_usada,
     obter_lote_financeiro_por_id,
     obter_paychecks_por_usuario_id,
+    remover_contracheques_salvos_por_usuario,
 )
 from backend.schemas.financeiro_schema import (
     ArquivoFinanceiroJobPayload,
@@ -446,3 +447,20 @@ def listar_contracheques_salvos(
 ) -> list[ContrachequeResumoResponse]:
     paychecks = obter_paychecks_por_usuario_id(db, current_user.id)
     return [_serializar_paycheck_resumo(paycheck) for paycheck in paychecks]
+
+
+@router.delete("/contracheques")
+def limpar_contracheques_salvos(
+    current_user=Depends(obter_usuario_autenticado),
+    db: Session = Depends(get_db),
+) -> dict[str, int]:
+    resultado = remover_contracheques_salvos_por_usuario(db, current_user.id)
+    logger.info(
+        "Contracheques salvos apagados",
+        extra={
+            "user_id": current_user.id,
+            "deleted_batches": resultado["deleted_batches"],
+            "deleted_paychecks": resultado["deleted_paychecks"],
+        },
+    )
+    return resultado

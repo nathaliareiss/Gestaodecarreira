@@ -14,6 +14,7 @@ import {
   obterContrachequesSalvos,
   obterEvolucaoSalarialPersistida,
   criarImportacaoTemporariaFinanceiro,
+  limparContrachequesSalvos,
   enviarLoteContracheques,
   obterStatusLoteFinanceiro,
 } from "../model/financeiro.repository"
@@ -59,7 +60,7 @@ function mapaNumericoSegura(valor: Record<string, number> | null | undefined): R
 function formatarErroFinanceiro(
   error: unknown,
   idioma: SiteLanguage,
-  contexto: "analise" | "lote" | "importacao" | "envio",
+  contexto: "analise" | "lote" | "importacao" | "envio" | "limpeza",
   textosFinanceiro?: Pick<FinanceTexts, "assistantLaunchError">,
 ) {
   if (error instanceof ApiResponseError) {
@@ -86,6 +87,12 @@ function formatarErroFinanceiro(
         return idioma === "en"
           ? "The import assistant is no longer available."
           : "O assistente de importação não está mais disponível."
+      }
+
+      if (contexto === "limpeza") {
+        return idioma === "en"
+          ? "We could not clear the saved pay stubs."
+          : "Não foi possível limpar os contracheques salvos."
       }
     }
 
@@ -492,6 +499,8 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
     useState<FinanceiroImportacaoTemporariaCriacaoResponse | null>(null)
   const [mostrarTokenTemporario, setMostrarTokenTemporario] = useState(false)
   const [copiouTokenTemporario, setCopiouTokenTemporario] = useState(false)
+  const [mostrandoConfirmacaoLimpeza, setMostrandoConfirmacaoLimpeza] = useState(false)
+  const [apagandoContracheques, setApagandoContracheques] = useState(false)
   const [carregandoAnalisePersistida, setCarregandoAnalisePersistida] = useState(!modoDemo)
 
   const carregarAnalisePersistida = useCallback(async () => {
@@ -536,6 +545,29 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
       setCarregandoAnalisePersistida(false)
     }
   }, [modoDemo, language])
+
+  async function confirmarLimpezaDosContracheques() {
+    if (modoDemo || apagandoContracheques) {
+      return
+    }
+
+    setApagandoContracheques(true)
+    setErro(null)
+
+    try {
+      await limparContrachequesSalvos()
+      setContrachequesSalvos([])
+      setEvolucaoSalarial(null)
+      setBatchStatus(null)
+      setBatchId(null)
+      setErroEvolucao(null)
+      setMostrandoConfirmacaoLimpeza(false)
+    } catch (error) {
+      setErro(formatarErroFinanceiro(error, language, "limpeza"))
+    } finally {
+      setApagandoContracheques(false)
+    }
+  }
 
   function selecionarArquivos(evento: ChangeEvent<HTMLInputElement>) {
     const selecionados = Array.from(evento.target.files ?? [])

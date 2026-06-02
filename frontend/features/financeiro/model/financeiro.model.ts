@@ -82,6 +82,11 @@ export type FinanceiroContrachequeResumo = {
   descontos: number
 }
 
+export type FinanceiroLimpezaContrachequesResponse = {
+  deleted_batches: number
+  deleted_paychecks: number
+}
+
 export type ContrachequeAnalise = {
   competencia: string
   ano: number

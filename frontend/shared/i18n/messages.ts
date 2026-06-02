@@ -173,6 +173,12 @@ export type LocaleTexts = {
     workerKeptGoingAfterFailures: string
     primaryIssue: string
     primaryIssueNotAvailable: string
+    clearPaychecksButton: string
+    clearPaychecksConfirmTitle: string
+    clearPaychecksConfirmText: string
+    clearPaychecksYes: string
+    clearPaychecksNo: string
+    clearPaychecksLoading: string
     annualSalaryEvolution: string
     savedSalaryAnalysis: string
     salaryAnalysisPersists: string
@@ -447,6 +453,12 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       workerKeptGoingAfterFailures: "O processamento continuou mesmo após falhas, então o lote ainda pode terminar com resultados parciais.",
       primaryIssue: "Problema principal",
       primaryIssueNotAvailable: "Problema principal indisponível.",
+      clearPaychecksButton: "Limpar PDFs",
+      clearPaychecksConfirmTitle: "Limpar PDFs",
+      clearPaychecksConfirmText: "Tem certeza de que deseja apagar todos os contracheques baixados?",
+      clearPaychecksYes: "Sim",
+      clearPaychecksNo: "Não",
+      clearPaychecksLoading: "Apagando...",
       annualSalaryEvolution: "Evolução salarial anual",
       savedSalaryAnalysis: "Análise salarial salva",
       salaryAnalysisPersists: "Esta seção carrega automaticamente os seus contracheques salvos.",
@@ -721,6 +733,12 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       workerKeptGoingAfterFailures: "Processing continued after failures, so the batch can still finish with partial results.",
       primaryIssue: "Primary issue",
       primaryIssueNotAvailable: "Primary issue not available.",
+      clearPaychecksButton: "Clear PDFs",
+      clearPaychecksConfirmTitle: "Clear PDFs",
+      clearPaychecksConfirmText: "Are you sure you want to delete all downloaded pay stubs?",
+      clearPaychecksYes: "Yes",
+      clearPaychecksNo: "No",
+      clearPaychecksLoading: "Deleting...",
       annualSalaryEvolution: "Annual Salary Evolution",
       savedSalaryAnalysis: "Saved salary analysis",
       salaryAnalysisPersists: "This section automatically loads your saved paychecks.",

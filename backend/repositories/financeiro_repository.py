@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from decimal import Decimal
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 from sqlalchemy.orm import selectinload
 
@@ -160,6 +160,34 @@ def obter_paychecks_por_usuario_id(db: Session, user_id: int) -> list[Paycheck]:
 
 def listar_contracheques_resumidos_por_usuario_id(db: Session, user_id: int) -> list[Paycheck]:
     return obter_paychecks_por_usuario_id(db, user_id)
+
+
+def remover_contracheques_salvos_por_usuario(
+    db: Session,
+    user_id: int,
+) -> dict[str, int]:
+    total_batches = db.scalar(
+        select(func.count()).select_from(PayrollBatch).where(PayrollBatch.user_id == user_id)
+    ) or 0
+    total_paychecks = db.scalar(
+        select(func.count()).select_from(Paycheck).where(Paycheck.user_id == user_id)
+    ) or 0
+
+    batches = list(
+        db.scalars(
+            select(PayrollBatch).where(PayrollBatch.user_id == user_id)
+        ).all()
+    )
+
+    for lote in batches:
+        db.delete(lote)
+
+    db.commit()
+
+    return {
+        "deleted_batches": int(total_batches),
+        "deleted_paychecks": int(total_paychecks),
+    }
 
 
 def atualizar_lote_financeiro(
