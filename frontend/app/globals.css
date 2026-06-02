@@ -1621,6 +1621,28 @@ html[data-theme="dark"] .finance-auto-import-panel {
   text-underline-offset: 0.15em;
 }
 
+.finance-saved-paychecks-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.55rem;
+}
+
+.finance-saved-paychecks__clear-button {
+  border: 1px solid rgba(239, 68, 68, 0.18);
+  background: rgba(239, 68, 68, 0.12);
+  color: #b91c1c;
+  font-weight: 800;
+}
+
+html[data-theme="light"] .finance-saved-paychecks__clear-button {
+  background: rgba(239, 68, 68, 0.08);
+}
+
+.finance-saved-paychecks__clear-button:hover {
+  background: rgba(239, 68, 68, 0.18);
+  color: #991b1b;
+}
+
 .finance-auto-import-modal {
   position: fixed;
   inset: 0;
@@ -1710,6 +1732,36 @@ html[data-theme="dark"] .finance-auto-import-panel {
 .finance-auto-import-modal__feedback--success {
   color: #0f766e;
   font-weight: 700;
+}
+
+.finance-clear-paychecks-modal__dialog {
+  width: min(100%, 32rem);
+  border-color: rgba(239, 68, 68, 0.18);
+}
+
+.finance-clear-paychecks-modal__subtitle {
+  margin: 0;
+  color: #5f6a7a;
+  line-height: 1.55;
+}
+
+.finance-clear-paychecks-modal__actions {
+  justify-content: flex-end;
+}
+
+.finance-clear-paychecks-modal__cancel {
+  min-height: 2.8rem;
+}
+
+.finance-clear-paychecks-modal__confirm {
+  min-height: 2.8rem;
+  color: #ffffff;
+  background: linear-gradient(135deg, #ef4444, #fb7185);
+  box-shadow: 0 12px 30px rgba(239, 68, 68, 0.24);
+}
+
+.finance-clear-paychecks-modal__confirm:hover {
+  background: linear-gradient(135deg, #dc2626, #f43f5e);
 }
 
 .finance-auto-import-panel__checklist,

@@ -6,6 +6,7 @@ from types import SimpleNamespace
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from sqlalchemy import func, select
 
 from backend.database.database import SessionLocal
 from backend.database.models import PayrollBatch, Paycheck, PaycheckItem
@@ -191,6 +192,67 @@ def test_contracheques_salvos_isolados_por_usuario() -> None:
     assert payload[0]["competencia"] == "Janeiro/2024"
     assert payload[0]["salario_base"] == 3100.0
     assert payload[0]["bruto_total"] == 4000.0
+
+
+def test_limpar_contracheques_salvos_remove_apenas_o_usuario_logado() -> None:
+    _criar_lote_com_paychecks(
+        7,
+        [
+            {
+                "competencia": "Janeiro/2024",
+                "ano": 2024,
+                "mes": 1,
+                "salario_base": "3100.00",
+                "bruto": "4000.00",
+                "descontos": "500.00",
+                "liquido": "3500.00",
+            },
+            {
+                "competencia": "Fevereiro/2024",
+                "ano": 2024,
+                "mes": 2,
+                "salario_base": "3200.00",
+                "bruto": "4200.00",
+                "descontos": "520.00",
+                "liquido": "3680.00",
+            },
+        ],
+    )
+    _criar_lote_com_paychecks(
+        8,
+        [
+            {
+                "competencia": "Março/2024",
+                "ano": 2024,
+                "mes": 3,
+                "salario_base": "4300.00",
+                "bruto": "5400.00",
+                "descontos": "650.00",
+                "liquido": "4750.00",
+            },
+        ],
+    )
+
+    client = criar_client()
+    resposta = client.delete("/financeiro/contracheques")
+
+    assert resposta.status_code == 200
+    assert resposta.json() == {"deleted_batches": 1, "deleted_paychecks": 2}
+
+    with SessionLocal() as db:
+        total_usuario_7 = db.scalar(
+            select(func.count()).select_from(Paycheck).where(Paycheck.user_id == 7)
+        )
+        total_usuario_8 = db.scalar(
+            select(func.count()).select_from(Paycheck).where(Paycheck.user_id == 8)
+        )
+        total_batches_7 = db.scalar(
+            select(func.count()).select_from(PayrollBatch).where(PayrollBatch.user_id == 7)
+        )
+
+    assert total_usuario_7 == 0
+    assert total_usuario_8 == 1
+    assert total_batches_7 == 0
 
 
 def test_evolucao_salarial_persistida_nao_depende_do_batch_atual() -> None:
