@@ -45,6 +45,12 @@ class FakeElement:
     def is_enabled(self):
         return True
 
+    def scroll_into_view_if_needed(self, timeout: int | None = None):  # noqa: ARG002
+        return None
+
+    def click(self, timeout: int | None = None, force: bool = False):  # noqa: ARG002
+        return None
+
     def bounding_box(self):
         if not self._visible:
             return None
@@ -127,6 +133,9 @@ class FakeRow:
             return FakeCollection([])
 
         return FakeCollection([])
+
+    def inner_text(self, timeout: int | None = None):  # noqa: ARG002
+        return f"{self._competencia} {self._tipo} {self._button_text}"
 
     def get_by_role(self, role: str, name=None):  # noqa: ARG002
         if role != "button":
@@ -364,6 +373,44 @@ class HelperContrachequesTests(unittest.TestCase):
         )
 
         self.assertTrue(helper.pagina_consultar_contracheque_pronta(page))
+
+    def test_ir_para_proxima_pagina_detecta_mudanca_de_lista(self):
+        class BotaoProximaPagina:
+            def __init__(self, page):
+                self._page = page
+
+            def is_visible(self):
+                return True
+
+            def scroll_into_view_if_needed(self, timeout: int | None = None):  # noqa: ARG002
+                return None
+
+            def click(self, timeout: int | None = None):  # noqa: ARG002
+                self._page._fase = 1
+
+        class PaginaComTroca(FakePage):
+            def __init__(self):
+                super().__init__(
+                    url="https://portal.exemplo/contracheques",
+                    title="Contracheques",
+                    selectors={},
+                )
+                self._fase = 0
+                self._botao = BotaoProximaPagina(self)
+                self._pagina_1 = FakeCollection([FakeRow("01/2026", "Mensal")])
+                self._pagina_2 = FakeCollection([FakeRow("02/2026", "Mensal")])
+
+            def locator(self, selector: str, **kwargs):
+                if selector == 'a.z-paging-next[name$="-next"]':
+                    return FakeCollection([self._botao])
+
+                if selector in {"tr.z-listitem", ".z-listbox-body tr", "table tbody tr"}:
+                    return self._pagina_1 if self._fase == 0 else self._pagina_2
+
+                return super().locator(selector, **kwargs)
+
+        page = PaginaComTroca()
+        self.assertTrue(helper.portal_automation.ir_para_proxima_pagina(page))
 
     def test_detecta_alvos_de_download_por_link_pdf(self):
         page = FakePage(

@@ -1698,16 +1698,24 @@ def baixar_contracheques_baixar(page, context, pasta_saida: Path) -> list[Path]:
 
     pagina_atual = portal_automation.encontrar_pagina_com_lista_flexivel(page)
     total_baixados = 0
+    pagina = 1
 
     while True:
         try:
+            inicio_pagina = time.perf_counter()
             pagina_atual = portal_automation.encontrar_pagina_com_lista_flexivel(pagina_atual)
-            total_baixados += portal_automation.processar_pagina(
+            baixados_nesta_pagina = portal_automation.processar_pagina(
                 pagina_atual,
                 pasta_mensais,
                 pasta_decimo,
                 vistos,
                 context=context,
+            )
+            tempo_pagina = time.perf_counter() - inicio_pagina
+            total_baixados += baixados_nesta_pagina
+            log(
+                f"Pagina {pagina} concluida em {tempo_pagina:.1f}s "
+                f"| arquivos baixados nesta pagina: {baixados_nesta_pagina}"
             )
         except Exception as erro:
             log(f"[falha] processar_pagina -> {erro}")
@@ -1721,6 +1729,8 @@ def baixar_contracheques_baixar(page, context, pasta_saida: Path) -> list[Path]:
 
         if not avancou:
             break
+
+        pagina += 1
 
     arquivos_baixados = sorted(
         p
@@ -2012,15 +2022,23 @@ def baixar_contracheques_baixar(page, context, pasta_saida: Path) -> list[Path]:
 
     pagina_atual = portal_automation.encontrar_pagina_com_lista_flexivel(page)
     total_baixados = 0
+    pagina = 1
 
     while True:
         try:
-            total_baixados += portal_automation.processar_pagina(
+            inicio_pagina = time.perf_counter()
+            baixados_nesta_pagina = portal_automation.processar_pagina(
                 pagina_atual,
                 pasta_mensais,
                 pasta_decimo,
                 vistos,
                 context=context,
+            )
+            tempo_pagina = time.perf_counter() - inicio_pagina
+            total_baixados += baixados_nesta_pagina
+            log(
+                f"Pagina {pagina} concluida em {tempo_pagina:.1f}s "
+                f"| arquivos baixados nesta pagina: {baixados_nesta_pagina}"
             )
         except Exception as erro:
             log(f"[falha] processar_pagina -> {erro}")
@@ -2034,6 +2052,8 @@ def baixar_contracheques_baixar(page, context, pasta_saida: Path) -> list[Path]:
 
         if not avancou:
             break
+
+        pagina += 1
 
     arquivos_baixados = sorted(
         p

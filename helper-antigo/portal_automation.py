@@ -229,6 +229,25 @@ def localizar_linhas_documento(contexto):
     return contexto.locator("tr.z-listitem")
 
 
+def assinatura_lista_documentos(contexto) -> tuple[int, tuple[str, ...]]:
+    linhas = localizar_linhas_documento(contexto)
+
+    try:
+        total_linhas = linhas.count()
+    except Exception:
+        return 0, ()
+
+    amostras: list[str] = []
+    for indice in range(min(total_linhas, 3)):
+        try:
+            texto = linhas.nth(indice).inner_text(timeout=2000).strip()
+        except Exception:
+            texto = ""
+        amostras.append(normalizar_texto(texto))
+
+    return total_linhas, tuple(amostras)
+
+
 def esperar_lista_em_alguma_frame(page: Page, timeout_ms: int):
     deadline = time.time() + (timeout_ms / 1000)
 
@@ -484,7 +503,7 @@ def clicar_baixar_na_linha(
 
 def processar_pagina(page: Page, pasta_mensais: Path, pasta_decimo: Path, vistos: set[str], context=None) -> int:
     try:
-        page.wait_for_timeout(1500)
+        page.wait_for_timeout(300)
     except Exception:
         pass
 
@@ -556,41 +575,24 @@ def ir_para_proxima_pagina(page: Page) -> bool:
             _log("Botão de próxima página não está visível.")
             return False
 
-        linhas_antes = localizar_linhas_documento(contexto)
-        primeira_linha_antes = ""
-
-        if linhas_antes.count() > 0:
-            try:
-                primeira_linha_antes = linhas_antes.nth(0).inner_text(timeout=3000).strip()
-            except Exception:
-                primeira_linha_antes = ""
+        assinatura_antes = assinatura_lista_documentos(contexto)
 
         botao.scroll_into_view_if_needed()
         botao.click(timeout=5000)
 
         try:
-            page.wait_for_timeout(2000)
+            page.wait_for_timeout(250)
         except Exception:
             pass
 
-        for _ in range(12):
+        for _ in range(16):
             try:
-                page.wait_for_timeout(500)
+                page.wait_for_timeout(250)
             except Exception:
                 pass
 
             contexto_depois = encontrar_contexto_lista(page)
-            linhas_depois = localizar_linhas_documento(contexto_depois)
-
-            if linhas_depois.count() == 0:
-                continue
-
-            try:
-                primeira_linha_depois = linhas_depois.nth(0).inner_text(timeout=3000).strip()
-            except Exception:
-                continue
-
-            if primeira_linha_depois != primeira_linha_antes:
+            if assinatura_lista_documentos(contexto_depois) != assinatura_antes:
                 _log("Avançou para a próxima página.")
                 return True
 

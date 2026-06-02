@@ -17,6 +17,7 @@ criar_sessao_requests = base.criar_sessao_requests
 baixar_url_com_sessao = base.baixar_url_com_sessao
 encontrar_contexto_lista = base.encontrar_contexto_lista
 localizar_linhas_documento = base.localizar_linhas_documento
+assinatura_lista_documentos = base.assinatura_lista_documentos
 esperar_lista_em_alguma_frame = base.esperar_lista_em_alguma_frame
 extrair_info_documento = base.extrair_info_documento
 diagnostico_abrangente = base.diagnostico_abrangente
@@ -142,7 +143,7 @@ def processar_pagina(page: Page, pasta_mensais: Path, pasta_decimo: Path, vistos
         pass
 
     try:
-        page.wait_for_timeout(1500)
+        page.wait_for_timeout(300)
     except Exception:
         pass
 
@@ -220,41 +221,24 @@ def ir_para_proxima_pagina(page: Page) -> bool:
             _log("Botao de proxima pagina nao esta visivel.")
             return False
 
-        linhas_antes = localizar_linhas_documento(contexto)
-        primeira_linha_antes = ""
-
-        if linhas_antes.count() > 0:
-            try:
-                primeira_linha_antes = linhas_antes.nth(0).inner_text(timeout=3000).strip()
-            except Exception:
-                primeira_linha_antes = ""
+        assinatura_antes = assinatura_lista_documentos(contexto)
 
         botao.scroll_into_view_if_needed()
         botao.click(timeout=5000)
 
         try:
-            page.wait_for_timeout(2000)
+            page.wait_for_timeout(250)
         except Exception:
             pass
 
-        for _ in range(12):
+        for _ in range(16):
             try:
-                page.wait_for_timeout(500)
+                page.wait_for_timeout(250)
             except Exception:
                 pass
 
             contexto_depois = encontrar_contexto_lista(page)
-            linhas_depois = localizar_linhas_documento(contexto_depois)
-
-            if linhas_depois.count() == 0:
-                continue
-
-            try:
-                primeira_linha_depois = linhas_depois.nth(0).inner_text(timeout=3000).strip()
-            except Exception:
-                continue
-
-            if primeira_linha_depois != primeira_linha_antes:
+            if assinatura_lista_documentos(contexto_depois) != assinatura_antes:
                 _log("Indo para a proxima pagina.")
                 return True
 
