@@ -943,7 +943,7 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
   const monitorando = Boolean(
     batchId !== null && batchStatus && !isBatchTerminalStatus(batchStatus.status) && !enviando,
   )
-  const statusAtual = mensagemStatusBatch(batchStatus, enviando, monitorando, t)
+  const statusAtual = mensagemStatusBatch(batchStatus, enviando, monitorando, language, t)
   const totalSelecionadoBytes = arquivosSelecionados.reduce((total, arquivo) => total + arquivo.size, 0)
   const totalSelecionadoArquivos = arquivosSelecionados.length
   const barraIndeterminada = enviando && batchStatus === null
@@ -1223,7 +1223,7 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
             <div className="metric-strip metric-strip--hero">
               <div className="metric-line">
                 <span>{t.status}</span>
-                <strong>{formatarStatusLote(batchStatus.status)}</strong>
+                <strong>{formatarStatusLote(batchStatus.status, language)}</strong>
               </div>
               <div className="metric-line">
                 <span>{t.processed}</span>
@@ -1251,7 +1251,7 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
                 </div>
                 <div
                   className="progress-track"
-                  aria-label="Batch completion progress"
+                  aria-label={t.batchProcessingProgressLabel}
                   role="progressbar"
                   aria-valuemin={0}
                   aria-valuemax={100}
@@ -1412,11 +1412,12 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
                 title={t.salaryBaseByYear}
                 subtitle={t.salaryTrendExplainer}
                 years={anosEvolucao}
+                language={language}
                 texts={{ annualAnalysis: t.annualAnalysis, noAnnualData: t.noAnnualData }}
                 series={[
                   {
                     key: SALARY_BASE_SERIE.key,
-                    label: SALARY_BASE_SERIE.label,
+                    label: rotuloSerieFinanceira(SALARY_BASE_SERIE.key, language),
                     color: SALARY_BASE_SERIE.color,
                     values: serieSalarioBase,
                   },
@@ -1424,21 +1425,22 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
               />
 
               <LineChart
-                ariaLabel="Annual gross and net pay evolution"
+                ariaLabel={language === "en" ? "Annual gross and net pay evolution" : "Evolução anual do bruto total e líquido"}
                 title={t.grossTotalAndNetPay}
                 subtitle={t.grossAndNetSubtitle}
                 years={anosEvolucao}
+                language={language}
                 texts={{ annualAnalysis: t.annualAnalysis, noAnnualData: t.noAnnualData }}
                 series={[
                   {
                     key: BRUTO_SERIE.key,
-                    label: BRUTO_SERIE.label,
+                    label: rotuloSerieFinanceira(BRUTO_SERIE.key, language),
                     color: BRUTO_SERIE.color,
                     values: serieBruto,
                   },
                   {
                     key: LIQUIDO_SERIE.key,
-                    label: LIQUIDO_SERIE.label,
+                    label: rotuloSerieFinanceira(LIQUIDO_SERIE.key, language),
                     color: LIQUIDO_SERIE.color,
                     values: serieLiquido,
                   },
