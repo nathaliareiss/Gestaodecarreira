@@ -233,18 +233,6 @@ async def _processar_upload_lote_financeiro(
             },
         )
 
-        if background_tasks is not None:
-            background_tasks.add_task(processar_lote_financeiro_job, payload_json)
-            agendado = True
-            try:
-                atualizar_lote_financeiro(db, lote, status="processing")
-            except Exception as erro_status:
-                logger.warning(
-                    "Nao foi possivel atualizar o status do lote financeiro",
-                    extra={"batch_id": lote.id, "erro": str(erro_status)},
-                )
-            return LoteFinanceiroUploadResponse(batch_id=lote.id, status="processing")
-
         resultado_direto = processar_lote_financeiro_job(payload_json)
         return LoteFinanceiroUploadResponse(
             batch_id=int(resultado_direto["batch_id"]),

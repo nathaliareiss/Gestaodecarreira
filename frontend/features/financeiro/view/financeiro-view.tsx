@@ -389,7 +389,7 @@ function LineChart({ title, subtitle, years, series, ariaLabel, texts, language 
           <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label={ariaLabel}>
             <defs>
               <linearGradient id={`grid-${ariaLabel.replace(/\s+/g, "-").toLowerCase()}`} x1="0" x2="0" y1="0" y2="1">
-                <stop offset="0%" stopColor="rgba(148, 163, 184, 0.28)" />
+                <stop offset="0%" stopColor="rgba(24, 25, 28, 0.28)" />
                 <stop offset="100%" stopColor="rgba(148, 163, 184, 0.08)" />
               </linearGradient>
             </defs>
