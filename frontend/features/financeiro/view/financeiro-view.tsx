@@ -257,36 +257,31 @@ type SerieLinha = {
   values: number[]
 }
 
-type ColunaDesconto = {
-  key: string
-  label: string
-}
-
-const COLUNAS_DESCONTOS: ColunaDesconto[] = [
-  { key: "previdencia", label: "Pension" },
-  { key: "irrf", label: "IRRF" },
-  { key: "emprestimo", label: "Loans" },
-  { key: "saude", label: "Health" },
-  { key: "outros_descontos", label: "Other discounts" },
-]
+const COLUNAS_DESCONTOS = [
+  "previdencia",
+  "irrf",
+  "emprestimo",
+  "saude",
+  "outros_descontos",
+] as const
 
 const SALARY_BASE_SERIE: SerieLinha = {
   key: "salario_base",
-  label: "Salary base",
+  label: "Base salarial",
   color: "#14b8a6",
   values: [],
 }
 
 const BRUTO_SERIE: SerieLinha = {
   key: "bruto_total",
-  label: "Gross total",
+  label: "Bruto total",
   color: "#60a5fa",
   values: [],
 }
 
 const LIQUIDO_SERIE: SerieLinha = {
   key: "liquido",
-  label: "Net pay",
+  label: "Líquido",
   color: "#f97316",
   values: [],
 }

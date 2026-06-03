@@ -292,7 +292,7 @@ function LinhaDoTempoGrafica({
       x: (x / largura) * 100,
       y: (y / altura) * 100,
       alinhamento,
-      titulo: formatarTipoEvento(evento.tipo),
+        titulo: formatarTipoEvento(evento.tipo, idioma),
       linhas: [
         `${idioma === "en" ? "Date" : "Data"}: ${formatarData(evento.data_efetiva, idioma)}`,
         `${idioma === "en" ? "Status" : "Status"}: ${
@@ -350,7 +350,7 @@ function LinhaDoTempoGrafica({
                 x={x}
                 y={isAbove ? y - 18 : y + 32}
               >
-                {formatarTipoEvento(evento.tipo)}
+                {formatarTipoEvento(evento.tipo, idioma)}
               </text>
               <text
                 className={`timeline-graph__label timeline-graph__label--muted ${isAbove ? "timeline-graph__label--above" : "timeline-graph__label--below"}`}

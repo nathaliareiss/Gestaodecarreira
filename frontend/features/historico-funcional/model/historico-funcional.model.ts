@@ -90,7 +90,20 @@ export type HistoricoFuncionalAnalise = {
   processamento_origem: "fila" | "direto"
 }
 
-export function formatarTipoEvento(tipo: HistoricoFuncionalEvento["tipo"]) {
+export function formatarTipoEvento(tipo: HistoricoFuncionalEvento["tipo"], idioma: "pt-BR" | "en" = "pt-BR") {
+  if (idioma === "en") {
+    switch (tipo) {
+      case "nomeacao":
+        return "Appointment"
+      case "progressao":
+        return "Progression"
+      case "promocao":
+        return "Promotion"
+      default:
+        return "Substitution"
+    }
+  }
+
   switch (tipo) {
     case "nomeacao":
       return "Nomeação"
