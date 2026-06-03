@@ -47,8 +47,8 @@ html[data-theme="light"] {
   --page-glow-b: rgba(180, 83, 9, 0.12);
   --page-base: linear-gradient(180deg, #f8fbff 0%, #edf3fb 100%);
   --surface-strong: rgba(255, 255, 255, 0.94);
-  --graph-text: #374151;
-  --graph-text-muted: #4b5563;
+  --graph-text: #181c20;
+  --graph-text-muted: #191d23;
 }
 
 body {
