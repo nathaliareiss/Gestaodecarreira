@@ -22,18 +22,18 @@ export function calcularProgressoLote(status) {
   return Math.min(100, Math.round((completo / total) * 100))
 }
 
-export function formatarStatusLote(status) {
+export function formatarStatusLote(status, idioma = "en") {
   switch (status) {
     case "pending":
-      return "Pending"
+      return idioma === "en" ? "Pending" : "Pendente"
     case "processing":
-      return "Processing"
+      return idioma === "en" ? "Processing" : "Processando"
     case "completed":
-      return "Completed"
+      return idioma === "en" ? "Completed" : "Concluído"
     case "failed":
-      return "Failed"
+      return idioma === "en" ? "Failed" : "Falhou"
     default:
-      return "Unknown"
+      return idioma === "en" ? "Unknown" : "Desconhecido"
   }
 }
 

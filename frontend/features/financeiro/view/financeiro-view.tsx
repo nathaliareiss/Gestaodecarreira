@@ -181,6 +181,7 @@ function mensagemStatusBatch(
   status: FinanceiroBatchStatusResponse | null,
   enviando: boolean,
   monitorando: boolean,
+  idioma: SiteLanguage,
   textosFinanceiro: Pick<FinanceTexts, "uploadingBatch" | "pollingEveryTwoSeconds" | "ready">,
 ) {
   if (enviando) {
@@ -192,7 +193,7 @@ function mensagemStatusBatch(
   }
 
   if (status) {
-    return formatarStatusLote(status.status)
+    return formatarStatusLote(status.status, idioma)
   }
 
   return textosFinanceiro.ready
@@ -297,6 +298,7 @@ type LineChartProps = {
   series: SerieLinha[]
   ariaLabel: string
   texts: Pick<FinanceTexts, "annualAnalysis" | "noAnnualData">
+  language: SiteLanguage
 }
 
 function calcularPontoLinha(
@@ -338,7 +340,33 @@ function formatarEixoMoeda(valor: number) {
   return formatarMoeda(valor)
 }
 
-function LineChart({ title, subtitle, years, series, ariaLabel, texts }: LineChartProps) {
+function rotuloSerieFinanceira(serieKey: string, idioma: SiteLanguage) {
+  if (idioma === "en") {
+    switch (serieKey) {
+      case "salario_base":
+        return "Salary base"
+      case "bruto_total":
+        return "Gross total"
+      case "liquido":
+        return "Net pay"
+      default:
+        return serieKey
+    }
+  }
+
+  switch (serieKey) {
+    case "salario_base":
+      return "Base salarial"
+    case "bruto_total":
+      return "Bruto total"
+    case "liquido":
+      return "Líquido"
+    default:
+      return serieKey
+  }
+}
+
+function LineChart({ title, subtitle, years, series, ariaLabel, texts, language }: LineChartProps) {
   const width = 960
   const height = 320
   const padding = { top: 24, right: 24, bottom: 56, left: 88 }
@@ -467,7 +495,7 @@ function LineChart({ title, subtitle, years, series, ariaLabel, texts }: LineCha
         </div>
       )}
 
-      <div className="chart-legend" aria-label={`${title} legend`}>
+      <div className="chart-legend" aria-label={language === "en" ? `${title} legend` : `Legenda de ${title}`}>
         {seriesSeguras.map((serie) => (
           <span className="chart-legend__item" key={serie.key}>
             <span className="chart-legend__swatch" style={{ background: serie.color }} />
