@@ -2013,7 +2013,7 @@ html[data-theme="light"] .upload-shell__collapsed--compact {
 }
 
 .chart-axis-baseline {
-  stroke: rgba(148, 163, 184, 0.22);
+  stroke: rgba(39, 42, 45, 0.22);
 }
 
 .chart-axis-label {
@@ -2043,7 +2043,7 @@ html[data-theme="light"] .upload-shell__collapsed--compact {
   border-radius: 999px;
   border: 1px solid rgba(148, 163, 184, 0.12);
   background: rgba(8, 16, 30, 0.42);
-  color: #374151;
+  color: #282d34;
   font-size: 0.84rem;
   font-weight: 700;
 }
