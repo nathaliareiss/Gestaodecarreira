@@ -392,7 +392,10 @@ export function UsuarioPageController({
               criandoConta={indoParaCadastro}
             />
           ) : (
-            <FinanceiroView modoDemo={modoDemo} />
+            <FinanceiroView
+              modoDemo={modoDemo}
+              dataAposentadoriaPrevista={historicoExibido?.data_aposentadoria_prevista ?? null}
+            />
           )}
         </section>
       </section>

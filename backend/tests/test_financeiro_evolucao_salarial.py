@@ -222,6 +222,48 @@ def test_evolucao_financeira_anual_com_aumento_calcula_salario_base_e_composicao
     assert resultado["anos_sem_crescimento_relevante"] == []
 
 
+def test_evolucao_financeira_anual_usa_campos_agregados_para_irrf_e_previdencia() -> None:
+    batch_id = _criar_lote_com_paychecks(
+        [
+            {
+                "competencia": "Janeiro/2022",
+                "ano": 2022,
+                "mes": 1,
+                "salario_base": "3000.00",
+                "bruto": "3900.00",
+                "descontos": "540.00",
+                "liquido": "3400.00",
+                "itens": _vantagens_padrao("3000.00"),
+                "itens_desconto": [],
+                "irrf": "200.00",
+                "previdencia": "300.00",
+            },
+            {
+                "competencia": "Fevereiro/2022",
+                "ano": 2022,
+                "mes": 2,
+                "salario_base": "3100.00",
+                "bruto": "4000.00",
+                "descontos": "580.00",
+                "liquido": "3420.00",
+                "itens": _vantagens_padrao("3100.00"),
+                "itens_desconto": [],
+                "irrf": "220.00",
+                "previdencia": "320.00",
+            },
+        ]
+    )
+
+    with SessionLocal() as db:
+        resultado = calcular_evolucao_salarial_lote(db, batch_id)
+
+    serie = resultado["series"][0]
+    assert serie["descontos_referencia_anual"] == 560.0
+    assert serie["composicao_descontos_referencia_anual"]["irrf"] == 210.0
+    assert serie["composicao_descontos_referencia_anual"]["previdencia"] == 310.0
+    assert serie["composicao_descontos_referencia_anual"]["outros_descontos"] == 40.0
+
+
 def test_evolucao_financeira_anual_sem_aumento_identifica_anos_sem_crescimento() -> None:
     batch_id = _criar_lote_com_paychecks(
         [

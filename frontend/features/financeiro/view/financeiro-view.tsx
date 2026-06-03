@@ -38,6 +38,7 @@ const NOME_DOWNLOAD_ASSISTENTE = "Assistente-contracheque-Setup.exe"
 
 type FinanceiroViewProps = {
   modoDemo: boolean
+  dataAposentadoriaPrevista?: string | null
 }
 
 function listaSegura<T>(valor: T[] | null | undefined): T[] {
@@ -155,6 +156,22 @@ function formatarMoeda(valor: number | null) {
   return formatadorMoeda.format(valor)
 }
 
+function formatarDataISO(valor: string | null | undefined, idioma: SiteLanguage) {
+  if (!valor) {
+    return "-"
+  }
+
+  const data = new Date(`${valor}T00:00:00Z`)
+  if (Number.isNaN(data.getTime())) {
+    return "-"
+  }
+
+  return new Intl.DateTimeFormat(idioma === "en" ? "en-US" : "pt-BR", {
+    dateStyle: "medium",
+    timeZone: "UTC",
+  }).format(data)
+}
+
 function formatarVariacaoPercentual(valor: number | null, idioma: SiteLanguage) {
   if (valor == null || !Number.isFinite(valor)) {
     return idioma === "en" ? "Base year" : "Ano base"
@@ -231,9 +248,92 @@ function formatarAvisoMesesFaltantes(
   return textoModelo.replace("{{months}}", lista)
 }
 
+type ProjecaoAposentadoriaSalarial = {
+  taxaMediaAnualPercentual: number
+  anosRestantes: number
+  salarioProjetado: number
+  dataAposentadoriaPrevista: string
+}
+
+function calcularTaxaMediaAnualPercentual(
+  salarioInicial: number,
+  salarioFinal: number,
+  anosObservados: number,
+) {
+  if (
+    !Number.isFinite(salarioInicial) ||
+    !Number.isFinite(salarioFinal) ||
+    salarioInicial <= 0 ||
+    salarioFinal <= 0 ||
+    anosObservados <= 0
+  ) {
+    return null
+  }
+
+  return (Math.pow(salarioFinal / salarioInicial, 1 / anosObservados) - 1) * 100
+}
+
+function calcularProjecaoAposentadoriaSalarial(
+  evolucao: FinanceiroEvolucaoSalarialResponse | null | undefined,
+  dataAposentadoriaPrevista: string | null | undefined,
+): ProjecaoAposentadoriaSalarial | null {
+  if (!evolucao || !dataAposentadoriaPrevista) {
+    return null
+  }
+
+  const series = listaSegura(evolucao.series)
+  if (series.length < 2) {
+    return null
+  }
+
+  const primeiroAno = series[0]?.ano ?? null
+  const ultimoAno = series[series.length - 1]?.ano ?? null
+  if (primeiroAno == null || ultimoAno == null || ultimoAno <= primeiroAno) {
+    return null
+  }
+
+  const dataAposentadoria = new Date(`${dataAposentadoriaPrevista}T00:00:00Z`)
+  if (Number.isNaN(dataAposentadoria.getTime())) {
+    return null
+  }
+
+  const anosRestantes = dataAposentadoria.getUTCFullYear() - ultimoAno
+  if (anosRestantes <= 0) {
+    return null
+  }
+
+  const salarioInicial = evolucao.salario_base_inicial_referencia
+  const salarioFinal = evolucao.salario_base_final_referencia
+  if (salarioInicial == null || salarioFinal == null) {
+    return null
+  }
+
+  const taxaMediaAnualPercentual = calcularTaxaMediaAnualPercentual(
+    salarioInicial,
+    salarioFinal,
+    ultimoAno - primeiroAno,
+  )
+
+  if (taxaMediaAnualPercentual == null) {
+    return null
+  }
+
+  const salarioProjetado =
+    salarioFinal * Math.pow(1 + taxaMediaAnualPercentual / 100, anosRestantes)
+
+  return {
+    taxaMediaAnualPercentual,
+    anosRestantes,
+    salarioProjetado,
+    dataAposentadoriaPrevista,
+  }
+}
+
 function resumoEvolucaoSalarial(
   evolucao: FinanceiroEvolucaoSalarialResponse | null | undefined,
   textosFinanceiro: Pick<FinanceTexts, "noPaychecksYet" | "salaryAnalysisPersists" | "demoFigures">,
+  idioma: SiteLanguage,
+  dataAposentadoriaPrevista: string | null | undefined,
 ) {
   if (
     evolucao == null ||
@@ -245,9 +345,27 @@ function resumoEvolucaoSalarial(
     return textosFinanceiro.noPaychecksYet
   }
 
-  return `No período analisado, seu salário-base passou de ${formatarMoeda(
-    evolucao.salario_base_inicial_referencia,
-  )} para ${formatarMoeda(evolucao.salario_base_final_referencia)}. A remuneração bruta total também variou por causa de adicionais, auxílios e outras vantagens.`
+  const salarioInicial = formatarMoeda(evolucao.salario_base_inicial_referencia)
+  const salarioFinal = formatarMoeda(evolucao.salario_base_final_referencia)
+  const projecao = calcularProjecaoAposentadoriaSalarial(evolucao, dataAposentadoriaPrevista)
+
+  if (projecao) {
+    const taxaMediaFormatada = `${projecao.taxaMediaAnualPercentual.toFixed(2)}%`
+    const salarioProjetado = formatarMoeda(projecao.salarioProjetado)
+    const dataAposentadoriaFormatada = formatarDataISO(projecao.dataAposentadoriaPrevista, idioma)
+
+    if (idioma === "en") {
+      return `Over the analyzed period, your base salary went from ${salarioInicial} to ${salarioFinal}, with a compounded average annual growth of ${taxaMediaFormatada}. If this pattern continues until your expected retirement on ${dataAposentadoriaFormatada}, the hypothetical base salary could reach ${salarioProjetado}.`
+    }
+
+    return `No período analisado, seu salário-base passou de ${salarioInicial} para ${salarioFinal}, com crescimento médio anual composto de ${taxaMediaFormatada}. Se esse padrão continuar até a sua aposentadoria prevista em ${dataAposentadoriaFormatada}, o salário-base hipotético pode chegar a ${salarioProjetado}.`
+  }
+
+  if (idioma === "en") {
+    return `Over the analyzed period, your base salary went from ${salarioInicial} to ${salarioFinal}. The gross total also changed because of extra pay, allowances, and other benefits.`
+  }
+
+  return `No período analisado, seu salário-base passou de ${salarioInicial} para ${salarioFinal}. A remuneração bruta total também variou por causa de adicionais, auxílios e outras vantagens.`
 }
 
 type SerieLinha = {
@@ -509,7 +627,7 @@ function obterValorDesconto(
   return mapaNumericoSegura(composicao)[chave] ?? 0
 }
 
-export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
+export function FinanceiroView({ modoDemo, dataAposentadoriaPrevista }: FinanceiroViewProps) {
   const { language, texts } = useLanguage()
   const t = texts.finance
   const [arquivosSelecionados, setArquivosSelecionados] = useState<File[]>([])
@@ -1491,7 +1609,14 @@ export function FinanceiroView({ modoDemo }: FinanceiroViewProps) {
                 </p>
               ) : null}
 
-              <p className="salary-summary">{resumoEvolucaoSalarial(evolucaoSalarial, t)}</p>
+              <p className="salary-summary">
+                {resumoEvolucaoSalarial(
+                  evolucaoSalarial,
+                  t,
+                  language,
+                  dataAposentadoriaPrevista,
+                )}
+              </p>
             </>
           ) : null}
 

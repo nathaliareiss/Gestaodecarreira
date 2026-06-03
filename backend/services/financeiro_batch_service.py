@@ -617,6 +617,27 @@ def _mediana_por_categoria(valores_por_categoria: dict[str, list[Decimal]]) -> d
     }
 
 
+def _totais_descontos_por_paycheck(paycheck: Paycheck) -> dict[str, Decimal]:
+    totais_categoria = _somar_itens_por_categoria(list(paycheck.items))
+    previdencia = max(totais_categoria["previdencia"], _para_decimal(getattr(paycheck, "previdencia", ZERO)))
+    irrf = max(totais_categoria["irrf"], _para_decimal(getattr(paycheck, "irrf", ZERO)))
+    emprestimo = totais_categoria["emprestimo"]
+    saude = totais_categoria["saude"]
+    associacao = totais_categoria["associacao"]
+    subtotal_conhecido = previdencia + irrf + emprestimo + saude + associacao
+    outros_fallback = max(_para_decimal(getattr(paycheck, "descontos", ZERO)) - subtotal_conhecido, ZERO)
+    outros_descontos = max(totais_categoria["outros_descontos"], outros_fallback)
+
+    return {
+        "previdencia": previdencia,
+        "irrf": irrf,
+        "emprestimo": emprestimo,
+        "saude": saude,
+        "associacao": associacao,
+        "outros_descontos": outros_descontos,
+    }
+
+
 calcular_mediana_decimal = _mediana_decimal
 calcular_variacao_percentual_decimal = _variacao_percentual_decimal
 
@@ -668,8 +689,9 @@ def _calcular_evolucao_salarial_a_partir_de_paychecks(
             totais_categoria = _somar_itens_por_categoria(list(paycheck.items))
             for categoria in CATEGORIAS_VANTAGEM:
                 valores_por_categoria_vantagem[categoria].append(totais_categoria[categoria])
+            totais_desconto = _totais_descontos_por_paycheck(paycheck)
             for categoria in CATEGORIAS_DESCONTO:
-                valores_por_categoria_desconto[categoria].append(totais_categoria[categoria])
+                valores_por_categoria_desconto[categoria].append(totais_desconto[categoria])
 
         salario_base_referencia = _mediana_decimal(salarios_base)
         bruto_total_referencia = _mediana_decimal(brutos_totais)
