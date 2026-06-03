@@ -15,6 +15,8 @@
   --page-glow-b: rgba(245, 158, 11, 0.14);
   --page-base: linear-gradient(180deg, #08111d 0%, #050b14 100%);
   --surface-strong: rgba(13, 24, 43, 0.94);
+  --graph-text: #d8e6ff;
+  --graph-text-muted: rgba(216, 230, 255, 0.84);
 }
 
 * {
@@ -45,6 +47,8 @@ html[data-theme="light"] {
   --page-glow-b: rgba(180, 83, 9, 0.12);
   --page-base: linear-gradient(180deg, #f8fbff 0%, #edf3fb 100%);
   --surface-strong: rgba(255, 255, 255, 0.94);
+  --graph-text: #374151;
+  --graph-text-muted: #4b5563;
 }
 
 body {
@@ -1132,7 +1136,7 @@ html[data-theme="light"] .confirm-email-card__success-note {
 
 .analysis-header__subtitle {
   margin: 0;
-  color: var(--muted);
+  color: var(--graph-text-muted);
   font-size: 0.78rem;
   line-height: 1.45;
 }
