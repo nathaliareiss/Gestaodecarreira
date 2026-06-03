@@ -7,7 +7,7 @@ import uuid
 from decimal import Decimal
 from pathlib import Path
 
-from fastapi import APIRouter, BackgroundTasks, Depends, File, Header, HTTPException, UploadFile, status
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, Header, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
 
 from backend.database.database import get_db
@@ -97,6 +97,21 @@ def _carregar_mensagens_erro_lote(valor_bruto: str | None) -> list[str]:
     return [str(mensagem).strip() for mensagem in mensagens if str(mensagem).strip()]
 
 
+def _carregar_competencias_faltantes_lote(valor_bruto: str | None) -> list[str]:
+    if not valor_bruto:
+        return []
+
+    try:
+        competencias = json.loads(valor_bruto)
+    except Exception:
+        return []
+
+    if not isinstance(competencias, list):
+        return []
+
+    return [str(item).strip() for item in competencias if str(item).strip()]
+
+
 def _serializar_paycheck_resumo(paycheck) -> ContrachequeResumoResponse:
     return ContrachequeResumoResponse(
         id=paycheck.id,
@@ -115,6 +130,7 @@ async def _processar_upload_lote_financeiro(
     arquivos: list[UploadFile],
     user_id: int,
     db: Session,
+    missing_competencies: list[str] | None = None,
     background_tasks: BackgroundTasks | None = None,
 ) -> LoteFinanceiroUploadResponse:
     if not arquivos:
@@ -149,7 +165,7 @@ async def _processar_upload_lote_financeiro(
                 }
             )
 
-        lote = criar_lote_financeiro(db, user_id, len(arquivos_job))
+        lote = criar_lote_financeiro(db, user_id, len(arquivos_job), missing_competencies=missing_competencies)
         fila = obter_fila_financeiro()
         payload = LoteFinanceiroJobPayload(
             batch_id=lote.id,
@@ -350,6 +366,7 @@ async def upload_lote_financeiro_importacao_temporaria(
     background_tasks: BackgroundTasks,
     arquivos: list[UploadFile] = File(...),
     x_import_token: str = Header(..., alias="X-Import-Token"),
+    missing_competencies: str = Form("[]"),
     db: Session = Depends(get_db),
 ) -> LoteFinanceiroUploadResponse:
     try:
@@ -364,6 +381,7 @@ async def upload_lote_financeiro_importacao_temporaria(
         arquivos=arquivos,
         user_id=importacao.user_id,
         db=db,
+        missing_competencies=_carregar_competencias_faltantes_lote(missing_competencies),
         background_tasks=background_tasks,
     )
     marcar_importacao_temporaria_como_usada(db, importacao)
@@ -379,12 +397,14 @@ async def upload_lote_financeiro(
     background_tasks: BackgroundTasks,
     arquivos: list[UploadFile] = File(...),
     current_user=Depends(obter_usuario_autenticado),
+    missing_competencies: str = Form("[]"),
     db: Session = Depends(get_db),
 ) -> LoteFinanceiroUploadResponse:
     return await _processar_upload_lote_financeiro(
         arquivos=arquivos,
         user_id=current_user.id,
         db=db,
+        missing_competencies=_carregar_competencias_faltantes_lote(missing_competencies),
         background_tasks=background_tasks,
     )
 
@@ -407,6 +427,8 @@ def obter_status_lote_financeiro(
             detail="Voce nao tem acesso a este lote financeiro.",
         )
 
+    competencias_faltantes = _carregar_competencias_faltantes_lote(getattr(lote, "missing_competencies", None))
+
     return LoteFinanceiroStatusResponse(
         total=lote.total_files,
         processed_count=lote.processed_files,
@@ -416,9 +438,13 @@ def obter_status_lote_financeiro(
         last_error_message=lote.last_error_message or None,
         failure_messages=_carregar_mensagens_erro_lote(lote.failure_messages),
         missing_competencies=(
-            detectar_competencias_faltantes_por_paychecks(obter_paychecks_por_batch_id(db, batch_id))
-            if lote.status in {"completed", "failed"}
-            else []
+            competencias_faltantes
+            if competencias_faltantes
+            else (
+                detectar_competencias_faltantes_por_paychecks(obter_paychecks_por_batch_id(db, batch_id))
+                if lote.status in {"completed", "failed"}
+                else []
+            )
         ),
         processed=lote.processed_files,
         duplicated=lote.duplicated_files,

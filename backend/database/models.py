@@ -94,6 +94,7 @@ class PayrollBatch(Base):
     processing_seconds_total = Column(Numeric(14, 3, asdecimal=True), nullable=False, default=0)
     last_error_message = Column(String, nullable=False, default="")
     failure_messages = Column(Text, nullable=False, default="[]")
+    missing_competencies = Column(Text, nullable=False, default="[]")
     status = Column(String, nullable=False, default="pending")
     created_at = Column(
         DateTime(timezone=True),

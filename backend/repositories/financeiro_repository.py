@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from decimal import Decimal
+import json
 
 from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
@@ -29,6 +30,7 @@ def criar_lote_financeiro(
     db: Session,
     user_id: int | None,
     total_files: int,
+    missing_competencies: list[str] | None = None,
 ) -> PayrollBatch:
     lote = PayrollBatch(
         user_id=user_id,
@@ -37,6 +39,7 @@ def criar_lote_financeiro(
         duplicated_files=0,
         failed_files=0,
         processing_seconds_total=0,
+        missing_competencies=json.dumps([item for item in (missing_competencies or []) if str(item).strip()], ensure_ascii=False),
         status="pending",
     )
     db.add(lote)
