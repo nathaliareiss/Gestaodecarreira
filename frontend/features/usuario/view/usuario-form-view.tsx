@@ -1,6 +1,6 @@
 "use client"
 
-import Link from "next/link"
+import { useRouter } from "next/navigation"
 import type { FormEvent } from "react"
 import { useState } from "react"
 
@@ -35,6 +35,7 @@ export function UsuarioFormView({
   onLoginChange,
   onSenhaChange,
 }: UsuarioFormViewProps) {
+  const router = useRouter()
   const { texts } = useLanguage()
   const [senhaVisivel, setSenhaVisivel] = useState(false)
 
@@ -190,9 +191,13 @@ export function UsuarioFormView({
           {erro.action ? (
             <>
               {" "}
-              <Link className="error-box__link" href={erro.action.href}>
+              <button
+                className="error-box__link"
+                type="button"
+                onClick={() => router.push(erro.action!.href)}
+              >
                 {erro.action.label}
-              </Link>
+              </button>
             </>
           ) : null}
         </p>

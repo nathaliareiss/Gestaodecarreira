@@ -960,10 +960,16 @@ html[data-theme="light"] .ghost-button {
 }
 
 .error-box__link {
+  appearance: none;
+  border: 0;
+  background: transparent;
   color: #ffffff;
   font-weight: 800;
   text-decoration: underline;
   text-underline-offset: 0.18em;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
 }
 
 .error-box__link:hover {
