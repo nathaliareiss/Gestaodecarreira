@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, type FormEvent } from "react"
+import { useEffect, useState, type FormEvent } from "react"
 import { useRouter } from "next/navigation"
 
 import {
@@ -44,6 +44,10 @@ export function useLoginController({ modoInicial = "login" }: UseLoginController
   const [erroConfirmacao, setErroConfirmacao] = useState<string | null>(null)
   const [erroRecuperacao, setErroRecuperacao] = useState<string | null>(null)
   const [mensagemRecuperacao, setMensagemRecuperacao] = useState<string | null>(null)
+
+  useEffect(() => {
+    setModo(modoInicial)
+  }, [modoInicial])
 
   function atualizarCampo<Chave extends keyof UsuarioLogin>(
     chave: Chave,

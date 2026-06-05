@@ -26,6 +26,10 @@ export function AuthEntryController({ modoInicial, modoLoginInicial = "login" }:
     removerUsuarioAutenticadoId()
   }, [])
 
+  useEffect(() => {
+    setModo(modoInicial)
+  }, [modoInicial])
+
   return (
     <main className="page-shell page-shell--auth">
       <div className="bg-orb bg-orb-a" />
