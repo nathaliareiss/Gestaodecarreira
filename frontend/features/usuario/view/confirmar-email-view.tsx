@@ -78,7 +78,7 @@ export function ConfirmarEmailView({ token }: ConfirmarEmailViewProps) {
   const acaoPrincipal =
     estado === "sucesso" ? (
       <Link className="primary-button button--large confirm-email-card__button" href="/usuario">
-        Ir para a p\u00e1gina de usu\u00e1rio
+        Ir para a página de usuário
       </Link>
     ) : (
       <Link className="primary-button button--large confirm-email-card__button" href="/login">
@@ -105,7 +105,7 @@ export function ConfirmarEmailView({ token }: ConfirmarEmailViewProps) {
 
         {estado === "sucesso" ? (
           <p className="confirm-email-card__success-note">
-            Seu acesso foi liberado com seguran\u00e7a.
+            Seu acesso foi liberado com segurança.
           </p>
         ) : null}
 
@@ -113,7 +113,7 @@ export function ConfirmarEmailView({ token }: ConfirmarEmailViewProps) {
           <p className="confirm-email-card__hint">
             {estado === "erro"
               ? "Se o problema continuar, tente abrir o link novamente a partir do email mais recente."
-              : "Se precisar, solicite um novo email de confirma\u00e7\u00e3o na tela de cadastro."}
+              : "Se precisar, solicite um novo email de confirmação na tela de cadastro."}
           </p>
         ) : null}
 

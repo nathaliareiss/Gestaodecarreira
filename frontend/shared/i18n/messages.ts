@@ -344,7 +344,7 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       emailAlreadyRegisteredPrefix: "E-mail já cadastrado. Esqueceu a senha?",
       emailAlreadyRegisteredLink: "Redefina aqui.",
       loginAlreadyRegistered: "Este login já está cadastrado.",
-      successMessage: "Cadastro concluído com sucesso. Agora você pode entrar com seu login.",
+      successMessage: "Cadastro realizado. Verifique seu e-mail para confirmar o acesso.",
       unexpectedSave: "Não foi possível criar a conta agora. Tente novamente.",
     },
     dashboard: {
@@ -628,7 +628,7 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       emailAlreadyRegisteredPrefix: "Email already registered. Forgot your password?",
       emailAlreadyRegisteredLink: "Reset it here.",
       loginAlreadyRegistered: "This login is already registered.",
-      successMessage: "Registration completed successfully. You can now sign in with your login.",
+      successMessage: "Registration created. Check your email to confirm access.",
       unexpectedSave: "We could not create the account right now. Please try again.",
     },
     dashboard: {
