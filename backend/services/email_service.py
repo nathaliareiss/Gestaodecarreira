@@ -291,7 +291,7 @@ def enviar_email_confirmacao(destinatario: str, nome: str, token: str) -> None:
     link = _montar_link_confirmacao(token)
     logger.info(
         "Preparando email de confirmacao",
-        extra={"destinatario": destinatario, "tipo": "confirmacao"},
+        extra={"destinatario": destinatario, "tipo": "confirmacao", "link_final": link},
     )
     texto, html = _montar_template_email_acao(
         titulo="Confirme seu cadastro",
@@ -315,7 +315,7 @@ def enviar_email_recuperacao_senha(destinatario: str, nome: str, token: str) -> 
     link = _montar_link_redefinicao(token)
     logger.info(
         "Preparando email de recuperacao de senha",
-        extra={"destinatario": destinatario, "tipo": "recuperacao_senha"},
+        extra={"destinatario": destinatario, "tipo": "recuperacao_senha", "link_final": link},
     )
     texto, html = _montar_template_email_acao(
         titulo="Redefina sua senha",

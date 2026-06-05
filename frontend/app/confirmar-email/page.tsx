@@ -3,13 +3,14 @@ import { ConfirmarEmailView } from "@/features/usuario/view/confirmar-email-view
 export const dynamic = "force-dynamic"
 
 type ConfirmarEmailPageProps = {
-  searchParams?: {
+  searchParams?: Promise<{
     token?: string | string[]
-  }
+  }>
 }
 
-export default function ConfirmarEmailPage({ searchParams }: ConfirmarEmailPageProps) {
-  const token = Array.isArray(searchParams?.token) ? searchParams?.token[0] : searchParams?.token ?? null
+export default async function ConfirmarEmailPage({ searchParams }: ConfirmarEmailPageProps) {
+  const parametros = (await searchParams) ?? {}
+  const token = Array.isArray(parametros.token) ? parametros.token[0] : parametros.token ?? null
 
   return <ConfirmarEmailView token={token} />
 }
