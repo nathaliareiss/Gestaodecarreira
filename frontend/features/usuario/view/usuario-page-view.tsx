@@ -1,6 +1,7 @@
 import type { FormEvent } from "react"
 
 import type { UsuarioCadastro } from "../model/usuario.model"
+import type { CadastroErroMensagem } from "../controller/use-usuario-controller"
 
 import { UsuarioFormView } from "./usuario-form-view"
 import { UsuarioHeroSection } from "./usuario-hero-section"
@@ -9,7 +10,7 @@ type UsuarioPageViewProps = {
   cadastro: UsuarioCadastro
   carregando: boolean
   entrandoDemo: boolean
-  erro: string | null
+  erro: CadastroErroMensagem | null
   mensagem: string | null
   onSubmit: (evento: FormEvent<HTMLFormElement>) => void
   onEntrarDemo: () => void

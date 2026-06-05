@@ -853,6 +853,7 @@ export function FinanceiroView({ modoDemo, dataAposentadoriaPrevista }: Financei
         status: resposta.status,
         last_error_message: null,
         failure_messages: [],
+        missing_competencies: [],
       })
     } catch (error) {
       setBatchStatus(null)
@@ -1646,9 +1647,9 @@ export function FinanceiroView({ modoDemo, dataAposentadoriaPrevista }: Financei
                             <strong>{item.ano}</strong>
                           </td>
                           {COLUNAS_DESCONTOS.map((coluna) => (
-                            <td key={`${item.ano}-${coluna.key}`}>
+                            <td key={`${item.ano}-${coluna}`}>
                               {formatarMoeda(
-                                obterValorDesconto(item.composicao_descontos_referencia_anual, coluna.key),
+                                obterValorDesconto(item.composicao_descontos_referencia_anual, coluna),
                               )}
                             </td>
                           ))}
@@ -1680,19 +1681,21 @@ export function FinanceiroView({ modoDemo, dataAposentadoriaPrevista }: Financei
           ) : null}
 
           {batchStatus && isBatchTerminalStatus(batchStatus.status) && mesesFaltantesAgrupados.length > 0 ? (
-            <details className="finance-missing-months">
-              <summary>{t.missingPaycheckMonthsExpand}</summary>
-              <div className="finance-missing-months__body">
-                <p className="helper">{t.missingPaycheckMonthsNotice}</p>
-                <ul className="finance-missing-months__years">
-                  {mesesFaltantesAgrupados.map((item) => (
-                    <li key={item.ano} className="finance-missing-months__year">
-                      <strong>{item.resumo}</strong>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </details>
+            <div className="finance-missing-months">
+              <p className="helper finance-missing-months__notice">{t.missingPaycheckMonthsNotice}</p>
+              <details className="finance-missing-months__details">
+                <summary>{t.missingPaycheckMonthsExpand}</summary>
+                <div className="finance-missing-months__body">
+                  <ul className="finance-missing-months__years">
+                    {mesesFaltantesAgrupados.map((item) => (
+                      <li key={item.ano} className="finance-missing-months__year">
+                        <strong>{item.resumo}</strong>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </details>
+            </div>
           ) : null}
 
         </section>
