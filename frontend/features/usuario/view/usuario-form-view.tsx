@@ -39,7 +39,7 @@ export function UsuarioFormView({
   const [senhaVisivel, setSenhaVisivel] = useState(false)
 
   return (
-    <form className="card form-card form-card--register" onSubmit={onSubmit}>
+    <form className="card form-card form-card--register" onSubmit={onSubmit} autoComplete="off">
       <div className="card-header card-header--tight">
         <div>
           <p className="eyebrow">{texts.registerForm.newUser}</p>
@@ -50,6 +50,7 @@ export function UsuarioFormView({
       <label className="field">
         <span>{texts.registerForm.fullName}</span>
         <input
+          autoComplete="off"
           value={cadastro.nome}
           onChange={(evento) => onNomeChange(evento.target.value)}
           required
@@ -59,6 +60,7 @@ export function UsuarioFormView({
       <label className="field">
         <span>{texts.registerForm.nickname}</span>
         <input
+          autoComplete="off"
           value={cadastro.apelido}
           onChange={(evento) => onApelidoChange(evento.target.value)}
         />
@@ -68,6 +70,7 @@ export function UsuarioFormView({
         <span>{texts.registerForm.confirmationEmail}</span>
         <input
           type="email"
+          autoComplete="off"
           value={cadastro.email}
           onChange={(evento) => onEmailChange(evento.target.value)}
           required
@@ -78,6 +81,7 @@ export function UsuarioFormView({
         <span>{texts.registerForm.startDate}</span>
         <input
           type="date"
+          autoComplete="off"
           value={cadastro.data_exercicio}
           onChange={(evento) => onDataExercicioChange(evento.target.value)}
           required
@@ -88,6 +92,7 @@ export function UsuarioFormView({
         <label className="field">
           <span>{texts.registerForm.login}</span>
           <input
+            autoComplete="off"
             value={cadastro.login}
             onChange={(evento) => onLoginChange(evento.target.value)}
             required
@@ -99,6 +104,7 @@ export function UsuarioFormView({
           <div className="password-field">
             <input
               type={senhaVisivel ? "text" : "password"}
+              autoComplete="new-password"
               value={cadastro.senha}
               onChange={(evento) => onSenhaChange(evento.target.value)}
               minLength={6}
