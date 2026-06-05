@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 
 import { ApiResponseError } from "@/shared/api/client"
@@ -13,6 +14,7 @@ type ConfirmarEmailViewProps = {
 type EstadoConfirmacao = "carregando" | "sucesso" | "token_invalido" | "token_ausente" | "erro"
 
 export function ConfirmarEmailView({ token }: ConfirmarEmailViewProps) {
+  const router = useRouter()
   const [estado, setEstado] = useState<EstadoConfirmacao>(token ? "carregando" : "token_ausente")
 
   useEffect(() => {
@@ -52,33 +54,47 @@ export function ConfirmarEmailView({ token }: ConfirmarEmailViewProps) {
     }
   }, [token])
 
+  useEffect(() => {
+    if (estado !== "sucesso") {
+      return
+    }
+
+    const timer = window.setTimeout(() => {
+      router.replace("/usuario")
+    }, 700)
+
+    return () => {
+      window.clearTimeout(timer)
+    }
+  }, [estado, router])
+
   const conteudo = {
     carregando: {
       titulo: "Confirmando seu cadastro...",
-      subtitulo: "Estamos validando o seu link de confirma\u00e7\u00e3o. Isso leva apenas alguns segundos.",
+      subtitulo: "Estamos validando o seu link de confirmação. Isso leva apenas alguns segundos.",
     },
     sucesso: {
       titulo: "Cadastro confirmado com sucesso",
-      subtitulo: "Seu acesso foi validado. Agora voc\u00ea j\u00e1 pode entrar na sua conta.",
+      subtitulo: "Seu acesso foi validado. Agora você já pode entrar na sua conta.",
     },
     token_ausente: {
-      titulo: "Link inv\u00e1lido ou incompleto.",
-      subtitulo: "Abra novamente o email de confirma\u00e7\u00e3o para acessar o link completo.",
+      titulo: "Link inválido ou incompleto.",
+      subtitulo: "Abra novamente o email de confirmação para acessar o link completo.",
     },
     token_invalido: {
-      titulo: "Este link expirou ou j\u00e1 foi utilizado.",
-      subtitulo: "Se precisar, solicite um novo email de confirma\u00e7\u00e3o na tela de cadastro.",
+      titulo: "Este link expirou ou já foi utilizado.",
+      subtitulo: "Se precisar, solicite um novo email de confirmação na tela de cadastro.",
     },
     erro: {
-      titulo: "N\u00e3o foi poss\u00edvel confirmar agora. Tente novamente.",
-      subtitulo: "Houve uma falha t\u00e9cnica ao validar seu cadastro. Tente mais tarde.",
+      titulo: "Não foi possível confirmar agora. Tente novamente.",
+      subtitulo: "Houve uma falha técnica ao validar seu cadastro. Tente mais tarde.",
     },
   }[estado]
 
   const acaoPrincipal =
     estado === "sucesso" ? (
       <Link className="primary-button button--large confirm-email-card__button" href="/usuario">
-        Ir para a página de usuário
+        Indo para a página de usuário...
       </Link>
     ) : (
       <Link className="primary-button button--large confirm-email-card__button" href="/login">
