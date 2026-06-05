@@ -228,7 +228,7 @@ def _montar_link_confirmacao(token: str) -> str:
 
 
 def _montar_link_redefinicao(token: str) -> str:
-    return f"{FRONTEND_BASE_URL}/redefinir-senha?token={token}"
+    return f"{FRONTEND_BASE_URL}/definir-senha?token={token}"
 
 
 def _montar_template_email_acao(

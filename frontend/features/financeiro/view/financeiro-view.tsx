@@ -240,12 +240,78 @@ function resumoProgressoLote(
   return `${processados} ${textosFinanceiro.processed}, ${duplicados} ${textosFinanceiro.duplicated}, ${falhas} ${textosFinanceiro.failed}.`
 }
 
-function formatarAvisoMesesFaltantes(
-  meses: string[],
-  textoModelo: string,
-): string {
-  const lista = meses.join(", ")
-  return textoModelo.replace("{{months}}", lista)
+function extrairCompetenciaMesAno(valor: string): { ano: number; mes: number } | null {
+  const texto = valor.trim()
+  if (!texto) {
+    return null
+  }
+
+  const partes = texto.split(/[\/-]/).map((parte) => parte.trim())
+  if (partes.length !== 2) {
+    return null
+  }
+
+  const primeiro = Number(partes[0])
+  const segundo = Number(partes[1])
+
+  if (partes[0].length === 4) {
+    if (!Number.isInteger(primeiro) || !Number.isInteger(segundo)) {
+      return null
+    }
+    return { ano: primeiro, mes: segundo }
+  }
+
+  if (!Number.isInteger(primeiro) || !Number.isInteger(segundo)) {
+    return null
+  }
+
+  return { ano: segundo, mes: primeiro }
+}
+
+function agruparMesesFaltantesPorAno(meses: string[], idioma: SiteLanguage) {
+  const locale = idioma === "en" ? "en-US" : "pt-BR"
+  const agrupados = new Map<number, Set<number>>()
+
+  for (const item of meses) {
+    const competencia = extrairCompetenciaMesAno(item)
+    if (!competencia || competencia.ano <= 0 || competencia.mes < 1 || competencia.mes > 12) {
+      continue
+    }
+
+    if (!agrupados.has(competencia.ano)) {
+      agrupados.set(competencia.ano, new Set())
+    }
+
+    agrupados.get(competencia.ano)?.add(competencia.mes)
+  }
+
+  return Array.from(agrupados.entries())
+    .sort(([anoA], [anoB]) => anoA - anoB)
+    .map(([ano, mesesDoAno]) => ({
+      ano,
+      meses: Array.from(mesesDoAno)
+        .sort((a, b) => a - b)
+        .map((mes) =>
+          new Intl.DateTimeFormat(locale, { month: "long", timeZone: "UTC" }).format(
+            new Date(Date.UTC(2024, mes - 1, 1)),
+          ),
+        ),
+    }))
+}
+
+function formatarMesesFaltantesPorAno(
+  agrupados: { ano: number; meses: string[] }[],
+  idioma: SiteLanguage,
+) {
+  const formatadorLista = new Intl.ListFormat(idioma === "en" ? "en-US" : "pt-BR", {
+    style: "long",
+    type: "conjunction",
+  })
+
+  return agrupados.map((item) => ({
+    ...item,
+    resumo: `${item.ano}: ${formatadorLista.format(item.meses)}.`,
+  }))
 }
 
 type ProjecaoAposentadoriaSalarial = {
@@ -1070,12 +1136,12 @@ export function FinanceiroView({ modoDemo, dataAposentadoriaPrevista }: Financei
   const totalContrachequesSalvos = listaSegura(contrachequesSalvos).length
   const mensagensErroLote = listaSegura(batchStatus?.failure_messages)
   const mesesFaltantesLote = listaSegura(batchStatus?.missing_competencies)
+  const mesesFaltantesAgrupados = formatarMesesFaltantesPorAno(
+    agruparMesesFaltantesPorAno(mesesFaltantesLote, language),
+    language,
+  )
   const erroPrincipalLote = batchStatus?.last_error_message ?? null
   const possuiEvolucao = Boolean(evolucaoSalarial && serieEvolucao.length > 0)
-  const avisoMesesFaltantes =
-    mesesFaltantesLote.length > 0
-      ? formatarAvisoMesesFaltantes(mesesFaltantesLote, t.missingPaycheckMonthsWarning)
-      : ""
 
   return (
     <section className="analysis-card card">
@@ -1380,13 +1446,6 @@ export function FinanceiroView({ modoDemo, dataAposentadoriaPrevista }: Financei
               </div>
             </div>
 
-            {batchStatus && isBatchTerminalStatus(batchStatus.status) && mesesFaltantesLote.length > 0 ? (
-              <div className="error-box">
-                <p className="error-box__title">{t.missingPaycheckMonthsTitle}</p>
-                <p>{avisoMesesFaltantes}</p>
-              </div>
-            ) : null}
-
             {(batchStatus.duplicated_count ?? batchStatus.duplicated ?? 0) > 0 ? (
               <p className="helper">{t.somePaychecksAlreadyExisted}</p>
             ) : null}
@@ -1618,6 +1677,22 @@ export function FinanceiroView({ modoDemo, dataAposentadoriaPrevista }: Financei
                 )}
               </p>
             </>
+          ) : null}
+
+          {batchStatus && isBatchTerminalStatus(batchStatus.status) && mesesFaltantesAgrupados.length > 0 ? (
+            <details className="finance-missing-months">
+              <summary>{t.missingPaycheckMonthsExpand}</summary>
+              <div className="finance-missing-months__body">
+                <p className="helper">{t.missingPaycheckMonthsNotice}</p>
+                <ul className="finance-missing-months__years">
+                  {mesesFaltantesAgrupados.map((item) => (
+                    <li key={item.ano} className="finance-missing-months__year">
+                      <strong>{item.resumo}</strong>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </details>
           ) : null}
 
         </section>

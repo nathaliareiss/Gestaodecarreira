@@ -1,15 +1,17 @@
 "use client"
 
+import Link from "next/link"
 import type { FormEvent } from "react"
 import { useState } from "react"
 
 import type { UsuarioCadastro } from "../model/usuario.model"
+import type { CadastroErroMensagem } from "../controller/use-usuario-controller"
 import { useLanguage } from "@/shared/i18n/language-provider"
 
 type UsuarioFormViewProps = {
   cadastro: UsuarioCadastro
   carregando: boolean
-  erro: string | null
+  erro: CadastroErroMensagem | null
   mensagem: string | null
   onSubmit: (evento: FormEvent<HTMLFormElement>) => void
   onNomeChange: (valor: string) => void
@@ -176,7 +178,19 @@ export function UsuarioFormView({
       </div>
 
       {mensagem ? <p className="success-box">{mensagem}</p> : null}
-      {erro ? <p className="error-box">{erro}</p> : null}
+      {erro ? (
+        <p className="error-box">
+          <span>{erro.message}</span>
+          {erro.action ? (
+            <>
+              {" "}
+              <Link className="error-box__link" href={erro.action.href}>
+                {erro.action.label}
+              </Link>
+            </>
+          ) : null}
+        </p>
+      ) : null}
     </form>
   )
 }

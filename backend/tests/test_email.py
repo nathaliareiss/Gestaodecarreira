@@ -74,7 +74,7 @@ def test_montar_link_redefinicao_usa_frontend_base_url(monkeypatch) -> None:
     monkeypatch.setattr(email_service, "FRONTEND_BASE_URL", "https://frontend.example.com")
 
     assert email_service._montar_link_redefinicao("token-123") == (
-        "https://frontend.example.com/redefinir-senha?token=token-123"
+        "https://frontend.example.com/definir-senha?token=token-123"
     )
 
 
@@ -113,4 +113,4 @@ def test_enviar_email_recuperacao_monta_template_html(monkeypatch) -> None:
     assert mensagem["Subject"] == "Redefina sua senha no Career Flow"
     assert "Career Flow" in html
     assert "Criar nova senha" in html
-    assert "https://frontend.example.com/redefinir-senha?token=token-456" in html
+    assert "https://frontend.example.com/definir-senha?token=token-456" in html

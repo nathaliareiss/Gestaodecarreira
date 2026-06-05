@@ -14,11 +14,12 @@ type ModoEntradaAuth = "login" | "cadastro"
 
 type AuthEntryControllerProps = {
   modoInicial: ModoEntradaAuth
+  modoLoginInicial?: "login" | "recuperacao"
 }
 
-export function AuthEntryController({ modoInicial }: AuthEntryControllerProps) {
+export function AuthEntryController({ modoInicial, modoLoginInicial = "login" }: AuthEntryControllerProps) {
   const [modo, setModo] = useState<ModoEntradaAuth>(modoInicial)
-  const login = useLoginController()
+  const login = useLoginController({ modoInicial: modoLoginInicial })
   const cadastro = useUsuarioController()
 
   useEffect(() => {

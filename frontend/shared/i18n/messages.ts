@@ -62,6 +62,8 @@ export type LocaleTexts = {
     requiredFields: string
     passwordMinLength: string
     emailAlreadyRegistered: string
+    emailAlreadyRegisteredPrefix: string
+    emailAlreadyRegisteredLink: string
     loginAlreadyRegistered: string
     successMessage: string
     unexpectedSave: string
@@ -171,6 +173,8 @@ export type LocaleTexts = {
     total: string
     somePaychecksAlreadyExisted: string
     workerKeptGoingAfterFailures: string
+    missingPaycheckMonthsNotice: string
+    missingPaycheckMonthsExpand: string
     primaryIssue: string
     primaryIssueNotAvailable: string
     clearPaychecksButton: string
@@ -337,6 +341,8 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       requiredFields: "Preencha nome, e-mail, data de exercício, login e senha.",
       passwordMinLength: "A senha precisa ter pelo menos 6 caracteres.",
       emailAlreadyRegistered: "Este email já está cadastrado.",
+      emailAlreadyRegisteredPrefix: "E-mail já cadastrado. Esqueceu a senha?",
+      emailAlreadyRegisteredLink: "Redefina aqui.",
       loginAlreadyRegistered: "Este login já está cadastrado.",
       successMessage: "Cadastro concluído com sucesso. Agora você pode entrar com seu login.",
       unexpectedSave: "Não foi possível criar a conta agora. Tente novamente.",
@@ -451,9 +457,8 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       total: "Total",
       somePaychecksAlreadyExisted: "Alguns contracheques já existiam e foram ignorados.",
       workerKeptGoingAfterFailures: "O processamento continuou mesmo após falhas, então o lote ainda pode terminar com resultados parciais.",
-      missingPaycheckMonthsTitle: "Folhas faltantes",
-      missingPaycheckMonthsWarning:
-        "Houve um erro ao captar as folhas dos meses {{months}}. Envie manualmente ou veja a análise sem esses meses.",
+      missingPaycheckMonthsNotice: "Alguns meses não foram encontrados nos contracheques enviados.",
+      missingPaycheckMonthsExpand: "Ver meses faltantes",
       primaryIssue: "Problema principal",
       primaryIssueNotAvailable: "Problema principal indisponível.",
       clearPaychecksButton: "Limpar PDFs",
@@ -620,6 +625,8 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       requiredFields: "Fill in name, email, start date, login, and password.",
       passwordMinLength: "The password must be at least 6 characters long.",
       emailAlreadyRegistered: "This email is already registered.",
+      emailAlreadyRegisteredPrefix: "Email already registered. Forgot your password?",
+      emailAlreadyRegisteredLink: "Reset it here.",
       loginAlreadyRegistered: "This login is already registered.",
       successMessage: "Registration completed successfully. You can now sign in with your login.",
       unexpectedSave: "We could not create the account right now. Please try again.",
@@ -734,9 +741,8 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       total: "Total",
       somePaychecksAlreadyExisted: "Some paychecks already existed and were ignored.",
       workerKeptGoingAfterFailures: "Processing continued after failures, so the batch can still finish with partial results.",
-      missingPaycheckMonthsTitle: "Missing pay stubs",
-      missingPaycheckMonthsWarning:
-        "There was an issue capturing the sheets for these months: {{months}}. Please upload them manually or review the analysis without those months.",
+      missingPaycheckMonthsNotice: "Some months were not found in the uploaded pay stubs.",
+      missingPaycheckMonthsExpand: "See missing months",
       primaryIssue: "Primary issue",
       primaryIssueNotAvailable: "Primary issue not available.",
       clearPaychecksButton: "Clear PDFs",

@@ -22,11 +22,15 @@ import { useLanguage } from "@/shared/i18n/language-provider"
 
 type ModoAutenticacao = "login" | "recuperacao"
 
-export function useLoginController() {
+type UseLoginControllerOptions = {
+  modoInicial?: ModoAutenticacao
+}
+
+export function useLoginController({ modoInicial = "login" }: UseLoginControllerOptions = {}) {
   const router = useRouter()
   const { texts } = useLanguage()
   const authTexts = texts.authCard
-  const [modo, setModo] = useState<ModoAutenticacao>("login")
+  const [modo, setModo] = useState<ModoAutenticacao>(modoInicial)
   const [dados, setDados] = useState<UsuarioLogin>(USUARIO_LOGIN_INICIAL)
   const [recuperacao, setRecuperacao] = useState<UsuarioSolicitacaoRecuperacaoSenha>(
     USUARIO_SOLICITACAO_RECUPERACAO_SENHA_INICIAL,

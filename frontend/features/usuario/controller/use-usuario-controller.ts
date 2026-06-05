@@ -12,6 +12,16 @@ import { salvarSessaoDemo } from "@/shared/auth/session"
 import { ApiResponseError } from "@/shared/api/client"
 import { useLanguage } from "@/shared/i18n/language-provider"
 
+type CadastroErroAcao = {
+  label: string
+  href: string
+}
+
+export type CadastroErroMensagem = {
+  message: string
+  action?: CadastroErroAcao
+}
+
 export function useUsuarioController() {
   const router = useRouter()
   const { texts } = useLanguage()
@@ -19,7 +29,7 @@ export function useUsuarioController() {
   const [cadastro, setCadastro] = useState<UsuarioCadastro>(USUARIO_CADASTRO_INICIAL)
   const [carregando, setCarregando] = useState(false)
   const [entrandoDemo, setEntrandoDemo] = useState(false)
-  const [erro, setErro] = useState<string | null>(null)
+  const [erro, setErro] = useState<CadastroErroMensagem | null>(null)
   const [mensagem, setMensagem] = useState<string | null>(null)
 
   function atualizarCampo<Chave extends keyof UsuarioCadastro>(
@@ -67,7 +77,7 @@ export function useUsuarioController() {
 
     const erroValidacao = validarCadastro()
     if (erroValidacao) {
-      setErro(erroValidacao)
+      setErro({ message: erroValidacao })
       return
     }
 
@@ -89,14 +99,20 @@ export function useUsuarioController() {
       if (error instanceof ApiResponseError && error.status === 409) {
         const mensagemErro = error.message.toLowerCase()
         if (mensagemErro.includes("login")) {
-          setErro(registerTexts.loginAlreadyRegistered)
+          setErro({ message: registerTexts.loginAlreadyRegistered })
         } else if (mensagemErro.includes("email")) {
-          setErro(registerTexts.emailAlreadyRegistered)
+          setErro({
+            message: registerTexts.emailAlreadyRegisteredPrefix,
+            action: {
+              label: registerTexts.emailAlreadyRegisteredLink,
+              href: "/login?modo=recuperacao",
+            },
+          })
         } else {
-          setErro(registerTexts.unexpectedSave)
+          setErro({ message: registerTexts.unexpectedSave })
         }
       } else {
-        setErro(registerTexts.unexpectedSave)
+        setErro({ message: registerTexts.unexpectedSave })
       }
     } finally {
       setCarregando(false)

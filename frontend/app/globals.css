@@ -959,6 +959,21 @@ html[data-theme="light"] .ghost-button {
   font-weight: 600;
 }
 
+.error-box__link {
+  color: #ffffff;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
+.error-box__link:hover {
+  color: var(--accent);
+}
+
+html[data-theme="light"] .error-box__link {
+  color: #0f766e;
+}
+
 .error-list {
   margin: 0;
   padding-left: 1.2rem;
@@ -2190,6 +2205,56 @@ html[data-theme="light"] .salary-base-chart__bar-track {
   margin: 0;
   line-height: 1.7;
   font-size: 0.95rem;
+}
+
+.finance-missing-months {
+  margin-top: 1rem;
+  padding: 0.9rem 1rem;
+  border-radius: 18px;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  background: rgba(8, 16, 30, 0.26);
+}
+
+.finance-missing-months > summary {
+  list-style: none;
+  cursor: pointer;
+  color: var(--accent);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.finance-missing-months > summary::-webkit-details-marker {
+  display: none;
+}
+
+.finance-missing-months__body {
+  display: grid;
+  gap: 0.75rem;
+  padding-top: 0.85rem;
+}
+
+.finance-missing-months__years {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.finance-missing-months__year {
+  padding: 0.7rem 0.85rem;
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.finance-missing-months__year strong {
+  display: block;
+  line-height: 1.6;
+}
+
+html[data-theme="light"] .finance-missing-months {
+  background: rgba(255, 255, 255, 0.78);
 }
 
 .composition-grid {
