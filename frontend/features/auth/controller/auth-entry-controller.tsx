@@ -64,6 +64,9 @@ export function AuthEntryController({ modoInicial, modoLoginInicial = "login" }:
               onDataExercicioChange={(valor) => cadastro.atualizarCampo("data_exercicio", valor)}
               onLoginChange={(valor) => cadastro.atualizarCampo("login", valor)}
               onSenhaChange={(valor) => cadastro.atualizarCampo("senha", valor)}
+              onAceitePoliticaPrivacidadeChange={(valor) =>
+                cadastro.atualizarCampo("aceite_politica_privacidade", valor)
+              }
             />
           ) : (
             <LoginCardView

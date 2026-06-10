@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { useRouter } from "next/navigation"
 import type { FormEvent } from "react"
 import { useState } from "react"
@@ -20,6 +21,7 @@ type UsuarioFormViewProps = {
   onDataExercicioChange: (valor: string) => void
   onLoginChange: (valor: string) => void
   onSenhaChange: (valor: string) => void
+  onAceitePoliticaPrivacidadeChange: (valor: boolean) => void
 }
 
 export function UsuarioFormView({
@@ -34,6 +36,7 @@ export function UsuarioFormView({
   onDataExercicioChange,
   onLoginChange,
   onSenhaChange,
+  onAceitePoliticaPrivacidadeChange,
 }: UsuarioFormViewProps) {
   const router = useRouter()
   const { texts } = useLanguage()
@@ -176,6 +179,22 @@ export function UsuarioFormView({
           </div>
         </label>
       </div>
+
+      <label className="checkbox-row checkbox-row--consent">
+        <input
+          type="checkbox"
+          checked={cadastro.aceite_politica_privacidade}
+          onChange={(evento) => onAceitePoliticaPrivacidadeChange(evento.target.checked)}
+          required
+        />
+        <span className="checkbox-row__copy">
+          {texts.registerForm.privacyConsentPrefix}{" "}
+          <Link className="inline-link" href="/politica-de-privacidade" target="_blank" rel="noreferrer">
+            {texts.registerForm.privacyPolicyLinkLabel}
+          </Link>
+          {texts.registerForm.privacyConsentSuffix}
+        </span>
+      </label>
 
       <div className="actions">
         <button className="primary-button button--large" type="submit" disabled={carregando}>

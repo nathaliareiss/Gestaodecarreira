@@ -69,6 +69,10 @@ export function useUsuarioController() {
       return registerTexts.passwordMinLength
     }
 
+    if (!cadastro.aceite_politica_privacidade) {
+      return registerTexts.privacyConsentRequired
+    }
+
     return null
   }
 
@@ -93,6 +97,7 @@ export function useUsuarioController() {
         data_exercicio: cadastro.data_exercicio,
         login: cadastro.login.trim(),
         senha: cadastro.senha,
+        aceite_politica_privacidade: cadastro.aceite_politica_privacidade,
       })
       setMensagem(registerTexts.successMessage)
     } catch (error) {

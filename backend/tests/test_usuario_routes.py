@@ -53,6 +53,7 @@ def test_criar_usuario_novo_retorna_201(monkeypatch) -> None:
             "data_exercicio": "2020-01-01",
             "login": "novo.login",
             "senha": "senha-segura",
+            "aceite_politica_privacidade": True,
         },
     )
 
@@ -79,6 +80,7 @@ def test_criar_usuario_email_duplicado_retorna_409(monkeypatch) -> None:
             "data_exercicio": "2020-01-01",
             "login": "novo.login",
             "senha": "senha-segura",
+            "aceite_politica_privacidade": True,
         },
     )
 
@@ -102,6 +104,7 @@ def test_criar_usuario_falha_tecnica_retorna_503(monkeypatch) -> None:
             "data_exercicio": "2020-01-01",
             "login": "novo.login",
             "senha": "senha-segura",
+            "aceite_politica_privacidade": True,
         },
     )
 
@@ -109,3 +112,21 @@ def test_criar_usuario_falha_tecnica_retorna_503(monkeypatch) -> None:
     assert resposta.json() == {
         "detail": "Nao foi possivel concluir o cadastro agora. Tente novamente mais tarde."
     }
+
+
+def test_criar_usuario_sem_aceite_da_politica_retorna_422() -> None:
+    client = criar_client()
+    resposta = client.post(
+        "/usuarios",
+        json={
+            "nome": "Maria Silva",
+            "apelido": "Maria",
+            "email": "novo@example.com",
+            "data_exercicio": "2020-01-01",
+            "login": "novo.login",
+            "senha": "senha-segura",
+            "aceite_politica_privacidade": False,
+        },
+    )
+
+    assert resposta.status_code == 422

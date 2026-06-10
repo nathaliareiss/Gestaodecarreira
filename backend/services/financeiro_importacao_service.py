@@ -6,6 +6,7 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy.orm import Session
 
 from backend.database.models import FinanceiroImportacaoTemporaria, Usuario
+from backend.database.database import ativar_acesso_backend
 from backend.logger import logger
 from backend.repositories.financeiro_repository import (
     criar_importacao_temporaria_financeira as criar_registro_importacao_temporaria_financeira,
@@ -56,6 +57,7 @@ def validar_importacao_temporaria_financeira(
     db: Session,
     token: str,
 ) -> FinanceiroImportacaoTemporaria:
+    ativar_acesso_backend(db)
     importacao = obter_importacao_temporaria_ativa_por_token_hash(db, _hash_token(token))
     if importacao is None or importacao.scope != SCOPE_IMPORTACAO_FINANCEIRA:
         raise ValueError("Token temporario invalido ou expirado.")
@@ -67,5 +69,6 @@ def usar_importacao_temporaria_financeira(
     db: Session,
     token: str,
 ) -> FinanceiroImportacaoTemporaria:
+    ativar_acesso_backend(db)
     importacao = validar_importacao_temporaria_financeira(db, token)
     return marcar_importacao_temporaria_como_usada(db, importacao)

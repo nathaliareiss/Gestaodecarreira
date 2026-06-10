@@ -6,7 +6,11 @@ from fastapi import Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from backend.logger import logger
-from backend.database.database import get_db
+from backend.database.database import (
+    ativar_acesso_backend,
+    ativar_contexto_usuario,
+    get_db,
+)
 from backend.database.models import Usuario
 from backend.repositories.usuario_repository import (
     atualizar_usuario,
@@ -34,6 +38,7 @@ def _hash_token(valor: str) -> str:
 
 
 def autenticar_usuario(db: Session, dados: UsuarioLoginRequest) -> tuple[Usuario, str]:
+    ativar_acesso_backend(db)
     identificador = dados.login.strip()
     senha = dados.senha
     logger.info("Processando autenticacao", extra={"identificador": identificador})
@@ -96,6 +101,7 @@ def obter_usuario_autenticado_por_token(
     db: Session,
     token: str,
 ) -> Usuario | None:
+    ativar_acesso_backend(db)
     return obter_usuario_por_sessao_token_hash(db, _hash_token(token))
 
 
@@ -107,10 +113,12 @@ def obter_usuario_autenticado(
     usuario = obter_usuario_autenticado_por_token(db, token)
     if usuario is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Sessao expirada.")
+    ativar_contexto_usuario(db, usuario.id)
     return usuario
 
 
 def encerrar_sessao_usuario(db: Session, token: str) -> None:
+    ativar_acesso_backend(db)
     usuario = obter_usuario_autenticado_por_token(db, token)
     if usuario is None:
         logger.warning("Encerramento de sessao ignorado porque o token nao foi encontrado")
@@ -129,6 +137,7 @@ def confirmar_email_usuario(
     db: Session,
     dados: UsuarioConfirmarRequest,
 ) -> Usuario:
+    ativar_acesso_backend(db)
     usuario = obter_usuario_por_token(db, dados.token)
     if usuario is None:
         raise ValueError("Token de confirmacao invalido ou expirado.")
@@ -148,6 +157,7 @@ def solicitar_recuperacao_senha(
     db: Session,
     dados: UsuarioSolicitarRecuperacaoSenhaRequest,
 ) -> tuple[Usuario, str]:
+    ativar_acesso_backend(db)
     email = dados.email.strip().lower()
     logger.info("Processando recuperacao de senha", extra={"email": email})
     usuario = obter_usuario_por_email(db, email)
@@ -175,6 +185,7 @@ def reenviar_confirmacao_email(
     db: Session,
     dados: UsuarioReenviarConfirmacaoRequest,
 ) -> tuple[Usuario, str]:
+    ativar_acesso_backend(db)
     identificador = dados.identificador.strip()
     logger.info("Processando reenvio de confirmacao")
 
@@ -204,6 +215,7 @@ def redefinir_senha_usuario(
     db: Session,
     dados: UsuarioRedefinirSenhaRequest,
 ) -> Usuario:
+    ativar_acesso_backend(db)
     usuario = obter_usuario_por_redefinir_senha_token_hash(db, _hash_token(dados.token))
     if usuario is None:
         raise ValueError("Token de redefinicao invalido ou expirado.")

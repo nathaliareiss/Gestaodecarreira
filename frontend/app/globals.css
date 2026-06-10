@@ -832,11 +832,31 @@ html[data-theme="light"] .ghost-button {
   color: var(--text);
 }
 
+.checkbox-row--consent {
+  align-items: start;
+}
+
 .checkbox-row input {
   width: 1rem;
   height: 1rem;
   margin: 0;
   accent-color: var(--accent);
+}
+
+.checkbox-row__copy {
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.inline-link {
+  color: var(--accent);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
+.inline-link:hover {
+  color: #9ef7e8;
 }
 
 .actions {
@@ -2799,6 +2819,31 @@ html[data-language="en"] .language-toggle__dot {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1.25rem;
+  margin-top: 1.25rem;
+}
+
+.privacy-page {
+  padding-top: 5rem;
+}
+
+.privacy-page__hero {
+  border-radius: 28px;
+}
+
+.privacy-page__hero h1 {
+  max-width: none;
+  font-size: clamp(2.2rem, 4vw, 3.6rem);
+}
+
+.hero-text--privacy {
+  max-width: 58ch;
+}
+
+.hero-links--privacy {
+  margin-top: 0.5rem;
+}
+
+.privacy-page__grid {
   margin-top: 1.25rem;
 }
 

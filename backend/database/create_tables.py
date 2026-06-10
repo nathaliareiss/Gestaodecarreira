@@ -1,42 +1,98 @@
 from sqlalchemy import text
 
+from backend.config import SUPABASE_STORAGE_BUCKET
 from backend.database.database import Base, engine
 from backend.database import models as database_models  # noqa: F401
 from backend.logger import logger
 
 
 def habilitar_rls_tabelas_publicas() -> None:
+    current_user_id_sql = "NULLIF(current_setting('app.current_user_id', true), '')::INTEGER"
     comandos = [
         "ALTER TABLE IF EXISTS public.usuarios ENABLE ROW LEVEL SECURITY",
+        "ALTER TABLE IF EXISTS public.usuarios FORCE ROW LEVEL SECURITY",
         "ALTER TABLE IF EXISTS public.historicos_funcionais ENABLE ROW LEVEL SECURITY",
+        "ALTER TABLE IF EXISTS public.historicos_funcionais FORCE ROW LEVEL SECURITY",
         "ALTER TABLE IF EXISTS public.payroll_batches ENABLE ROW LEVEL SECURITY",
+        "ALTER TABLE IF EXISTS public.payroll_batches FORCE ROW LEVEL SECURITY",
         "ALTER TABLE IF EXISTS public.financeiro_importacoes_temporarias ENABLE ROW LEVEL SECURITY",
+        "ALTER TABLE IF EXISTS public.financeiro_importacoes_temporarias FORCE ROW LEVEL SECURITY",
         "ALTER TABLE IF EXISTS public.paychecks ENABLE ROW LEVEL SECURITY",
+        "ALTER TABLE IF EXISTS public.paychecks FORCE ROW LEVEL SECURITY",
         "ALTER TABLE IF EXISTS public.paycheck_items ENABLE ROW LEVEL SECURITY",
+        "ALTER TABLE IF EXISTS public.paycheck_items FORCE ROW LEVEL SECURITY",
+        "ALTER TABLE IF EXISTS public.support_document_access_grants ENABLE ROW LEVEL SECURITY",
+        "ALTER TABLE IF EXISTS public.support_document_access_grants FORCE ROW LEVEL SECURITY",
         "DROP POLICY IF EXISTS usuarios_backend_access ON public.usuarios",
+        "DROP POLICY IF EXISTS usuarios_self_access ON public.usuarios",
+        "DROP POLICY IF EXISTS usuarios_self_update ON public.usuarios",
+        "DROP POLICY IF EXISTS usuarios_self_delete ON public.usuarios",
         "CREATE POLICY usuarios_backend_access ON public.usuarios FOR ALL TO PUBLIC "
         "USING (current_setting('app.backend_access', true) = 'on') "
         "WITH CHECK (current_setting('app.backend_access', true) = 'on')",
+        f"CREATE POLICY usuarios_self_access ON public.usuarios FOR SELECT TO PUBLIC "
+        f"USING (id = {current_user_id_sql})",
+        f"CREATE POLICY usuarios_self_update ON public.usuarios FOR UPDATE TO PUBLIC "
+        f"USING (id = {current_user_id_sql}) "
+        f"WITH CHECK (id = {current_user_id_sql})",
+        f"CREATE POLICY usuarios_self_delete ON public.usuarios FOR DELETE TO PUBLIC "
+        f"USING (id = {current_user_id_sql})",
         "DROP POLICY IF EXISTS historicos_funcionais_backend_access ON public.historicos_funcionais",
-        "CREATE POLICY historicos_funcionais_backend_access ON public.historicos_funcionais FOR ALL TO PUBLIC "
-        "USING (current_setting('app.backend_access', true) = 'on') "
-        "WITH CHECK (current_setting('app.backend_access', true) = 'on')",
+        "DROP POLICY IF EXISTS historicos_funcionais_user_access ON public.historicos_funcionais",
+        f"CREATE POLICY historicos_funcionais_backend_access ON public.historicos_funcionais FOR ALL TO PUBLIC "
+        f"USING (current_setting('app.backend_access', true) = 'on') "
+        f"WITH CHECK (current_setting('app.backend_access', true) = 'on')",
+        f"CREATE POLICY historicos_funcionais_user_access ON public.historicos_funcionais FOR ALL TO PUBLIC "
+        f"USING (usuario_id = {current_user_id_sql}) "
+        f"WITH CHECK (usuario_id = {current_user_id_sql})",
         "DROP POLICY IF EXISTS payroll_batches_backend_access ON public.payroll_batches",
-        "CREATE POLICY payroll_batches_backend_access ON public.payroll_batches FOR ALL TO PUBLIC "
-        "USING (current_setting('app.backend_access', true) = 'on') "
-        "WITH CHECK (current_setting('app.backend_access', true) = 'on')",
+        "DROP POLICY IF EXISTS payroll_batches_user_access ON public.payroll_batches",
+        f"CREATE POLICY payroll_batches_backend_access ON public.payroll_batches FOR ALL TO PUBLIC "
+        f"USING (current_setting('app.backend_access', true) = 'on') "
+        f"WITH CHECK (current_setting('app.backend_access', true) = 'on')",
+        f"CREATE POLICY payroll_batches_user_access ON public.payroll_batches FOR ALL TO PUBLIC "
+        f"USING (user_id = {current_user_id_sql}) "
+        f"WITH CHECK (user_id = {current_user_id_sql})",
         "DROP POLICY IF EXISTS financeiro_importacoes_temporarias_backend_access ON public.financeiro_importacoes_temporarias",
-        "CREATE POLICY financeiro_importacoes_temporarias_backend_access ON public.financeiro_importacoes_temporarias FOR ALL TO PUBLIC "
-        "USING (current_setting('app.backend_access', true) = 'on') "
-        "WITH CHECK (current_setting('app.backend_access', true) = 'on')",
+        "DROP POLICY IF EXISTS financeiro_importacoes_temporarias_user_access ON public.financeiro_importacoes_temporarias",
+        f"CREATE POLICY financeiro_importacoes_temporarias_backend_access ON public.financeiro_importacoes_temporarias FOR ALL TO PUBLIC "
+        f"USING (current_setting('app.backend_access', true) = 'on') "
+        f"WITH CHECK (current_setting('app.backend_access', true) = 'on')",
+        f"CREATE POLICY financeiro_importacoes_temporarias_user_access ON public.financeiro_importacoes_temporarias FOR ALL TO PUBLIC "
+        f"USING (user_id = {current_user_id_sql}) "
+        f"WITH CHECK (user_id = {current_user_id_sql})",
         "DROP POLICY IF EXISTS paychecks_backend_access ON public.paychecks",
-        "CREATE POLICY paychecks_backend_access ON public.paychecks FOR ALL TO PUBLIC "
-        "USING (current_setting('app.backend_access', true) = 'on') "
-        "WITH CHECK (current_setting('app.backend_access', true) = 'on')",
+        "DROP POLICY IF EXISTS paychecks_user_access ON public.paychecks",
+        f"CREATE POLICY paychecks_backend_access ON public.paychecks FOR ALL TO PUBLIC "
+        f"USING (current_setting('app.backend_access', true) = 'on') "
+        f"WITH CHECK (current_setting('app.backend_access', true) = 'on')",
+        f"CREATE POLICY paychecks_user_access ON public.paychecks FOR ALL TO PUBLIC "
+        f"USING (user_id = {current_user_id_sql}) "
+        f"WITH CHECK (user_id = {current_user_id_sql})",
         "DROP POLICY IF EXISTS paycheck_items_backend_access ON public.paycheck_items",
-        "CREATE POLICY paycheck_items_backend_access ON public.paycheck_items FOR ALL TO PUBLIC "
-        "USING (current_setting('app.backend_access', true) = 'on') "
-        "WITH CHECK (current_setting('app.backend_access', true) = 'on')",
+        "DROP POLICY IF EXISTS paycheck_items_user_access ON public.paycheck_items",
+        f"CREATE POLICY paycheck_items_backend_access ON public.paycheck_items FOR ALL TO PUBLIC "
+        f"USING (current_setting('app.backend_access', true) = 'on') "
+        f"WITH CHECK (current_setting('app.backend_access', true) = 'on')",
+        f"CREATE POLICY paycheck_items_user_access ON public.paycheck_items FOR ALL TO PUBLIC "
+        f"USING (EXISTS ("
+        f"SELECT 1 FROM public.paychecks "
+        f"WHERE public.paychecks.id = public.paycheck_items.paycheck_id "
+        f"AND public.paychecks.user_id = {current_user_id_sql}"
+        f")) "
+        f"WITH CHECK (EXISTS ("
+        f"SELECT 1 FROM public.paychecks "
+        f"WHERE public.paychecks.id = public.paycheck_items.paycheck_id "
+        f"AND public.paychecks.user_id = {current_user_id_sql}"
+        f"))",
+        "DROP POLICY IF EXISTS support_document_access_grants_backend_access ON public.support_document_access_grants",
+        "DROP POLICY IF EXISTS support_document_access_grants_user_access ON public.support_document_access_grants",
+        f"CREATE POLICY support_document_access_grants_backend_access ON public.support_document_access_grants FOR ALL TO PUBLIC "
+        f"USING (current_setting('app.backend_access', true) = 'on') "
+        f"WITH CHECK (current_setting('app.backend_access', true) = 'on')",
+        f"CREATE POLICY support_document_access_grants_user_access ON public.support_document_access_grants FOR ALL TO PUBLIC "
+        f"USING (user_id = {current_user_id_sql}) "
+        f"WITH CHECK (user_id = {current_user_id_sql})",
     ]
 
     try:
@@ -46,7 +102,58 @@ def habilitar_rls_tabelas_publicas() -> None:
     except Exception:
         logger.exception(
             "Falha ao habilitar RLS nas tabelas publicas",
-            extra={"tabelas": ["usuarios", "historicos_funcionais"]},
+            extra={"tabelas": ["usuarios", "historicos_funcionais", "financeiro"]},
+        )
+
+    bucket = SUPABASE_STORAGE_BUCKET.replace("'", "''")
+    comandos_storage = [
+        f"""
+        DO $$
+        BEGIN
+            IF EXISTS (
+                SELECT 1
+                FROM information_schema.tables
+                WHERE table_schema = 'storage' AND table_name = 'buckets'
+            ) THEN
+                UPDATE storage.buckets
+                SET public = FALSE
+                WHERE id = '{bucket}';
+            END IF;
+        END $$;
+        """,
+        "ALTER TABLE IF EXISTS storage.objects ENABLE ROW LEVEL SECURITY",
+        "ALTER TABLE IF EXISTS storage.objects FORCE ROW LEVEL SECURITY",
+        f"""
+        DO $$
+        BEGIN
+            IF EXISTS (
+                SELECT 1
+                FROM information_schema.tables
+                WHERE table_schema = 'storage' AND table_name = 'objects'
+            ) THEN
+                DROP POLICY IF EXISTS gestaocarreira_backend_objects_access ON storage.objects;
+                CREATE POLICY gestaocarreira_backend_objects_access ON storage.objects FOR ALL TO PUBLIC
+                USING (
+                    bucket_id = '{bucket}'
+                    AND current_setting('app.backend_access', true) = 'on'
+                )
+                WITH CHECK (
+                    bucket_id = '{bucket}'
+                    AND current_setting('app.backend_access', true) = 'on'
+                );
+            END IF;
+        END $$;
+        """,
+    ]
+
+    try:
+        with engine.begin() as conexao:
+            for comando in comandos_storage:
+                conexao.execute(text(comando))
+    except Exception:
+        logger.exception(
+            "Falha ao restringir bucket do Supabase Storage",
+            extra={"bucket": SUPABASE_STORAGE_BUCKET},
         )
 
 
@@ -62,6 +169,8 @@ def sincronizar_usuario_table() -> None:
         "ALTER TABLE IF EXISTS usuarios ADD COLUMN IF NOT EXISTS sessao_expira_em TIMESTAMP WITH TIME ZONE",
         "ALTER TABLE IF EXISTS usuarios ADD COLUMN IF NOT EXISTS redefinir_senha_token_hash VARCHAR",
         "ALTER TABLE IF EXISTS usuarios ADD COLUMN IF NOT EXISTS redefinir_senha_expira_em TIMESTAMP WITH TIME ZONE",
+        "ALTER TABLE IF EXISTS usuarios ADD COLUMN IF NOT EXISTS politica_privacidade_aceita_em TIMESTAMP WITH TIME ZONE",
+        "ALTER TABLE IF EXISTS usuarios ADD COLUMN IF NOT EXISTS politica_privacidade_versao VARCHAR",
         "ALTER TABLE IF EXISTS usuarios ADD COLUMN IF NOT EXISTS criado_em TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()",
         "ALTER TABLE IF EXISTS usuarios ADD COLUMN IF NOT EXISTS confirmado_em TIMESTAMP WITH TIME ZONE",
         "ALTER TABLE IF EXISTS payroll_batches ADD COLUMN IF NOT EXISTS last_error_message VARCHAR NOT NULL DEFAULT ''",
@@ -76,6 +185,13 @@ def sincronizar_usuario_table() -> None:
         "ALTER TABLE IF EXISTS financeiro_importacoes_temporarias ADD COLUMN IF NOT EXISTS expires_at TIMESTAMP WITH TIME ZONE",
         "ALTER TABLE IF EXISTS financeiro_importacoes_temporarias ADD COLUMN IF NOT EXISTS used_at TIMESTAMP WITH TIME ZONE",
         "ALTER TABLE IF EXISTS financeiro_importacoes_temporarias ADD COLUMN IF NOT EXISTS created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()",
+        "ALTER TABLE IF EXISTS support_document_access_grants ADD COLUMN IF NOT EXISTS document_kind VARCHAR NOT NULL DEFAULT 'unknown'",
+        "ALTER TABLE IF EXISTS support_document_access_grants ADD COLUMN IF NOT EXISTS document_storage_path VARCHAR",
+        "ALTER TABLE IF EXISTS support_document_access_grants ADD COLUMN IF NOT EXISTS reason TEXT",
+        "ALTER TABLE IF EXISTS support_document_access_grants ADD COLUMN IF NOT EXISTS granted_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()",
+        "ALTER TABLE IF EXISTS support_document_access_grants ADD COLUMN IF NOT EXISTS expires_at TIMESTAMP WITH TIME ZONE",
+        "ALTER TABLE IF EXISTS support_document_access_grants ADD COLUMN IF NOT EXISTS revoked_at TIMESTAMP WITH TIME ZONE",
+        "ALTER TABLE IF EXISTS support_document_access_grants ADD COLUMN IF NOT EXISTS created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()",
         "UPDATE financeiro_importacoes_temporarias SET scope = COALESCE(scope, 'financeiro_importacao') WHERE scope IS NULL",
         "ALTER TABLE IF EXISTS paycheck_items ADD COLUMN IF NOT EXISTS categoria_normalizada VARCHAR NOT NULL DEFAULT 'outros_vantagens'",
         "ALTER TABLE IF EXISTS paycheck_items ADD COLUMN IF NOT EXISTS descricao_original VARCHAR NOT NULL DEFAULT ''",
@@ -106,6 +222,8 @@ def sincronizar_usuario_table() -> None:
             "CREATE INDEX IF NOT EXISTS ix_financeiro_importacoes_temporarias_expires_at ON financeiro_importacoes_temporarias (expires_at)",
             "CREATE INDEX IF NOT EXISTS ix_paychecks_user_id_file_hash ON paychecks (user_id, file_hash)",
             "CREATE INDEX IF NOT EXISTS ix_paychecks_user_id_ano_mes_matricula ON paychecks (user_id, ano, mes, matricula)",
+            "CREATE INDEX IF NOT EXISTS ix_support_document_access_grants_user_id_created_at ON support_document_access_grants (user_id, created_at DESC, id DESC)",
+            "CREATE INDEX IF NOT EXISTS ix_support_document_access_grants_expires_at ON support_document_access_grants (expires_at)",
         ]
     )
 

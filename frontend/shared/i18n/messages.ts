@@ -61,6 +61,10 @@ export type LocaleTexts = {
     afterRegistration: string
     requiredFields: string
     passwordMinLength: string
+    privacyConsentPrefix: string
+    privacyPolicyLinkLabel: string
+    privacyConsentSuffix: string
+    privacyConsentRequired: string
     emailAlreadyRegistered: string
     emailAlreadyRegisteredPrefix: string
     emailAlreadyRegisteredLink: string
@@ -340,6 +344,11 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       afterRegistration: "Depois do cadastro, você receberá um e-mail para confirmar o acesso.",
       requiredFields: "Preencha nome, e-mail, data de exercício, login e senha.",
       passwordMinLength: "A senha precisa ter pelo menos 6 caracteres.",
+      privacyConsentPrefix: "Li e concordo com a",
+      privacyPolicyLinkLabel: "Política de Privacidade",
+      privacyConsentSuffix:
+        " e autorizo o tratamento dos meus dados para geração das análises disponibilizadas pela plataforma.",
+      privacyConsentRequired: "Você precisa aceitar a Política de Privacidade para concluir o cadastro.",
       emailAlreadyRegistered: "Este email já está cadastrado.",
       emailAlreadyRegisteredPrefix: "E-mail já cadastrado. Esqueceu a senha?",
       emailAlreadyRegisteredLink: "Redefina aqui.",
@@ -624,6 +633,11 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       afterRegistration: "After registration, you will receive an email to confirm access.",
       requiredFields: "Fill in name, email, start date, login, and password.",
       passwordMinLength: "The password must be at least 6 characters long.",
+      privacyConsentPrefix: "I have read and agree to the",
+      privacyPolicyLinkLabel: "Privacy Policy",
+      privacyConsentSuffix:
+        " and authorize the processing of my data to generate the analyses provided by the platform.",
+      privacyConsentRequired: "You must accept the Privacy Policy to complete registration.",
       emailAlreadyRegistered: "This email is already registered.",
       emailAlreadyRegisteredPrefix: "Email already registered. Forgot your password?",
       emailAlreadyRegisteredLink: "Reset it here.",

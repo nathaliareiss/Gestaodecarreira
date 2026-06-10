@@ -21,6 +21,7 @@ type UsuarioPageViewProps = {
   onDataExercicioChange: (valor: string) => void
   onLoginChange: (valor: string) => void
   onSenhaChange: (valor: string) => void
+  onAceitePoliticaPrivacidadeChange: (valor: boolean) => void
 }
 
 export function UsuarioPageView({
@@ -38,6 +39,7 @@ export function UsuarioPageView({
   onDataExercicioChange,
   onLoginChange,
   onSenhaChange,
+  onAceitePoliticaPrivacidadeChange,
 }: UsuarioPageViewProps) {
   return (
     <main className="page-shell">
@@ -64,6 +66,7 @@ export function UsuarioPageView({
             onDataExercicioChange={onDataExercicioChange}
             onLoginChange={onLoginChange}
             onSenhaChange={onSenhaChange}
+            onAceitePoliticaPrivacidadeChange={onAceitePoliticaPrivacidadeChange}
           />
         </div>
       </section>

@@ -5,6 +5,7 @@ export type UsuarioCadastro = {
   data_exercicio: string
   login: string
   senha: string
+  aceite_politica_privacidade: boolean
 }
 
 export type UsuarioConta = {
@@ -27,4 +28,5 @@ export const USUARIO_CADASTRO_INICIAL: UsuarioCadastro = {
   data_exercicio: "",
   login: "",
   senha: "",
+  aceite_politica_privacidade: false,
 }

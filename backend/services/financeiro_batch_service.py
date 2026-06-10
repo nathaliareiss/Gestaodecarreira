@@ -12,7 +12,7 @@ from statistics import median
 
 from sqlalchemy.orm import Session
 
-from backend.database.database import SessionLocal
+from backend.database.database import SessionLocal, ativar_acesso_backend
 from backend.database.models import Paycheck, PaycheckItem, PayrollBatch
 from backend.logger import logger
 from backend.metrics import registrar_job_execucao
@@ -467,6 +467,7 @@ def processar_arquivo_financeiro_job(dados: dict) -> dict[str, object]:
 
     try:
         with SessionLocal() as db:
+            ativar_acesso_backend(db)
             lote = obter_lote_financeiro_por_id(db, payload.batch_id)
             if lote is None:
                 raise ValueError("Lote financeiro nao encontrado.")
@@ -517,6 +518,7 @@ def processar_lote_financeiro_job(dados: dict) -> dict[str, object]:
 
     try:
         with SessionLocal() as db:
+            ativar_acesso_backend(db)
             lote = obter_lote_financeiro_por_id(db, payload.batch_id)
             if lote is None:
                 raise ValueError("Lote financeiro nao encontrado.")

@@ -5,8 +5,10 @@ from datetime import datetime, timezone
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from backend.logger import logger
+from backend.config import PRIVACY_POLICY_VERSION
+from backend.database.database import ativar_acesso_backend
 from backend.database.models import Usuario
+from backend.logger import logger
 from backend.repositories.usuario_repository import (
     criar_usuario,
     atualizar_usuario,
@@ -65,6 +67,7 @@ def _mensagem_conflito_integridade(erro: IntegrityError) -> str | None:
 
 
 def cadastrar_usuario(db: Session, cadastro: UsuarioCreateRequest) -> Usuario:
+    ativar_acesso_backend(db)
     nome = cadastro.nome.strip()
     apelido = cadastro.apelido.strip() or None
     email = cadastro.email.strip().lower()
@@ -100,6 +103,8 @@ def cadastrar_usuario(db: Session, cadastro: UsuarioCreateRequest) -> Usuario:
         senha_hash=gerar_hash_sha256(senha),
         token_confirmacao_email=gerar_token_seguro(),
         email_confirmado=False,
+        politica_privacidade_aceita_em=datetime.now(timezone.utc),
+        politica_privacidade_versao=PRIVACY_POLICY_VERSION,
         criado_em=datetime.now(timezone.utc),
         confirmado_em=None,
     )
@@ -150,6 +155,7 @@ def obter_usuario_mais_recente(db: Session) -> Usuario | None:
 
 
 def confirmar_usuario(db: Session, dados: UsuarioConfirmarRequest) -> Usuario:
+    ativar_acesso_backend(db)
     usuario = obter_usuario_por_token(db, dados.token)
     if usuario is None:
         raise ValueError("Token de confirmacao invalido.")
@@ -165,6 +171,7 @@ def confirmar_usuario(db: Session, dados: UsuarioConfirmarRequest) -> Usuario:
 
 
 def excluir_usuario_mais_recente(db: Session) -> Usuario | None:
+    ativar_acesso_backend(db)
     usuario = obter_ultimo_usuario(db)
     if usuario is None:
         return None

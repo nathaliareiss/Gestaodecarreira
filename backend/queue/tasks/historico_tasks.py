@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from time import perf_counter
 
-from backend.database.database import SessionLocal
+from backend.database.database import SessionLocal, ativar_acesso_backend
 from backend.logger import logger
 from backend.metrics import registrar_job_execucao
 from backend.schemas.historico_funcional_schema import (
@@ -25,6 +25,7 @@ def processar_historico_funcional_job(dados: dict) -> dict:
     )
     try:
         with SessionLocal() as db:
+            ativar_acesso_backend(db)
             resposta = processar_historico_funcional_db(db, payload, processamento_origem="fila")
             return resposta.model_dump(mode="json")
     except Exception:
@@ -48,6 +49,7 @@ def processar_afastamentos_job(usuario_id: int, dados: dict) -> dict:
     )
     try:
         with SessionLocal() as db:
+            ativar_acesso_backend(db)
             resposta = processar_afastamentos_db(db, usuario_id, payload, processamento_origem="fila")
             return resposta.model_dump(mode="json")
     except Exception:

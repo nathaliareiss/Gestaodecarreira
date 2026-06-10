@@ -36,6 +36,8 @@ class Usuario(Base):
     sessao_expira_em = Column(DateTime(timezone=True), nullable=True)
     redefinir_senha_token_hash = Column(String, nullable=True)
     redefinir_senha_expira_em = Column(DateTime(timezone=True), nullable=True)
+    politica_privacidade_aceita_em = Column(DateTime(timezone=True), nullable=True)
+    politica_privacidade_versao = Column(String, nullable=True)
     criado_em = Column(
         DateTime(timezone=True),
         nullable=False,
@@ -136,6 +138,33 @@ class FinanceiroImportacaoTemporaria(Base):
 
     __table_args__ = (
         Index("ix_financeiro_importacoes_temporarias_user_id_created_at", "user_id", "created_at", "id"),
+    )
+
+
+class SupportDocumentAccessGrant(Base):
+    __tablename__ = "support_document_access_grants"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False, index=True)
+    document_kind = Column(String, nullable=False, default="unknown")
+    document_storage_path = Column(String, nullable=False)
+    reason = Column(Text, nullable=True)
+    granted_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    revoked_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+
+    __table_args__ = (
+        Index("ix_support_document_access_grants_user_id_created_at", "user_id", "created_at", "id"),
+        Index("ix_support_document_access_grants_expires_at", "expires_at"),
     )
 
 

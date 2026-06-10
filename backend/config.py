@@ -70,3 +70,4 @@ RESEND_API_KEY = os.getenv("RESEND_API_KEY", "").strip()
 RESEND_FROM_EMAIL = os.getenv("RESEND_FROM_EMAIL", SMTP_FROM_EMAIL or SMTP_USER).strip()
 AUTO_SYNC_DB_SCHEMA = _ler_bool("AUTO_SYNC_DB_SCHEMA", False)
 SECRET_KEY = os.getenv("SECRET_KEY", "").strip()
+PRIVACY_POLICY_VERSION = os.getenv("PRIVACY_POLICY_VERSION", "2026-06-10").strip() or "2026-06-10"
