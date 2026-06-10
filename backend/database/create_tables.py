@@ -23,6 +23,12 @@ def habilitar_rls_tabelas_publicas() -> None:
         "ALTER TABLE IF EXISTS public.paycheck_items FORCE ROW LEVEL SECURITY",
         "ALTER TABLE IF EXISTS public.support_document_access_grants ENABLE ROW LEVEL SECURITY",
         "ALTER TABLE IF EXISTS public.support_document_access_grants FORCE ROW LEVEL SECURITY",
+        "ALTER TABLE IF EXISTS public.work_schedules ENABLE ROW LEVEL SECURITY",
+        "ALTER TABLE IF EXISTS public.work_schedules FORCE ROW LEVEL SECURITY",
+        "ALTER TABLE IF EXISTS public.vacation_periods ENABLE ROW LEVEL SECURITY",
+        "ALTER TABLE IF EXISTS public.vacation_periods FORCE ROW LEVEL SECURITY",
+        "ALTER TABLE IF EXISTS public.work_calendar_overrides ENABLE ROW LEVEL SECURITY",
+        "ALTER TABLE IF EXISTS public.work_calendar_overrides FORCE ROW LEVEL SECURITY",
         "DROP POLICY IF EXISTS usuarios_backend_access ON public.usuarios",
         "DROP POLICY IF EXISTS usuarios_self_access ON public.usuarios",
         "DROP POLICY IF EXISTS usuarios_self_update ON public.usuarios",
@@ -91,6 +97,30 @@ def habilitar_rls_tabelas_publicas() -> None:
         f"USING (current_setting('app.backend_access', true) = 'on') "
         f"WITH CHECK (current_setting('app.backend_access', true) = 'on')",
         f"CREATE POLICY support_document_access_grants_user_access ON public.support_document_access_grants FOR ALL TO PUBLIC "
+        f"USING (user_id = {current_user_id_sql}) "
+        f"WITH CHECK (user_id = {current_user_id_sql})",
+        "DROP POLICY IF EXISTS work_schedules_backend_access ON public.work_schedules",
+        "DROP POLICY IF EXISTS work_schedules_user_access ON public.work_schedules",
+        f"CREATE POLICY work_schedules_backend_access ON public.work_schedules FOR ALL TO PUBLIC "
+        f"USING (current_setting('app.backend_access', true) = 'on') "
+        f"WITH CHECK (current_setting('app.backend_access', true) = 'on')",
+        f"CREATE POLICY work_schedules_user_access ON public.work_schedules FOR ALL TO PUBLIC "
+        f"USING (user_id = {current_user_id_sql}) "
+        f"WITH CHECK (user_id = {current_user_id_sql})",
+        "DROP POLICY IF EXISTS vacation_periods_backend_access ON public.vacation_periods",
+        "DROP POLICY IF EXISTS vacation_periods_user_access ON public.vacation_periods",
+        f"CREATE POLICY vacation_periods_backend_access ON public.vacation_periods FOR ALL TO PUBLIC "
+        f"USING (current_setting('app.backend_access', true) = 'on') "
+        f"WITH CHECK (current_setting('app.backend_access', true) = 'on')",
+        f"CREATE POLICY vacation_periods_user_access ON public.vacation_periods FOR ALL TO PUBLIC "
+        f"USING (user_id = {current_user_id_sql}) "
+        f"WITH CHECK (user_id = {current_user_id_sql})",
+        "DROP POLICY IF EXISTS work_calendar_overrides_backend_access ON public.work_calendar_overrides",
+        "DROP POLICY IF EXISTS work_calendar_overrides_user_access ON public.work_calendar_overrides",
+        f"CREATE POLICY work_calendar_overrides_backend_access ON public.work_calendar_overrides FOR ALL TO PUBLIC "
+        f"USING (current_setting('app.backend_access', true) = 'on') "
+        f"WITH CHECK (current_setting('app.backend_access', true) = 'on')",
+        f"CREATE POLICY work_calendar_overrides_user_access ON public.work_calendar_overrides FOR ALL TO PUBLIC "
         f"USING (user_id = {current_user_id_sql}) "
         f"WITH CHECK (user_id = {current_user_id_sql})",
     ]
@@ -192,6 +222,27 @@ def sincronizar_usuario_table() -> None:
         "ALTER TABLE IF EXISTS support_document_access_grants ADD COLUMN IF NOT EXISTS expires_at TIMESTAMP WITH TIME ZONE",
         "ALTER TABLE IF EXISTS support_document_access_grants ADD COLUMN IF NOT EXISTS revoked_at TIMESTAMP WITH TIME ZONE",
         "ALTER TABLE IF EXISTS support_document_access_grants ADD COLUMN IF NOT EXISTS created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()",
+        "ALTER TABLE IF EXISTS work_schedules ADD COLUMN IF NOT EXISTS name VARCHAR",
+        "ALTER TABLE IF EXISTS work_schedules ADD COLUMN IF NOT EXISTS schedule_type VARCHAR",
+        "ALTER TABLE IF EXISTS work_schedules ADD COLUMN IF NOT EXISTS anchor_date DATE",
+        "ALTER TABLE IF EXISTS work_schedules ADD COLUMN IF NOT EXISTS working_weekdays_json TEXT NOT NULL DEFAULT '[]'",
+        "ALTER TABLE IF EXISTS work_schedules ADD COLUMN IF NOT EXISTS custom_pattern_json TEXT NOT NULL DEFAULT '[]'",
+        "ALTER TABLE IF EXISTS work_schedules ADD COLUMN IF NOT EXISTS note TEXT",
+        "ALTER TABLE IF EXISTS work_schedules ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE",
+        "ALTER TABLE IF EXISTS work_schedules ADD COLUMN IF NOT EXISTS created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()",
+        "ALTER TABLE IF EXISTS work_schedules ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()",
+        "ALTER TABLE IF EXISTS vacation_periods ADD COLUMN IF NOT EXISTS title VARCHAR NOT NULL DEFAULT 'Ferias'",
+        "ALTER TABLE IF EXISTS vacation_periods ADD COLUMN IF NOT EXISTS start_date DATE",
+        "ALTER TABLE IF EXISTS vacation_periods ADD COLUMN IF NOT EXISTS end_date DATE",
+        "ALTER TABLE IF EXISTS vacation_periods ADD COLUMN IF NOT EXISTS note TEXT",
+        "ALTER TABLE IF EXISTS vacation_periods ADD COLUMN IF NOT EXISTS created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()",
+        "ALTER TABLE IF EXISTS vacation_periods ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()",
+        "ALTER TABLE IF EXISTS work_calendar_overrides ADD COLUMN IF NOT EXISTS override_date DATE",
+        "ALTER TABLE IF EXISTS work_calendar_overrides ADD COLUMN IF NOT EXISTS is_working_day BOOLEAN",
+        "ALTER TABLE IF EXISTS work_calendar_overrides ADD COLUMN IF NOT EXISTS title VARCHAR NOT NULL DEFAULT 'Excecao manual'",
+        "ALTER TABLE IF EXISTS work_calendar_overrides ADD COLUMN IF NOT EXISTS note TEXT",
+        "ALTER TABLE IF EXISTS work_calendar_overrides ADD COLUMN IF NOT EXISTS created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()",
+        "ALTER TABLE IF EXISTS work_calendar_overrides ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()",
         "UPDATE financeiro_importacoes_temporarias SET scope = COALESCE(scope, 'financeiro_importacao') WHERE scope IS NULL",
         "ALTER TABLE IF EXISTS paycheck_items ADD COLUMN IF NOT EXISTS categoria_normalizada VARCHAR NOT NULL DEFAULT 'outros_vantagens'",
         "ALTER TABLE IF EXISTS paycheck_items ADD COLUMN IF NOT EXISTS descricao_original VARCHAR NOT NULL DEFAULT ''",
@@ -224,6 +275,11 @@ def sincronizar_usuario_table() -> None:
             "CREATE INDEX IF NOT EXISTS ix_paychecks_user_id_ano_mes_matricula ON paychecks (user_id, ano, mes, matricula)",
             "CREATE INDEX IF NOT EXISTS ix_support_document_access_grants_user_id_created_at ON support_document_access_grants (user_id, created_at DESC, id DESC)",
             "CREATE INDEX IF NOT EXISTS ix_support_document_access_grants_expires_at ON support_document_access_grants (expires_at)",
+            "CREATE INDEX IF NOT EXISTS ix_work_schedules_user_id_is_active ON work_schedules (user_id, is_active)",
+            "CREATE INDEX IF NOT EXISTS ix_work_schedules_user_id_created_at ON work_schedules (user_id, created_at DESC)",
+            "CREATE INDEX IF NOT EXISTS ix_vacation_periods_user_id_start_date ON vacation_periods (user_id, start_date)",
+            "CREATE INDEX IF NOT EXISTS ix_vacation_periods_user_id_end_date ON vacation_periods (user_id, end_date)",
+            "CREATE INDEX IF NOT EXISTS ix_work_calendar_overrides_user_id_override_date ON work_calendar_overrides (user_id, override_date)",
         ]
     )
 

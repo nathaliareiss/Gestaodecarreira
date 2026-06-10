@@ -6,6 +6,7 @@ from backend.routes.financeiro_routes import router as financeiro_router
 from backend.routes.historico_funcional_routes import router as historico_funcional_router
 from backend.routes.health_routes import router as health_router
 from backend.routes.usuario_routes import router as usuario_router
+from backend.routes.work_calendar_routes import router as work_calendar_router
 
 router = APIRouter(prefix="/api")
 router.include_router(health_router)
@@ -14,5 +15,6 @@ router.include_router(carreira_router)
 router.include_router(financeiro_router)
 router.include_router(historico_funcional_router)
 router.include_router(usuario_router)
+router.include_router(work_calendar_router)
 
 __all__ = ["router"]

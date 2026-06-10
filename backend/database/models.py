@@ -168,6 +168,89 @@ class SupportDocumentAccessGrant(Base):
     )
 
 
+class WorkSchedule(Base):
+    __tablename__ = "work_schedules"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False, index=True)
+    name = Column(String, nullable=False)
+    schedule_type = Column(String, nullable=False)
+    anchor_date = Column(Date, nullable=False)
+    working_weekdays_json = Column(Text, nullable=False, default="[]")
+    custom_pattern_json = Column(Text, nullable=False, default="[]")
+    note = Column(Text, nullable=True)
+    is_active = Column(Boolean, nullable=False, default=True)
+    created_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+    updated_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+    __table_args__ = (
+        Index("ix_work_schedules_user_id_is_active", "user_id", "is_active"),
+        Index("ix_work_schedules_user_id_created_at", "user_id", "created_at"),
+    )
+
+
+class VacationPeriod(Base):
+    __tablename__ = "vacation_periods"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False, index=True)
+    title = Column(String, nullable=False, default="Ferias")
+    start_date = Column(Date, nullable=False)
+    end_date = Column(Date, nullable=False)
+    note = Column(Text, nullable=True)
+    created_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+    updated_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+    __table_args__ = (
+        Index("ix_vacation_periods_user_id_start_date", "user_id", "start_date"),
+        Index("ix_vacation_periods_user_id_end_date", "user_id", "end_date"),
+    )
+
+
+class WorkCalendarOverride(Base):
+    __tablename__ = "work_calendar_overrides"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False, index=True)
+    override_date = Column(Date, nullable=False)
+    is_working_day = Column(Boolean, nullable=False)
+    title = Column(String, nullable=False, default="Excecao manual")
+    note = Column(Text, nullable=True)
+    created_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+    updated_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+    __table_args__ = (
+        Index("ix_work_calendar_overrides_user_id_override_date", "user_id", "override_date"),
+    )
+
+
 class Paycheck(Base):
     __tablename__ = "paychecks"
 

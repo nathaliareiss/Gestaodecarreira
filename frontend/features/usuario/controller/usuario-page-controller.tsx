@@ -1,9 +1,10 @@
 ﻿"use client"
 
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useEffect, useState } from "react"
 
+import { CalendarioView } from "@/features/calendario/view/calendario-view"
 import type { HistoricoFuncionalAnalise } from "@/features/historico-funcional/model/historico-funcional.model"
 import { buscarUltimoHistoricoFuncional } from "@/features/historico-funcional/model/historico-funcional.repository"
 import { HistoricoFuncionalView } from "@/features/historico-funcional/view/historico-funcional-view"
@@ -69,6 +70,21 @@ type UsuarioPageControllerProps = {
   modoDemo: boolean
 }
 
+type AbaDashboard = "perfil" | "historico" | "financeiro" | "calendario"
+
+function normalizarAbaDashboard(valor: string | null, modoDemo: boolean): AbaDashboard {
+  switch (valor) {
+    case "historico":
+    case "financeiro":
+    case "calendario":
+      return valor
+    case "perfil":
+      return "perfil"
+    default:
+      return modoDemo ? "historico" : "perfil"
+  }
+}
+
 export function UsuarioPageController({
   usuarioInicial,
   historicoInicial,
@@ -76,10 +92,11 @@ export function UsuarioPageController({
   modoDemo,
 }: UsuarioPageControllerProps) {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { language, texts } = useLanguage()
   const [usuario, setUsuario] = useState<UsuarioConta | null>(usuarioInicial)
-  const [abaAtiva, setAbaAtiva] = useState<"perfil" | "historico" | "financeiro">(
-    modoDemo ? "historico" : "perfil",
+  const [abaAtiva, setAbaAtiva] = useState<AbaDashboard>(
+    normalizarAbaDashboard(searchParams.get("aba"), modoDemo),
   )
   const [erro, setErro] = useState<string | null>(erroInicial)
   const [carregando, setCarregando] = useState(false)
@@ -187,6 +204,20 @@ export function UsuarioPageController({
     }
   }
 
+  function selecionarAba(aba: AbaDashboard) {
+    setAbaAtiva(aba)
+
+    const params = new URLSearchParams(searchParams.toString())
+    if (aba === "perfil") {
+      params.delete("aba")
+    } else {
+      params.set("aba", aba)
+    }
+
+    const query = params.toString()
+    router.replace(query ? `/usuario?${query}` : "/usuario", { scroll: false })
+  }
+
   useEffect(() => {
     if (modoDemo || abaAtiva !== "perfil" || !usuario?.id) {
       return
@@ -231,6 +262,11 @@ export function UsuarioPageController({
     }
   }, [abaAtiva, modoDemo, usuario?.id])
 
+  useEffect(() => {
+    const abaDaUrl = normalizarAbaDashboard(searchParams.get("aba"), modoDemo)
+    setAbaAtiva((atual) => (atual === abaDaUrl ? atual : abaDaUrl))
+  }, [modoDemo, searchParams])
+
   return (
     <main className="page-shell">
       <div className="bg-orb bg-orb-a" />
@@ -267,12 +303,13 @@ export function UsuarioPageController({
               { key: "perfil" as const, label: texts.dashboard.profile },
               { key: "historico" as const, label: texts.dashboard.history },
               { key: "financeiro" as const, label: texts.dashboard.finance },
+              { key: "calendario" as const, label: language === "en" ? "Calendar" : "Calendario" },
             ].map((aba) => (
               <button
                 className={abaAtiva === aba.key ? "tab-button tab-button--active" : "tab-button"}
                 key={aba.key}
                 type="button"
-                onClick={() => setAbaAtiva(aba.key)}
+                onClick={() => selecionarAba(aba.key)}
               >
                 {aba.label}
               </button>
@@ -391,6 +428,8 @@ export function UsuarioPageController({
               onCreateAccount={() => void criarConta()}
               criandoConta={indoParaCadastro}
             />
+          ) : abaAtiva === "calendario" ? (
+            <CalendarioView modoDemo={modoDemo} />
           ) : (
             <FinanceiroView
               modoDemo={modoDemo}
