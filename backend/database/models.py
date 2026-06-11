@@ -176,6 +176,8 @@ class WorkSchedule(Base):
     name = Column(String, nullable=False)
     schedule_type = Column(String, nullable=False)
     anchor_date = Column(Date, nullable=False)
+    state_code = Column(String, nullable=True)
+    city_name = Column(String, nullable=True)
     working_weekdays_json = Column(Text, nullable=False, default="[]")
     custom_pattern_json = Column(Text, nullable=False, default="[]")
     note = Column(Text, nullable=True)
@@ -204,8 +206,11 @@ class VacationPeriod(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False, index=True)
     title = Column(String, nullable=False, default="Ferias")
+    vacation_type = Column(String, nullable=False, default="regular")
     start_date = Column(Date, nullable=False)
     end_date = Column(Date, nullable=False)
+    requested_days = Column(Integer, nullable=True)
+    counted_days = Column(Integer, nullable=True)
     note = Column(Text, nullable=True)
     created_at = Column(
         DateTime(timezone=True),

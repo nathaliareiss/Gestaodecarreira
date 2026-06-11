@@ -125,3 +125,23 @@ def test_evento_de_feriado_nacional_e_incluido(monkeypatch) -> None:
 
     categorias = {evento.category for evento in eventos}
     assert "holiday" in categorias
+
+
+def test_ferias_regulamentares_contam_dias_uteis() -> None:
+    escala = criar_escala("5x2", date(2026, 6, 1), working_weekdays=[0, 1, 2, 3, 4])
+    escala.state_code = "MG"
+    escala.city_name = "Belo Horizonte"
+
+    data_final = work_calendar_service._calcular_data_final_ferias_uteis(date(2026, 6, 8), 10, escala)
+
+    assert data_final == date(2026, 6, 19)
+
+
+def test_feriado_municipal_da_cidade_da_escala_e_incluido() -> None:
+    escala = criar_escala("12x36", date(2026, 8, 14))
+    escala.state_code = "MG"
+    escala.city_name = "Belo Horizonte"
+
+    feriados = work_calendar_service._feriados_para_escala(escala, date(2026, 8, 15), date(2026, 8, 15))
+
+    assert feriados[date(2026, 8, 15)] == "Feriado municipal - Nossa Senhora da Boa Viagem"

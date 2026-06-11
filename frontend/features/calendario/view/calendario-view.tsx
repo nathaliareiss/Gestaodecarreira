@@ -11,16 +11,13 @@ import type {
   TipoEscalaTrabalho,
   VacationPeriod,
   WorkCalendarEvent,
-  WorkCalendarOverride,
   WorkSchedule,
 } from "../model/calendario.model"
 import {
   criarEscalaTrabalho,
-  criarExcecaoCalendario,
   criarFerias,
   listarEscalasTrabalho,
   listarEventosCalendario,
-  listarExcecoesCalendario,
   listarFerias,
 } from "../model/calendario.repository"
 
@@ -33,71 +30,34 @@ type IntervaloCalendario = {
   end: string
 }
 
-type Labels = {
-  title: string
-  subtitle: string
-  scheduleTitle: string
-  vacationTitle: string
-  overrideTitle: string
-  currentSchedule: string
-  activeSchedule: string
-  noSchedules: string
-  noVacations: string
-  noOverrides: string
-  scheduleName: string
-  scheduleType: string
-  anchorDate: string
-  weekdays: string
-  customPattern: string
-  note: string
-  activateNow: string
-  saveSchedule: string
-  saving: string
-  vacationLabel: string
-  vacationStart: string
-  vacationEnd: string
-  saveVacation: string
-  overrideDate: string
-  overrideMode: string
-  overrideWork: string
-  overrideOff: string
-  overrideReason: string
-  saveOverride: string
-  calendarTitle: string
-  calendarSubtitle: string
-  loading: string
-  refreshError: string
-  demoOnly: string
-  work: string
-  off: string
-  vacation: string
-  holiday: string
-  exception: string
-  today: string
-  month: string
-  dayNames: string[]
-  scheduleOptions: Record<TipoEscalaTrabalho, string>
-  patternHint: string
+type CidadeOption = {
+  state: string
+  city: string
+  label: string
 }
 
+const CITY_OPTIONS: CidadeOption[] = [
+  { state: "MG", city: "Belo Horizonte", label: "Belo Horizonte - MG" },
+  { state: "MG", city: "Contagem", label: "Contagem - MG" },
+  { state: "MG", city: "Betim", label: "Betim - MG" },
+  { state: "MG", city: "Uberlandia", label: "Uberlandia - MG" },
+  { state: "MG", city: "Juiz de Fora", label: "Juiz de Fora - MG" },
+  { state: "SP", city: "Sao Paulo", label: "Sao Paulo - SP" },
+  { state: "RJ", city: "Rio de Janeiro", label: "Rio de Janeiro - RJ" },
+]
+
 const WEEKDAY_OPTIONS = [
-  { value: 0, pt: "Seg", en: "Mon" },
-  { value: 1, pt: "Ter", en: "Tue" },
-  { value: 2, pt: "Qua", en: "Wed" },
-  { value: 3, pt: "Qui", en: "Thu" },
-  { value: 4, pt: "Sex", en: "Fri" },
-  { value: 5, pt: "Sab", en: "Sat" },
-  { value: 6, pt: "Dom", en: "Sun" },
+  { value: 0, label: "Seg" },
+  { value: 1, label: "Ter" },
+  { value: 2, label: "Qua" },
+  { value: 3, label: "Qui" },
+  { value: 4, label: "Sex" },
+  { value: 5, label: "Sab" },
+  { value: 6, label: "Dom" },
 ] as const
 
 function hojeISO() {
   return new Date().toISOString().slice(0, 10)
-}
-
-function deslocarDataISO(dataISO: string, dias: number) {
-  const data = new Date(`${dataISO}T00:00:00Z`)
-  data.setUTCDate(data.getUTCDate() + dias)
-  return data.toISOString().slice(0, 10)
 }
 
 function intervaloMesAtual(): IntervaloCalendario {
@@ -150,159 +110,85 @@ function formatarDataISO(valor: string, language: "pt-BR" | "en") {
   }).format(data)
 }
 
-function formatarDiasSemana(workingWeekdays: number[], labels: Labels) {
+function formatarDiasSemana(workingWeekdays: number[]) {
   if (workingWeekdays.length === 0) {
     return "-"
   }
 
-  const map = new Map(WEEKDAY_OPTIONS.map((item) => [item.value, labels.dayNames[item.value] ?? String(item.value)]))
+  const map = new Map(WEEKDAY_OPTIONS.map((item) => [item.value, item.label]))
   return workingWeekdays.map((item) => map.get(item) ?? String(item)).join(", ")
 }
 
-function labelsPorIdioma(language: "pt-BR" | "en"): Labels {
-  if (language === "en") {
-    return {
-      title: "Work calendar",
-      subtitle: "Manage your work rotation, vacations, manual exceptions, and monthly visibility in one place.",
-      scheduleTitle: "Work schedule",
-      vacationTitle: "Vacations",
-      overrideTitle: "Manual exceptions",
-      currentSchedule: "Saved schedules",
-      activeSchedule: "Active",
-      noSchedules: "No schedule saved yet.",
-      noVacations: "No vacations saved yet.",
-      noOverrides: "No manual exceptions saved yet.",
-      scheduleName: "Schedule name",
-      scheduleType: "Rotation type",
-      anchorDate: "Anchor date",
-      weekdays: "Working weekdays",
-      customPattern: "Custom pattern",
-      note: "Notes",
-      activateNow: "Set as active schedule",
-      saveSchedule: "Save schedule",
-      saving: "Saving...",
-      vacationLabel: "Vacation title",
-      vacationStart: "Start date",
-      vacationEnd: "End date",
-      saveVacation: "Save vacation",
-      overrideDate: "Exception date",
-      overrideMode: "Override type",
-      overrideWork: "Working day",
-      overrideOff: "Day off",
-      overrideReason: "Reason",
-      saveOverride: "Save exception",
-      calendarTitle: "Calendar",
-      calendarSubtitle: "Colors separate work days, days off, vacations, holidays, and manual changes.",
-      loading: "Loading calendar data...",
-      refreshError: "We could not load the calendar right now.",
-      demoOnly: "Demo mode keeps this module read-only.",
-      work: "Shift",
-      off: "Day off",
-      vacation: "Vacation",
-      holiday: "Holiday",
-      exception: "Exception",
-      today: "Today",
-      month: "Month",
-      dayNames: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
-      scheduleOptions: {
-        "12x36": "12x36",
-        "24x72": "24x72",
-        "5x2": "5x2",
-        custom: "Custom",
-      },
-      patternHint: "Use 1 for work and 0 for day off. Example: 1, 0, 1, 0",
-    }
-  }
-
-  return {
-    title: "Calendario de trabalho",
-    subtitle: "Gerencie sua escala, ferias, excecoes manuais e a visao mensal em um unico lugar.",
-    scheduleTitle: "Escala de trabalho",
-    vacationTitle: "Ferias",
-    overrideTitle: "Excecoes manuais",
-    currentSchedule: "Escalas salvas",
-    activeSchedule: "Ativa",
-    noSchedules: "Nenhuma escala cadastrada ainda.",
-    noVacations: "Nenhum periodo de ferias cadastrado ainda.",
-    noOverrides: "Nenhuma excecao manual cadastrada ainda.",
-    scheduleName: "Nome da escala",
-    scheduleType: "Tipo de escala",
-    anchorDate: "Data base",
-    weekdays: "Dias de trabalho",
-    customPattern: "Padrao personalizado",
-    note: "Observacoes",
-    activateNow: "Definir como escala ativa",
-    saveSchedule: "Salvar escala",
-    saving: "Salvando...",
-    vacationLabel: "Titulo das ferias",
-    vacationStart: "Inicio",
-    vacationEnd: "Fim",
-    saveVacation: "Salvar ferias",
-    overrideDate: "Data da excecao",
-    overrideMode: "Tipo de excecao",
-    overrideWork: "Marcar como plantao",
-    overrideOff: "Marcar como folga",
-    overrideReason: "Motivo",
-    saveOverride: "Salvar excecao",
-    calendarTitle: "Calendario",
-    calendarSubtitle: "As cores separam plantao, folga, ferias, feriado e ajustes manuais.",
-    loading: "Carregando dados do calendario...",
-    refreshError: "Nao foi possivel carregar o calendario agora.",
-    demoOnly: "No modo demonstracao, este modulo fica somente para leitura.",
-    work: "Plantao",
-    off: "Folga",
-    vacation: "Ferias",
-    holiday: "Feriado",
-    exception: "Excecao",
-    today: "Hoje",
-    month: "Mes",
-    dayNames: ["Seg", "Ter", "Qua", "Qui", "Sex", "Sab", "Dom"],
-    scheduleOptions: {
-      "12x36": "12x36",
-      "24x72": "24x72",
-      "5x2": "5x2",
-      custom: "Personalizada",
-    },
-    patternHint: "Use 1 para trabalho e 0 para folga. Exemplo: 1, 0, 1, 0",
-  }
+function calendarioEventClass(category: WorkCalendarEvent["category"]) {
+  return `calendar-event--${category}`
 }
 
 export function CalendarioView({ modoDemo }: CalendarioViewProps) {
   const { language } = useLanguage()
-  const labels = useMemo(() => labelsPorIdioma(language), [language])
+  const labels = useMemo(
+    () => ({
+      title: language === "en" ? "Work schedule" : "Escala",
+      subtitle:
+        language === "en"
+          ? "Manage shifts, regular vacation, premium vacation, and holidays in the same calendar."
+          : "Gerencie plantoes, ferias regulamentares, ferias-premio e feriados no mesmo calendario.",
+      scheduleTitle: language === "en" ? "Shift schedule" : "Escala de plantao",
+      city: language === "en" ? "City for local holidays" : "Cidade dos feriados municipais",
+      regularVacation: language === "en" ? "Regular vacation" : "Ferias regulamentares",
+      premiumVacation: language === "en" ? "Premium vacation" : "Ferias-premio",
+      loading: language === "en" ? "Loading..." : "Carregando...",
+      save: language === "en" ? "Save" : "Salvar",
+      saving: language === "en" ? "Saving..." : "Salvando...",
+      refreshError:
+        language === "en"
+          ? "We could not load the schedule right now."
+          : "Nao foi possivel carregar a escala agora.",
+      demoOnly:
+        language === "en"
+          ? "Demo mode keeps this module read-only."
+          : "No modo demonstracao, este modulo fica somente para leitura.",
+      noSchedules: language === "en" ? "No schedule saved yet." : "Nenhuma escala cadastrada ainda.",
+      noVacations: language === "en" ? "No vacation saved yet." : "Nenhuma ferias cadastrada ainda.",
+      active: language === "en" ? "Active" : "Ativa",
+      work: language === "en" ? "Shift" : "Plantao",
+      off: language === "en" ? "Day off" : "Folga",
+      vacation: language === "en" ? "Regular vacation" : "Ferias regulamentares",
+      premium: language === "en" ? "Premium vacation" : "Ferias-premio",
+      holiday: language === "en" ? "Holiday" : "Feriado",
+      today: language === "en" ? "Today" : "Hoje",
+    }),
+    [language],
+  )
+
   const [intervalo, setIntervalo] = useState<IntervaloCalendario>(() => intervaloMesAtual())
   const [escalas, setEscalas] = useState<WorkSchedule[]>([])
   const [ferias, setFerias] = useState<VacationPeriod[]>([])
-  const [excecoes, setExcecoes] = useState<WorkCalendarOverride[]>([])
   const [eventos, setEventos] = useState<WorkCalendarEvent[]>([])
   const [carregandoDados, setCarregandoDados] = useState(false)
   const [carregandoEventos, setCarregandoEventos] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
-  const [salvando, setSalvando] = useState<"schedule" | "vacation" | "override" | null>(null)
+  const [salvando, setSalvando] = useState<"schedule" | "regular" | "premium" | null>(null)
 
   const [nomeEscala, setNomeEscala] = useState("Escala principal")
   const [tipoEscala, setTipoEscala] = useState<TipoEscalaTrabalho>("12x36")
   const [dataBase, setDataBase] = useState(hojeISO())
+  const [cidadeSelecionada, setCidadeSelecionada] = useState("MG|Belo Horizonte")
   const [diasTrabalho, setDiasTrabalho] = useState<number[]>([0, 1, 2, 3, 4])
   const [padraoPersonalizado, setPadraoPersonalizado] = useState("1, 0")
   const [observacaoEscala, setObservacaoEscala] = useState("")
-  const [escalaAtiva, setEscalaAtiva] = useState(true)
 
-  const [tituloFerias, setTituloFerias] = useState(language === "en" ? "Vacation" : "Ferias")
-  const [inicioFerias, setInicioFerias] = useState(hojeISO())
-  const [fimFerias, setFimFerias] = useState(deslocarDataISO(hojeISO(), 7))
-  const [observacaoFerias, setObservacaoFerias] = useState("")
+  const [inicioFeriasRegular, setInicioFeriasRegular] = useState(hojeISO())
+  const [diasFeriasRegular, setDiasFeriasRegular] = useState(15)
+  const [observacaoFeriasRegular, setObservacaoFeriasRegular] = useState("")
 
-  const [dataExcecao, setDataExcecao] = useState(hojeISO())
-  const [excecaoTrabalha, setExcecaoTrabalha] = useState(true)
-  const [tituloExcecao, setTituloExcecao] = useState(language === "en" ? "Manual change" : "Ajuste manual")
-  const [observacaoExcecao, setObservacaoExcecao] = useState("")
+  const [inicioFeriasPremio, setInicioFeriasPremio] = useState(hojeISO())
+  const [diasFeriasPremio, setDiasFeriasPremio] = useState(30)
+  const [observacaoFeriasPremio, setObservacaoFeriasPremio] = useState("")
 
   const carregarCadastros = useCallback(async () => {
     if (modoDemo) {
       setEscalas([])
       setFerias([])
-      setExcecoes([])
       return
     }
 
@@ -310,14 +196,12 @@ export function CalendarioView({ modoDemo }: CalendarioViewProps) {
     setErro(null)
 
     try {
-      const [escalasResposta, feriasResposta, excecoesResposta] = await Promise.all([
+      const [escalasResposta, feriasResposta] = await Promise.all([
         listarEscalasTrabalho(),
         listarFerias(),
-        listarExcecoesCalendario(),
       ])
       setEscalas(escalasResposta)
       setFerias(feriasResposta)
-      setExcecoes(excecoesResposta)
     } catch (error) {
       setErro(formatarErro(error, labels.refreshError))
     } finally {
@@ -335,8 +219,7 @@ export function CalendarioView({ modoDemo }: CalendarioViewProps) {
     setErro(null)
 
     try {
-      const resposta = await listarEventosCalendario(intervalo.start, intervalo.end)
-      setEventos(resposta)
+      setEventos(await listarEventosCalendario(intervalo.start, intervalo.end))
     } catch (error) {
       setErro(formatarErro(error, labels.refreshError))
     } finally {
@@ -352,14 +235,19 @@ export function CalendarioView({ modoDemo }: CalendarioViewProps) {
     void carregarEventos()
   }, [carregarEventos])
 
-  useEffect(() => {
-    setTituloFerias(language === "en" ? "Vacation" : "Ferias")
-    setTituloExcecao(language === "en" ? "Manual change" : "Ajuste manual")
-  }, [language])
-
   const escalaAtual = useMemo(
     () => escalas.find((item) => item.is_active) ?? null,
     [escalas],
+  )
+
+  const feriasRegulares = useMemo(
+    () => ferias.filter((item) => item.vacation_type !== "premium"),
+    [ferias],
+  )
+
+  const feriasPremio = useMemo(
+    () => ferias.filter((item) => item.vacation_type === "premium"),
+    [ferias],
   )
 
   const eventosCalendario = useMemo(
@@ -373,7 +261,7 @@ export function CalendarioView({ modoDemo }: CalendarioViewProps) {
         backgroundColor: item.color,
         borderColor: item.color,
         textColor: item.text_color,
-        classNames: [`calendar-event--${item.category}`],
+        classNames: [calendarioEventClass(item.category)],
       })),
     [eventos],
   )
@@ -388,23 +276,20 @@ export function CalendarioView({ modoDemo }: CalendarioViewProps) {
     setErro(null)
 
     try {
-      const customPattern = tipoEscala === "custom" ? parsePadraoPersonalizado(padraoPersonalizado) : []
-      const workingWeekdays = tipoEscala === "5x2" ? diasTrabalho.slice().sort((a, b) => a - b) : []
-
+      const [stateCode, cityName] = cidadeSelecionada.split("|")
       await criarEscalaTrabalho({
         name: nomeEscala.trim(),
         schedule_type: tipoEscala,
         anchor_date: dataBase,
-        working_weekdays: workingWeekdays,
-        custom_pattern: customPattern,
+        state_code: stateCode || null,
+        city_name: cityName || null,
+        working_weekdays: tipoEscala === "5x2" ? diasTrabalho.slice().sort((a, b) => a - b) : [],
+        custom_pattern: tipoEscala === "custom" ? parsePadraoPersonalizado(padraoPersonalizado) : [],
         note: observacaoEscala.trim() || null,
-        is_active: escalaAtiva,
+        is_active: true,
       })
 
       await Promise.all([carregarCadastros(), carregarEventos()])
-      if (tipoEscala === "custom") {
-        setPadraoPersonalizado("1, 0")
-      }
     } catch (error) {
       setErro(formatarErro(error, labels.refreshError))
     } finally {
@@ -412,25 +297,26 @@ export function CalendarioView({ modoDemo }: CalendarioViewProps) {
     }
   }
 
-  async function submitFerias(event: FormEvent<HTMLFormElement>) {
+  async function submitFeriasRegular(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (modoDemo) {
       return
     }
 
-    setSalvando("vacation")
+    setSalvando("regular")
     setErro(null)
 
     try {
       await criarFerias({
-        title: tituloFerias.trim(),
-        start_date: inicioFerias,
-        end_date: fimFerias,
-        note: observacaoFerias.trim() || null,
+        title: "Ferias regulamentares",
+        vacation_type: "regular",
+        start_date: inicioFeriasRegular,
+        requested_days: diasFeriasRegular,
+        note: observacaoFeriasRegular.trim() || null,
       })
 
       await Promise.all([carregarCadastros(), carregarEventos()])
-      setObservacaoFerias("")
+      setObservacaoFeriasRegular("")
     } catch (error) {
       setErro(formatarErro(error, labels.refreshError))
     } finally {
@@ -438,25 +324,26 @@ export function CalendarioView({ modoDemo }: CalendarioViewProps) {
     }
   }
 
-  async function submitExcecao(event: FormEvent<HTMLFormElement>) {
+  async function submitFeriasPremio(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (modoDemo) {
       return
     }
 
-    setSalvando("override")
+    setSalvando("premium")
     setErro(null)
 
     try {
-      await criarExcecaoCalendario({
-        override_date: dataExcecao,
-        is_working_day: excecaoTrabalha,
-        title: tituloExcecao.trim(),
-        note: observacaoExcecao.trim() || null,
+      await criarFerias({
+        title: "Ferias-premio",
+        vacation_type: "premium",
+        start_date: inicioFeriasPremio,
+        requested_days: diasFeriasPremio,
+        note: observacaoFeriasPremio.trim() || null,
       })
 
       await Promise.all([carregarCadastros(), carregarEventos()])
-      setObservacaoExcecao("")
+      setObservacaoFeriasPremio("")
     } catch (error) {
       setErro(formatarErro(error, labels.refreshError))
     } finally {
@@ -488,12 +375,12 @@ export function CalendarioView({ modoDemo }: CalendarioViewProps) {
               <p className="eyebrow">{labels.scheduleTitle}</p>
               <h4>{labels.scheduleTitle}</h4>
             </div>
-            {escalaAtual ? <span className="status-pill">{labels.activeSchedule}</span> : null}
+            {escalaAtual ? <span className="status-pill">{labels.active}</span> : null}
           </div>
 
           <form className="calendar-form" onSubmit={submitEscala}>
             <label className="field">
-              <span>{labels.scheduleName}</span>
+              <span>Nome da escala</span>
               <input
                 type="text"
                 value={nomeEscala}
@@ -505,21 +392,21 @@ export function CalendarioView({ modoDemo }: CalendarioViewProps) {
 
             <div className="field-grid">
               <label className="field">
-                <span>{labels.scheduleType}</span>
+                <span>Tipo de escala</span>
                 <select
                   value={tipoEscala}
                   onChange={(event) => setTipoEscala(event.target.value as TipoEscalaTrabalho)}
                   disabled={modoDemo}
                 >
-                  <option value="12x36">{labels.scheduleOptions["12x36"]}</option>
-                  <option value="24x72">{labels.scheduleOptions["24x72"]}</option>
-                  <option value="5x2">{labels.scheduleOptions["5x2"]}</option>
-                  <option value="custom">{labels.scheduleOptions.custom}</option>
+                  <option value="12x36">12x36</option>
+                  <option value="24x72">24x72</option>
+                  <option value="5x2">5x2</option>
+                  <option value="custom">Personalizada</option>
                 </select>
               </label>
 
               <label className="field">
-                <span>{labels.anchorDate}</span>
+                <span>Data base</span>
                 <input
                   type="date"
                   value={dataBase}
@@ -530,9 +417,24 @@ export function CalendarioView({ modoDemo }: CalendarioViewProps) {
               </label>
             </div>
 
+            <label className="field">
+              <span>{labels.city}</span>
+              <select
+                value={cidadeSelecionada}
+                onChange={(event) => setCidadeSelecionada(event.target.value)}
+                disabled={modoDemo}
+              >
+                {CITY_OPTIONS.map((item) => (
+                  <option key={`${item.state}-${item.city}`} value={`${item.state}|${item.city}`}>
+                    {item.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+
             {tipoEscala === "5x2" ? (
               <div className="field">
-                <span>{labels.weekdays}</span>
+                <span>Dias de trabalho</span>
                 <div className="calendar-form__weekday-grid">
                   {WEEKDAY_OPTIONS.map((item) => (
                     <label className="calendar-form__weekday" key={item.value}>
@@ -542,7 +444,7 @@ export function CalendarioView({ modoDemo }: CalendarioViewProps) {
                         onChange={() => alternarDiaTrabalho(item.value)}
                         disabled={modoDemo}
                       />
-                      <span>{labels.dayNames[item.value]}</span>
+                      <span>{item.label}</span>
                     </label>
                   ))}
                 </div>
@@ -551,7 +453,7 @@ export function CalendarioView({ modoDemo }: CalendarioViewProps) {
 
             {tipoEscala === "custom" ? (
               <label className="field">
-                <span>{labels.customPattern}</span>
+                <span>Padrao personalizado</span>
                 <input
                   type="text"
                   value={padraoPersonalizado}
@@ -560,12 +462,14 @@ export function CalendarioView({ modoDemo }: CalendarioViewProps) {
                   disabled={modoDemo}
                   required
                 />
-                <p className="helper calendar-pattern-hint">{labels.patternHint}</p>
+                <p className="helper calendar-pattern-hint">
+                  Use 1 para trabalho e 0 para folga.
+                </p>
               </label>
             ) : null}
 
             <label className="field">
-              <span>{labels.note}</span>
+              <span>Observacoes</span>
               <input
                 type="text"
                 value={observacaoEscala}
@@ -574,38 +478,23 @@ export function CalendarioView({ modoDemo }: CalendarioViewProps) {
               />
             </label>
 
-            <label className="calendar-form__toggle">
-              <input
-                type="checkbox"
-                checked={escalaAtiva}
-                onChange={(event) => setEscalaAtiva(event.target.checked)}
-                disabled={modoDemo}
-              />
-              <span>{labels.activateNow}</span>
-            </label>
-
             <button className="primary-button" type="submit" disabled={modoDemo || salvando === "schedule"}>
-              {salvando === "schedule" ? labels.saving : labels.saveSchedule}
+              {salvando === "schedule" ? labels.saving : labels.save}
             </button>
           </form>
 
           <div className="calendar-summary">
-            <p className="calendar-summary__title">{labels.currentSchedule}</p>
             {escalas.length === 0 ? (
               <p className="helper">{carregandoDados ? labels.loading : labels.noSchedules}</p>
             ) : (
               <ul className="calendar-chip-list">
                 {escalas.map((item) => (
-                  <li
-                    className={item.is_active ? "calendar-chip calendar-chip--active" : "calendar-chip"}
-                    key={item.id}
-                  >
+                  <li className={item.is_active ? "calendar-chip calendar-chip--active" : "calendar-chip"} key={item.id}>
                     <strong>{item.name}</strong>
                     <span>
-                      {labels.scheduleOptions[item.schedule_type]}
-                      {item.schedule_type === "5x2"
-                        ? ` - ${formatarDiasSemana(item.working_weekdays, labels)}`
-                        : ""}
+                      {item.schedule_type}
+                      {item.schedule_type === "5x2" ? ` - ${formatarDiasSemana(item.working_weekdays)}` : ""}
+                      {item.city_name ? ` - ${item.city_name}/${item.state_code ?? ""}` : ""}
                     </span>
                   </li>
                 ))}
@@ -614,170 +503,61 @@ export function CalendarioView({ modoDemo }: CalendarioViewProps) {
           </div>
         </section>
 
-        <section className="calendar-panel">
-          <div className="calendar-panel__header">
-            <div>
-              <p className="eyebrow">{labels.vacationTitle}</p>
-              <h4>{labels.vacationTitle}</h4>
-            </div>
-          </div>
+        <VacationCard
+          title={labels.regularVacation}
+          description="Periodo de 10 ou 15 dias uteis."
+          startDate={inicioFeriasRegular}
+          days={diasFeriasRegular}
+          dayOptions={[10, 15]}
+          note={observacaoFeriasRegular}
+          saving={salvando === "regular"}
+          disabled={modoDemo}
+          vacations={feriasRegulares}
+          emptyLabel={labels.noVacations}
+          loadingLabel={carregandoDados ? labels.loading : null}
+          language={language}
+          onStartDateChange={setInicioFeriasRegular}
+          onDaysChange={setDiasFeriasRegular}
+          onNoteChange={setObservacaoFeriasRegular}
+          onSubmit={submitFeriasRegular}
+        />
 
-          <form className="calendar-form" onSubmit={submitFerias}>
-            <label className="field">
-              <span>{labels.vacationLabel}</span>
-              <input
-                type="text"
-                value={tituloFerias}
-                onChange={(event) => setTituloFerias(event.target.value)}
-                disabled={modoDemo}
-                required
-              />
-            </label>
-
-            <div className="field-grid">
-              <label className="field">
-                <span>{labels.vacationStart}</span>
-                <input
-                  type="date"
-                  value={inicioFerias}
-                  onChange={(event) => setInicioFerias(event.target.value)}
-                  disabled={modoDemo}
-                  required
-                />
-              </label>
-
-              <label className="field">
-                <span>{labels.vacationEnd}</span>
-                <input
-                  type="date"
-                  value={fimFerias}
-                  onChange={(event) => setFimFerias(event.target.value)}
-                  disabled={modoDemo}
-                  required
-                />
-              </label>
-            </div>
-
-            <label className="field">
-              <span>{labels.note}</span>
-              <input
-                type="text"
-                value={observacaoFerias}
-                onChange={(event) => setObservacaoFerias(event.target.value)}
-                disabled={modoDemo}
-              />
-            </label>
-
-            <button className="primary-button" type="submit" disabled={modoDemo || salvando === "vacation"}>
-              {salvando === "vacation" ? labels.saving : labels.saveVacation}
-            </button>
-          </form>
-
-          <div className="calendar-summary">
-            {ferias.length === 0 ? (
-              <p className="helper">{carregandoDados ? labels.loading : labels.noVacations}</p>
-            ) : (
-              <ul className="calendar-summary-list">
-                {ferias.map((item) => (
-                  <li className="calendar-summary-item" key={item.id}>
-                    <strong>{item.title}</strong>
-                    <span>{`${formatarDataISO(item.start_date, language)} - ${formatarDataISO(item.end_date, language)}`}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </section>
-
-        <section className="calendar-panel">
-          <div className="calendar-panel__header">
-            <div>
-              <p className="eyebrow">{labels.overrideTitle}</p>
-              <h4>{labels.overrideTitle}</h4>
-            </div>
-          </div>
-
-          <form className="calendar-form" onSubmit={submitExcecao}>
-            <label className="field">
-              <span>{labels.overrideDate}</span>
-              <input
-                type="date"
-                value={dataExcecao}
-                onChange={(event) => setDataExcecao(event.target.value)}
-                disabled={modoDemo}
-                required
-              />
-            </label>
-
-            <label className="field">
-              <span>{labels.overrideMode}</span>
-              <select
-                value={excecaoTrabalha ? "work" : "off"}
-                onChange={(event) => setExcecaoTrabalha(event.target.value === "work")}
-                disabled={modoDemo}
-              >
-                <option value="work">{labels.overrideWork}</option>
-                <option value="off">{labels.overrideOff}</option>
-              </select>
-            </label>
-
-            <label className="field">
-              <span>{labels.overrideReason}</span>
-              <input
-                type="text"
-                value={tituloExcecao}
-                onChange={(event) => setTituloExcecao(event.target.value)}
-                disabled={modoDemo}
-                required
-              />
-            </label>
-
-            <label className="field">
-              <span>{labels.note}</span>
-              <input
-                type="text"
-                value={observacaoExcecao}
-                onChange={(event) => setObservacaoExcecao(event.target.value)}
-                disabled={modoDemo}
-              />
-            </label>
-
-            <button className="primary-button" type="submit" disabled={modoDemo || salvando === "override"}>
-              {salvando === "override" ? labels.saving : labels.saveOverride}
-            </button>
-          </form>
-
-          <div className="calendar-summary">
-            {excecoes.length === 0 ? (
-              <p className="helper">{carregandoDados ? labels.loading : labels.noOverrides}</p>
-            ) : (
-              <ul className="calendar-summary-list">
-                {excecoes.map((item) => (
-                  <li className="calendar-summary-item" key={item.id}>
-                    <strong>{item.title}</strong>
-                    <span>{`${formatarDataISO(item.override_date, language)} - ${item.is_working_day ? labels.work : labels.off}`}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </section>
+        <VacationCard
+          title={labels.premiumVacation}
+          description="Opcional. Contagem em dias corridos."
+          startDate={inicioFeriasPremio}
+          days={diasFeriasPremio}
+          dayOptions={[15, 30, 45, 60, 90]}
+          note={observacaoFeriasPremio}
+          saving={salvando === "premium"}
+          disabled={modoDemo}
+          vacations={feriasPremio}
+          emptyLabel="Preencha somente se tiver direito a ferias-premio."
+          loadingLabel={carregandoDados ? labels.loading : null}
+          language={language}
+          onStartDateChange={setInicioFeriasPremio}
+          onDaysChange={setDiasFeriasPremio}
+          onNoteChange={setObservacaoFeriasPremio}
+          onSubmit={submitFeriasPremio}
+        />
       </div>
 
       <section className="calendar-panel calendar-panel--wide">
         <div className="calendar-panel__header">
           <div>
-            <p className="eyebrow">{labels.calendarTitle}</p>
-            <h4>{labels.calendarTitle}</h4>
-            <p className="analysis-header__subtitle">{labels.calendarSubtitle}</p>
+            <p className="eyebrow">{labels.title}</p>
+            <h4>{labels.title}</h4>
+            <p className="analysis-header__subtitle">
+              Plantoes, folgas, ferias e feriados nacionais/estaduais/municipais aparecem juntos.
+            </p>
           </div>
           <div className="calendar-legend">
             {[
               { label: labels.work, color: "#14b8a6" },
               { label: labels.off, color: "#94a3b8" },
               { label: labels.vacation, color: "#f59e0b" },
+              { label: labels.premium, color: "#38bdf8" },
               { label: labels.holiday, color: "#ef4444" },
-              { label: labels.exception, color: "#8b5cf6" },
             ].map((item) => (
               <span className="calendar-legend__item" key={item.label}>
                 <span className="calendar-legend__swatch" style={{ backgroundColor: item.color }} />
@@ -795,9 +575,7 @@ export function CalendarioView({ modoDemo }: CalendarioViewProps) {
             initialView="dayGridMonth"
             height="auto"
             events={eventosCalendario}
-            buttonText={{
-              today: labels.today,
-            }}
+            buttonText={{ today: labels.today }}
             headerToolbar={{
               left: "prev,next today",
               center: "title",
@@ -816,6 +594,118 @@ export function CalendarioView({ modoDemo }: CalendarioViewProps) {
           />
         </div>
       </section>
+    </section>
+  )
+}
+
+type VacationCardProps = {
+  title: string
+  description: string
+  startDate: string
+  days: number
+  dayOptions: number[]
+  note: string
+  saving: boolean
+  disabled: boolean
+  vacations: VacationPeriod[]
+  emptyLabel: string
+  loadingLabel: string | null
+  language: "pt-BR" | "en"
+  onStartDateChange: (value: string) => void
+  onDaysChange: (value: number) => void
+  onNoteChange: (value: string) => void
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void
+}
+
+function VacationCard({
+  title,
+  description,
+  startDate,
+  days,
+  dayOptions,
+  note,
+  saving,
+  disabled,
+  vacations,
+  emptyLabel,
+  loadingLabel,
+  language,
+  onStartDateChange,
+  onDaysChange,
+  onNoteChange,
+  onSubmit,
+}: VacationCardProps) {
+  return (
+    <section className="calendar-panel">
+      <div className="calendar-panel__header">
+        <div>
+          <p className="eyebrow">{title}</p>
+          <h4>{title}</h4>
+          <p className="helper">{description}</p>
+        </div>
+      </div>
+
+      <form className="calendar-form" onSubmit={onSubmit}>
+        <div className="field-grid">
+          <label className="field">
+            <span>Inicio</span>
+            <input
+              type="date"
+              value={startDate}
+              onChange={(event) => onStartDateChange(event.target.value)}
+              disabled={disabled}
+              required
+            />
+          </label>
+
+          <label className="field">
+            <span>Dias</span>
+            <select
+              value={days}
+              onChange={(event) => onDaysChange(Number(event.target.value))}
+              disabled={disabled}
+            >
+              {dayOptions.map((item) => (
+                <option value={item} key={item}>
+                  {item}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <label className="field">
+          <span>Observacoes</span>
+          <input
+            type="text"
+            value={note}
+            onChange={(event) => onNoteChange(event.target.value)}
+            disabled={disabled}
+          />
+        </label>
+
+        <button className="primary-button" type="submit" disabled={disabled || saving}>
+          {saving ? "Salvando..." : "Salvar"}
+        </button>
+      </form>
+
+      <div className="calendar-summary">
+        {vacations.length === 0 ? (
+          <p className="helper">{loadingLabel ?? emptyLabel}</p>
+        ) : (
+          <ul className="calendar-summary-list">
+            {vacations.map((item) => (
+              <li className="calendar-summary-item" key={item.id}>
+                <strong>{item.title}</strong>
+                <span>
+                  {`${formatarDataISO(item.start_date, language)} - ${formatarDataISO(item.end_date, language)}`}
+                </span>
+                <span>{`${item.counted_days ?? item.requested_days ?? "-"} dias`}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </section>
   )
 }

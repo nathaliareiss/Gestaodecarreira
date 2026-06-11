@@ -34,8 +34,37 @@ CORES_EVENTO = {
     "work": "#14b8a6",
     "off": "#94a3b8",
     "vacation": "#f59e0b",
+    "premium_vacation": "#38bdf8",
     "holiday": "#ef4444",
     "exception": "#8b5cf6",
+}
+
+MUNICIPAL_HOLIDAYS: dict[tuple[str, str], dict[tuple[int, int], str]] = {
+    ("MG", "belo horizonte"): {
+        (8, 15): "Feriado municipal - Nossa Senhora da Boa Viagem",
+        (12, 8): "Feriado municipal - Imaculada Conceicao",
+    },
+    ("MG", "contagem"): {
+        (8, 30): "Feriado municipal - Aniversario de Contagem",
+        (12, 8): "Feriado municipal - Imaculada Conceicao",
+    },
+    ("MG", "betim"): {
+        (7, 16): "Feriado municipal - Nossa Senhora do Carmo",
+    },
+    ("MG", "uberlandia"): {
+        (8, 31): "Feriado municipal - Aniversario de Uberlandia",
+    },
+    ("MG", "juiz de fora"): {
+        (6, 13): "Feriado municipal - Santo Antonio",
+    },
+    ("SP", "sao paulo"): {
+        (1, 25): "Feriado municipal - Aniversario de Sao Paulo",
+        (11, 20): "Feriado municipal - Dia da Consciencia Negra",
+    },
+    ("RJ", "rio de janeiro"): {
+        (1, 20): "Feriado municipal - Sao Sebastiao",
+        (4, 23): "Feriado municipal - Sao Jorge",
+    },
 }
 
 
@@ -80,6 +109,12 @@ def _validar_schedule_payload(payload: WorkScheduleCreateRequest) -> None:
     if payload.schedule_type != "5x2":
         payload.working_weekdays = []
 
+    if payload.state_code:
+        payload.state_code = payload.state_code.strip().upper()[:2]
+
+    if payload.city_name:
+        payload.city_name = payload.city_name.strip()
+
 
 def _schedule_to_response(schedule: WorkSchedule) -> WorkScheduleResponse:
     return WorkScheduleResponse(
@@ -88,6 +123,8 @@ def _schedule_to_response(schedule: WorkSchedule) -> WorkScheduleResponse:
         name=schedule.name,
         schedule_type=schedule.schedule_type,  # type: ignore[arg-type]
         anchor_date=schedule.anchor_date,
+        state_code=schedule.state_code,
+        city_name=schedule.city_name,
         working_weekdays=_desserializar_int_list(schedule.working_weekdays_json),
         custom_pattern=_desserializar_bool_list(schedule.custom_pattern_json),
         note=schedule.note,
@@ -102,8 +139,11 @@ def _vacation_to_response(vacation: VacationPeriod) -> VacationPeriodResponse:
         id=vacation.id,
         user_id=vacation.user_id,
         title=vacation.title,
+        vacation_type=getattr(vacation, "vacation_type", "regular"),  # type: ignore[arg-type]
         start_date=vacation.start_date,
         end_date=vacation.end_date,
+        requested_days=vacation.requested_days,
+        counted_days=vacation.counted_days,
         note=vacation.note,
         created_at=vacation.created_at,
         updated_at=vacation.updated_at,
@@ -137,6 +177,8 @@ def criar_escala_trabalho(
         name=payload.name.strip(),
         schedule_type=payload.schedule_type,
         anchor_date=payload.anchor_date,
+        state_code=payload.state_code,
+        city_name=payload.city_name,
         working_weekdays_json=_serializar_lista_json(payload.working_weekdays),
         custom_pattern_json=_serializar_lista_json(payload.custom_pattern),
         note=payload.note.strip() if payload.note else None,
@@ -154,14 +196,31 @@ def criar_periodo_ferias(
     user_id: int,
     payload: VacationPeriodCreateRequest,
 ) -> VacationPeriodResponse:
-    if payload.end_date < payload.start_date:
+    schedule = obter_work_schedule_ativo_por_usuario(db, user_id)
+    requested_days = payload.requested_days
+
+    if payload.vacation_type == "regular":
+        requested_days = requested_days or 15
+        if requested_days not in {10, 15}:
+            raise ValueError("Ferias regulamentares devem ser divididas em periodos de 10 ou 15 dias uteis.")
+        end_date = _calcular_data_final_ferias_uteis(payload.start_date, requested_days, schedule)
+        counted_days = requested_days
+    else:
+        requested_days = requested_days or 15
+        end_date = payload.end_date or (payload.start_date + relativedelta(days=requested_days - 1))
+        counted_days = (end_date - payload.start_date).days + 1
+
+    if end_date < payload.start_date:
         raise ValueError("A data final das ferias nao pode ser anterior a data inicial.")
 
     vacation = VacationPeriod(
         user_id=user_id,
         title=payload.title.strip(),
+        vacation_type=payload.vacation_type,
         start_date=payload.start_date,
-        end_date=payload.end_date,
+        end_date=end_date,
+        requested_days=requested_days,
+        counted_days=counted_days,
         note=payload.note.strip() if payload.note else None,
     )
     return _vacation_to_response(criar_vacation_period(db, vacation))
@@ -221,6 +280,51 @@ def _iterar_datas(start_date: date, end_date: date):
         cursor = cursor + relativedelta(days=1)
 
 
+def _normalizar_cidade(city_name: str | None) -> str:
+    return (city_name or "").strip().lower()
+
+
+def _feriados_para_escala(schedule: WorkSchedule | None, start_date: date, end_date: date) -> dict[date, str]:
+    years = range(start_date.year, end_date.year + 1)
+    state_code = (getattr(schedule, "state_code", None) or "").strip().upper() or None
+    city_name = _normalizar_cidade(getattr(schedule, "city_name", None))
+    holiday_calendar = holidays.country_holidays("BR", subdiv=state_code, years=years)
+    result: dict[date, str] = {
+        item_date: str(name)
+        for item_date, name in holiday_calendar.items()
+        if start_date <= item_date <= end_date
+    }
+
+    if state_code and city_name:
+        for (month, day), name in MUNICIPAL_HOLIDAYS.get((state_code, city_name), {}).items():
+            for year in years:
+                holiday_date = date(year, month, day)
+                if start_date <= holiday_date <= end_date:
+                    result[holiday_date] = name
+
+    return result
+
+
+def _is_business_day(target_date: date, schedule: WorkSchedule | None) -> bool:
+    if target_date.weekday() >= 5:
+        return False
+
+    return target_date not in _feriados_para_escala(schedule, target_date, target_date)
+
+
+def _calcular_data_final_ferias_uteis(start_date: date, requested_days: int, schedule: WorkSchedule | None) -> date:
+    counted_days = 0
+    cursor = start_date
+
+    while True:
+        if _is_business_day(cursor, schedule):
+            counted_days += 1
+            if counted_days == requested_days:
+                return cursor
+
+        cursor = cursor + relativedelta(days=1)
+
+
 def gerar_eventos_calendario(
     db: Session,
     user_id: int,
@@ -233,7 +337,7 @@ def gerar_eventos_calendario(
     schedule = obter_work_schedule_ativo_por_usuario(db, user_id)
     vacations = listar_vacations_por_usuario_no_intervalo(db, user_id, start_date, end_date)
     overrides = listar_work_calendar_overrides_por_usuario_no_intervalo(db, user_id, start_date, end_date)
-    holiday_calendar = holidays.country_holidays("BR", years=range(start_date.year, end_date.year + 1))
+    holiday_calendar = _feriados_para_escala(schedule, start_date, end_date)
 
     vacations_by_day: dict[date, VacationPeriod] = {}
     for vacation in vacations:
@@ -256,8 +360,10 @@ def gerar_eventos_calendario(
                     title=vacation.title,
                     start=current_day,
                     end=current_day + relativedelta(days=1),
-                    category="vacation",
-                    color=CORES_EVENTO["vacation"],
+                    category="premium_vacation" if getattr(vacation, "vacation_type", "regular") == "premium" else "vacation",
+                    color=CORES_EVENTO[
+                        "premium_vacation" if getattr(vacation, "vacation_type", "regular") == "premium" else "vacation"
+                    ],
                     text_color="#08111d",
                     source="vacation_periods",
                     is_working_day=False,

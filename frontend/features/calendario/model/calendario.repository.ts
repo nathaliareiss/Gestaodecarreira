@@ -2,6 +2,7 @@ import { apiFetch, parseApiResponse } from "@/shared/api/client"
 
 import type {
   TipoEscalaTrabalho,
+  TipoFerias,
   VacationPeriod,
   WorkCalendarEvent,
   WorkCalendarOverride,
@@ -12,6 +13,8 @@ type WorkSchedulePayload = {
   name: string
   schedule_type: TipoEscalaTrabalho
   anchor_date: string
+  state_code: string | null
+  city_name: string | null
   working_weekdays: number[]
   custom_pattern: boolean[]
   note: string | null
@@ -20,8 +23,10 @@ type WorkSchedulePayload = {
 
 type VacationPayload = {
   title: string
+  vacation_type: TipoFerias
   start_date: string
-  end_date: string
+  end_date?: string | null
+  requested_days: number
   note: string | null
 }
 
@@ -68,6 +73,7 @@ function categoriaSegura(valor: unknown): WorkCalendarEvent["category"] {
     case "work":
     case "off":
     case "vacation":
+    case "premium_vacation":
     case "holiday":
     case "exception":
       return valor
@@ -95,6 +101,8 @@ function normalizarEscala(resposta: Partial<WorkSchedule> | null | undefined): W
     name: stringSegura(resposta?.name),
     schedule_type: tipoEscalaSeguro(resposta?.schedule_type),
     anchor_date: stringSegura(resposta?.anchor_date),
+    state_code: typeof resposta?.state_code === "string" ? resposta.state_code : null,
+    city_name: typeof resposta?.city_name === "string" ? resposta.city_name : null,
     working_weekdays: listaDeNumerosSegura(resposta?.working_weekdays),
     custom_pattern: listaDeBooleanosSegura(resposta?.custom_pattern),
     note: typeof resposta?.note === "string" ? resposta.note : null,
@@ -109,8 +117,11 @@ function normalizarFerias(resposta: Partial<VacationPeriod> | null | undefined):
     id: numeroSeguro(resposta?.id),
     user_id: numeroSeguro(resposta?.user_id),
     title: stringSegura(resposta?.title),
+    vacation_type: resposta?.vacation_type === "premium" ? "premium" : "regular",
     start_date: stringSegura(resposta?.start_date),
     end_date: stringSegura(resposta?.end_date),
+    requested_days: resposta?.requested_days == null ? null : numeroSeguro(resposta.requested_days),
+    counted_days: resposta?.counted_days == null ? null : numeroSeguro(resposta.counted_days),
     note: typeof resposta?.note === "string" ? resposta.note : null,
     created_at: stringSegura(resposta?.created_at),
     updated_at: stringSegura(resposta?.updated_at),

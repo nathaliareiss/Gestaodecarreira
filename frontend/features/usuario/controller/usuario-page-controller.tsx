@@ -303,7 +303,7 @@ export function UsuarioPageController({
               { key: "perfil" as const, label: texts.dashboard.profile },
               { key: "historico" as const, label: texts.dashboard.history },
               { key: "financeiro" as const, label: texts.dashboard.finance },
-              { key: "calendario" as const, label: language === "en" ? "Calendar" : "Calendario" },
+              { key: "calendario" as const, label: language === "en" ? "Schedule" : "Escala" },
             ].map((aba) => (
               <button
                 className={abaAtiva === aba.key ? "tab-button tab-button--active" : "tab-button"}

@@ -1,4 +1,5 @@
 export type TipoEscalaTrabalho = "12x36" | "24x72" | "5x2" | "custom"
+export type TipoFerias = "regular" | "premium"
 
 export type WorkSchedule = {
   id: number
@@ -6,6 +7,8 @@ export type WorkSchedule = {
   name: string
   schedule_type: TipoEscalaTrabalho
   anchor_date: string
+  state_code: string | null
+  city_name: string | null
   working_weekdays: number[]
   custom_pattern: boolean[]
   note: string | null
@@ -18,8 +21,11 @@ export type VacationPeriod = {
   id: number
   user_id: number
   title: string
+  vacation_type: TipoFerias
   start_date: string
   end_date: string
+  requested_days: number | null
+  counted_days: number | null
   note: string | null
   created_at: string
   updated_at: string
@@ -40,6 +46,7 @@ export type WorkCalendarEventCategory =
   | "work"
   | "off"
   | "vacation"
+  | "premium_vacation"
   | "holiday"
   | "exception"
 
