@@ -65,6 +65,8 @@ def test_upload_pdf_valido_eh_aceito(monkeypatch) -> None:
         "/historicos-funcionais/analisar",
         data={
             "data_nascimento": "1980-01-01",
+            "sexo": "feminino",
+            "categoria_previdenciaria": "professor",
             "anos_clt_averbados": "2",
             "usuario_id": "999",
         },

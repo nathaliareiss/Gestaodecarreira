@@ -1058,14 +1058,49 @@ def _montar_resumo_grafico(
     )
 
 
-def _proximo_marco(eventos: list[EventoHistorico], tipo: str, base: date) -> date:
+def _dias_suspensao_por_afastamentos(
+    afastamentos: list[AfastamentoPeriodo],
+    inicio: date,
+    fim: date,
+) -> int:
+    total = 0
+    for afastamento in afastamentos:
+        if afastamento.tipo != "licenca_para_tratamento_de_saude":
+            continue
+        if afastamento.total_dias <= 90:
+            continue
+
+        inicio_suspensao = max(afastamento.data_inicio, inicio)
+        fim_suspensao = min(afastamento.data_fim, fim)
+        if fim_suspensao >= inicio_suspensao:
+            total += (fim_suspensao - inicio_suspensao).days + 1
+    return total
+
+
+def _proximo_marco(
+    eventos: list[EventoHistorico],
+    tipo: str,
+    base: date,
+    afastamentos: list[AfastamentoPeriodo] | None = None,
+) -> date:
     data_referencia = base
     for evento in eventos:
         if evento.tipo == tipo:
             data_referencia = evento.data_efetiva
 
     incremento = 2 if tipo == "progressao" else 5
-    return _adicionar_anos(data_referencia, incremento)
+    prevista_base = _adicionar_anos(data_referencia, incremento)
+    prevista = prevista_base
+    periodos_afastamento = afastamentos or []
+
+    for _ in range(10):
+        dias_suspensos = _dias_suspensao_por_afastamentos(periodos_afastamento, data_referencia, prevista)
+        nova_prevista = prevista_base + timedelta(days=dias_suspensos)
+        if nova_prevista == prevista:
+            return prevista
+        prevista = nova_prevista
+
+    return prevista
 
 
 def analisar_historico_funcional(
@@ -1127,16 +1162,6 @@ def analisar_historico_funcional(
         categoria_previdenciaria=categoria_previdenciaria,
     )
 
-    proxima_progressao_prevista = _proximo_marco(eventos, "progressao", inicio_contagem_progressao)
-    proxima_promocao_prevista = _proximo_marco(eventos, "promocao", inicio_contagem_progressao)
-    resumo_grafico = _montar_resumo_grafico(
-        eventos=eventos,
-        dias_trabalhados=dias_trabalhados,
-        dias_totais=dias_totais,
-        percentual_trabalhado=percentual_trabalhado,
-        percentual_restante=percentual_restante,
-    )
-
     afastamentos: list[AfastamentoPeriodo] = []
     resumo_afastamentos: AfastamentoResumoResponse | None = None
     if conteudo_afastamentos_pdf is not None:
@@ -1150,6 +1175,16 @@ def analisar_historico_funcional(
                 "periodos_afastamento": len(afastamentos),
             },
         )
+
+    proxima_progressao_prevista = _proximo_marco(eventos, "progressao", inicio_contagem_progressao, afastamentos)
+    proxima_promocao_prevista = _proximo_marco(eventos, "promocao", inicio_contagem_progressao, afastamentos)
+    resumo_grafico = _montar_resumo_grafico(
+        eventos=eventos,
+        dias_trabalhados=dias_trabalhados,
+        dias_totais=dias_totais,
+        percentual_trabalhado=percentual_trabalhado,
+        percentual_restante=percentual_restante,
+    )
 
     ferias: list[FeriasPeriodo] = []
     resumo_ferias: FeriasResumoResponse | None = None

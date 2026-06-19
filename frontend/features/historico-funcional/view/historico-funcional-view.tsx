@@ -961,6 +961,10 @@ export function HistoricoFuncionalView({
                   <span>{t.nextProgression}</span>
                   <strong>{formatarData(painel.proxima_progressao_prevista, language)}</strong>
                 </div>
+                <div className="metric-line">
+                  <span>{t.nextPromotion}</span>
+                  <strong>{formatarData(painel.proxima_promocao_prevista, language)}</strong>
+                </div>
               </div>
 
             </div>

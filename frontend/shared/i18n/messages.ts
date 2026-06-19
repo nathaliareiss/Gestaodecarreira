@@ -268,6 +268,7 @@ export type LocaleTexts = {
     vacationDaysUsed: string
     nextVacation: string
     nextProgression: string
+    nextPromotion: string
     comparison: string
     timeWorkedAndLeave: string
     noLeavePeriods: string
@@ -577,6 +578,7 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       vacationDaysUsed: "Dias de férias usados",
       nextVacation: "Próximas férias",
       nextProgression: "Próxima progressão",
+      nextPromotion: "Próxima promoção",
       comparison: "Comparação",
       timeWorkedAndLeave: "Tempo trabalhado e afastamento",
       noLeavePeriods: "Você não possui períodos de afastamento registrados para desenhar a comparação.",
@@ -884,6 +886,7 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       vacationDaysUsed: "Vacation days used",
       nextVacation: "Next vacation",
       nextProgression: "Next Progression",
+      nextPromotion: "Next Promotion",
       comparison: "Comparison",
       timeWorkedAndLeave: "Time Worked and Leave",
       noLeavePeriods: "You do not have any recorded leave periods to draw the comparison.",

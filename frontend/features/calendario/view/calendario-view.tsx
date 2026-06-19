@@ -115,7 +115,7 @@ function formatarDiasSemana(workingWeekdays: number[]) {
     return "-"
   }
 
-  const map = new Map(WEEKDAY_OPTIONS.map((item) => [item.value, item.label]))
+  const map = new Map<number, string>(WEEKDAY_OPTIONS.map((item) => [item.value, item.label]))
   return workingWeekdays.map((item) => map.get(item) ?? String(item)).join(", ")
 }
 
