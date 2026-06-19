@@ -99,7 +99,7 @@ export function useUsuarioController() {
         senha: cadastro.senha,
         aceite_politica_privacidade: cadastro.aceite_politica_privacidade,
       })
-      setMensagem(registerTexts.successMessage)
+      router.replace("/login")
     } catch (error) {
       if (error instanceof ApiResponseError && error.status === 409) {
         const mensagemErro = error.message.toLowerCase()

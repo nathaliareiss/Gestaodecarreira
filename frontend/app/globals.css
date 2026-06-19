@@ -88,6 +88,12 @@ select:focus {
   background: rgba(8, 16, 30, 0.82);
 }
 
+input:focus::placeholder,
+textarea:focus::placeholder {
+  color: transparent !important;
+  opacity: 0;
+}
+
 .form-card--login .login-input {
   color: #f8fbff !important;
   -webkit-text-fill-color: #f8fbff !important;

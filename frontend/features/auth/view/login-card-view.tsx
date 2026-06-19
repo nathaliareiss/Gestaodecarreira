@@ -113,8 +113,8 @@ export function LoginCardView({
           </div>
 
           {mensagemConfirmacao ? <p className="success-box">{mensagemConfirmacao}</p> : null}
-          {erroConfirmacao ? <p className="error-box">{erroConfirmacao}</p> : null}
-          {erro ? <p className="error-box">{erro}</p> : null}
+          {erroConfirmacao ? <p className="error-box" role="alert">{erroConfirmacao}</p> : null}
+          {erro ? <p className="error-box" role="alert">{erro}</p> : null}
         </form>
       ) : (
         <form className="card form-card form-card--recovery form-card--auth" onSubmit={onRecuperacaoSubmit}>
@@ -149,7 +149,7 @@ export function LoginCardView({
           </div>
 
           {mensagemRecuperacao ? <p className="success-box">{mensagemRecuperacao}</p> : null}
-          {erroRecuperacao ? <p className="error-box">{erroRecuperacao}</p> : null}
+          {erroRecuperacao ? <p className="error-box" role="alert">{erroRecuperacao}</p> : null}
         </form>
       )}
     </>

@@ -66,7 +66,8 @@ def _obter_request_id(request: Request) -> str:
 
 def _cookie_deve_ser_seguro(request: Request) -> bool:
     proto = request.headers.get("x-forwarded-proto", request.url.scheme)
-    return proto.split(",")[0].strip().lower() == "https"
+    frontend_scheme = urlparse(FRONTEND_BASE_URL).scheme if FRONTEND_BASE_URL else ""
+    return proto.split(",")[0].strip().lower() == "https" or frontend_scheme == "https"
 
 
 def _cookie_same_site(request: Request) -> str:

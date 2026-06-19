@@ -57,7 +57,7 @@ def autenticar_usuario(db: Session, dados: UsuarioLoginRequest) -> tuple[Usuario
         raise ValueError("Senha incorreta.")
 
     if not usuario.email_confirmado:
-        raise ValueError("Confirme seu email antes de entrar.")
+        raise ValueError("Confirme seu cadastro no e-mail informado.")
 
     token_sessao = gerar_token_seguro()
     registrar_sessao_usuario(db, usuario, token_sessao)
