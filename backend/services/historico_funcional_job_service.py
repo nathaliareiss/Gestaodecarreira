@@ -22,7 +22,7 @@ from backend.schemas.historico_funcional_schema import (
     HistoricoFuncionalUploadRequest,
     HistoricoFuncionalResumoGraficoResponse,
 )
-from backend.storage import baixar_pdf_storage, obter_origem_storage
+from backend.storage import baixar_pdf_storage
 from backend.services.historico_funcional_service import (
     analisar_afastamentos_pdf,
     analisar_historico_funcional,
@@ -176,12 +176,7 @@ def processar_historico_funcional_db(
         usuario_id=dados.usuario_id,
         arquivo_storage_path=dados.arquivo_storage_path,
         afastamentos_storage_path=dados.afastamentos_storage_path,
-        armazenamento_origem=(
-            "local"
-            if dados.armazenamento_origem == "local"
-            or dados.afastamentos_armazenamento_origem == "local"
-            else obter_origem_storage(dados.arquivo_storage_path)
-        ),
+        armazenamento_origem="local",
         processamento_origem=processamento_origem,
     )
 
@@ -218,9 +213,7 @@ def processar_afastamentos_db(
                 }
                 for afastamento in afastamentos
             ],
-            "armazenamento_origem": dados.armazenamento_origem
-            if dados.armazenamento_origem in {"supabase", "local"}
-            else obter_origem_storage(dados.arquivo_storage_path),
+            "armazenamento_origem": "local",
             "processamento_origem": processamento_origem,
         }
     )

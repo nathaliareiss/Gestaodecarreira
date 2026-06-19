@@ -3,7 +3,7 @@
 -- This codebase currently authenticates users through the backend `usuarios` table
 -- and propagates the authenticated user to PostgreSQL through
 -- `app.current_user_id`. Because of that, the RLS policies below follow the
--- runtime model that exists today instead of Supabase Auth `auth.uid()`.
+-- runtime model that exists today.
 
 BEGIN;
 

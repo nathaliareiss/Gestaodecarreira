@@ -103,11 +103,9 @@ docker compose down
 
 - `DATABASE_URL`
 - `REDIS_URL`
-- `SUPABASE_URL`
-- `SUPABASE_SERVICE_ROLE_KEY`
-- `SUPABASE_STORAGE_BUCKET`
-- `SUPABASE_STORAGE_HISTORICO_PREFIX`
-- `SUPABASE_STORAGE_AFASTAMENTOS_PREFIX`
+- `STORAGE_LOCAL_DIR`
+- `STORAGE_HISTORICO_PREFIX`
+- `STORAGE_AFASTAMENTOS_PREFIX`
 - `CORS_ORIGINS`
 - `FRONTEND_BASE_URL`
 - `SMTP_HOST`
@@ -126,9 +124,6 @@ docker compose down
 - `NEXT_PUBLIC_API_URL`
 
 For production emails, prefer `EMAIL_PROVIDER=resend` with a verified sender.
-
-If `DATABASE_URL` points to Supabase, the backend automatically adds `sslmode=require` when it
-detects a `*.supabase.co` host.
 
 ## Backend
 
@@ -170,16 +165,13 @@ If the queue is unavailable, the backend can still process directly for local de
 
 ### PDF Storage
 
-PDFs are stored in Supabase Storage:
+PDFs are stored in the local storage directory:
 
-- bucket: `gestaocarreira`
+- default directory: `backend/storage_data`
 - career history folder: `historicofuncional`
 - leave folder: `afastamentos`
 
 The database stores only file paths and analysis metadata.
-
-If Supabase Storage is unavailable, the backend falls back to a local directory
-(`backend/storage_data`) and marks the response with `armazenamento_origem: "local"`.
 
 ## Frontend
 
@@ -364,18 +356,16 @@ docker compose down
 
 - `backend/.env`: variáveis do backend
 - `frontend/.env.local`: URL pública da API consumida pelo frontend
-- `backend/.env.example`: exemplo com SMTP, Redis, Supabase e demais variáveis
+- `backend/.env.example`: exemplo com SMTP, Redis, storage local e demais variáveis
 - `frontend/.env.local.example`: exemplo da configuração do frontend
 
 ### Variáveis Importantes
 
 - `DATABASE_URL`
 - `REDIS_URL`
-- `SUPABASE_URL`
-- `SUPABASE_SERVICE_ROLE_KEY`
-- `SUPABASE_STORAGE_BUCKET`
-- `SUPABASE_STORAGE_HISTORICO_PREFIX`
-- `SUPABASE_STORAGE_AFASTAMENTOS_PREFIX`
+- `STORAGE_LOCAL_DIR`
+- `STORAGE_HISTORICO_PREFIX`
+- `STORAGE_AFASTAMENTOS_PREFIX`
 - `CORS_ORIGINS`
 - `FRONTEND_BASE_URL`
 - `SMTP_HOST`
@@ -394,9 +384,6 @@ docker compose down
 - `NEXT_PUBLIC_API_URL`
 
 Para e-mails em produção, prefira `EMAIL_PROVIDER=resend` com um remetente verificado.
-
-Se o `DATABASE_URL` vier do Supabase, o backend adiciona `sslmode=require` automaticamente quando
-detecta um host `*.supabase.co`.
 
 ## Backend
 
@@ -440,16 +427,13 @@ ambiente local funcionando.
 
 ### Storage de PDFs
 
-Os PDFs ficam no Supabase Storage:
+Os PDFs ficam no storage local:
 
-- bucket: `gestaocarreira`
+- diretório padrão: `backend/storage_data`
 - pasta de histórico funcional: `historicofuncional`
 - pasta de afastamentos: `afastamentos`
 
 O banco guarda apenas o caminho do arquivo e os metadados da análise.
-
-Se o Supabase Storage não estiver acessível, o backend salva o PDF em um diretório local de
-fallback (`backend/storage_data`) e marca a resposta com `armazenamento_origem: "local"`.
 
 ## Frontend
 

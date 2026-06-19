@@ -526,10 +526,10 @@ function rotuloArmazenamento(
   idioma: "pt-BR" | "en",
 ) {
   if (idioma === "en") {
-    return origem === "local" ? "local fallback storage" : "Supabase Storage"
+    return "local storage"
   }
 
-  return origem === "local" ? "storage local de fallback" : "Supabase Storage"
+  return "storage local"
 }
 
 function rotuloProcessamento(

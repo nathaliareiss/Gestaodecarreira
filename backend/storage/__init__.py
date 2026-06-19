@@ -1,4 +1,4 @@
-from backend.storage.supabase_storage import (
+from backend.storage.local_storage import (
     StorageError,
     baixar_pdf_storage,
     gerar_caminho_storage_afastamentos,

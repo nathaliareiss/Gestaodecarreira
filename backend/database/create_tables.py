@@ -1,6 +1,5 @@
 from sqlalchemy import text
 
-from backend.config import SUPABASE_STORAGE_BUCKET, SUPABASE_STORAGE_CONFIGURED
 from backend.database.database import Base, engine
 from backend.database import models as database_models  # noqa: F401
 from backend.logger import logger
@@ -133,64 +132,6 @@ def habilitar_rls_tabelas_publicas() -> None:
         logger.exception(
             "Falha ao habilitar RLS nas tabelas publicas",
             extra={"tabelas": ["usuarios", "historicos_funcionais", "financeiro"]},
-        )
-
-    if not SUPABASE_STORAGE_CONFIGURED:
-        logger.info(
-            "Supabase Storage nao configurado; politicas de bucket ignoradas",
-            extra={"storage": "local"},
-        )
-        return
-
-    bucket = SUPABASE_STORAGE_BUCKET.replace("'", "''")
-    comandos_storage = [
-        f"""
-        DO $$
-        BEGIN
-            IF EXISTS (
-                SELECT 1
-                FROM information_schema.tables
-                WHERE table_schema = 'storage' AND table_name = 'buckets'
-            ) THEN
-                UPDATE storage.buckets
-                SET public = FALSE
-                WHERE id = '{bucket}';
-            END IF;
-        END $$;
-        """,
-        "ALTER TABLE IF EXISTS storage.objects ENABLE ROW LEVEL SECURITY",
-        "ALTER TABLE IF EXISTS storage.objects FORCE ROW LEVEL SECURITY",
-        f"""
-        DO $$
-        BEGIN
-            IF EXISTS (
-                SELECT 1
-                FROM information_schema.tables
-                WHERE table_schema = 'storage' AND table_name = 'objects'
-            ) THEN
-                DROP POLICY IF EXISTS gestaocarreira_backend_objects_access ON storage.objects;
-                CREATE POLICY gestaocarreira_backend_objects_access ON storage.objects FOR ALL TO PUBLIC
-                USING (
-                    bucket_id = '{bucket}'
-                    AND current_setting('app.backend_access', true) = 'on'
-                )
-                WITH CHECK (
-                    bucket_id = '{bucket}'
-                    AND current_setting('app.backend_access', true) = 'on'
-                );
-            END IF;
-        END $$;
-        """,
-    ]
-
-    try:
-        with engine.begin() as conexao:
-            for comando in comandos_storage:
-                conexao.execute(text(comando))
-    except Exception:
-        logger.exception(
-            "Falha ao restringir bucket do Supabase Storage",
-            extra={"bucket": SUPABASE_STORAGE_BUCKET},
         )
 
 

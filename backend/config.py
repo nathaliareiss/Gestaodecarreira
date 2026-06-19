@@ -34,20 +34,14 @@ def _ler_bool(nome_variavel: str, padrao: bool = False) -> bool:
 HOST = os.getenv("HOST", "0.0.0.0")
 PORT = int(os.getenv("PORT", "8000"))
 REDIS_URL = os.getenv("REDIS_URL", "").strip()
-SUPABASE_URL = os.getenv("SUPABASE_URL", "").strip()
-SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "").strip()
-SUPABASE_STORAGE_BUCKET = os.getenv("SUPABASE_STORAGE_BUCKET", "").strip()
-SUPABASE_STORAGE_HISTORICO_PREFIX = os.getenv(
-    "SUPABASE_STORAGE_HISTORICO_PREFIX",
+STORAGE_HISTORICO_PREFIX = os.getenv(
+    "STORAGE_HISTORICO_PREFIX",
     "historicofuncional",
 ).strip()
-SUPABASE_STORAGE_AFASTAMENTOS_PREFIX = os.getenv(
-    "SUPABASE_STORAGE_AFASTAMENTOS_PREFIX",
+STORAGE_AFASTAMENTOS_PREFIX = os.getenv(
+    "STORAGE_AFASTAMENTOS_PREFIX",
     "afastamentos",
 ).strip()
-SUPABASE_STORAGE_CONFIGURED = bool(
-    SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY and SUPABASE_STORAGE_BUCKET
-)
 CORS_ORIGINS = _ler_lista_csv("CORS_ORIGINS")
 FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL", "").rstrip("/")
 EMAIL_CONFIRMATION_SUBJECT = os.getenv(

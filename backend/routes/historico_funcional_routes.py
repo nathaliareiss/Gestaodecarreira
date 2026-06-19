@@ -138,11 +138,7 @@ async def analisar_e_salvar_historico(
             afastamentos_storage_path,
         )
 
-    armazenamento_origem = (
-        "local"
-        if arquivo_armazenamento_origem == "local" or afastamentos_armazenamento_origem == "local"
-        else "supabase"
-    )
+    armazenamento_origem = "local"
 
     dados = HistoricoFuncionalUploadRequest(
         usuario_id=current_user.id,

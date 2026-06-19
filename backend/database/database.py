@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, event, text
@@ -22,27 +21,7 @@ if not DATABASE_URL:
     )
     raise RuntimeError(
         "DATABASE_URL nao foi definido. Configure backend/.env antes de iniciar o banco."
-    )
-
-def _garantir_sslmode_require(url: str) -> str:
-    partes = urlparse(url)
-    if not partes.hostname or not partes.hostname.endswith(".supabase.co"):
-        return url
-
-    query = dict(parse_qsl(partes.query, keep_blank_values=True))
-    if "sslmode" in query:
-        return url
-
-    query["sslmode"] = "require"
-    url_corrigida = urlunparse(partes._replace(query=urlencode(query)))
-    logger.warning(
-        "DATABASE_URL Supabase sem sslmode; aplicando sslmode=require automaticamente",
-        extra={"host": partes.hostname, "porta": partes.port},
-    )
-    return url_corrigida
-
-
-DATABASE_URL = _garantir_sslmode_require(DATABASE_URL)
+)
 
 _E_SQLITE = DATABASE_URL.startswith("sqlite")
 _ENGINE_KWARGS = {"pool_pre_ping": True}

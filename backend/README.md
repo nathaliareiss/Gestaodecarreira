@@ -89,11 +89,9 @@ backend.app:app
 - `HOST`
 - `PORT`
 - `REDIS_URL`
-- `SUPABASE_URL`
-- `SUPABASE_SERVICE_ROLE_KEY`
-- `SUPABASE_STORAGE_BUCKET`
-- `SUPABASE_STORAGE_HISTORICO_PREFIX`
-- `SUPABASE_STORAGE_AFASTAMENTOS_PREFIX`
+- `STORAGE_LOCAL_DIR`
+- `STORAGE_HISTORICO_PREFIX`
+- `STORAGE_AFASTAMENTOS_PREFIX`
 - `CORS_ORIGINS`
 - `DATABASE_URL`
 - `FRONTEND_BASE_URL`
@@ -162,22 +160,16 @@ O frontend agora chama a API diretamente pela URL pública configurada em `NEXT_
 Se `CORS_ORIGINS` estiver vazio, o backend usa `FRONTEND_BASE_URL` como origem permitida.
 Se os dois estiverem vazios, ele cai no fallback permissivo `*`.
 
-Se `DATABASE_URL` vier do Supabase, use a conexão do pooler no Railway sempre que possível.
-O backend adiciona `sslmode=require` automaticamente quando detecta um host `*.supabase.co`.
-
 ## Storage de PDFs
 
-Os PDFs ficam no Supabase Storage:
+Os PDFs ficam no storage local:
 
-- bucket: `gestaocarreira`
+- diretório padrão: `backend/storage_data`
 - pasta de histórico funcional: `historicofuncional`
 - pasta de afastamentos: `afastamentos`
 
-O backend recebe os arquivos via `multipart/form-data`, envia para o Storage e salva no banco
-somente o caminho do objeto.
-
-Se o Supabase Storage não estiver acessível, o backend salva o PDF em um diretório local de
-fallback (`backend/storage_data`) e marca a resposta com `armazenamento_origem: "local"`.
+O backend recebe os arquivos via `multipart/form-data`, salva no diretório local configurado e
+guarda no banco somente o caminho do arquivo.
 
 ## Otimizações de banco
 

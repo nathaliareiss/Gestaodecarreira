@@ -42,7 +42,7 @@ def test_upload_pdf_valido_eh_aceito(monkeypatch) -> None:
 
     def enviar_pdf_falso(conteudo_pdf: bytes, caminho_storage: str, content_type: str = "application/pdf"):
         chamadas["upload"] = (conteudo_pdf, caminho_storage, content_type)
-        return SimpleNamespace(caminho_storage=caminho_storage, origem="supabase")
+        return SimpleNamespace(caminho_storage=caminho_storage, origem="local")
 
     monkeypatch.setattr(
         historico_funcional_routes,
