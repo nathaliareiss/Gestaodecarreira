@@ -218,6 +218,7 @@ def sincronizar_usuario_table() -> None:
         [
             "ALTER TABLE IF EXISTS historicos_funcionais ADD COLUMN IF NOT EXISTS arquivo_storage_path VARCHAR",
             "ALTER TABLE IF EXISTS historicos_funcionais ADD COLUMN IF NOT EXISTS afastamentos_storage_path VARCHAR",
+            "ALTER TABLE IF EXISTS historicos_funcionais ADD COLUMN IF NOT EXISTS ferias_storage_path VARCHAR",
             "CREATE INDEX IF NOT EXISTS ix_usuarios_sessao_token_hash ON usuarios (sessao_token_hash)",
             "CREATE INDEX IF NOT EXISTS ix_usuarios_redefinir_senha_token_hash ON usuarios (redefinir_senha_token_hash)",
             "CREATE INDEX IF NOT EXISTS ix_historicos_funcionais_usuario_criado_em_id ON historicos_funcionais (usuario_id, criado_em DESC, id DESC)",

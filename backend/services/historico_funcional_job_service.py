@@ -18,15 +18,46 @@ from backend.repositories.historico_funcional_repository import (
 from backend.repositories.usuario_repository import atualizar_usuario, obter_usuario_por_id
 from backend.schemas.historico_funcional_schema import (
     AfastamentosUploadRequest,
+    FeriasUploadRequest,
     HistoricoFuncionalResponse,
     HistoricoFuncionalUploadRequest,
     HistoricoFuncionalResumoGraficoResponse,
 )
+from backend.schemas.work_calendar_schema import VacationPeriodCreateRequest
 from backend.storage import baixar_pdf_storage
 from backend.services.historico_funcional_service import (
     analisar_afastamentos_pdf,
+    analisar_ferias_pdf,
     analisar_historico_funcional,
 )
+from backend.services.work_calendar_service import criar_periodo_ferias, listar_periodos_ferias
+
+
+def _sincronizar_ferias_no_calendario(db: Session, usuario_id: int | None, resposta: HistoricoFuncionalResponse) -> None:
+    if usuario_id is None or not resposta.ferias:
+        return
+
+    existentes = {
+        (item.vacation_type, item.start_date, item.end_date)
+        for item in listar_periodos_ferias(db, usuario_id)
+    }
+    for periodo in resposta.ferias:
+        chave = (periodo.tipo, periodo.data_inicio, periodo.data_fim)
+        if chave in existentes:
+            continue
+        criar_periodo_ferias(
+            db,
+            usuario_id,
+            VacationPeriodCreateRequest(
+                title="Ferias premio" if periodo.tipo == "premium" else "Ferias regulamentares",
+                vacation_type=periodo.tipo,
+                start_date=periodo.data_inicio,
+                end_date=periodo.data_fim,
+                requested_days=periodo.dias_contabilizados,
+                note="Importado automaticamente do PDF de ferias.",
+            ),
+        )
+        existentes.add(chave)
 
 
 def normalizar_dados_historico_salvo(
@@ -66,6 +97,13 @@ def normalizar_dados_historico_salvo(
     if "afastamentos" not in dados or not isinstance(dados.get("afastamentos"), list):
         dados["afastamentos"] = []
 
+    if "ferias" not in dados or not isinstance(dados.get("ferias"), list):
+        dados["ferias"] = []
+
+    if "ferias_resumo" in dados and dados["ferias_resumo"] is not None:
+        if not isinstance(dados["ferias_resumo"], dict):
+            dados["ferias_resumo"] = None
+
     if "eventos" not in dados or not isinstance(dados.get("eventos"), list):
         dados["eventos"] = []
 
@@ -84,6 +122,7 @@ def _persistir_historico_analisado(
     usuario_id: int | None,
     arquivo_storage_path: str,
     afastamentos_storage_path: str | None,
+    ferias_storage_path: str | None,
     armazenamento_origem: str,
     processamento_origem: str,
 ) -> HistoricoFuncionalResponse:
@@ -92,6 +131,7 @@ def _persistir_historico_analisado(
         arquivo_nome=resposta.arquivo_nome,
         arquivo_storage_path=arquivo_storage_path,
         afastamentos_storage_path=afastamentos_storage_path,
+        ferias_storage_path=ferias_storage_path,
         nome=resposta.nome,
         masp=resposta.masp,
         cpf=resposta.cpf,
@@ -159,16 +199,25 @@ def processar_historico_funcional_db(
         if dados.afastamentos_storage_path
         else None
     )
+    conteudo_ferias_pdf = (
+        baixar_pdf_storage(dados.ferias_storage_path)
+        if dados.ferias_storage_path
+        else None
+    )
     resposta, texto_extraido = analisar_historico_funcional(
         conteudo_pdf=conteudo_pdf,
         arquivo_nome=dados.arquivo_nome,
         usuario_id=dados.usuario_id,
         data_nascimento=dados.data_nascimento,
+        sexo=dados.sexo,
+        categoria_previdenciaria=dados.categoria_previdenciaria,
         anos_clt_averbados=dados.anos_clt_averbados,
         conteudo_afastamentos_pdf=conteudo_afastamentos_pdf,
         arquivo_afastamentos_nome=dados.afastamentos_arquivo_nome,
+        conteudo_ferias_pdf=conteudo_ferias_pdf,
+        arquivo_ferias_nome=dados.ferias_arquivo_nome,
     )
-    return _persistir_historico_analisado(
+    resposta = _persistir_historico_analisado(
         db=db,
         resposta=resposta,
         texto_extraido=texto_extraido,
@@ -176,9 +225,12 @@ def processar_historico_funcional_db(
         usuario_id=dados.usuario_id,
         arquivo_storage_path=dados.arquivo_storage_path,
         afastamentos_storage_path=dados.afastamentos_storage_path,
+        ferias_storage_path=dados.ferias_storage_path,
         armazenamento_origem="local",
         processamento_origem=processamento_origem,
     )
+    _sincronizar_ferias_no_calendario(db, dados.usuario_id, resposta)
+    return resposta
 
 
 def processar_afastamentos_db(
@@ -230,6 +282,64 @@ def processar_afastamentos_db(
     )
     logger.info(
         "Afastamentos anexados ao historico",
+        extra={
+            "historico_id": historico.id,
+            "user_id": usuario_id,
+            "arquivo_nome": dados.arquivo_nome,
+        },
+    )
+    return resposta
+
+
+def processar_ferias_db(
+    db: Session,
+    usuario_id: int,
+    dados: FeriasUploadRequest,
+    processamento_origem: str = "direto",
+) -> HistoricoFuncionalResponse:
+    historico = obter_ultimo_historico_por_usuario(db, usuario_id)
+    if historico is None:
+        raise ValueError("Nenhum historico funcional encontrado para este usuario.")
+
+    dados_historico = json.loads(historico.dados_json)
+    dados_historico = normalizar_dados_historico_salvo(dados_historico, historico.id, usuario_id)
+    conteudo_ferias_pdf = baixar_pdf_storage(dados.arquivo_storage_path)
+    ferias, resumo_ferias = analisar_ferias_pdf(conteudo_ferias_pdf)
+
+    resposta = HistoricoFuncionalResponse.model_validate(dados_historico).model_copy(
+        update={
+            "ferias_arquivo_nome": dados.arquivo_nome,
+            "ferias_resumo": resumo_ferias,
+            "ferias": [
+                {
+                    "tipo": item.tipo,
+                    "data_inicio": item.data_inicio,
+                    "data_fim": item.data_fim,
+                    "dias_contabilizados": item.dias_contabilizados,
+                    "dias_corridos": item.dias_corridos,
+                    "regra_contagem": item.regra_contagem,
+                    "observacao": item.observacao,
+                }
+                for item in ferias
+            ],
+            "armazenamento_origem": "local",
+            "processamento_origem": processamento_origem,
+        }
+    )
+
+    historico.dados_json = json.dumps(resposta.model_dump(mode="json"), ensure_ascii=False)
+    historico.ferias_storage_path = dados.arquivo_storage_path
+    db.add(historico)
+    db.commit()
+    db.refresh(historico)
+    _sincronizar_ferias_no_calendario(db, usuario_id, resposta)
+    definir_json_cache(
+        chave_historico_ultimo_usuario(usuario_id),
+        resposta.model_dump(mode="json"),
+        CACHE_TTL_HISTORICO_ULTIMO_SEGUNDOS,
+    )
+    logger.info(
+        "Ferias anexadas ao historico",
         extra={
             "historico_id": historico.id,
             "user_id": usuario_id,

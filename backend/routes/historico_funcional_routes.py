@@ -19,10 +19,12 @@ from backend.repositories.historico_funcional_repository import obter_ultimo_his
 from backend.queue.queue_config import obter_fila_historicos, obter_job
 from backend.queue.tasks.historico_tasks import (
     processar_afastamentos_job,
+    processar_ferias_job,
     processar_historico_funcional_job,
 )
 from backend.schemas.historico_funcional_schema import (
     AfastamentosUploadRequest,
+    FeriasUploadRequest,
     HistoricoFuncionalResponse,
     HistoricoFuncionalUploadRequest,
 )
@@ -30,12 +32,14 @@ from backend.schemas.queue_schema import JobAgendadoResponse, JobStatusResponse
 from backend.services.historico_funcional_job_service import (
     normalizar_dados_historico_salvo,
     processar_afastamentos_db,
+    processar_ferias_db,
     processar_historico_funcional_db,
 )
 from backend.storage import (
     StorageError,
     enviar_pdf_para_storage,
     gerar_caminho_storage_afastamentos,
+    gerar_caminho_storage_ferias,
     gerar_caminho_storage_historico,
 )
 
@@ -112,9 +116,12 @@ def _responder_status_job(job_id: str) -> JobStatusResponse:
 async def analisar_e_salvar_historico(
     arquivo: UploadFile = File(...),
     data_nascimento: date = Form(...),
+    sexo: str = Form(...),
+    categoria_previdenciaria: str = Form("geral"),
     anos_clt_averbados: int = Form(0),
     current_user=Depends(obter_usuario_autenticado),
     afastamentos_arquivo: UploadFile | None = File(None),
+    ferias_arquivo: UploadFile | None = File(None),
     db: Session = Depends(get_db),
 ) -> HistoricoFuncionalResponse | JobAgendadoResponse:
     arquivo_nome = _ler_nome_arquivo(arquivo, "historico-funcional.pdf")
@@ -138,6 +145,20 @@ async def analisar_e_salvar_historico(
             afastamentos_storage_path,
         )
 
+    ferias_arquivo_nome = None
+    ferias_storage_path = None
+    ferias_armazenamento_origem = None
+    if ferias_arquivo is not None:
+        ferias_arquivo_nome = _ler_nome_arquivo(ferias_arquivo, "ferias.pdf")
+        ferias_storage_path = gerar_caminho_storage_ferias(
+            ferias_arquivo_nome,
+            current_user.id,
+        )
+        ferias_storage_path, ferias_armazenamento_origem = await _armazenar_arquivo_pdf(
+            ferias_arquivo,
+            ferias_storage_path,
+        )
+
     armazenamento_origem = "local"
 
     dados = HistoricoFuncionalUploadRequest(
@@ -146,10 +167,15 @@ async def analisar_e_salvar_historico(
         arquivo_storage_path=arquivo_storage_path,
         armazenamento_origem=armazenamento_origem,
         data_nascimento=data_nascimento,
+        sexo=sexo,  # type: ignore[arg-type]
+        categoria_previdenciaria=categoria_previdenciaria,  # type: ignore[arg-type]
         anos_clt_averbados=anos_clt_averbados,
         afastamentos_arquivo_nome=afastamentos_arquivo_nome,
         afastamentos_storage_path=afastamentos_storage_path,
         afastamentos_armazenamento_origem=afastamentos_armazenamento_origem,
+        ferias_arquivo_nome=ferias_arquivo_nome,
+        ferias_storage_path=ferias_storage_path,
+        ferias_armazenamento_origem=ferias_armazenamento_origem,
     )
     logger.info(
         "Recebido historico funcional para analise",
@@ -157,6 +183,7 @@ async def analisar_e_salvar_historico(
             "usuario_id": current_user.id,
             "arquivo_nome": dados.arquivo_nome,
             "tem_afastamentos": bool(dados.afastamentos_storage_path),
+            "tem_ferias": bool(dados.ferias_storage_path),
         },
     )
 
@@ -358,6 +385,98 @@ async def anexar_afastamentos_historico(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Nao foi possivel analisar o arquivo de afastamentos no momento.",
+        ) from erro
+
+
+@router.post(
+    "/usuario/{usuario_id}/ferias",
+    response_model=HistoricoFuncionalResponse | JobAgendadoResponse,
+)
+async def anexar_ferias_historico(
+    usuario_id: int,
+    arquivo: UploadFile = File(...),
+    current_user=Depends(obter_usuario_autenticado),
+    db: Session = Depends(get_db),
+) -> HistoricoFuncionalResponse | JobAgendadoResponse:
+    if usuario_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Voce nao tem acesso a este historico funcional.",
+        )
+    arquivo_nome = _ler_nome_arquivo(arquivo, "ferias.pdf")
+    arquivo_storage_path = gerar_caminho_storage_ferias(arquivo_nome, current_user.id)
+    arquivo_storage_path, arquivo_armazenamento_origem = await _armazenar_arquivo_pdf(
+        arquivo,
+        arquivo_storage_path,
+    )
+
+    dados = FeriasUploadRequest(
+        arquivo_nome=arquivo_nome,
+        arquivo_storage_path=arquivo_storage_path,
+        armazenamento_origem=arquivo_armazenamento_origem,
+    )
+    logger.info(
+        "Recebido arquivo de ferias",
+        extra={"user_id": usuario_id, "arquivo_nome": dados.arquivo_nome},
+    )
+
+    fila = obter_fila_historicos()
+    if fila is not None:
+        try:
+            job = fila.enqueue(
+                processar_ferias_job,
+                current_user.id,
+                dados.model_dump(mode="json"),
+                job_timeout=900,
+            )
+            logger.info(
+                "Ferias agendadas na fila",
+                extra={
+                    "job_id": job.id,
+                    "user_id": usuario_id,
+                    "arquivo_nome": dados.arquivo_nome,
+                },
+            )
+            return _responder_job_agendado(
+                job.id,
+                "Seu PDF de ferias foi recebido e esta sendo processado em segundo plano.",
+            )
+        except Exception:
+            logger.warning(
+                "Fila indisponivel, processando ferias diretamente",
+                extra={"user_id": usuario_id, "arquivo_nome": dados.arquivo_nome},
+            )
+
+    try:
+        return processar_ferias_db(db, current_user.id, dados, processamento_origem="direto")
+    except StorageError as erro:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Nao foi possivel acessar o storage para processar o PDF.",
+        ) from erro
+    except ValueError as erro:
+        mensagem = str(erro)
+        logger.warning(
+            "Falha ao analisar ferias",
+            extra={"user_id": usuario_id, "arquivo_nome": dados.arquivo_nome},
+        )
+        if "Nenhum historico funcional encontrado" in mensagem:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Nenhum historico funcional encontrado para este usuario.",
+            ) from erro
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Nao foi possivel analisar o arquivo de ferias. Verifique o PDF e tente novamente.",
+        ) from erro
+    except Exception as erro:
+        logger.exception(
+            "Falha inesperada ao analisar ferias",
+            extra={"user_id": usuario_id, "arquivo_nome": dados.arquivo_nome},
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Nao foi possivel analisar o arquivo de ferias no momento.",
         ) from erro
 
 

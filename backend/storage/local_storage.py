@@ -47,6 +47,10 @@ def gerar_caminho_storage_afastamentos(nome_arquivo: str, usuario_id: int | None
     return _montar_caminho(STORAGE_AFASTAMENTOS_PREFIX, nome_arquivo, usuario_id)
 
 
+def gerar_caminho_storage_ferias(nome_arquivo: str, usuario_id: int | None) -> str:
+    return _montar_caminho("ferias", nome_arquivo, usuario_id)
+
+
 def _caminho_local(caminho_storage: str) -> Path:
     return LOCAL_STORAGE_ROOT / caminho_storage
 

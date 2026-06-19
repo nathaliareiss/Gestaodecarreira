@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, timedelta
 from io import BytesIO
 from typing import Literal
 
@@ -13,9 +13,13 @@ from backend.logger import logger
 from backend.schemas.historico_funcional_schema import (
     AfastamentoPeriodoResponse,
     AfastamentoResumoResponse,
+    FeriasPeriodoResponse,
+    FeriasResumoResponse,
     HistoricoFuncionalEventoResponse,
     HistoricoFuncionalResponse,
     HistoricoFuncionalResumoGraficoResponse,
+    CategoriaPrevidenciaria,
+    SexoServidor,
 )
 
 SECAO_NOMEOACAO_PREFIXOS = ("Efetivo-Nomeado",)
@@ -66,6 +70,17 @@ class AfastamentoPeriodo:
     publicacao: date | None
     mes_ano_afastamento: str
     dias_restantes_ate_pericia: int
+
+
+@dataclass(frozen=True, slots=True)
+class FeriasPeriodo:
+    tipo: Literal["regular", "premium"]
+    data_inicio: date
+    data_fim: date
+    dias_contabilizados: int
+    dias_corridos: int
+    regra_contagem: Literal["dias_uteis", "dias_corridos"]
+    observacao: str | None = None
 
 
 def _limpar_linhas(texto: str) -> list[str]:
@@ -165,6 +180,154 @@ def _adicionar_anos(data_base: date, anos: int) -> date:
         return data_base.replace(year=data_base.year + anos)
     except ValueError:
         return data_base.replace(year=data_base.year + anos, day=28)
+
+
+def _data_por_tempo_contribuicao(data_exercicio: date, anos_requeridos: int, anos_clt_averbados: int) -> date:
+    anos_creditados = min(max(anos_clt_averbados, 0), 10)
+    return _adicionar_anos(data_exercicio, max(anos_requeridos - anos_creditados, 0))
+
+
+def _dias_contribuicao_em(data_referencia: date, data_exercicio: date, anos_clt_averbados: int) -> int:
+    dias_carreira = max((data_referencia - data_exercicio).days, 0)
+    dias_clt = min(max(anos_clt_averbados, 0), 10) * 365
+    return dias_carreira + dias_clt
+
+
+def _anos_por_dias(dias: int) -> float:
+    return dias / 365.2425
+
+
+def _meses_desde(inicio: date, fim: date) -> int:
+    return max((fim.year - inicio.year) * 12 + (fim.month - inicio.month), 0)
+
+
+def _pontuacao_exigida_art_146(data_referencia: date, sexo: SexoServidor, professor: bool) -> int:
+    if professor:
+        base = 81 if sexo == "feminino" else 92
+        teto = 92 if sexo == "feminino" else 100
+        incremento = max(data_referencia.year - 2020, 0) if data_referencia >= date(2021, 1, 1) else 0
+        return min(base + incremento, teto)
+
+    base = 86 if sexo == "feminino" else 97
+    teto = 100 if sexo == "feminino" else 105
+    incremento = 0
+    marco = date(2021, 1, 1)
+    if data_referencia >= marco:
+        incremento = (_meses_desde(marco, data_referencia) // 15) + 1
+    return min(base + incremento, teto)
+
+
+def _calcular_data_pontos_art_146(
+    data_nascimento: date,
+    data_exercicio: date,
+    anos_clt_averbados: int,
+    sexo: SexoServidor,
+    categoria_previdenciaria: CategoriaPrevidenciaria,
+) -> tuple[date, date, date]:
+    professor = categoria_previdenciaria == "professor"
+    idade_minima = 51 if professor and sexo == "feminino" else 57 if professor else 56 if sexo == "feminino" else 62
+    contribuicao_minima = 25 if professor and sexo == "feminino" else 30 if professor else 30 if sexo == "feminino" else 35
+    data_por_idade = _adicionar_anos(data_nascimento, idade_minima)
+    data_por_contribuicao = _data_por_tempo_contribuicao(data_exercicio, contribuicao_minima, anos_clt_averbados)
+    data_por_servico_publico = _adicionar_anos(data_exercicio, 10)
+    data_por_cargo = _adicionar_anos(data_exercicio, 5)
+    cursor = max(data_por_idade, data_por_contribuicao, data_por_servico_publico, data_por_cargo)
+
+    for _ in range(365 * 80):
+        idade = _anos_por_dias((cursor - data_nascimento).days)
+        contribuicao = _anos_por_dias(_dias_contribuicao_em(cursor, data_exercicio, anos_clt_averbados))
+        if idade + contribuicao >= _pontuacao_exigida_art_146(cursor, sexo, professor):
+            return data_por_contribuicao, data_por_idade, cursor
+        cursor += timedelta(days=1)
+
+    return data_por_contribuicao, data_por_idade, cursor
+
+
+def _calcular_data_pedagio_art_147(
+    data_nascimento: date,
+    data_exercicio: date,
+    anos_clt_averbados: int,
+    sexo: SexoServidor,
+    categoria_previdenciaria: CategoriaPrevidenciaria,
+) -> tuple[date, date, date]:
+    professor = categoria_previdenciaria == "professor"
+    marco_reforma = date(2020, 9, 14)
+    idade_minima = 50 if professor and sexo == "feminino" else 55 if professor else 55 if sexo == "feminino" else 60
+    contribuicao_minima = 25 if professor and sexo == "feminino" else 30 if professor else 30 if sexo == "feminino" else 35
+    dias_minimos = contribuicao_minima * 365
+    dias_em_2020 = _dias_contribuicao_em(marco_reforma, data_exercicio, anos_clt_averbados)
+    pedagio = max(dias_minimos - dias_em_2020, 0) // 2
+    dias_necessarios = dias_minimos + pedagio
+    dias_clt = min(max(anos_clt_averbados, 0), 10) * 365
+    data_por_contribuicao = data_exercicio + timedelta(days=max(dias_necessarios - dias_clt, 0))
+    data_por_idade = _adicionar_anos(data_nascimento, idade_minima)
+    data_prevista = max(data_por_contribuicao, data_por_idade, _adicionar_anos(data_exercicio, 10), _adicionar_anos(data_exercicio, 5))
+    return data_por_contribuicao, data_por_idade, data_prevista
+
+
+def _calcular_data_regra_permanente(
+    data_nascimento: date,
+    data_exercicio: date,
+    anos_clt_averbados: int,
+    sexo: SexoServidor,
+    categoria_previdenciaria: CategoriaPrevidenciaria,
+) -> tuple[date, date, date]:
+    if categoria_previdenciaria == "professor":
+        idade_minima = 57 if sexo == "feminino" else 60
+        contribuicao_minima = 25
+        anos_servico = 10
+        anos_cargo = 5
+    elif categoria_previdenciaria == "seguranca":
+        idade_minima = 55
+        contribuicao_minima = 30
+        anos_servico = 25
+        anos_cargo = 25
+    elif categoria_previdenciaria == "saude_exposicao":
+        idade_minima = 60
+        contribuicao_minima = 25
+        anos_servico = 10
+        anos_cargo = 5
+    else:
+        idade_minima = 62 if sexo == "feminino" else 65
+        contribuicao_minima = 25
+        anos_servico = 10
+        anos_cargo = 5
+    data_por_contribuicao = _data_por_tempo_contribuicao(data_exercicio, contribuicao_minima, anos_clt_averbados)
+    data_por_idade = _adicionar_anos(data_nascimento, idade_minima)
+    data_prevista = max(
+        data_por_contribuicao,
+        data_por_idade,
+        _adicionar_anos(data_exercicio, anos_servico),
+        _adicionar_anos(data_exercicio, anos_cargo),
+    )
+    return data_por_contribuicao, data_por_idade, data_prevista
+
+
+def _calcular_data_saude_exposicao_art_149(
+    data_nascimento: date,
+    data_exercicio: date,
+    anos_clt_averbados: int,
+) -> tuple[date, date, date]:
+    data_por_contribuicao = _data_por_tempo_contribuicao(data_exercicio, 25, anos_clt_averbados)
+    data_por_idade = data_exercicio
+    data_por_servico_publico = _adicionar_anos(data_exercicio, 20)
+    cursor = max(data_por_contribuicao, data_por_servico_publico, _adicionar_anos(data_exercicio, 5))
+
+    for _ in range(365 * 80):
+        idade = _anos_por_dias(max((cursor - data_nascimento).days, 0))
+        contribuicao = _anos_por_dias(_dias_contribuicao_em(cursor, data_exercicio, anos_clt_averbados))
+        exposicao = _anos_por_dias(max((cursor - data_exercicio).days, 0))
+        if idade + contribuicao + exposicao >= 86:
+            return data_por_contribuicao, data_por_idade, cursor
+        cursor += timedelta(days=1)
+
+    return data_por_contribuicao, data_por_idade, cursor
+
+
+def _cargo_indica_professor(blocos: list[BlocoHistorico]) -> bool:
+    texto_cargos = " ".join(f"{bloco.cargo} {bloco.descricao}" for bloco in blocos)
+    normalizado = _normalizar_sem_acentos(texto_cargos)
+    return any(termo in normalizado for termo in ("professor", "peb", "regente de ensino"))
 
 
 def _fim_estagio_probatorio(data_exercicio: date) -> date:
@@ -379,6 +542,172 @@ def _montar_resumo_afastamentos(afastamentos: list[AfastamentoPeriodo]) -> Afast
         dias_por_tipo={str(chave): int(valor) for chave, valor in df.groupby("tipo")["total_dias"].sum().to_dict().items()},
         periodos_por_tipo={str(chave): int(valor) for chave, valor in df.groupby("tipo").size().to_dict().items()},
     )
+
+
+def _tipo_ferias_linha(linha: str) -> Literal["regular", "premium"] | None:
+    normalizada = _normalizar_sem_acentos(re.sub(r"\s+", " ", linha).strip())
+    if "ferias" not in normalizada:
+        return None
+    if "premio" in normalizada:
+        return "premium"
+    if "regulamentar" in normalizada or "regular" in normalizada:
+        return "regular"
+    return None
+
+
+def _contar_dias_uteis(data_inicio: date, data_fim: date) -> int:
+    total = 0
+    cursor = data_inicio
+    while cursor <= data_fim:
+        if cursor.weekday() < 5:
+            total += 1
+        cursor += timedelta(days=1)
+    return total
+
+
+def _montar_ferias_periodo(
+    tipo: Literal["regular", "premium"],
+    data_inicio: date,
+    data_fim: date,
+    observacao: str | None = None,
+) -> FeriasPeriodo:
+    if data_fim < data_inicio:
+        data_inicio, data_fim = data_fim, data_inicio
+
+    dias_corridos = (data_fim - data_inicio).days + 1
+    if tipo == "regular":
+        return FeriasPeriodo(
+            tipo=tipo,
+            data_inicio=data_inicio,
+            data_fim=data_fim,
+            dias_contabilizados=_contar_dias_uteis(data_inicio, data_fim),
+            dias_corridos=dias_corridos,
+            regra_contagem="dias_uteis",
+            observacao=observacao,
+        )
+
+    return FeriasPeriodo(
+        tipo=tipo,
+        data_inicio=data_inicio,
+        data_fim=data_fim,
+        dias_contabilizados=dias_corridos,
+        dias_corridos=dias_corridos,
+        regra_contagem="dias_corridos",
+        observacao=observacao,
+    )
+
+
+def extrair_ferias_pdf(conteudo_pdf: bytes) -> list[FeriasPeriodo]:
+    texto = extrair_texto_pdf(conteudo_pdf)
+    linhas = _limpar_linhas(texto)
+    periodos: list[FeriasPeriodo] = []
+    vistos: set[tuple[str, date, date]] = set()
+    tipo_atual: Literal["regular", "premium"] | None = None
+    texto_normalizado = _normalizar_sem_acentos(texto)
+
+    if "ferias regulamentares" in texto_normalizado:
+        for linha in linhas:
+            match = re.match(
+                r"^\d{4}\s+(?P<inicio>\d{2}/\d{2}/\d{4})\s+(?P<retorno_previsto>\d{2}/\d{2}/\d{4})\s+(?P<retorno_efetivo>\d{2}/\d{2}/\d{4}|-)",
+                linha,
+            )
+            if not match:
+                continue
+            data_inicio = _parsear_data(match.group("inicio"))
+            retorno_texto = match.group("retorno_efetivo")
+            if retorno_texto == "-":
+                retorno_texto = match.group("retorno_previsto")
+            data_fim = _parsear_data(retorno_texto) - timedelta(days=1)
+            chave = ("regular", data_inicio, data_fim)
+            if chave not in vistos:
+                vistos.add(chave)
+                periodos.append(_montar_ferias_periodo("regular", data_inicio, data_fim, linha))
+
+    if "ferias-premio" in texto_normalizado or "ferias premio" in texto_normalizado:
+        texto_compacto = re.sub(r"\s+", " ", texto)
+        for match in re.finditer(
+            r"(?P<inicio>\d{2}/\d{2}/\d{4})\s*a\s*(?P<fim>\d{2}/\d{2}/\d{4})",
+            texto_compacto,
+            flags=re.IGNORECASE,
+        ):
+            data_inicio = _parsear_data(match.group("inicio"))
+            data_fim = _parsear_data(match.group("fim"))
+            chave = ("premium", data_inicio, data_fim)
+            if chave not in vistos:
+                vistos.add(chave)
+                periodos.append(_montar_ferias_periodo("premium", data_inicio, data_fim, match.group(0)))
+
+    if not periodos:
+        for linha in linhas:
+            tipo_linha = _tipo_ferias_linha(linha)
+            if tipo_linha is not None:
+                tipo_atual = tipo_linha
+
+            datas = _encontrar_datas(linha)
+            if len(datas) < 2 or tipo_atual is None:
+                continue
+
+            for indice in range(0, len(datas) - 1, 2):
+                data_inicio = datas[indice]
+                data_fim = datas[indice + 1]
+                chave = (tipo_atual, data_inicio, data_fim)
+                if chave in vistos:
+                    continue
+                vistos.add(chave)
+                periodos.append(_montar_ferias_periodo(tipo_atual, data_inicio, data_fim, linha))
+
+    if not periodos:
+        raise ValueError("Nao foi possivel localizar periodos de ferias no PDF.")
+
+    return periodos
+
+
+def _montar_resumo_ferias(ferias: list[FeriasPeriodo]) -> FeriasResumoResponse:
+    if not ferias:
+        return FeriasResumoResponse(
+            periodos_totais=0,
+            dias_totais_usados=0,
+            dias_por_tipo={},
+            periodos_por_tipo={},
+        )
+
+    df = pd.DataFrame(
+        [
+            {
+                "tipo": item.tipo,
+                "dias_contabilizados": item.dias_contabilizados,
+            }
+            for item in ferias
+        ]
+    )
+    hoje = date.today()
+    futuras = sorted((item for item in ferias if item.data_inicio >= hoje), key=lambda item: item.data_inicio)
+    proxima = futuras[0] if futuras else None
+
+    return FeriasResumoResponse(
+        periodos_totais=len(ferias),
+        dias_totais_usados=int(df["dias_contabilizados"].sum()),
+        dias_por_tipo={
+            str(chave): int(valor)
+            for chave, valor in df.groupby("tipo")["dias_contabilizados"].sum().to_dict().items()
+        },
+        periodos_por_tipo={str(chave): int(valor) for chave, valor in df.groupby("tipo").size().to_dict().items()},
+        proxima_ferias_inicio=proxima.data_inicio if proxima else None,
+        proxima_ferias_fim=proxima.data_fim if proxima else None,
+        proxima_ferias_tipo=proxima.tipo if proxima else None,
+    )
+
+
+def analisar_ferias_pdf(
+    conteudo_pdf: bytes,
+) -> tuple[list[FeriasPeriodo], FeriasResumoResponse]:
+    ferias = extrair_ferias_pdf(conteudo_pdf)
+    resumo_ferias = _montar_resumo_ferias(ferias)
+    logger.info(
+        "Ferias analisadas",
+        extra={"periodos": len(ferias), "dias_totais": resumo_ferias.dias_totais_usados},
+    )
+    return ferias, resumo_ferias
 
 
 def _parsear_bloco_secao(tipo: str, descricao: str, bloco: str) -> BlocoHistorico:
@@ -629,19 +958,52 @@ def _cronometro_ate_aposentadoria(
     data_nascimento: date,
     data_exercicio: date,
     anos_clt_averbados: int,
+    sexo: SexoServidor,
+    categoria_previdenciaria: CategoriaPrevidenciaria,
 ) -> tuple[date, date, date, int, int, float, float]:
-    anos_creditados = min(max(anos_clt_averbados, 0), 10)
-    data_aposentadoria_por_carreira = _adicionar_anos(
-        data_exercicio,
-        max(25 - anos_creditados, 0),
-    )
-    data_aposentadoria_por_idade = _adicionar_anos(data_nascimento, 50)
-    data_aposentadoria_prevista = max(
-        data_aposentadoria_por_carreira,
-        data_aposentadoria_por_idade,
+    opcoes = [
+        _calcular_data_regra_permanente(
+            data_nascimento,
+            data_exercicio,
+            anos_clt_averbados,
+            sexo,
+            categoria_previdenciaria,
+        )
+    ]
+    if data_exercicio <= date(2020, 9, 14) and categoria_previdenciaria in {"geral", "professor"}:
+        opcoes.append(
+            _calcular_data_pontos_art_146(
+                data_nascimento,
+                data_exercicio,
+                anos_clt_averbados,
+                sexo,
+                categoria_previdenciaria,
+            )
+        )
+    if data_exercicio <= date(2020, 9, 14) and categoria_previdenciaria == "saude_exposicao":
+        opcoes.append(
+            _calcular_data_saude_exposicao_art_149(
+                data_nascimento,
+                data_exercicio,
+                anos_clt_averbados,
+            )
+        )
+        opcoes.append(
+            _calcular_data_pedagio_art_147(
+                data_nascimento,
+                data_exercicio,
+                anos_clt_averbados,
+                sexo,
+                categoria_previdenciaria,
+            )
+        )
+
+    data_aposentadoria_por_carreira, data_aposentadoria_por_idade, data_aposentadoria_prevista = min(
+        opcoes,
+        key=lambda item: item[2],
     )
     hoje = date.today()
-    dias_trabalhados = max((hoje - data_exercicio).days, 0)
+    dias_trabalhados = _dias_contribuicao_em(hoje, data_exercicio, anos_clt_averbados)
     dias_totais = max((data_aposentadoria_prevista - data_exercicio).days, 1)
     percentual_trabalhado = min((dias_trabalhados / dias_totais) * 100, 100)
     percentual_restante = max(100 - percentual_trabalhado, 0)
@@ -709,9 +1071,13 @@ def analisar_historico_funcional(
     arquivo_nome: str,
     usuario_id: int | None,
     data_nascimento: date,
+    sexo: SexoServidor,
+    categoria_previdenciaria: CategoriaPrevidenciaria,
     anos_clt_averbados: int,
     conteudo_afastamentos_pdf: bytes | None = None,
     arquivo_afastamentos_nome: str | None = None,
+    conteudo_ferias_pdf: bytes | None = None,
+    arquivo_ferias_nome: str | None = None,
 ) -> tuple[HistoricoFuncionalResponse, str]:
     logger.info(
         "Iniciando analise de historico funcional",
@@ -719,6 +1085,7 @@ def analisar_historico_funcional(
             "arquivo_nome": arquivo_nome,
             "usuario_id": usuario_id,
             "possui_afastamentos": conteudo_afastamentos_pdf is not None,
+            "possui_ferias": conteudo_ferias_pdf is not None,
         },
     )
     texto = extrair_texto_pdf(conteudo_pdf)
@@ -754,6 +1121,8 @@ def analisar_historico_funcional(
         data_nascimento=data_nascimento,
         data_exercicio=nomeacao.data_efetiva,
         anos_clt_averbados=anos_clt_averbados,
+        sexo=sexo,
+        categoria_previdenciaria=categoria_previdenciaria,
     )
 
     proxima_progressao_prevista = _proximo_marco(eventos, "progressao", inicio_contagem_progressao)
@@ -780,6 +1149,20 @@ def analisar_historico_funcional(
             },
         )
 
+    ferias: list[FeriasPeriodo] = []
+    resumo_ferias: FeriasResumoResponse | None = None
+    if conteudo_ferias_pdf is not None:
+        ferias = extrair_ferias_pdf(conteudo_ferias_pdf)
+        resumo_ferias = _montar_resumo_ferias(ferias)
+        logger.info(
+            "Historico funcional com ferias anexadas",
+            extra={
+                "arquivo_nome": arquivo_nome,
+                "arquivo_ferias_nome": arquivo_ferias_nome,
+                "periodos_ferias": len(ferias),
+            },
+        )
+
     resposta = HistoricoFuncionalResponse(
         historico_id=0,
         usuario_id=usuario_id,
@@ -789,6 +1172,8 @@ def analisar_historico_funcional(
         cpf=cpf,
         data_emissao=data_emissao,
         data_nascimento=data_nascimento,
+        sexo=sexo,
+        categoria_previdenciaria=categoria_previdenciaria,
         data_posse=nomeacao_bloco.data_posse,
         data_exercicio=nomeacao_bloco.data_exercicio,
         cargo_atual=ultimo_evento.cargo,
@@ -822,6 +1207,20 @@ def analisar_historico_funcional(
             )
             for afastamento in afastamentos
         ],
+        ferias_arquivo_nome=arquivo_ferias_nome,
+        ferias_resumo=resumo_ferias,
+        ferias=[
+            FeriasPeriodoResponse(
+                tipo=item.tipo,
+                data_inicio=item.data_inicio,
+                data_fim=item.data_fim,
+                dias_contabilizados=item.dias_contabilizados,
+                dias_corridos=item.dias_corridos,
+                regra_contagem=item.regra_contagem,
+                observacao=item.observacao,
+            )
+            for item in ferias
+        ],
         eventos=[
             HistoricoFuncionalEventoResponse(
                 tipo=evento.tipo,
@@ -847,6 +1246,7 @@ def analisar_historico_funcional(
             "usuario_id": usuario_id,
             "eventos": len(eventos),
             "afastamentos": len(afastamentos),
+            "ferias": len(ferias),
         },
     )
     return resposta, texto

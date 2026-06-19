@@ -5,6 +5,10 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+SexoServidor = Literal["feminino", "masculino"]
+FeriasTipo = Literal["regular", "premium"]
+CategoriaPrevidenciaria = Literal["geral", "professor", "seguranca", "saude_exposicao"]
+
 
 class HistoricoFuncionalUploadRequest(BaseModel):
     usuario_id: int | None = None
@@ -12,13 +16,24 @@ class HistoricoFuncionalUploadRequest(BaseModel):
     arquivo_storage_path: str = Field(min_length=1)
     armazenamento_origem: Literal["local"] = "local"
     data_nascimento: date
+    sexo: SexoServidor
+    categoria_previdenciaria: CategoriaPrevidenciaria = "geral"
     anos_clt_averbados: int = Field(default=0, ge=0, le=10)
     afastamentos_arquivo_nome: str | None = None
     afastamentos_storage_path: str | None = None
     afastamentos_armazenamento_origem: Literal["local"] | None = None
+    ferias_arquivo_nome: str | None = None
+    ferias_storage_path: str | None = None
+    ferias_armazenamento_origem: Literal["local"] | None = None
 
 
 class AfastamentosUploadRequest(BaseModel):
+    arquivo_nome: str = Field(min_length=1)
+    arquivo_storage_path: str = Field(min_length=1)
+    armazenamento_origem: Literal["local"] = "local"
+
+
+class FeriasUploadRequest(BaseModel):
     arquivo_nome: str = Field(min_length=1)
     arquivo_storage_path: str = Field(min_length=1)
     armazenamento_origem: Literal["local"] = "local"
@@ -69,6 +84,26 @@ class AfastamentoResumoResponse(BaseModel):
     periodos_por_tipo: dict[str, int]
 
 
+class FeriasPeriodoResponse(BaseModel):
+    tipo: FeriasTipo
+    data_inicio: date
+    data_fim: date
+    dias_contabilizados: int
+    dias_corridos: int
+    regra_contagem: Literal["dias_uteis", "dias_corridos"]
+    observacao: str | None = None
+
+
+class FeriasResumoResponse(BaseModel):
+    periodos_totais: int
+    dias_totais_usados: int
+    dias_por_tipo: dict[str, int]
+    periodos_por_tipo: dict[str, int]
+    proxima_ferias_inicio: date | None = None
+    proxima_ferias_fim: date | None = None
+    proxima_ferias_tipo: FeriasTipo | None = None
+
+
 class HistoricoFuncionalResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -80,6 +115,8 @@ class HistoricoFuncionalResponse(BaseModel):
     cpf: str | None
     data_emissao: date | None
     data_nascimento: date
+    sexo: SexoServidor | None = None
+    categoria_previdenciaria: CategoriaPrevidenciaria | None = None
     data_posse: date
     data_exercicio: date
     cargo_atual: str
@@ -101,6 +138,9 @@ class HistoricoFuncionalResponse(BaseModel):
     afastamentos_arquivo_nome: str | None = None
     afastamentos_resumo: AfastamentoResumoResponse | None = None
     afastamentos: list[AfastamentoPeriodoResponse] = Field(default_factory=list)
+    ferias_arquivo_nome: str | None = None
+    ferias_resumo: FeriasResumoResponse | None = None
+    ferias: list[FeriasPeriodoResponse] = Field(default_factory=list)
     eventos: list[HistoricoFuncionalEventoResponse]
     armazenamento_origem: Literal["local"] = "local"
     processamento_origem: Literal["fila", "direto"] = "direto"

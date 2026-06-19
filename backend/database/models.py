@@ -71,6 +71,7 @@ class HistoricoFuncional(Base):
     tempo_clt_creditado_anos = Column(Integer, nullable=False, default=0)
     arquivo_storage_path = Column(String, nullable=True)
     afastamentos_storage_path = Column(String, nullable=True)
+    ferias_storage_path = Column(String, nullable=True)
     texto_extraido = Column(Text, nullable=False)
     dados_json = Column(Text, nullable=False)
     criado_em = Column(
