@@ -16,6 +16,7 @@ type HistoricoFuncionalViewProps = {
 
 type StatusEvento = HistoricoFuncionalAnalise["eventos"][number]["status"]
 type ResumoAfastamentos = NonNullable<HistoricoFuncionalAnalise["afastamentos_resumo"]>
+type ResumoFerias = NonNullable<HistoricoFuncionalAnalise["ferias_resumo"]>
 type TooltipGrafico = {
   x: number
   y: number
@@ -32,6 +33,11 @@ const CORES_AFASTAMENTO = {
 const ROTULOS_AFASTAMENTO = {
   aguardando_resultado_conclusivo_de_exame_pericial: "Medical Review",
   licenca_para_tratamento_de_saude: "Medical Leave",
+} as const
+
+const CORES_FERIAS = {
+  regular: "#38bdf8",
+  premium: "#a78bfa",
 } as const
 
 function formatarData(valor: string | null, idioma: "pt-BR" | "en") {
@@ -521,6 +527,79 @@ function GraficoComparativoTempo({
   )
 }
 
+function rotuloFerias(tipo: "regular" | "premium", idioma: "pt-BR" | "en") {
+  if (idioma === "en") {
+    return tipo === "regular" ? "Regular vacation" : "Premium leave"
+  }
+
+  return tipo === "regular" ? "Férias regulamentares" : "Férias-prêmio"
+}
+
+function GraficoPizzaFerias({
+  resumo,
+  idioma,
+}: {
+  resumo: ResumoFerias
+  idioma: "pt-BR" | "en"
+}) {
+  const total = Math.max(resumo.dias_totais_usados, 1)
+  const tipos = Object.entries(resumo.dias_por_tipo)
+    .filter(([, dias]) => dias > 0)
+    .sort((a, b) => b[1] - a[1]) as Array<[keyof typeof CORES_FERIAS, number]>
+
+  const fatias = tipos.reduce<Array<{ cor: string; inicio: number; fim: number }>>(
+    (acumuladas, [tipo, dias]) => {
+      const inicioAnterior = acumuladas.length > 0 ? acumuladas[acumuladas.length - 1].fim : 0
+      const proporcao = (dias / total) * 100
+
+      acumuladas.push({
+        cor: CORES_FERIAS[tipo],
+        inicio: inicioAnterior,
+        fim: inicioAnterior + proporcao,
+      })
+
+      return acumuladas
+    },
+    [],
+  )
+
+  const background =
+    fatias.length > 0
+      ? `conic-gradient(${fatias.map((fatia) => `${fatia.cor} ${fatia.inicio}% ${fatia.fim}%`).join(", ")})`
+      : "conic-gradient(rgba(148, 163, 184, 0.18) 0 100%)"
+
+  return (
+    <div className="pie-visual pie-visual--afastamentos">
+      <div
+        className="pie-visual__ring"
+        style={{
+          background,
+          width: "240px",
+          height: "240px",
+          maxWidth: "100%",
+          maxHeight: "100%",
+        }}
+      >
+        <div className="pie-visual__center" style={{ overflow: "hidden" }}>
+          <strong>{resumo.dias_totais_usados}</strong>
+          <span>{idioma === "en" ? "vacation" : "ferias"}</span>
+        </div>
+      </div>
+      <div className="pie-visual__legend">
+        {tipos.map(([tipo, dias]) => (
+          <div className="pie-visual__legend-item" key={tipo}>
+            <span className="pie-visual__legend-dot" style={{ background: CORES_FERIAS[tipo] }} />
+            <div>
+              <strong>{rotuloFerias(tipo, idioma)}</strong>
+              <span>{`${dias} ${idioma === "en" ? "day(s)" : "dia(s)"}`}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function rotuloArmazenamento(
   origem: HistoricoFuncionalAnalise["armazenamento_origem"],
   idioma: "pt-BR" | "en",
@@ -556,20 +635,28 @@ export function HistoricoFuncionalView({
     arquivo,
     arquivoDownloadUrl,
     arquivoAfastamentos,
+    arquivoFerias,
     anosCltAverbados,
+    sexo,
+    categoriaPrevidenciaria,
     dataNascimento,
     erro,
     mensagemProcessamento,
     historico,
     modoAtualizacaoHistorico,
     modoAnexoAfastamentos,
+    modoAnexoFerias,
     iniciarAnexoAfastamentos,
+    iniciarAnexoFerias,
     iniciarAtualizacaoHistorico,
     recarregarHistorico,
     selecionarArquivo,
     selecionarArquivoAfastamentos,
+    selecionarArquivoFerias,
     setAnosCltAverbados,
     setDataNascimento,
+    setSexo,
+    setCategoriaPrevidenciaria,
     usarCltMaximo,
     enviarFormulario,
   } = useHistoricoFuncionalController({
@@ -580,6 +667,7 @@ export function HistoricoFuncionalView({
   const painel = historico ?? historicoInicial
   const resumo = painel?.resumo_grafico
   const resumoAfastamentos = painel?.afastamentos_resumo
+  const resumoFerias = painel?.ferias_resumo
   const afastamentoPericia = resumoAfastamentos?.dias_por_tipo.aguardando_resultado_conclusivo_de_exame_pericial ?? 0
 
   return (
@@ -620,6 +708,15 @@ export function HistoricoFuncionalView({
                     onClick={iniciarAnexoAfastamentos}
                   >
                     {t.attachLeaveRecords}
+                  </button>
+                ) : null}
+                {painel ? (
+                  <button
+                    className="ghost-button ghost-button--compact"
+                    type="button"
+                    onClick={iniciarAnexoFerias}
+                  >
+                    {t.attachVacationRecords}
                   </button>
                 ) : null}
                 {painel ? (
@@ -684,6 +781,18 @@ export function HistoricoFuncionalView({
                 </label>
 
                 <label className="field">
+                  <span>{t.sex}</span>
+                  <select
+                    value={sexo}
+                    onChange={(evento) => setSexo(evento.target.value as "feminino" | "masculino")}
+                    required
+                  >
+                    <option value="feminino">{t.female}</option>
+                    <option value="masculino">{t.male}</option>
+                  </select>
+                </label>
+
+                <label className="field">
                   <span>{t.recognizedCltYears}</span>
                   <input
                     type="number"
@@ -692,6 +801,24 @@ export function HistoricoFuncionalView({
                     value={anosCltAverbados}
                     onChange={(evento) => setAnosCltAverbados(Number(evento.target.value))}
                   />
+                </label>
+
+                <label className="field">
+                  <span>{t.retirementCategory}</span>
+                  <select
+                    value={categoriaPrevidenciaria}
+                    onChange={(evento) =>
+                      setCategoriaPrevidenciaria(
+                        evento.target.value as "geral" | "professor" | "seguranca" | "saude_exposicao",
+                      )
+                    }
+                    required
+                  >
+                    <option value="geral">{t.categoryGeneral}</option>
+                    <option value="professor">{t.categoryTeacher}</option>
+                    <option value="seguranca">{t.categorySecurity}</option>
+                    <option value="saude_exposicao">{t.categoryHealthExposure}</option>
+                  </select>
                 </label>
               </div>
 
@@ -702,6 +829,15 @@ export function HistoricoFuncionalView({
 
               {arquivoAfastamentos ? (
                 <p className="helper">{`${t.selectedLeaveRecordsFile}: ${arquivoAfastamentos.name}`}</p>
+              ) : null}
+
+              <label className="field">
+                <span>{t.vacationRecordsPdf}</span>
+                <input type="file" accept="application/pdf" onChange={selecionarArquivoFerias} />
+              </label>
+
+              {arquivoFerias ? (
+                <p className="helper">{`${t.selectedVacationRecordsFile}: ${arquivoFerias.name}`}</p>
               ) : null}
 
               <div className="upload-actions">
@@ -738,6 +874,22 @@ export function HistoricoFuncionalView({
               {mensagemProcessamento ? <p className="helper">{mensagemProcessamento}</p> : null}
               {erro ? <p className="error-box">{erro}</p> : null}
             </div>
+          ) : painel && modoAnexoFerias ? (
+            <div className="upload-shell__collapsed upload-shell__collapsed--compact">
+              <label className="field">
+                <span>{t.vacationRecordsPdf}</span>
+                <input type="file" accept="application/pdf" onChange={selecionarArquivoFerias} />
+              </label>
+
+              {arquivoFerias ? (
+                <p className="helper">{`${t.selectedVacationRecordsFile}: ${arquivoFerias.name}`}</p>
+              ) : (
+                <p className="helper">{t.selectVacationPdfToAttach}</p>
+              )}
+
+              {mensagemProcessamento ? <p className="helper">{mensagemProcessamento}</p> : null}
+              {erro ? <p className="error-box">{erro}</p> : null}
+            </div>
           ) : (
             <div className="upload-shell__collapsed">
               <p className="helper">{t.sendOtherFiles}</p>
@@ -754,6 +906,7 @@ export function HistoricoFuncionalView({
                 idioma={language}
               />
               {resumoAfastamentos ? <GraficoPizzaAfastamentos resumo={resumoAfastamentos} idioma={language} /> : null}
+              {resumoFerias ? <GraficoPizzaFerias resumo={resumoFerias} idioma={language} /> : null}
             </div>
 
             <div className="overview-panel__content">
@@ -788,6 +941,22 @@ export function HistoricoFuncionalView({
                     <strong>{afastamentoPericia}</strong>
                   </div>
                 ) : null}
+                {resumoFerias ? (
+                  <div className="metric-line">
+                    <span>{t.vacationDaysUsed}</span>
+                    <strong>{resumoFerias.dias_totais_usados}</strong>
+                  </div>
+                ) : null}
+                {resumoFerias ? (
+                  <div className="metric-line">
+                    <span>{t.nextVacation}</span>
+                    <strong>
+                      {resumoFerias.proxima_ferias_inicio
+                        ? `${formatarData(resumoFerias.proxima_ferias_inicio, language)} - ${formatarData(resumoFerias.proxima_ferias_fim, language)}`
+                        : "-"}
+                    </strong>
+                  </div>
+                ) : null}
                 <div className="metric-line">
                   <span>{t.nextProgression}</span>
                   <strong>{formatarData(painel.proxima_progressao_prevista, language)}</strong>
@@ -815,6 +984,35 @@ export function HistoricoFuncionalView({
               painel={painel}
               idioma={language}
             />
+          </section>
+        ) : null}
+
+        {painel?.ferias?.length ? (
+          <section className="timeline-panel">
+            <div className="career-bars__title" style={{ marginBottom: "1rem" }}>
+              <p className="eyebrow">{t.vacationHistory}</p>
+              <h3>{t.vacationPeriods}</h3>
+            </div>
+
+            <div className="metric-strip">
+              {painel.ferias
+                .slice()
+                .sort((a, b) => new Date(`${b.data_inicio}T00:00:00`).getTime() - new Date(`${a.data_inicio}T00:00:00`).getTime())
+                .map((periodo) => (
+                  <div
+                    className="metric-line"
+                    key={`${periodo.tipo}-${periodo.data_inicio}-${periodo.data_fim}`}
+                  >
+                    <span>{rotuloFerias(periodo.tipo, language)}</span>
+                    <strong>{`${formatarData(periodo.data_inicio, language)} - ${formatarData(periodo.data_fim, language)}`}</strong>
+                    <small>
+                      {`${periodo.dias_contabilizados} ${
+                        periodo.regra_contagem === "dias_uteis" ? t.businessDays : t.calendarDays
+                      }`}
+                    </small>
+                  </div>
+                ))}
+            </div>
           </section>
         ) : null}
       </div>

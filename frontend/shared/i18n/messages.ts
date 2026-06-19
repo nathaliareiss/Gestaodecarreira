@@ -229,6 +229,7 @@ export type LocaleTexts = {
     uploadDocuments: string
     uploadCareerHistory: string
     attachLeaveRecords: string
+    attachVacationRecords: string
     updateCareerHistory: string
     downloadPdf: string
     demoDataLoaded: string
@@ -237,9 +238,20 @@ export type LocaleTexts = {
     clickUploadCareerHistory: string
     careerHistoryPdf: string
     dateOfBirth: string
+    sex: string
+    female: string
+    male: string
+    retirementCategory: string
+    categoryGeneral: string
+    categoryTeacher: string
+    categorySecurity: string
+    categoryHealthExposure: string
     recognizedCltYears: string
     leaveRecordsPdf: string
     selectedLeaveRecordsFile: string
+    vacationRecordsPdf: string
+    selectedVacationRecordsFile: string
+    selectVacationPdfToAttach: string
     fill10CltYears: string
     upTo10CltYears: string
     selectedFile: string
@@ -253,6 +265,8 @@ export type LocaleTexts = {
     events: string
     daysAway: string
     medicalReview: string
+    vacationDaysUsed: string
+    nextVacation: string
     nextProgression: string
     comparison: string
     timeWorkedAndLeave: string
@@ -269,6 +283,10 @@ export type LocaleTexts = {
     daysUntilMedicalReview: string
     enoughEvents: string
     chartTitle: string
+    vacationHistory: string
+    vacationPeriods: string
+    businessDays: string
+    calendarDays: string
     uploadHint: string
     loadedInDemo: string
     userRequiredForHistory: string
@@ -364,7 +382,7 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       noActiveSession: "Nenhuma sessão ativa foi encontrada. Entre novamente para ver seus dados.",
       goToLogin: "Ir para login",
       profile: "Perfil",
-      history: "Histórico funcional",
+      history: "História de carreira",
       finance: "Financeiro",
       exit: "Sair",
       exitDemo: "Sair da demo",
@@ -376,7 +394,7 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       confirmed: "Confirmado",
       pending: "Pendente",
       profileOverview: "Visão geral do perfil",
-      careerHistory: "Histórico funcional",
+      careerHistory: "História de carreira",
       dataManagement: "Gestão de dados",
       saved: "Salvo",
       waitingForPdf: "Aguardando PDF",
@@ -508,9 +526,9 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       salaryTrendExplainer: "Uma linha única mantém a tendência salarial clara e fácil de acompanhar.",
     },
     history: {
-      title: "Histórico funcional",
+      title: "História de carreira",
       subtitle:
-        "Envie um ou mais contracheques e acompanhe o progresso do lote enquanto os arquivos são processados.",
+        "Envie o histórico de carreira e complemente com PDFs de afastamentos e férias para revisar evolução, descanso e aposentadoria.",
       statusSaved: "Salvo",
       waitingForPdf: "Aguardando PDF",
       documents: "Documentos",
@@ -520,6 +538,7 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       uploadDocuments: "Enviar documentos",
       uploadCareerHistory: "Enviar histórico funcional",
       attachLeaveRecords: "Anexar afastamentos",
+      attachVacationRecords: "Anexar férias",
       updateCareerHistory: "Atualizar histórico funcional",
       downloadPdf: "Baixar PDF",
       demoDataLoaded: "Os dados abaixo já estão carregados para a demo.",
@@ -528,9 +547,20 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       clickUploadCareerHistory: "Clique em \"Enviar histórico funcional\" para abrir os campos de upload.",
       careerHistoryPdf: "PDF do histórico funcional",
       dateOfBirth: "Data de nascimento",
+      sex: "Sexo",
+      female: "Feminino",
+      male: "Masculino",
+      retirementCategory: "Regra previdenciária",
+      categoryGeneral: "Servidor público geral",
+      categoryTeacher: "Professor",
+      categorySecurity: "Segurança pública",
+      categoryHealthExposure: "Saúde com exposição nociva",
       recognizedCltYears: "Anos CLT reconhecidos",
       leaveRecordsPdf: "PDF de afastamentos",
       selectedLeaveRecordsFile: "Arquivo de afastamentos selecionado",
+      vacationRecordsPdf: "PDF de férias regulamentares ou prêmio",
+      selectedVacationRecordsFile: "Arquivo de férias selecionado",
+      selectVacationPdfToAttach: "Selecione o PDF de férias para anexar aos dados salvos.",
       fill10CltYears: "Preencher 10 anos CLT",
       upTo10CltYears: "Você pode informar até 10 anos CLT. Se já tiver esse tempo, digite 10 ou use o atalho.",
       selectedFile: "Arquivo selecionado",
@@ -544,6 +574,8 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       events: "Eventos",
       daysAway: "Dias afastado",
       medicalReview: "Revisão médica",
+      vacationDaysUsed: "Dias de férias usados",
+      nextVacation: "Próximas férias",
       nextProgression: "Próxima progressão",
       comparison: "Comparação",
       timeWorkedAndLeave: "Tempo trabalhado e afastamento",
@@ -560,6 +592,10 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       daysUntilMedicalReview: "dias até a revisão médica",
       enoughEvents: "O PDF não trouxe eventos suficientes para desenhar a linha do tempo.",
       chartTitle: "Linha do tempo de progressões e promoções",
+      vacationHistory: "Férias",
+      vacationPeriods: "Períodos importados",
+      businessDays: "dias úteis",
+      calendarDays: "dias corridos",
       uploadHint: "Envie o PDF do histórico funcional para analisar os dados e montar os cálculos de carreira.",
       loadedInDemo: "Aqui você verá tempo trabalhado, projeção de aposentadoria e a próxima progressão e promoção.",
       userRequiredForHistory: "Crie um usuário antes de enviar o histórico funcional.",
@@ -809,6 +845,7 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       uploadDocuments: "Upload Documents",
       uploadCareerHistory: "Upload Career History",
       attachLeaveRecords: "Attach Leave Records",
+      attachVacationRecords: "Attach Vacation Records",
       updateCareerHistory: "Update Career History",
       downloadPdf: "Download PDF",
       demoDataLoaded: "The data below is already loaded for the demo.",
@@ -817,9 +854,20 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       clickUploadCareerHistory: 'Click "Upload Career History" to open the upload fields.',
       careerHistoryPdf: "Career History PDF",
       dateOfBirth: "Date of Birth",
+      sex: "Sex",
+      female: "Female",
+      male: "Male",
+      retirementCategory: "Retirement rule",
+      categoryGeneral: "General public servant",
+      categoryTeacher: "Teacher",
+      categorySecurity: "Public safety",
+      categoryHealthExposure: "Health with harmful exposure",
       recognizedCltYears: "Recognized CLT Years",
       leaveRecordsPdf: "Leave Records PDF",
       selectedLeaveRecordsFile: "Selected leave records file",
+      vacationRecordsPdf: "Regular or premium vacation PDF",
+      selectedVacationRecordsFile: "Selected vacation file",
+      selectVacationPdfToAttach: "Select the vacation PDF to attach to the saved data.",
       fill10CltYears: "Fill 10 CLT Years",
       upTo10CltYears: "You can enter up to 10 CLT years. If you already have that time, enter 10 or use the shortcut.",
       selectedFile: "Selected file",
@@ -833,6 +881,8 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       events: "Events",
       daysAway: "Days Away",
       medicalReview: "Medical Review",
+      vacationDaysUsed: "Vacation days used",
+      nextVacation: "Next vacation",
       nextProgression: "Next Progression",
       comparison: "Comparison",
       timeWorkedAndLeave: "Time Worked and Leave",
@@ -849,6 +899,10 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       daysUntilMedicalReview: "days until medical review",
       enoughEvents: "The PDF did not bring enough events to draw the timeline.",
       chartTitle: "Timeline of progressions and promotions",
+      vacationHistory: "Vacation",
+      vacationPeriods: "Imported periods",
+      businessDays: "business days",
+      calendarDays: "calendar days",
       uploadHint: "Upload the career history PDF to analyze the data and build the career calculations.",
       loadedInDemo: "Here you will see time worked, retirement projection, and the next progression and promotion.",
       userRequiredForHistory: "Create a user before uploading the career history.",
