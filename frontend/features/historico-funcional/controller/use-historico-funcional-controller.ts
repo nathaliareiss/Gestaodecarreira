@@ -9,6 +9,7 @@ import type {
 } from "../model/historico-funcional.model"
 import {
   anexarAfastamentosAoHistorico,
+  anexarFeriasAoHistorico,
   analisarHistoricoFuncional,
   consultarStatusJobHistorico,
   buscarUltimoHistoricoFuncional,
@@ -63,7 +64,14 @@ export function useHistoricoFuncionalController({
 }: UseHistoricoFuncionalControllerParams) {
   const [arquivo, setArquivo] = useState<File | null>(null)
   const [arquivoAfastamentos, setArquivoAfastamentos] = useState<File | null>(null)
+  const [arquivoFerias, setArquivoFerias] = useState<File | null>(null)
   const [dataNascimento, setDataNascimento] = useState(historicoInicial?.data_nascimento ?? "")
+  const [sexo, setSexo] = useState<"feminino" | "masculino">(
+    historicoInicial?.sexo === "masculino" ? "masculino" : "feminino",
+  )
+  const [categoriaPrevidenciaria, setCategoriaPrevidenciaria] = useState<
+    "geral" | "professor" | "seguranca" | "saude_exposicao"
+  >(historicoInicial?.categoria_previdenciaria ?? "professor")
   const [anosCltAverbados, setAnosCltAverbados] = useState(
     historicoInicial?.tempo_clt_averbado_anos ?? 0,
   )
@@ -73,6 +81,7 @@ export function useHistoricoFuncionalController({
   const [mensagemProcessamento, setMensagemProcessamento] = useState<string | null>(null)
   const [modoAtualizacaoHistorico, setModoAtualizacaoHistorico] = useState(false)
   const [modoAnexoAfastamentos, setModoAnexoAfastamentos] = useState(false)
+  const [modoAnexoFerias, setModoAnexoFerias] = useState(false)
   const assinaturaEnvioAutomatico = useRef<string | null>(null)
   const arquivoDownloadUrl = useMemo(() => {
     if (!arquivo) {
@@ -119,6 +128,7 @@ export function useHistoricoFuncionalController({
     setArquivo(selecionado)
     setModoAtualizacaoHistorico(true)
     setModoAnexoAfastamentos(false)
+    setModoAnexoFerias(false)
     setErro(null)
   }
 
@@ -126,18 +136,36 @@ export function useHistoricoFuncionalController({
     const selecionado = evento.target.files?.[0] ?? null
     setArquivoAfastamentos(selecionado)
     setModoAnexoAfastamentos(true)
+    setModoAnexoFerias(false)
+    setErro(null)
+  }
+
+  function selecionarArquivoFerias(evento: ChangeEvent<HTMLInputElement>) {
+    const selecionado = evento.target.files?.[0] ?? null
+    setArquivoFerias(selecionado)
+    setModoAnexoFerias(true)
+    setModoAnexoAfastamentos(false)
     setErro(null)
   }
 
   function iniciarAnexoAfastamentos() {
     setModoAnexoAfastamentos(true)
     setModoAtualizacaoHistorico(false)
+    setModoAnexoFerias(false)
+    setErro(null)
+  }
+
+  function iniciarAnexoFerias() {
+    setModoAnexoFerias(true)
+    setModoAtualizacaoHistorico(false)
+    setModoAnexoAfastamentos(false)
     setErro(null)
   }
 
   function iniciarAtualizacaoHistorico() {
     setModoAtualizacaoHistorico(true)
     setModoAnexoAfastamentos(false)
+    setModoAnexoFerias(false)
     setErro(null)
   }
 
@@ -153,10 +181,12 @@ export function useHistoricoFuncionalController({
         arquivo?.size ?? 0,
         arquivo?.lastModified ?? 0,
         dataNascimento,
+        sexo,
+        categoriaPrevidenciaria,
         anosCltAverbados,
         usuarioId ?? "",
       ].join("|"),
-    [arquivo, dataNascimento, anosCltAverbados, usuarioId],
+    [arquivo, dataNascimento, sexo, categoriaPrevidenciaria, anosCltAverbados, usuarioId],
   )
 
   const criarAssinaturaAfastamentos = useCallback(
@@ -169,6 +199,18 @@ export function useHistoricoFuncionalController({
         usuarioId ?? "",
       ].join("|"),
     [arquivoAfastamentos, historico, usuarioId],
+  )
+
+  const criarAssinaturaFerias = useCallback(
+    () =>
+      [
+        arquivoFerias?.name ?? "",
+        arquivoFerias?.size ?? 0,
+        arquivoFerias?.lastModified ?? 0,
+        historico?.historico_id ?? "",
+        usuarioId ?? "",
+      ].join("|"),
+    [arquivoFerias, historico, usuarioId],
   )
 
   const recarregarHistorico = useCallback(async () => {
@@ -184,6 +226,7 @@ export function useHistoricoFuncionalController({
       setHistorico(recarregado)
       setModoAtualizacaoHistorico(false)
       setModoAnexoAfastamentos(false)
+      setModoAnexoFerias(false)
     } catch (error) {
       setErro(formatarErroHistorico(error, "pt-BR"))
     } finally {
@@ -220,9 +263,14 @@ export function useHistoricoFuncionalController({
         const payload = new FormData()
         payload.append("arquivo", arquivo)
         payload.append("data_nascimento", dataNascimento)
+        payload.append("sexo", sexo)
+        payload.append("categoria_previdenciaria", categoriaPrevidenciaria)
         payload.append("anos_clt_averbados", String(Math.min(Math.max(anosCltAverbados, 0), 10)))
         if (arquivoAfastamentos) {
           payload.append("afastamentos_arquivo", arquivoAfastamentos)
+        }
+        if (arquivoFerias) {
+          payload.append("ferias_arquivo", arquivoFerias)
         }
 
         const resposta = await analisarHistoricoFuncional(payload)
@@ -233,6 +281,7 @@ export function useHistoricoFuncionalController({
         setHistorico(analisado)
         setModoAtualizacaoHistorico(false)
         setModoAnexoAfastamentos(false)
+        setModoAnexoFerias(false)
       } catch (error) {
         if (assinatura) {
           assinaturaEnvioAutomatico.current = null
@@ -243,7 +292,7 @@ export function useHistoricoFuncionalController({
         setCarregando(false)
       }
     },
-    [arquivo, arquivoAfastamentos, anosCltAverbados, dataNascimento, usuarioId],
+    [arquivo, arquivoAfastamentos, arquivoFerias, anosCltAverbados, categoriaPrevidenciaria, dataNascimento, sexo, usuarioId],
   )
 
   const submeterAfastamentos = useCallback(
@@ -296,6 +345,56 @@ export function useHistoricoFuncionalController({
     [arquivoAfastamentos, historico, usuarioId],
   )
 
+  const submeterFerias = useCallback(
+    async (assinatura?: string) => {
+      if (!usuarioId) {
+        setErro("Crie um usuario antes de enviar ferias.")
+        return
+      }
+
+      if (!historico) {
+        setErro("Envie o historico de carreira primeiro.")
+        return
+      }
+
+      if (!arquivoFerias) {
+        setErro("Escolha um PDF de ferias.")
+        return
+      }
+
+      setCarregando(true)
+      setErro(null)
+      setMensagemProcessamento("Processando o PDF de ferias em segundo plano...")
+
+      if (assinatura) {
+        assinaturaEnvioAutomatico.current = assinatura
+      }
+
+      try {
+        const payload = new FormData()
+        payload.append("arquivo", arquivoFerias)
+        const resposta = await anexarFeriasAoHistorico(usuarioId, payload)
+
+        const analisado = respostaEhJob(resposta)
+          ? await aguardarResultadoJob(resposta.job_id)
+          : resposta
+
+        setHistorico(analisado)
+        setArquivoFerias(null)
+        setModoAnexoFerias(false)
+      } catch (error) {
+        if (assinatura) {
+          assinaturaEnvioAutomatico.current = null
+        }
+        setErro(formatarErroHistorico(error, "pt-BR"))
+      } finally {
+        setMensagemProcessamento(null)
+        setCarregando(false)
+      }
+    },
+    [arquivoFerias, historico, usuarioId],
+  )
+
   async function enviarFormulario(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault()
     await submeterAnalise()
@@ -316,6 +415,8 @@ export function useHistoricoFuncionalController({
     arquivo,
     dataNascimento,
     anosCltAverbados,
+    sexo,
+    categoriaPrevidenciaria,
     carregando,
     usuarioId,
     modoAtualizacaoHistorico,
@@ -356,11 +457,35 @@ export function useHistoricoFuncionalController({
     submeterAfastamentos,
   ])
 
+  useEffect(() => {
+    if (!modoAnexoFerias || !historico || !arquivoFerias || carregando) {
+      return
+    }
+
+    const assinatura = criarAssinaturaFerias()
+    if (assinaturaEnvioAutomatico.current === assinatura) {
+      return
+    }
+
+    void submeterFerias(assinatura)
+  }, [
+    arquivoFerias,
+    carregando,
+    usuarioId,
+    historico,
+    modoAnexoFerias,
+    criarAssinaturaFerias,
+    submeterFerias,
+  ])
+
   return {
     arquivo,
     arquivoDownloadUrl,
     arquivoAfastamentos,
+    arquivoFerias,
     anosCltAverbados,
+    sexo,
+    categoriaPrevidenciaria,
     carregando,
     dataNascimento,
     erro,
@@ -368,13 +493,18 @@ export function useHistoricoFuncionalController({
     historico,
     modoAtualizacaoHistorico,
     modoAnexoAfastamentos,
+    modoAnexoFerias,
     iniciarAnexoAfastamentos,
+    iniciarAnexoFerias,
     iniciarAtualizacaoHistorico,
     recarregarHistorico,
     selecionarArquivo,
     selecionarArquivoAfastamentos,
+    selecionarArquivoFerias,
     setAnosCltAverbados,
     setDataNascimento,
+    setSexo,
+    setCategoriaPrevidenciaria,
     usarCltMaximo,
     enviarFormulario,
   }

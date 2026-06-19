@@ -7,6 +7,7 @@ from io import BytesIO
 from typing import Literal
 
 import pandas as pd
+import holidays
 from pypdf import PdfReader
 
 from backend.logger import logger
@@ -556,10 +557,11 @@ def _tipo_ferias_linha(linha: str) -> Literal["regular", "premium"] | None:
 
 
 def _contar_dias_uteis(data_inicio: date, data_fim: date) -> int:
+    feriados = holidays.country_holidays("BR", subdiv="MG", years=range(data_inicio.year, data_fim.year + 1))
     total = 0
     cursor = data_inicio
     while cursor <= data_fim:
-        if cursor.weekday() < 5:
+        if cursor.weekday() < 5 and cursor not in feriados:
             total += 1
         cursor += timedelta(days=1)
     return total

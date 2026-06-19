@@ -1,6 +1,7 @@
 export type HistoricoFuncionalUpload = FormData
 
 export type AfastamentosUpload = FormData
+export type FeriasUpload = FormData
 
 export type JobAgendadoResponse = {
   job_id: string
@@ -33,6 +34,26 @@ export type AfastamentoResumo = {
   periodos_por_tipo: Record<string, number>
 }
 
+export type FeriasPeriodo = {
+  tipo: "regular" | "premium"
+  data_inicio: string
+  data_fim: string
+  dias_contabilizados: number
+  dias_corridos: number
+  regra_contagem: "dias_uteis" | "dias_corridos"
+  observacao: string | null
+}
+
+export type FeriasResumo = {
+  periodos_totais: number
+  dias_totais_usados: number
+  dias_por_tipo: Record<string, number>
+  periodos_por_tipo: Record<string, number>
+  proxima_ferias_inicio: string | null
+  proxima_ferias_fim: string | null
+  proxima_ferias_tipo: "regular" | "premium" | null
+}
+
 export type HistoricoFuncionalEvento = {
   tipo: "nomeacao" | "progressao" | "promocao" | "substituicao"
   descricao: string
@@ -56,6 +77,8 @@ export type HistoricoFuncionalAnalise = {
   cpf: string | null
   data_emissao: string | null
   data_nascimento: string
+  sexo: "feminino" | "masculino" | null
+  categoria_previdenciaria: "geral" | "professor" | "seguranca" | "saude_exposicao" | null
   data_posse: string
   data_exercicio: string
   cargo_atual: string
@@ -85,6 +108,9 @@ export type HistoricoFuncionalAnalise = {
   afastamentos_arquivo_nome: string | null
   afastamentos_resumo: AfastamentoResumo | null
   afastamentos: AfastamentoPeriodo[]
+  ferias_arquivo_nome: string | null
+  ferias_resumo: FeriasResumo | null
+  ferias: FeriasPeriodo[]
   eventos: HistoricoFuncionalEvento[]
   armazenamento_origem: "local"
   processamento_origem: "fila" | "direto"

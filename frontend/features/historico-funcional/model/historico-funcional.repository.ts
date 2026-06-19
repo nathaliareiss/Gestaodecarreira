@@ -1,5 +1,6 @@
 import type {
   AfastamentosUpload,
+  FeriasUpload,
   HistoricoFuncionalAnalise,
   HistoricoFuncionalUpload,
   JobAgendadoResponse,
@@ -50,6 +51,21 @@ export async function anexarAfastamentosAoHistorico(
   return parseApiResponse<HistoricoFuncionalAnalise | JobAgendadoResponse>(
     response,
     "Erro ao analisar o arquivo de afastamentos.",
+  )
+}
+
+export async function anexarFeriasAoHistorico(
+  usuarioId: number,
+  payload: FeriasUpload,
+): Promise<HistoricoFuncionalAnalise | JobAgendadoResponse> {
+  const response = await apiFetch(`/api/historicos-funcionais/usuario/${usuarioId}/ferias`, {
+    method: "POST",
+    body: payload,
+  })
+
+  return parseApiResponse<HistoricoFuncionalAnalise | JobAgendadoResponse>(
+    response,
+    "Erro ao analisar o arquivo de ferias.",
   )
 }
 
