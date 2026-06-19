@@ -22,7 +22,7 @@ from backend.schemas.historico_funcional_schema import (
     HistoricoFuncionalUploadRequest,
     HistoricoFuncionalResumoGraficoResponse,
 )
-from backend.storage.supabase_storage import baixar_pdf_storage, obter_origem_storage
+from backend.storage import baixar_pdf_storage, obter_origem_storage
 from backend.services.historico_funcional_service import (
     analisar_afastamentos_pdf,
     analisar_historico_funcional,

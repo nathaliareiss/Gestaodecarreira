@@ -1,6 +1,6 @@
 from sqlalchemy import text
 
-from backend.config import SUPABASE_STORAGE_BUCKET
+from backend.config import SUPABASE_STORAGE_BUCKET, SUPABASE_STORAGE_CONFIGURED
 from backend.database.database import Base, engine
 from backend.database import models as database_models  # noqa: F401
 from backend.logger import logger
@@ -134,6 +134,13 @@ def habilitar_rls_tabelas_publicas() -> None:
             "Falha ao habilitar RLS nas tabelas publicas",
             extra={"tabelas": ["usuarios", "historicos_funcionais", "financeiro"]},
         )
+
+    if not SUPABASE_STORAGE_CONFIGURED:
+        logger.info(
+            "Supabase Storage nao configurado; politicas de bucket ignoradas",
+            extra={"storage": "local"},
+        )
+        return
 
     bucket = SUPABASE_STORAGE_BUCKET.replace("'", "''")
     comandos_storage = [

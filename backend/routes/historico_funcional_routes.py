@@ -32,7 +32,7 @@ from backend.services.historico_funcional_job_service import (
     processar_afastamentos_db,
     processar_historico_funcional_db,
 )
-from backend.storage.supabase_storage import (
+from backend.storage import (
     StorageError,
     enviar_pdf_para_storage,
     gerar_caminho_storage_afastamentos,

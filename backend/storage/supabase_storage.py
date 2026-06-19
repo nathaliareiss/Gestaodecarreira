@@ -12,6 +12,7 @@ import requests
 
 from backend.config import (
     SUPABASE_SERVICE_ROLE_KEY,
+    SUPABASE_STORAGE_CONFIGURED,
     SUPABASE_STORAGE_AFASTAMENTOS_PREFIX,
     SUPABASE_STORAGE_BUCKET,
     SUPABASE_STORAGE_HISTORICO_PREFIX,
@@ -33,9 +34,9 @@ class ResultadoUploadStorage:
 
 
 def _validar_configuracao() -> None:
-    if not SUPABASE_URL or not SUPABASE_SERVICE_ROLE_KEY:
+    if not SUPABASE_STORAGE_CONFIGURED:
         raise StorageError(
-            "Configure SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY para usar o Storage do Supabase."
+            "Configure SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY e SUPABASE_STORAGE_BUCKET para usar o Storage do Supabase."
         )
 
 
@@ -96,7 +97,7 @@ def _arquivo_local_existe(caminho_storage: str) -> bool:
 
 
 def obter_origem_storage(caminho_storage: str) -> str:
-    return "local" if _arquivo_local_existe(caminho_storage) else "supabase"
+    return "local" if _arquivo_local_existe(caminho_storage) or not SUPABASE_STORAGE_CONFIGURED else "supabase"
 
 
 def enviar_pdf_para_storage(
@@ -104,8 +105,9 @@ def enviar_pdf_para_storage(
     caminho_storage: str,
     content_type: str = "application/pdf",
 ) -> ResultadoUploadStorage:
-    if SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY:
+    if SUPABASE_STORAGE_CONFIGURED:
         assert SUPABASE_URL
+        assert SUPABASE_STORAGE_BUCKET
         url = f"{SUPABASE_URL.rstrip('/')}/storage/v1/object/{SUPABASE_STORAGE_BUCKET}/{caminho_storage}"
         headers = _headers()
         headers.update(
@@ -136,9 +138,11 @@ def baixar_pdf_storage(caminho_storage: str) -> bytes:
     if _arquivo_local_existe(caminho_storage):
         return _caminho_local(caminho_storage).read_bytes()
 
-    _validar_configuracao()
+    if not SUPABASE_STORAGE_CONFIGURED:
+        raise StorageError("Arquivo nao encontrado no storage local.")
 
     assert SUPABASE_URL
+    assert SUPABASE_STORAGE_BUCKET
     url = f"{SUPABASE_URL.rstrip('/')}/storage/v1/object/{SUPABASE_STORAGE_BUCKET}/{caminho_storage}"
     try:
         resposta = requests.get(url, headers=_headers(), timeout=60)
