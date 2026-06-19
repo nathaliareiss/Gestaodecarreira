@@ -2,18 +2,32 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+from urllib.parse import urlparse
 
-from dotenv import load_dotenv
 from sqlalchemy import create_engine, event, text
 from sqlalchemy.pool import StaticPool
 from sqlalchemy.orm import Session as OrmSession, declarative_base, sessionmaker
 
+from backend.env_loader import carregar_primeiro_env
 from backend.logger import logger
 
 ENV_FILE = Path(__file__).resolve().parent.parent / ".env"
-load_dotenv(ENV_FILE)
+ENV_LOAD_RESULT = carregar_primeiro_env((ENV_FILE,))
 
 DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
+_DATABASE_URL_PARTS = urlparse(DATABASE_URL) if DATABASE_URL else None
+logger.info(
+    "DATABASE_URL avaliada para inicializacao do banco",
+    extra={
+        "database_url_definida": bool(DATABASE_URL),
+        "database_url_host": _DATABASE_URL_PARTS.hostname if _DATABASE_URL_PARTS else None,
+        "database_url_porta": _DATABASE_URL_PARTS.port if _DATABASE_URL_PARTS else None,
+        "database_url_banco": (_DATABASE_URL_PARTS.path.lstrip("/") or None) if _DATABASE_URL_PARTS else None,
+        "env_file": str(ENV_LOAD_RESULT.path) if ENV_LOAD_RESULT.path else None,
+        "env_override": ENV_LOAD_RESULT.override,
+        "environment": ENV_LOAD_RESULT.environment or None,
+    },
+)
 if not DATABASE_URL:
     logger.critical(
         "DATABASE_URL nao foi definido",

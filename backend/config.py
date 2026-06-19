@@ -3,20 +3,17 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-from dotenv import load_dotenv
+from backend.env_loader import carregar_primeiro_env
 
 BASE_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = BASE_DIR.parent
 
-for candidato in (
+ENV_LOAD_RESULT = carregar_primeiro_env((
     BASE_DIR / ".env",
     PROJECT_ROOT / ".env",
     Path.cwd() / ".env",
     Path.cwd() / "backend" / ".env",
-):
-    if candidato.is_file():
-        load_dotenv(candidato, override=False)
-        break
+))
 
 
 def _ler_lista_csv(nome_variavel: str) -> list[str]:
