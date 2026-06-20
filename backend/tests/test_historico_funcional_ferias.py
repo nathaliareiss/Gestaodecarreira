@@ -85,3 +85,16 @@ def test_proximo_marco_suspende_intersticio_por_licenca_saude_maior_que_90_dias(
     )
 
     assert proxima == date(2026, 4, 11)
+
+
+def test_aposentadoria_professor_nao_usa_pedagio_automatico_abaixo_da_idade_de_transicao() -> None:
+    _, data_idade, data_prevista, *_ = historico_funcional_service._cronometro_ate_aposentadoria(
+        data_nascimento=date(1988, 8, 12),
+        data_exercicio=date(2010, 2, 15),
+        anos_clt_averbados=2,
+        sexo="feminino",
+        categoria_previdenciaria="professor",
+    )
+
+    assert data_idade >= date(2039, 8, 12)
+    assert data_prevista >= date(2039, 8, 12)

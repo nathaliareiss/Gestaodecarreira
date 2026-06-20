@@ -961,11 +961,8 @@ export function HistoricoFuncionalView({
                   <span>{t.nextProgression}</span>
                   <strong>{formatarData(painel.proxima_progressao_prevista, language)}</strong>
                 </div>
-                <div className="metric-line">
-                  <span>{t.nextPromotion}</span>
-                  <strong>{formatarData(painel.proxima_promocao_prevista, language)}</strong>
-                </div>
               </div>
+              <p className="helper">{t.promotionDependsOnEvaluations}</p>
 
             </div>
           </section>
@@ -982,7 +979,10 @@ export function HistoricoFuncionalView({
               <p className="eyebrow">{t.chartTitle}</p>
             </div>
 
-            <LinhaDoTempoGrafica eventos={painel.eventos} idioma={language} />
+            <LinhaDoTempoGrafica
+              eventos={painel.eventos.filter((evento) => evento.tipo !== "promocao")}
+              idioma={language}
+            />
 
             <GraficoComparativoTempo
               painel={painel}

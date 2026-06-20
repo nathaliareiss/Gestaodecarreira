@@ -269,6 +269,7 @@ export type LocaleTexts = {
     nextVacation: string
     nextProgression: string
     nextPromotion: string
+    promotionDependsOnEvaluations: string
     comparison: string
     timeWorkedAndLeave: string
     noLeavePeriods: string
@@ -579,6 +580,8 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       nextVacation: "Próximas férias",
       nextProgression: "Próxima progressão",
       nextPromotion: "Próxima promoção",
+      promotionDependsOnEvaluations:
+        "Promoção depende das avaliações obtidas e da análise do processo funcional, por isso não aparece como previsão automática no gráfico.",
       comparison: "Comparação",
       timeWorkedAndLeave: "Tempo trabalhado e afastamento",
       noLeavePeriods: "Você não possui períodos de afastamento registrados para desenhar a comparação.",
@@ -593,13 +596,13 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       medicalReviewCompleted: "Revisão médica concluída",
       daysUntilMedicalReview: "dias até a revisão médica",
       enoughEvents: "O PDF não trouxe eventos suficientes para desenhar a linha do tempo.",
-      chartTitle: "Linha do tempo de progressões e promoções",
+      chartTitle: "Linha do tempo de progressões",
       vacationHistory: "Férias",
       vacationPeriods: "Períodos importados",
       businessDays: "dias úteis",
       calendarDays: "dias corridos",
       uploadHint: "Envie o PDF do histórico funcional para analisar os dados e montar os cálculos de carreira.",
-      loadedInDemo: "Aqui você verá tempo trabalhado, projeção de aposentadoria e a próxima progressão e promoção.",
+      loadedInDemo: "Aqui você verá tempo trabalhado, projeção de aposentadoria e a próxima progressão.",
       userRequiredForHistory: "Crie um usuário antes de enviar o histórico funcional.",
       userRequiredForLeave: "Crie um usuário antes de enviar afastamentos.",
       chooseCareerHistoryPdf: "Escolha um PDF do histórico funcional.",
@@ -887,6 +890,8 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       nextVacation: "Next vacation",
       nextProgression: "Next Progression",
       nextPromotion: "Next Promotion",
+      promotionDependsOnEvaluations:
+        "Promotion depends on performance evaluations and career-file review, so it is not shown as an automatic chart forecast.",
       comparison: "Comparison",
       timeWorkedAndLeave: "Time Worked and Leave",
       noLeavePeriods: "You do not have any recorded leave periods to draw the comparison.",
@@ -901,13 +906,13 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       medicalReviewCompleted: "Medical review completed",
       daysUntilMedicalReview: "days until medical review",
       enoughEvents: "The PDF did not bring enough events to draw the timeline.",
-      chartTitle: "Timeline of progressions and promotions",
+      chartTitle: "Timeline of progressions",
       vacationHistory: "Vacation",
       vacationPeriods: "Imported periods",
       businessDays: "business days",
       calendarDays: "calendar days",
       uploadHint: "Upload the career history PDF to analyze the data and build the career calculations.",
-      loadedInDemo: "Here you will see time worked, retirement projection, and the next progression and promotion.",
+      loadedInDemo: "Here you will see time worked, retirement projection, and the next progression.",
       userRequiredForHistory: "Create a user before uploading the career history.",
       userRequiredForLeave: "Create a user before uploading leave records.",
       chooseCareerHistoryPdf: "Choose a career history PDF.",

@@ -253,7 +253,9 @@ def _calcular_data_pedagio_art_147(
 ) -> tuple[date, date, date]:
     professor = categoria_previdenciaria == "professor"
     marco_reforma = date(2020, 9, 14)
-    idade_minima = 50 if professor and sexo == "feminino" else 55 if professor else 55 if sexo == "feminino" else 60
+    # A tela usa a estimativa automática conservadora para não prometer uma
+    # aposentadoria antecipada sem explicar todas as condições da regra.
+    idade_minima = 51 if professor and sexo == "feminino" else 57 if professor else 55 if sexo == "feminino" else 60
     contribuicao_minima = 25 if professor and sexo == "feminino" else 30 if professor else 30 if sexo == "feminino" else 35
     dias_minimos = contribuicao_minima * 365
     dias_em_2020 = _dias_contribuicao_em(marco_reforma, data_exercicio, anos_clt_averbados)
@@ -982,14 +984,7 @@ def _cronometro_ate_aposentadoria(
                 categoria_previdenciaria,
             )
         )
-    if data_exercicio <= date(2020, 9, 14) and categoria_previdenciaria == "saude_exposicao":
-        opcoes.append(
-            _calcular_data_saude_exposicao_art_149(
-                data_nascimento,
-                data_exercicio,
-                anos_clt_averbados,
-            )
-        )
+    if data_exercicio <= date(2020, 9, 14) and categoria_previdenciaria == "geral":
         opcoes.append(
             _calcular_data_pedagio_art_147(
                 data_nascimento,
@@ -997,6 +992,14 @@ def _cronometro_ate_aposentadoria(
                 anos_clt_averbados,
                 sexo,
                 categoria_previdenciaria,
+            )
+        )
+    if data_exercicio <= date(2020, 9, 14) and categoria_previdenciaria == "saude_exposicao":
+        opcoes.append(
+            _calcular_data_saude_exposicao_art_149(
+                data_nascimento,
+                data_exercicio,
+                anos_clt_averbados,
             )
         )
 
