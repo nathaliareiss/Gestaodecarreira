@@ -63,6 +63,19 @@ class HistoricoFuncionalResumoGraficoResponse(BaseModel):
     eventos_por_tipo: dict[str, int]
 
 
+class HistoricoFuncionalResumoAposentadoriaResponse(BaseModel):
+    tempo_restante_dias: int
+    idade_na_aposentadoria_anos: int
+    idade_por_tempo_servico_anos: int
+    idade_minima_governo_anos: int
+    data_por_tempo_servico: date
+    data_por_idade_minima: date
+    data_prevista: date
+    nivel_previsto: str
+    grau_previsto: str
+    observacao: str
+
+
 class AfastamentoPeriodoResponse(BaseModel):
     tipo: Literal[
         "aguardando_resultado_conclusivo_de_exame_pericial",
@@ -135,6 +148,7 @@ class HistoricoFuncionalResponse(BaseModel):
     proxima_progressao_prevista: date
     proxima_promocao_prevista: date
     resumo_grafico: HistoricoFuncionalResumoGraficoResponse
+    resumo_aposentadoria: HistoricoFuncionalResumoAposentadoriaResponse | None = None
     afastamentos_arquivo_nome: str | None = None
     afastamentos_resumo: AfastamentoResumoResponse | None = None
     afastamentos: list[AfastamentoPeriodoResponse] = Field(default_factory=list)

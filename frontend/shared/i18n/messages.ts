@@ -270,6 +270,12 @@ export type LocaleTexts = {
     nextProgression: string
     nextPromotion: string
     promotionDependsOnEvaluations: string
+    retirementSummaryTitle: string
+    retirementSummaryRemaining: string
+    retirementSummaryServiceAge: string
+    retirementSummaryMinimumAge: string
+    retirementSummaryCareerProjection: string
+    retirementSummaryDisclaimer: string
     comparison: string
     timeWorkedAndLeave: string
     noLeavePeriods: string
@@ -285,6 +291,8 @@ export type LocaleTexts = {
     daysUntilMedicalReview: string
     enoughEvents: string
     chartTitle: string
+    chartExplanationTitle: string
+    chartExplanationText: string
     vacationHistory: string
     vacationPeriods: string
     businessDays: string
@@ -582,6 +590,13 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       nextPromotion: "Próxima promoção",
       promotionDependsOnEvaluations:
         "Promoção depende das avaliações obtidas e da análise do processo funcional, por isso não aparece como previsão automática no gráfico.",
+      retirementSummaryTitle: "Resumo da aposentadoria",
+      retirementSummaryRemaining: "Faltam",
+      retirementSummaryServiceAge: "Pelo tempo de serviço, você alcançaria o requisito em",
+      retirementSummaryMinimumAge: "Pelas regras do governo, a idade mínima ocorre em",
+      retirementSummaryCareerProjection: "Na projeção de carreira, você estaria em",
+      retirementSummaryDisclaimer:
+        "Esses cálculos são somente expectativas e as regras podem mudar a qualquer tempo de acordo com o governo.",
       comparison: "Comparação",
       timeWorkedAndLeave: "Tempo trabalhado e afastamento",
       noLeavePeriods: "Você não possui períodos de afastamento registrados para desenhar a comparação.",
@@ -597,6 +612,9 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       daysUntilMedicalReview: "dias até a revisão médica",
       enoughEvents: "O PDF não trouxe eventos suficientes para desenhar a linha do tempo.",
       chartTitle: "Linha do tempo de progressões",
+      chartExplanationTitle: "Como ler os gráficos",
+      chartExplanationText:
+        "A linha mostra os marcos encontrados no histórico funcional e as próximas progressões estimadas. O comparativo separa tempo trabalhado, tempo restante e afastamentos registrados. Promoções não entram como previsão automática porque dependem das avaliações e da análise do processo funcional.",
       vacationHistory: "Férias",
       vacationPeriods: "Períodos importados",
       businessDays: "dias úteis",
@@ -892,6 +910,13 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       nextPromotion: "Next Promotion",
       promotionDependsOnEvaluations:
         "Promotion depends on performance evaluations and career-file review, so it is not shown as an automatic chart forecast.",
+      retirementSummaryTitle: "Retirement summary",
+      retirementSummaryRemaining: "Remaining",
+      retirementSummaryServiceAge: "By service time, you would meet the requirement on",
+      retirementSummaryMinimumAge: "Under government rules, the minimum age is reached on",
+      retirementSummaryCareerProjection: "In the career projection, you would be at",
+      retirementSummaryDisclaimer:
+        "These calculations are only expectations and the rules may change at any time according to the government.",
       comparison: "Comparison",
       timeWorkedAndLeave: "Time Worked and Leave",
       noLeavePeriods: "You do not have any recorded leave periods to draw the comparison.",
@@ -907,6 +932,9 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       daysUntilMedicalReview: "days until medical review",
       enoughEvents: "The PDF did not bring enough events to draw the timeline.",
       chartTitle: "Timeline of progressions",
+      chartExplanationTitle: "How to read the charts",
+      chartExplanationText:
+        "The timeline shows milestones found in the career history and the next estimated progressions. The comparison separates time worked, remaining time, and recorded leaves. Promotions are not automatic forecasts because they depend on evaluations and career-file review.",
       vacationHistory: "Vacation",
       vacationPeriods: "Imported periods",
       businessDays: "business days",

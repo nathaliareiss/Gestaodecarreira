@@ -27,10 +27,14 @@ from backend.schemas.historico_funcional_schema import (
 from backend.schemas.work_calendar_schema import VacationPeriodCreateRequest
 from backend.storage import baixar_pdf_storage
 from backend.services.historico_funcional_service import (
+    AfastamentoPeriodo,
+    EventoHistorico,
     _cronometro_ate_aposentadoria,
+    _fim_estagio_probatorio,
     analisar_afastamentos_pdf,
     analisar_ferias_pdf,
     analisar_historico_funcional,
+    montar_resumo_aposentadoria,
 )
 from backend.services.work_calendar_service import criar_periodo_ferias, listar_periodos_ferias
 
@@ -60,6 +64,59 @@ def _sincronizar_ferias_no_calendario(db: Session, usuario_id: int | None, respo
             ),
         )
         existentes.add(chave)
+
+
+def _eventos_salvos_para_modelo(eventos: list[dict]) -> list[EventoHistorico]:
+    convertidos: list[EventoHistorico] = []
+    for evento in eventos:
+        try:
+            convertidos.append(
+                EventoHistorico(
+                    tipo=evento.get("tipo", "substituicao"),
+                    descricao=str(evento.get("descricao") or ""),
+                    cargo=str(evento.get("cargo") or ""),
+                    simbolo=str(evento.get("simbolo") or ""),
+                    nivel=str(evento.get("nivel") or ""),
+                    grau=str(evento.get("grau") or ""),
+                    data_publicacao=date.fromisoformat(str(evento["data_publicacao"])),
+                    data_efetiva=date.fromisoformat(str(evento["data_efetiva"])),
+                    data_prevista=(
+                        date.fromisoformat(str(evento["data_prevista"]))
+                        if evento.get("data_prevista")
+                        else None
+                    ),
+                    status=evento.get("status", "nao_aplicavel"),
+                    atraso_dias=int(evento.get("atraso_dias") or 0),
+                )
+            )
+        except Exception:
+            continue
+    return convertidos
+
+
+def _afastamentos_salvos_para_modelo(afastamentos: list[dict]) -> list[AfastamentoPeriodo]:
+    convertidos: list[AfastamentoPeriodo] = []
+    for afastamento in afastamentos:
+        try:
+            convertidos.append(
+                AfastamentoPeriodo(
+                    tipo=afastamento.get("tipo", "licenca_para_tratamento_de_saude"),
+                    data_inicio=date.fromisoformat(str(afastamento["data_inicio"])),
+                    data_fim=date.fromisoformat(str(afastamento["data_fim"])),
+                    total_dias=int(afastamento.get("total_dias") or 0),
+                    legislacao=afastamento.get("legislacao"),
+                    publicacao=(
+                        date.fromisoformat(str(afastamento["publicacao"]))
+                        if afastamento.get("publicacao")
+                        else None
+                    ),
+                    mes_ano_afastamento=str(afastamento.get("mes_ano_afastamento") or ""),
+                    dias_restantes_ate_pericia=int(afastamento.get("dias_restantes_ate_pericia") or 0),
+                )
+            )
+        except Exception:
+            continue
+    return convertidos
 
 
 def normalizar_dados_historico_salvo(
@@ -111,6 +168,22 @@ def normalizar_dados_historico_salvo(
         dados["dias_totais_ate_aposentadoria"] = dias_totais
         dados["percentual_trabalhado"] = percentual_trabalhado
         dados["percentual_restante"] = percentual_restante
+        eventos_modelo = _eventos_salvos_para_modelo(eventos if isinstance(eventos, list) else [])
+        afastamentos_modelo = _afastamentos_salvos_para_modelo(
+            dados.get("afastamentos") if isinstance(dados.get("afastamentos"), list) else []
+        )
+        dados["resumo_aposentadoria"] = montar_resumo_aposentadoria(
+            data_nascimento=data_nascimento,
+            data_aposentadoria_por_carreira=dados["data_aposentadoria_por_carreira"],
+            data_aposentadoria_por_idade=dados["data_aposentadoria_por_idade"],
+            data_aposentadoria_prevista=dados["data_aposentadoria_prevista"],
+            eventos=eventos_modelo,
+            simbolo_atual=str(dados.get("simbolo_atual") or ""),
+            nivel_atual=str(dados.get("nivel_atual") or ""),
+            grau_atual=str(dados.get("grau_atual") or ""),
+            inicio_contagem_progressao=_fim_estagio_probatorio(data_exercicio),
+            afastamentos=afastamentos_modelo,
+        ).model_dump(mode="json")
     except Exception:
         logger.warning(
             "Nao foi possivel recalcular aposentadoria do historico salvo",

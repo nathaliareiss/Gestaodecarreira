@@ -1406,6 +1406,10 @@ html[data-theme="light"] .result-block {
   margin-top: 0.25rem;
 }
 
+.retirement-summary-panel__grid {
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
+}
+
 .hero-metrics {
   margin-bottom: 1.25rem;
 }
@@ -1437,6 +1441,32 @@ html[data-theme="light"] .result-block {
   display: block;
   margin-top: 0.3rem;
   font-size: 1.1rem;
+}
+
+.chart-explanation {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.9rem 1rem;
+  border-radius: 16px;
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  background: rgba(8, 16, 30, 0.32);
+}
+
+html[data-theme="light"] .chart-explanation {
+  background: rgba(248, 250, 252, 0.72);
+  border-color: rgba(15, 23, 42, 0.08);
+}
+
+.chart-explanation strong {
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+.chart-explanation p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.55;
 }
 
 .career-bars {

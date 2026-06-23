@@ -125,3 +125,51 @@ def test_normaliza_historico_salvo_recalcula_tempo_restante_sem_usar_valor_antig
     assert normalizado["tempo_clt_averbado_anos"] == 0
     assert resumo["tempo_restante_dias"] == max((data_prevista - date.today()).days, 0)
     assert resumo["tempo_restante_dias"] > 365 * 18
+    assert normalizado["resumo_aposentadoria"]["data_prevista"] == data_prevista.isoformat()
+
+
+def test_resumo_aposentadoria_projeta_nivel_e_grau_com_intersticios_almg() -> None:
+    evento_nomeacao = EventoHistorico(
+        tipo="nomeacao",
+        descricao="Nomeacao",
+        cargo="Professor",
+        simbolo="PEB",
+        nivel="I",
+        grau="A",
+        data_publicacao=date(2020, 1, 1),
+        data_efetiva=date(2020, 1, 1),
+        data_prevista=None,
+        status="nao_aplicavel",
+        atraso_dias=0,
+    )
+    evento_progressao = EventoHistorico(
+        tipo="progressao",
+        descricao="Progressao",
+        cargo="Professor",
+        simbolo="PEB",
+        nivel="I",
+        grau="A",
+        data_publicacao=date(2024, 1, 1),
+        data_efetiva=date(2024, 1, 1),
+        data_prevista=date(2024, 1, 1),
+        status="cumprindo",
+        atraso_dias=0,
+    )
+
+    resumo = historico_funcional_service.montar_resumo_aposentadoria(
+        data_nascimento=date(1990, 6, 1),
+        data_aposentadoria_por_carreira=date(2030, 1, 1),
+        data_aposentadoria_por_idade=date(2035, 6, 1),
+        data_aposentadoria_prevista=date(2035, 6, 1),
+        eventos=[evento_nomeacao, evento_progressao],
+        simbolo_atual="PEB",
+        nivel_atual="I",
+        grau_atual="A",
+        inicio_contagem_progressao=date(2023, 1, 1),
+        afastamentos=[],
+    )
+
+    assert resumo.idade_por_tempo_servico_anos == 39
+    assert resumo.idade_minima_governo_anos == 45
+    assert resumo.nivel_previsto == "III"
+    assert resumo.grau_previsto == "F"

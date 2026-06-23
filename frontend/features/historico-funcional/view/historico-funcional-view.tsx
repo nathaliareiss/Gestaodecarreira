@@ -666,9 +666,17 @@ export function HistoricoFuncionalView({
 
   const painel = historico ?? historicoInicial
   const resumo = painel?.resumo_grafico
+  const resumoAposentadoria = painel?.resumo_aposentadoria
   const resumoAfastamentos = painel?.afastamentos_resumo
   const resumoFerias = painel?.ferias_resumo
   const afastamentoPericia = resumoAfastamentos?.dias_por_tipo.aguardando_resultado_conclusivo_de_exame_pericial ?? 0
+  const idadeLabel = language === "en" ? "years old" : "anos"
+  const textoRestanteAposentadoria =
+    language === "en"
+      ? "to retire under the current estimate."
+      : "para aposentar pela estimativa atual."
+  const rotuloNivelGrau = language === "en" ? "Level" : "Nível"
+  const rotuloGrau = language === "en" ? "grade" : "grau"
 
   return (
     <section className="analysis-card card">
@@ -973,6 +981,51 @@ export function HistoricoFuncionalView({
           </div>
         )}
 
+        {painel && resumoAposentadoria ? (
+          <section className="timeline-panel retirement-summary-panel">
+            <div className="career-bars__title">
+              <p className="eyebrow">{t.retirementSummaryTitle}</p>
+            </div>
+
+            <div className="metric-strip retirement-summary-panel__grid">
+              <div className="metric-line">
+                <span>
+                  {`${t.retirementSummaryRemaining} ${formatarDuracaoEmAnos(
+                    resumoAposentadoria.tempo_restante_dias,
+                    language,
+                  )} ${textoRestanteAposentadoria}`}
+                </span>
+                <strong>{formatarData(resumoAposentadoria.data_prevista, language)}</strong>
+              </div>
+              <div className="metric-line">
+                <span>
+                  {`${t.retirementSummaryServiceAge} ${formatarData(
+                    resumoAposentadoria.data_por_tempo_servico,
+                    language,
+                  )}.`}
+                </span>
+                <strong>{`${resumoAposentadoria.idade_por_tempo_servico_anos} ${idadeLabel}`}</strong>
+              </div>
+              <div className="metric-line">
+                <span>
+                  {`${t.retirementSummaryMinimumAge} ${formatarData(
+                    resumoAposentadoria.data_por_idade_minima,
+                    language,
+                  )}.`}
+                </span>
+                <strong>{`${resumoAposentadoria.idade_minima_governo_anos} ${idadeLabel}`}</strong>
+              </div>
+              <div className="metric-line">
+                <span>{t.retirementSummaryCareerProjection}</span>
+                <strong>{`${rotuloNivelGrau} ${resumoAposentadoria.nivel_previsto}, ${rotuloGrau} ${resumoAposentadoria.grau_previsto}`}</strong>
+              </div>
+            </div>
+
+            <p className="helper">{resumoAposentadoria.observacao}</p>
+            <p className="helper">{t.retirementSummaryDisclaimer}</p>
+          </section>
+        ) : null}
+
         {painel && resumo ? (
           <section className="timeline-panel">
           <div className="career-bars__title" style={{ marginBottom: "1.5rem" }}>
@@ -988,6 +1041,11 @@ export function HistoricoFuncionalView({
               painel={painel}
               idioma={language}
             />
+
+            <div className="chart-explanation">
+              <strong>{t.chartExplanationTitle}</strong>
+              <p>{t.chartExplanationText}</p>
+            </div>
           </section>
         ) : null}
 

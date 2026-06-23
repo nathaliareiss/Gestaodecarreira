@@ -18,6 +18,7 @@ from backend.schemas.historico_funcional_schema import (
     FeriasResumoResponse,
     HistoricoFuncionalEventoResponse,
     HistoricoFuncionalResponse,
+    HistoricoFuncionalResumoAposentadoriaResponse,
     HistoricoFuncionalResumoGraficoResponse,
     CategoriaPrevidenciaria,
     SexoServidor,
@@ -27,6 +28,23 @@ SECAO_NOMEOACAO_PREFIXOS = ("Efetivo-Nomeado",)
 SECAO_PROGRESSAO_PREFIXOS = ("Progressão",)
 SECAO_PROMOCAO_PREFIXOS = ("Promoção",)
 SECAO_SUBSTITUICAO_PREFIXOS = ("Substituição",)
+
+GRAUS_ALMG = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "L", "M", "N", "O", "P"]
+NIVEIS_ALMG_POR_SIMBOLO = {
+    "PEB": ["I", "II", "III", "IV", "V"],
+    "EEB": ["I", "II", "III", "IV"],
+    "ANE": ["I", "II", "III", "IV", "V"],
+    "AEB": ["I", "II"],
+    "ATB": ["I", "II", "III"],
+    "TDE": ["I", "II", "III"],
+}
+NIVEIS_ALMG_PADRAO = ["I", "II", "III", "IV", "V"]
+OBSERVACAO_RESUMO_APOSENTADORIA = (
+    "Projeção estimativa baseada nos interstícios da Lei 15.293/2004. "
+    "Progressão e promoção dependem das avaliações obtidas, da titulação mínima "
+    "e da análise do processo funcional."
+)
+
 
 @dataclass(frozen=True, slots=True)
 class EventoHistorico:
@@ -1107,6 +1125,149 @@ def _proximo_marco(
     return prevista
 
 
+def _idade_em(data_nascimento: date, data_referencia: date) -> int:
+    idade = data_referencia.year - data_nascimento.year
+    aniversario = (data_referencia.month, data_referencia.day)
+    if aniversario < (data_nascimento.month, data_nascimento.day):
+        idade -= 1
+    return max(idade, 0)
+
+
+def _normalizar_grau(grau: str) -> str:
+    valor = re.sub(r"[^A-Z]", "", (grau or "").upper())
+    return valor if valor in GRAUS_ALMG else "A"
+
+
+def _simbolo_base(simbolo: str) -> str:
+    return re.sub(r"\d+$", "", (simbolo or "").upper()).strip()
+
+
+def _niveis_para_simbolo(simbolo: str) -> list[str]:
+    return NIVEIS_ALMG_POR_SIMBOLO.get(_simbolo_base(simbolo), NIVEIS_ALMG_PADRAO)
+
+
+def _normalizar_nivel(nivel: str, simbolo: str) -> str:
+    niveis = _niveis_para_simbolo(simbolo)
+    valor = re.sub(r"[^IVX]", "", (nivel or "").upper())
+    return valor if valor in niveis else niveis[0]
+
+
+def _proximo_grau(grau: str) -> str:
+    grau_atual = _normalizar_grau(grau)
+    indice = GRAUS_ALMG.index(grau_atual)
+    if indice >= len(GRAUS_ALMG) - 1:
+        return grau_atual
+    return GRAUS_ALMG[indice + 1]
+
+
+def _proximo_nivel(nivel: str, simbolo: str) -> str:
+    niveis = _niveis_para_simbolo(simbolo)
+    nivel_atual = _normalizar_nivel(nivel, simbolo)
+    indice = niveis.index(nivel_atual)
+    if indice >= len(niveis) - 1:
+        return nivel_atual
+    return niveis[indice + 1]
+
+
+def _adicionar_intersticio_com_suspensao(
+    data_referencia: date,
+    anos: int,
+    afastamentos: list[AfastamentoPeriodo] | None = None,
+) -> date:
+    prevista_base = _adicionar_anos(data_referencia, anos)
+    prevista = prevista_base
+    periodos_afastamento = afastamentos or []
+
+    for _ in range(10):
+        dias_suspensos = _dias_suspensao_por_afastamentos(periodos_afastamento, data_referencia, prevista)
+        nova_prevista = prevista_base + timedelta(days=dias_suspensos)
+        if nova_prevista == prevista:
+            return prevista
+        prevista = nova_prevista
+
+    return prevista
+
+
+def _projetar_nivel_grau_aposentadoria(
+    eventos: list[EventoHistorico],
+    simbolo_atual: str,
+    nivel_atual: str,
+    grau_atual: str,
+    data_aposentadoria_prevista: date,
+    inicio_contagem_progressao: date,
+    afastamentos: list[AfastamentoPeriodo] | None = None,
+) -> tuple[str, str]:
+    nivel = _normalizar_nivel(nivel_atual, simbolo_atual)
+    grau = _normalizar_grau(grau_atual)
+    referencia_progressao = inicio_contagem_progressao
+    referencia_promocao = inicio_contagem_progressao
+
+    for evento in sorted(eventos, key=lambda item: item.data_efetiva):
+        if evento.tipo == "progressao":
+            referencia_progressao = evento.data_efetiva
+        elif evento.tipo == "promocao":
+            referencia_promocao = evento.data_efetiva
+
+    proxima_progressao = _adicionar_intersticio_com_suspensao(referencia_progressao, 2, afastamentos)
+    proxima_promocao = _adicionar_intersticio_com_suspensao(referencia_promocao, 5, afastamentos)
+
+    for _ in range(160):
+        proxima_data = min(proxima_progressao, proxima_promocao)
+        if proxima_data > data_aposentadoria_prevista:
+            break
+
+        if proxima_progressao == proxima_data:
+            novo_grau = _proximo_grau(grau)
+            grau = novo_grau
+            referencia_progressao = proxima_progressao
+            proxima_progressao = _adicionar_intersticio_com_suspensao(referencia_progressao, 2, afastamentos)
+
+        if proxima_promocao == proxima_data:
+            novo_nivel = _proximo_nivel(nivel, simbolo_atual)
+            nivel = novo_nivel
+            referencia_promocao = proxima_promocao
+            proxima_promocao = _adicionar_intersticio_com_suspensao(referencia_promocao, 5, afastamentos)
+
+    return nivel, grau
+
+
+def montar_resumo_aposentadoria(
+    *,
+    data_nascimento: date,
+    data_aposentadoria_por_carreira: date,
+    data_aposentadoria_por_idade: date,
+    data_aposentadoria_prevista: date,
+    eventos: list[EventoHistorico],
+    simbolo_atual: str,
+    nivel_atual: str,
+    grau_atual: str,
+    inicio_contagem_progressao: date,
+    afastamentos: list[AfastamentoPeriodo] | None = None,
+) -> HistoricoFuncionalResumoAposentadoriaResponse:
+    nivel_previsto, grau_previsto = _projetar_nivel_grau_aposentadoria(
+        eventos=eventos,
+        simbolo_atual=simbolo_atual,
+        nivel_atual=nivel_atual,
+        grau_atual=grau_atual,
+        data_aposentadoria_prevista=data_aposentadoria_prevista,
+        inicio_contagem_progressao=inicio_contagem_progressao,
+        afastamentos=afastamentos,
+    )
+
+    return HistoricoFuncionalResumoAposentadoriaResponse(
+        tempo_restante_dias=max((data_aposentadoria_prevista - date.today()).days, 0),
+        idade_na_aposentadoria_anos=_idade_em(data_nascimento, data_aposentadoria_prevista),
+        idade_por_tempo_servico_anos=_idade_em(data_nascimento, data_aposentadoria_por_carreira),
+        idade_minima_governo_anos=_idade_em(data_nascimento, data_aposentadoria_por_idade),
+        data_por_tempo_servico=data_aposentadoria_por_carreira,
+        data_por_idade_minima=data_aposentadoria_por_idade,
+        data_prevista=data_aposentadoria_prevista,
+        nivel_previsto=nivel_previsto,
+        grau_previsto=grau_previsto,
+        observacao=OBSERVACAO_RESUMO_APOSENTADORIA,
+    )
+
+
 def analisar_historico_funcional(
     conteudo_pdf: bytes,
     arquivo_nome: str,
@@ -1189,6 +1350,18 @@ def analisar_historico_funcional(
         percentual_trabalhado=percentual_trabalhado,
         percentual_restante=percentual_restante,
     )
+    resumo_aposentadoria = montar_resumo_aposentadoria(
+        data_nascimento=data_nascimento,
+        data_aposentadoria_por_carreira=data_aposentadoria_por_carreira,
+        data_aposentadoria_por_idade=data_aposentadoria_por_idade,
+        data_aposentadoria_prevista=data_aposentadoria_prevista,
+        eventos=eventos,
+        simbolo_atual=ultimo_evento.simbolo,
+        nivel_atual=ultimo_evento.nivel,
+        grau_atual=ultimo_evento.grau,
+        inicio_contagem_progressao=inicio_contagem_progressao,
+        afastamentos=afastamentos,
+    )
 
     ferias: list[FeriasPeriodo] = []
     resumo_ferias: FeriasResumoResponse | None = None
@@ -1233,6 +1406,7 @@ def analisar_historico_funcional(
         proxima_progressao_prevista=proxima_progressao_prevista,
         proxima_promocao_prevista=proxima_promocao_prevista,
         resumo_grafico=resumo_grafico,
+        resumo_aposentadoria=resumo_aposentadoria,
         afastamentos_arquivo_nome=arquivo_afastamentos_nome,
         afastamentos_resumo=resumo_afastamentos,
         afastamentos=[

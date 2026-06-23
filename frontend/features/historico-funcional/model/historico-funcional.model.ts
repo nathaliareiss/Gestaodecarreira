@@ -68,6 +68,19 @@ export type HistoricoFuncionalEvento = {
   atraso_dias: number
 }
 
+export type HistoricoFuncionalResumoAposentadoria = {
+  tempo_restante_dias: number
+  idade_na_aposentadoria_anos: number
+  idade_por_tempo_servico_anos: number
+  idade_minima_governo_anos: number
+  data_por_tempo_servico: string
+  data_por_idade_minima: string
+  data_prevista: string
+  nivel_previsto: string
+  grau_previsto: string
+  observacao: string
+}
+
 export type HistoricoFuncionalAnalise = {
   historico_id: number
   usuario_id: number | null
@@ -105,6 +118,7 @@ export type HistoricoFuncionalAnalise = {
     eventos_por_status: Record<string, number>
     eventos_por_tipo: Record<string, number>
   }
+  resumo_aposentadoria: HistoricoFuncionalResumoAposentadoria | null
   afastamentos_arquivo_nome: string | null
   afastamentos_resumo: AfastamentoResumo | null
   afastamentos: AfastamentoPeriodo[]
