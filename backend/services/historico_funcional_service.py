@@ -799,6 +799,26 @@ def analisar_ferias_pdf(
     return ferias, resumo_ferias
 
 
+def analisar_ferias_pdfs(
+    conteudos_pdf: list[bytes],
+) -> tuple[list[FeriasPeriodo], FeriasResumoResponse]:
+    ferias: list[FeriasPeriodo] = []
+    for conteudo_pdf in conteudos_pdf:
+        ferias.extend(extrair_ferias_pdf(conteudo_pdf))
+
+    ferias = sorted(ferias, key=lambda item: (item.data_inicio, item.data_fim, item.tipo))
+    resumo_ferias = _montar_resumo_ferias(ferias)
+    logger.info(
+        "Ferias analisadas em lote",
+        extra={
+            "arquivos": len(conteudos_pdf),
+            "periodos": len(ferias),
+            "dias_totais": resumo_ferias.dias_totais_usados,
+        },
+    )
+    return ferias, resumo_ferias
+
+
 def _parsear_bloco_secao(tipo: str, descricao: str, bloco: str) -> BlocoHistorico:
     bloco = re.sub(r"\s+", " ", bloco).strip()
 
@@ -1355,6 +1375,7 @@ def analisar_historico_funcional(
     conteudo_afastamentos_pdf: bytes | None = None,
     arquivo_afastamentos_nome: str | None = None,
     conteudo_ferias_pdf: bytes | None = None,
+    conteudos_ferias_pdf: list[bytes] | None = None,
     arquivo_ferias_nome: str | None = None,
 ) -> tuple[HistoricoFuncionalResponse, str]:
     logger.info(
@@ -1363,7 +1384,7 @@ def analisar_historico_funcional(
             "arquivo_nome": arquivo_nome,
             "usuario_id": usuario_id,
             "possui_afastamentos": conteudo_afastamentos_pdf is not None,
-            "possui_ferias": conteudo_ferias_pdf is not None,
+            "possui_ferias": bool(conteudos_ferias_pdf or conteudo_ferias_pdf is not None),
         },
     )
     texto = extrair_texto_pdf(conteudo_pdf)
@@ -1448,14 +1469,15 @@ def analisar_historico_funcional(
 
     ferias: list[FeriasPeriodo] = []
     resumo_ferias: FeriasResumoResponse | None = None
-    if conteudo_ferias_pdf is not None:
-        ferias = extrair_ferias_pdf(conteudo_ferias_pdf)
-        resumo_ferias = _montar_resumo_ferias(ferias)
+    conteudos_ferias = conteudos_ferias_pdf or ([conteudo_ferias_pdf] if conteudo_ferias_pdf is not None else [])
+    if conteudos_ferias:
+        ferias, resumo_ferias = analisar_ferias_pdfs(conteudos_ferias)
         logger.info(
             "Historico funcional com ferias anexadas",
             extra={
                 "arquivo_nome": arquivo_nome,
                 "arquivo_ferias_nome": arquivo_ferias_nome,
+                "arquivos_ferias": len(conteudos_ferias),
                 "periodos_ferias": len(ferias),
             },
         )

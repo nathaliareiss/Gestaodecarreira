@@ -75,6 +75,46 @@ async def _armazenar_arquivo_pdf(
         ) from erro
 
 
+def _juntar_uploads(*grupos: UploadFile | list[UploadFile] | None) -> list[UploadFile]:
+    uploads: list[UploadFile] = []
+    for grupo in grupos:
+        if grupo is None:
+            continue
+        if isinstance(grupo, list):
+            uploads.extend(item for item in grupo if item is not None)
+        else:
+            uploads.append(grupo)
+    return uploads
+
+
+def _validar_limite_ferias(uploads: list[UploadFile]) -> None:
+    if len(uploads) > 3:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Envie no maximo 3 PDFs de ferias por vez.",
+        )
+
+
+async def _armazenar_arquivos_ferias(
+    uploads: list[UploadFile],
+    usuario_id: int,
+) -> tuple[list[str], list[str], str | None]:
+    _validar_limite_ferias(uploads)
+    nomes: list[str] = []
+    paths: list[str] = []
+    origem: str | None = None
+
+    for indice, upload in enumerate(uploads, start=1):
+        nome = _ler_nome_arquivo(upload, f"ferias-{indice}.pdf")
+        storage_path = gerar_caminho_storage_ferias(nome, usuario_id)
+        storage_path, origem_upload = await _armazenar_arquivo_pdf(upload, storage_path)
+        nomes.append(nome)
+        paths.append(storage_path)
+        origem = origem or origem_upload
+
+    return nomes, paths, origem
+
+
 def _responder_status_job(job_id: str) -> JobStatusResponse:
     job = obter_job(job_id)
     if job is None:
@@ -122,6 +162,7 @@ async def analisar_e_salvar_historico(
     current_user=Depends(obter_usuario_autenticado),
     afastamentos_arquivo: UploadFile | None = File(None),
     ferias_arquivo: UploadFile | None = File(None),
+    ferias_arquivos: list[UploadFile] | None = File(None),
     db: Session = Depends(get_db),
 ) -> HistoricoFuncionalResponse | JobAgendadoResponse:
     arquivo_nome = _ler_nome_arquivo(arquivo, "historico-funcional.pdf")
@@ -145,19 +186,11 @@ async def analisar_e_salvar_historico(
             afastamentos_storage_path,
         )
 
-    ferias_arquivo_nome = None
-    ferias_storage_path = None
-    ferias_armazenamento_origem = None
-    if ferias_arquivo is not None:
-        ferias_arquivo_nome = _ler_nome_arquivo(ferias_arquivo, "ferias.pdf")
-        ferias_storage_path = gerar_caminho_storage_ferias(
-            ferias_arquivo_nome,
-            current_user.id,
-        )
-        ferias_storage_path, ferias_armazenamento_origem = await _armazenar_arquivo_pdf(
-            ferias_arquivo,
-            ferias_storage_path,
-        )
+    uploads_ferias = _juntar_uploads(ferias_arquivo, ferias_arquivos)
+    ferias_arquivo_nomes, ferias_storage_paths, ferias_armazenamento_origem = await _armazenar_arquivos_ferias(
+        uploads_ferias,
+        current_user.id,
+    )
 
     armazenamento_origem = "local"
 
@@ -173,9 +206,11 @@ async def analisar_e_salvar_historico(
         afastamentos_arquivo_nome=afastamentos_arquivo_nome,
         afastamentos_storage_path=afastamentos_storage_path,
         afastamentos_armazenamento_origem=afastamentos_armazenamento_origem,
-        ferias_arquivo_nome=ferias_arquivo_nome,
-        ferias_storage_path=ferias_storage_path,
+        ferias_arquivo_nome=", ".join(ferias_arquivo_nomes) if ferias_arquivo_nomes else None,
+        ferias_storage_path=ferias_storage_paths[0] if ferias_storage_paths else None,
         ferias_armazenamento_origem=ferias_armazenamento_origem,
+        ferias_arquivo_nomes=ferias_arquivo_nomes,
+        ferias_storage_paths=ferias_storage_paths,
     )
     logger.info(
         "Recebido historico funcional para analise",
@@ -183,7 +218,8 @@ async def analisar_e_salvar_historico(
             "usuario_id": current_user.id,
             "arquivo_nome": dados.arquivo_nome,
             "tem_afastamentos": bool(dados.afastamentos_storage_path),
-            "tem_ferias": bool(dados.ferias_storage_path),
+            "tem_ferias": bool(dados.ferias_storage_paths),
+            "arquivos_ferias": len(dados.ferias_storage_paths),
         },
     )
 
@@ -394,7 +430,8 @@ async def anexar_afastamentos_historico(
 )
 async def anexar_ferias_historico(
     usuario_id: int,
-    arquivo: UploadFile = File(...),
+    arquivo: UploadFile | None = File(None),
+    arquivos: list[UploadFile] | None = File(None),
     current_user=Depends(obter_usuario_autenticado),
     db: Session = Depends(get_db),
 ) -> HistoricoFuncionalResponse | JobAgendadoResponse:
@@ -403,21 +440,27 @@ async def anexar_ferias_historico(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Voce nao tem acesso a este historico funcional.",
         )
-    arquivo_nome = _ler_nome_arquivo(arquivo, "ferias.pdf")
-    arquivo_storage_path = gerar_caminho_storage_ferias(arquivo_nome, current_user.id)
-    arquivo_storage_path, arquivo_armazenamento_origem = await _armazenar_arquivo_pdf(
-        arquivo,
-        arquivo_storage_path,
+    uploads = _juntar_uploads(arquivo, arquivos)
+    if not uploads:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Envie ao menos um PDF de ferias.",
+        )
+    arquivo_nomes, arquivo_storage_paths, arquivo_armazenamento_origem = await _armazenar_arquivos_ferias(
+        uploads,
+        current_user.id,
     )
 
     dados = FeriasUploadRequest(
-        arquivo_nome=arquivo_nome,
-        arquivo_storage_path=arquivo_storage_path,
+        arquivo_nome=", ".join(arquivo_nomes),
+        arquivo_storage_path=arquivo_storage_paths[0],
         armazenamento_origem=arquivo_armazenamento_origem,
+        arquivo_nomes=arquivo_nomes,
+        arquivo_storage_paths=arquivo_storage_paths,
     )
     logger.info(
-        "Recebido arquivo de ferias",
-        extra={"user_id": usuario_id, "arquivo_nome": dados.arquivo_nome},
+        "Recebidos arquivos de ferias",
+        extra={"user_id": usuario_id, "arquivo_nome": dados.arquivo_nome, "arquivos": len(arquivo_storage_paths)},
     )
 
     fila = obter_fila_historicos()
@@ -435,11 +478,12 @@ async def anexar_ferias_historico(
                     "job_id": job.id,
                     "user_id": usuario_id,
                     "arquivo_nome": dados.arquivo_nome,
+                    "arquivos": len(dados.arquivo_storage_paths),
                 },
             )
             return _responder_job_agendado(
                 job.id,
-                "Seu PDF de ferias foi recebido e esta sendo processado em segundo plano.",
+                "Seus PDFs de ferias foram recebidos e estao sendo processados em segundo plano.",
             )
         except Exception:
             logger.warning(

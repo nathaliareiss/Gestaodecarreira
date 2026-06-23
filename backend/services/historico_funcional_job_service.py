@@ -34,6 +34,7 @@ from backend.services.historico_funcional_service import (
     _fim_estagio_probatorio,
     analisar_afastamentos_pdf,
     analisar_ferias_pdf,
+    analisar_ferias_pdfs,
     analisar_historico_funcional,
     montar_resumo_aposentadoria,
 )
@@ -317,11 +318,13 @@ def processar_historico_funcional_db(
         if dados.afastamentos_storage_path
         else None
     )
-    conteudo_ferias_pdf = (
-        baixar_pdf_storage(dados.ferias_storage_path)
-        if dados.ferias_storage_path
-        else None
+    ferias_storage_paths = dados.ferias_storage_paths or (
+        [dados.ferias_storage_path] if dados.ferias_storage_path else []
     )
+    ferias_arquivo_nomes = dados.ferias_arquivo_nomes or (
+        [dados.ferias_arquivo_nome] if dados.ferias_arquivo_nome else []
+    )
+    conteudos_ferias_pdf = [baixar_pdf_storage(path) for path in ferias_storage_paths]
     resposta, texto_extraido = analisar_historico_funcional(
         conteudo_pdf=conteudo_pdf,
         arquivo_nome=dados.arquivo_nome,
@@ -332,8 +335,8 @@ def processar_historico_funcional_db(
         anos_clt_averbados=dados.anos_clt_averbados,
         conteudo_afastamentos_pdf=conteudo_afastamentos_pdf,
         arquivo_afastamentos_nome=dados.afastamentos_arquivo_nome,
-        conteudo_ferias_pdf=conteudo_ferias_pdf,
-        arquivo_ferias_nome=dados.ferias_arquivo_nome,
+        conteudos_ferias_pdf=conteudos_ferias_pdf or None,
+        arquivo_ferias_nome=", ".join(ferias_arquivo_nomes) if ferias_arquivo_nomes else None,
     )
     resposta = _persistir_historico_analisado(
         db=db,
@@ -343,7 +346,7 @@ def processar_historico_funcional_db(
         usuario_id=dados.usuario_id,
         arquivo_storage_path=dados.arquivo_storage_path,
         afastamentos_storage_path=dados.afastamentos_storage_path,
-        ferias_storage_path=dados.ferias_storage_path,
+        ferias_storage_path=json.dumps(ferias_storage_paths, ensure_ascii=False) if ferias_storage_paths else None,
         armazenamento_origem="local",
         processamento_origem=processamento_origem,
     )
@@ -421,12 +424,14 @@ def processar_ferias_db(
 
     dados_historico = json.loads(historico.dados_json)
     dados_historico = normalizar_dados_historico_salvo(dados_historico, historico.id, usuario_id)
-    conteudo_ferias_pdf = baixar_pdf_storage(dados.arquivo_storage_path)
-    ferias, resumo_ferias = analisar_ferias_pdf(conteudo_ferias_pdf)
+    ferias_storage_paths = dados.arquivo_storage_paths or [dados.arquivo_storage_path]
+    ferias_arquivo_nomes = dados.arquivo_nomes or [dados.arquivo_nome]
+    conteudos_ferias_pdf = [baixar_pdf_storage(path) for path in ferias_storage_paths]
+    ferias, resumo_ferias = analisar_ferias_pdfs(conteudos_ferias_pdf)
 
     resposta = HistoricoFuncionalResponse.model_validate(dados_historico).model_copy(
         update={
-            "ferias_arquivo_nome": dados.arquivo_nome,
+            "ferias_arquivo_nome": ", ".join(ferias_arquivo_nomes),
             "ferias_resumo": resumo_ferias,
             "ferias": [
                 {
@@ -446,7 +451,7 @@ def processar_ferias_db(
     )
 
     historico.dados_json = json.dumps(resposta.model_dump(mode="json"), ensure_ascii=False)
-    historico.ferias_storage_path = dados.arquivo_storage_path
+    historico.ferias_storage_path = json.dumps(ferias_storage_paths, ensure_ascii=False)
     db.add(historico)
     db.commit()
     db.refresh(historico)
@@ -461,7 +466,8 @@ def processar_ferias_db(
         extra={
             "historico_id": historico.id,
             "user_id": usuario_id,
-            "arquivo_nome": dados.arquivo_nome,
+            "arquivo_nome": resposta.ferias_arquivo_nome,
+            "arquivos": len(ferias_storage_paths),
         },
     )
     return resposta

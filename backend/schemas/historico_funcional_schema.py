@@ -25,6 +25,8 @@ class HistoricoFuncionalUploadRequest(BaseModel):
     ferias_arquivo_nome: str | None = None
     ferias_storage_path: str | None = None
     ferias_armazenamento_origem: Literal["local"] | None = None
+    ferias_arquivo_nomes: list[str] = Field(default_factory=list)
+    ferias_storage_paths: list[str] = Field(default_factory=list)
 
 
 class AfastamentosUploadRequest(BaseModel):
@@ -37,6 +39,8 @@ class FeriasUploadRequest(BaseModel):
     arquivo_nome: str = Field(min_length=1)
     arquivo_storage_path: str = Field(min_length=1)
     armazenamento_origem: Literal["local"] = "local"
+    arquivo_nomes: list[str] = Field(default_factory=list)
+    arquivo_storage_paths: list[str] = Field(default_factory=list)
 
 
 class HistoricoFuncionalEventoResponse(BaseModel):
