@@ -8,7 +8,8 @@ from backend.logger import logger
 
 try:
     from redis import Redis
-    from rq import Job, Queue
+    from rq import Queue
+    from rq.job import Job
 except ImportError:  # pragma: no cover - fallback quando as dependencias ainda nao foram instaladas
     Redis = None
     Job = None
