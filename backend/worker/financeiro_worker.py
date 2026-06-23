@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from rq import Connection, Worker
+from rq import Worker
 
 from backend.logger import logger
 from backend.queue.queue_config import obter_conexao_redis
@@ -17,9 +17,8 @@ def executar_worker_financeiro() -> None:
         "Iniciando worker financeiro",
         extra={"filas": ["financeiro"]},
     )
-    with Connection(conexao):
-        worker = Worker(["financeiro"])
-        worker.work(with_scheduler=True)
+    worker = Worker(["financeiro"], connection=conexao)
+    worker.work(with_scheduler=True)
 
 
 if __name__ == "__main__":
