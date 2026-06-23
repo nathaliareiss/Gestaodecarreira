@@ -30,6 +30,7 @@ from backend.services.historico_funcional_service import (
     AfastamentoPeriodo,
     EventoHistorico,
     _cronometro_ate_aposentadoria,
+    _categoria_previdenciaria_por_cargo,
     _fim_estagio_probatorio,
     analisar_afastamentos_pdf,
     analisar_ferias_pdf,
@@ -149,6 +150,17 @@ def normalizar_dados_historico_salvo(
         anos_clt_averbados = int(dados.get("tempo_clt_averbado_anos") or 0)
         sexo = dados.get("sexo") if dados.get("sexo") in {"feminino", "masculino"} else "feminino"
         categoria = dados.get("categoria_previdenciaria") or "geral"
+        texto_cargo = " ".join(
+            str(valor or "")
+            for valor in (
+                dados.get("cargo_atual"),
+                dados.get("simbolo_atual"),
+                *[evento.get("cargo") for evento in eventos if isinstance(evento, dict)],
+                *[evento.get("descricao") for evento in eventos if isinstance(evento, dict)],
+            )
+        )
+        categoria = _categoria_previdenciaria_por_cargo(categoria, texto_cargo)
+        dados["categoria_previdenciaria"] = categoria
         (
             dados["data_aposentadoria_por_carreira"],
             dados["data_aposentadoria_por_idade"],

@@ -71,7 +71,7 @@ export function useHistoricoFuncionalController({
   )
   const [categoriaPrevidenciaria, setCategoriaPrevidenciaria] = useState<
     "geral" | "professor" | "seguranca" | "saude_exposicao"
-  >(historicoInicial?.categoria_previdenciaria ?? "professor")
+  >(historicoInicial?.categoria_previdenciaria ?? "geral")
   const [anosCltAverbados, setAnosCltAverbados] = useState(
     historicoInicial?.tempo_clt_averbado_anos ?? 0,
   )

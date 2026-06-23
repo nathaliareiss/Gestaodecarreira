@@ -102,6 +102,37 @@ def test_aposentadoria_professor_nao_usa_pedagio_automatico_abaixo_da_idade_de_t
     assert dias_totais - dias_trabalhados == max((data_prevista - date.today()).days, 0)
 
 
+def test_aposentadoria_seguranca_publica_usa_idade_por_sexo_e_nao_regra_professor() -> None:
+    _, data_idade_feminino, data_prevista_feminino, *_ = historico_funcional_service._cronometro_ate_aposentadoria(
+        data_nascimento=date(1995, 6, 1),
+        data_exercicio=date(2010, 1, 1),
+        anos_clt_averbados=0,
+        sexo="feminino",
+        categoria_previdenciaria="seguranca",
+    )
+    _, data_idade_masculino, data_prevista_masculino, *_ = historico_funcional_service._cronometro_ate_aposentadoria(
+        data_nascimento=date(1995, 6, 1),
+        data_exercicio=date(2010, 1, 1),
+        anos_clt_averbados=0,
+        sexo="masculino",
+        categoria_previdenciaria="seguranca",
+    )
+
+    assert data_idade_feminino == date(2044, 6, 1)
+    assert data_idade_masculino == date(2048, 6, 1)
+    assert data_prevista_feminino == date(2044, 6, 1)
+    assert data_prevista_masculino == date(2048, 6, 1)
+
+
+def test_cargo_de_agente_penitenciario_forca_categoria_seguranca_publica() -> None:
+    categoria = historico_funcional_service._categoria_previdenciaria_por_cargo(
+        "professor",
+        "Agente Penitenciario Policial Penal",
+    )
+
+    assert categoria == "seguranca"
+
+
 def test_normaliza_historico_salvo_recalcula_tempo_restante_sem_usar_valor_antigo() -> None:
     dados = {
         "historico_id": 1,

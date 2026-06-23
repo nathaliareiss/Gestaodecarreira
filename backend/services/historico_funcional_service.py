@@ -324,6 +324,40 @@ def _calcular_data_regra_permanente(
     return data_por_contribuicao, data_por_idade, data_prevista
 
 
+def _calcular_data_seguranca_art_148(
+    data_nascimento: date,
+    data_exercicio: date,
+    anos_clt_averbados: int,
+    sexo: SexoServidor,
+) -> tuple[date, date, date]:
+    marco_reforma = date(2020, 9, 14)
+    contribuicao_minima = 25 if sexo == "feminino" else 30
+    exercicio_policial_minimo = 15 if sexo == "feminino" else 20
+
+    data_exercicio_policial = _adicionar_anos(data_exercicio, exercicio_policial_minimo)
+    data_por_contribuicao = _data_por_tempo_contribuicao(
+        data_exercicio,
+        contribuicao_minima,
+        anos_clt_averbados,
+    )
+    data_por_idade = _adicionar_anos(data_nascimento, 50 if sexo == "feminino" else 53)
+    data_regra_base = max(data_por_contribuicao, data_por_idade, data_exercicio_policial)
+
+    dias_minimos = contribuicao_minima * 365
+    dias_em_2020 = _dias_contribuicao_em(marco_reforma, data_exercicio, anos_clt_averbados)
+    pedagio = max(dias_minimos - dias_em_2020, 0) // 2
+    dias_necessarios = dias_minimos + pedagio
+    dias_clt = min(max(anos_clt_averbados, 0), 10) * 365
+    data_contribuicao_pedagio = data_exercicio + timedelta(days=max(dias_necessarios - dias_clt, 0))
+    data_idade_pedagio = _adicionar_anos(data_nascimento, 49 if sexo == "feminino" else 51)
+    data_regra_pedagio = max(data_contribuicao_pedagio, data_idade_pedagio, data_exercicio_policial)
+
+    if data_regra_pedagio < data_regra_base:
+        return data_contribuicao_pedagio, data_idade_pedagio, data_regra_pedagio
+
+    return data_por_contribuicao, data_por_idade, data_regra_base
+
+
 def _calcular_data_saude_exposicao_art_149(
     data_nascimento: date,
     data_exercicio: date,
@@ -347,8 +381,41 @@ def _calcular_data_saude_exposicao_art_149(
 
 def _cargo_indica_professor(blocos: list[BlocoHistorico]) -> bool:
     texto_cargos = " ".join(f"{bloco.cargo} {bloco.descricao}" for bloco in blocos)
-    normalizado = _normalizar_sem_acentos(texto_cargos)
+    return _texto_indica_professor(texto_cargos)
+
+
+def _texto_indica_professor(texto: str) -> bool:
+    normalizado = _normalizar_sem_acentos(texto)
     return any(termo in normalizado for termo in ("professor", "peb", "regente de ensino"))
+
+
+def _texto_indica_seguranca_publica(texto: str) -> bool:
+    normalizado = _normalizar_sem_acentos(texto)
+    return any(
+        termo in normalizado
+        for termo in (
+            "policial penal",
+            "policia penal",
+            "agente penitenciario",
+            "agente socioeducativo",
+            "policial civil",
+            "investigador de policia",
+            "delegado de policia",
+            "escrivao de policia",
+            "policia legislativa",
+        )
+    )
+
+
+def _categoria_previdenciaria_por_cargo(
+    categoria_informada: CategoriaPrevidenciaria,
+    texto_cargo: str,
+) -> CategoriaPrevidenciaria:
+    if _texto_indica_seguranca_publica(texto_cargo):
+        return "seguranca"
+    if categoria_informada == "geral" and _texto_indica_professor(texto_cargo):
+        return "professor"
+    return categoria_informada
 
 
 def _fim_estagio_probatorio(data_exercicio: date) -> date:
@@ -1012,6 +1079,15 @@ def _cronometro_ate_aposentadoria(
                 categoria_previdenciaria,
             )
         )
+    if data_exercicio <= date(2020, 9, 14) and categoria_previdenciaria == "seguranca":
+        opcoes.append(
+            _calcular_data_seguranca_art_148(
+                data_nascimento,
+                data_exercicio,
+                anos_clt_averbados,
+                sexo,
+            )
+        )
     if data_exercicio <= date(2020, 9, 14) and categoria_previdenciaria == "saude_exposicao":
         opcoes.append(
             _calcular_data_saude_exposicao_art_149(
@@ -1295,9 +1371,16 @@ def analisar_historico_funcional(
     blocos = _extrair_blocos(texto)
     if not blocos:
         raise ValueError("Nao foi possivel localizar os blocos do historico funcional.")
+    texto_cargos = " ".join(f"{bloco.cargo} {bloco.descricao}" for bloco in blocos)
+    categoria_calculo = _categoria_previdenciaria_por_cargo(categoria_previdenciaria, texto_cargos)
     logger.debug(
         "Blocos do historico identificados",
-        extra={"arquivo_nome": arquivo_nome, "blocos": len(blocos)},
+        extra={
+            "arquivo_nome": arquivo_nome,
+            "blocos": len(blocos),
+            "categoria_informada": categoria_previdenciaria,
+            "categoria_calculo": categoria_calculo,
+        },
     )
 
     eventos = _gerar_eventos(blocos)
@@ -1324,7 +1407,7 @@ def analisar_historico_funcional(
         data_exercicio=nomeacao.data_efetiva,
         anos_clt_averbados=anos_clt_averbados,
         sexo=sexo,
-        categoria_previdenciaria=categoria_previdenciaria,
+        categoria_previdenciaria=categoria_calculo,
     )
 
     afastamentos: list[AfastamentoPeriodo] = []
@@ -1387,7 +1470,7 @@ def analisar_historico_funcional(
         data_emissao=data_emissao,
         data_nascimento=data_nascimento,
         sexo=sexo,
-        categoria_previdenciaria=categoria_previdenciaria,
+        categoria_previdenciaria=categoria_calculo,
         data_posse=nomeacao_bloco.data_posse,
         data_exercicio=nomeacao_bloco.data_exercicio,
         cargo_atual=ultimo_evento.cargo,
