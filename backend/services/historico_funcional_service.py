@@ -1009,7 +1009,8 @@ def _cronometro_ate_aposentadoria(
     )
     hoje = date.today()
     dias_trabalhados = _dias_contribuicao_em(hoje, data_exercicio, anos_clt_averbados)
-    dias_totais = max((data_aposentadoria_prevista - data_exercicio).days, 1)
+    dias_restantes_calendario = max((data_aposentadoria_prevista - hoje).days, 0)
+    dias_totais = max(dias_trabalhados + dias_restantes_calendario, 1)
     percentual_trabalhado = min((dias_trabalhados / dias_totais) * 100, 100)
     percentual_restante = max(100 - percentual_trabalhado, 0)
     return (

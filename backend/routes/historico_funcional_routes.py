@@ -502,7 +502,14 @@ def obter_ultimo_historico_do_usuario(
     cache = obter_json_cache(chave_historico_ultimo_usuario(current_user.id))
     if cache is not None:
         logger.debug("Ultimo historico funcional carregado do cache", extra={"user_id": current_user.id})
-        return HistoricoFuncionalResponse.model_validate(cache)
+        dados_cache = normalizar_dados_historico_salvo(cache, int(cache.get("historico_id") or 0), current_user.id)
+        resposta_cache = HistoricoFuncionalResponse.model_validate(dados_cache)
+        definir_json_cache(
+            chave_historico_ultimo_usuario(current_user.id),
+            resposta_cache.model_dump(mode="json"),
+            CACHE_TTL_HISTORICO_ULTIMO_SEGUNDOS,
+        )
+        return resposta_cache
 
     historico = obter_ultimo_historico_por_usuario(db, current_user.id)
     if historico is None:

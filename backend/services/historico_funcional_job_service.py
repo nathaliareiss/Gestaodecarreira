@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from datetime import date
 
 from sqlalchemy.orm import Session
 
@@ -26,6 +27,7 @@ from backend.schemas.historico_funcional_schema import (
 from backend.schemas.work_calendar_schema import VacationPeriodCreateRequest
 from backend.storage import baixar_pdf_storage
 from backend.services.historico_funcional_service import (
+    _cronometro_ate_aposentadoria,
     analisar_afastamentos_pdf,
     analisar_ferias_pdf,
     analisar_historico_funcional,
@@ -83,6 +85,37 @@ def normalizar_dados_historico_salvo(
     dias_totais = int(dados.get("dias_totais_ate_aposentadoria") or 0)
     percentual_trabalhado = float(dados.get("percentual_trabalhado") or 0)
     percentual_restante = float(dados.get("percentual_restante") or 0)
+
+    try:
+        data_nascimento = date.fromisoformat(str(dados["data_nascimento"]))
+        data_exercicio = date.fromisoformat(str(dados["data_exercicio"]))
+        anos_clt_averbados = int(dados.get("tempo_clt_averbado_anos") or 0)
+        sexo = dados.get("sexo") if dados.get("sexo") in {"feminino", "masculino"} else "feminino"
+        categoria = dados.get("categoria_previdenciaria") or "geral"
+        (
+            dados["data_aposentadoria_por_carreira"],
+            dados["data_aposentadoria_por_idade"],
+            dados["data_aposentadoria_prevista"],
+            dias_trabalhados,
+            dias_totais,
+            percentual_trabalhado,
+            percentual_restante,
+        ) = _cronometro_ate_aposentadoria(
+            data_nascimento=data_nascimento,
+            data_exercicio=data_exercicio,
+            anos_clt_averbados=anos_clt_averbados,
+            sexo=sexo,
+            categoria_previdenciaria=categoria,
+        )
+        dados["dias_trabalhados"] = dias_trabalhados
+        dados["dias_totais_ate_aposentadoria"] = dias_totais
+        dados["percentual_trabalhado"] = percentual_trabalhado
+        dados["percentual_restante"] = percentual_restante
+    except Exception:
+        logger.warning(
+            "Nao foi possivel recalcular aposentadoria do historico salvo",
+            extra={"historico_id": historico_id, "user_id": usuario_id},
+        )
 
     dados["resumo_grafico"] = HistoricoFuncionalResumoGraficoResponse(
         tempo_trabalhado_dias=dias_trabalhados,

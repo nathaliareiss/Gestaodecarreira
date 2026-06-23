@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import date
 
 from backend.services import historico_funcional_service
+from backend.services.historico_funcional_job_service import normalizar_dados_historico_salvo
 from backend.services.historico_funcional_service import AfastamentoPeriodo, EventoHistorico
 
 
@@ -88,7 +89,7 @@ def test_proximo_marco_suspende_intersticio_por_licenca_saude_maior_que_90_dias(
 
 
 def test_aposentadoria_professor_nao_usa_pedagio_automatico_abaixo_da_idade_de_transicao() -> None:
-    _, data_idade, data_prevista, *_ = historico_funcional_service._cronometro_ate_aposentadoria(
+    _, data_idade, data_prevista, dias_trabalhados, dias_totais, *_ = historico_funcional_service._cronometro_ate_aposentadoria(
         data_nascimento=date(1988, 8, 12),
         data_exercicio=date(2010, 2, 15),
         anos_clt_averbados=2,
@@ -98,3 +99,29 @@ def test_aposentadoria_professor_nao_usa_pedagio_automatico_abaixo_da_idade_de_t
 
     assert data_idade >= date(2039, 8, 12)
     assert data_prevista >= date(2039, 8, 12)
+    assert dias_totais - dias_trabalhados == max((data_prevista - date.today()).days, 0)
+
+
+def test_normaliza_historico_salvo_recalcula_tempo_restante_sem_usar_valor_antigo() -> None:
+    dados = {
+        "historico_id": 1,
+        "usuario_id": 7,
+        "data_nascimento": "1995-06-01",
+        "data_exercicio": "2020-01-01",
+        "sexo": "feminino",
+        "categoria_previdenciaria": "professor",
+        "tempo_clt_averbado_anos": 0,
+        "dias_trabalhados": 1,
+        "dias_totais_ate_aposentadoria": 365 * 14,
+        "percentual_trabalhado": 1,
+        "percentual_restante": 99,
+        "eventos": [],
+    }
+
+    normalizado = normalizar_dados_historico_salvo(dados, historico_id=1, usuario_id=7)
+    resumo = normalizado["resumo_grafico"]
+    data_prevista = date.fromisoformat(str(normalizado["data_aposentadoria_prevista"]))
+
+    assert normalizado["tempo_clt_averbado_anos"] == 0
+    assert resumo["tempo_restante_dias"] == max((data_prevista - date.today()).days, 0)
+    assert resumo["tempo_restante_dias"] > 365 * 18
