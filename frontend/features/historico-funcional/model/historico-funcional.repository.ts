@@ -39,6 +39,20 @@ export async function buscarUltimoHistoricoFuncional(
   )
 }
 
+
+export async function limparHistoricoFuncional(
+  usuarioId: number,
+): Promise<{ deleted_histories: number; deleted_files: number }> {
+  const response = await apiFetch(`/api/historicos-funcionais/usuario/${usuarioId}`, {
+    method: "DELETE",
+  })
+
+  return parseApiResponse<{ deleted_histories: number; deleted_files: number }>(
+    response,
+    "Erro ao limpar o histórico funcional.",
+  )
+}
+
 export async function anexarAfastamentosAoHistorico(
   usuarioId: number,
   payload: AfastamentosUpload,

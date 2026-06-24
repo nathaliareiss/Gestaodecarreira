@@ -97,3 +97,43 @@ def test_historico_funcional_de_outro_usuario_e_bloqueado() -> None:
     resposta = client.get("/historicos-funcionais/usuario/8/ultimo")
 
     assert resposta.status_code == 403
+
+
+def test_limpar_historico_funcional_remove_registros_do_usuario(monkeypatch) -> None:
+    chamadas: dict[str, object] = {}
+    historico = SimpleNamespace(
+        arquivo_storage_path="historicos/7/a.pdf",
+        afastamentos_storage_path="afastamentos/7/b.pdf",
+        ferias_storage_path='["ferias/7/c.pdf","ferias/7/d.pdf"]',
+    )
+
+    monkeypatch.setattr(
+        historico_funcional_routes,
+        "listar_historicos_por_usuario",
+        lambda db, usuario_id: [historico],
+    )
+    monkeypatch.setattr(
+        historico_funcional_routes,
+        "remover_historicos_por_usuario",
+        lambda db, usuario_id: (chamadas.setdefault("usuario_removido", usuario_id), 1)[1],
+    )
+
+    removidos: list[str] = []
+    monkeypatch.setattr(
+        historico_funcional_routes,
+        "remover_arquivo_storage",
+        lambda path: removidos.append(path) or True,
+    )
+
+    client = criar_client()
+    resposta = client.delete("/historicos-funcionais/usuario/7")
+
+    assert resposta.status_code == 200
+    assert resposta.json() == {"deleted_histories": 1, "deleted_files": 4}
+    assert chamadas["usuario_removido"] == 7
+    assert sorted(removidos) == [
+        "afastamentos/7/b.pdf",
+        "ferias/7/c.pdf",
+        "ferias/7/d.pdf",
+        "historicos/7/a.pdf",
+    ]

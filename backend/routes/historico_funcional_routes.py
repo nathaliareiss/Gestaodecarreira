@@ -15,7 +15,11 @@ from backend.cache.redis_cache import (
     definir_json_cache,
     obter_json_cache,
 )
-from backend.repositories.historico_funcional_repository import obter_ultimo_historico_por_usuario
+from backend.repositories.historico_funcional_repository import (
+    listar_historicos_por_usuario,
+    obter_ultimo_historico_por_usuario,
+    remover_historicos_por_usuario,
+)
 from backend.queue.queue_config import obter_fila_historicos, obter_job
 from backend.queue.tasks.historico_tasks import (
     processar_afastamentos_job,
@@ -41,9 +45,26 @@ from backend.storage import (
     gerar_caminho_storage_afastamentos,
     gerar_caminho_storage_ferias,
     gerar_caminho_storage_historico,
+    remover_arquivo_storage,
 )
 
 router = APIRouter(prefix="/historicos-funcionais", tags=["historicos-funcionais"])
+
+
+def _extrair_storage_paths(valor: str | None) -> list[str]:
+    if not valor:
+        return []
+
+    try:
+        carregado = json.loads(valor)
+    except Exception:
+        return [valor]
+
+    if isinstance(carregado, list):
+        return [str(item) for item in carregado if str(item).strip()]
+    if isinstance(carregado, str) and carregado.strip():
+        return [carregado]
+    return []
 
 
 def _responder_job_agendado(job_id: str, detalhe: str) -> JobAgendadoResponse:
@@ -528,6 +549,51 @@ async def anexar_ferias_historico(
 def obter_status_job(job_id: str) -> JobStatusResponse:
     logger.debug("Consultando status do job", extra={"job_id": job_id})
     return _responder_status_job(job_id)
+
+
+@router.delete("/usuario/{usuario_id}")
+def limpar_historico_do_usuario(
+    usuario_id: int,
+    current_user=Depends(obter_usuario_autenticado),
+    db: Session = Depends(get_db),
+) -> dict[str, int]:
+    if usuario_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Voce nao tem acesso a este historico funcional.",
+        )
+
+    historicos = listar_historicos_por_usuario(db, current_user.id)
+    paths_storage: list[str] = []
+    for historico in historicos:
+        paths_storage.extend(
+            path
+            for path in (
+                historico.arquivo_storage_path,
+                historico.afastamentos_storage_path,
+            )
+            if path
+        )
+        paths_storage.extend(_extrair_storage_paths(historico.ferias_storage_path))
+
+    arquivos_removidos = 0
+    for path in set(paths_storage):
+        if remover_arquivo_storage(path):
+            arquivos_removidos += 1
+
+    historicos_removidos = remover_historicos_por_usuario(db, current_user.id)
+    logger.info(
+        "Historico funcional limpo pelo usuario",
+        extra={
+            "user_id": current_user.id,
+            "historicos_removidos": historicos_removidos,
+            "arquivos_removidos": arquivos_removidos,
+        },
+    )
+    return {
+        "deleted_histories": historicos_removidos,
+        "deleted_files": arquivos_removidos,
+    }
 
 
 @router.get("/usuario/{usuario_id}/ultimo", response_model=HistoricoFuncionalResponse)

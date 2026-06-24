@@ -6,6 +6,7 @@ from backend.storage.local_storage import (
     gerar_caminho_storage_historico,
     enviar_pdf_para_storage,
     obter_origem_storage,
+    remover_arquivo_storage,
 )
 
 __all__ = [
@@ -16,4 +17,5 @@ __all__ = [
     "gerar_caminho_storage_historico",
     "enviar_pdf_para_storage",
     "obter_origem_storage",
+    "remover_arquivo_storage",
 ]

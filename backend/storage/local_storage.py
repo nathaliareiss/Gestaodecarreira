@@ -77,5 +77,32 @@ def baixar_pdf_storage(caminho_storage: str) -> bytes:
     return caminho.read_bytes()
 
 
+def remover_arquivo_storage(caminho_storage: str | None) -> bool:
+    if not caminho_storage:
+        return False
+
+    caminho = _caminho_local(caminho_storage)
+    try:
+        caminho_resolvido = caminho.resolve()
+        raiz_resolvida = LOCAL_STORAGE_ROOT.resolve()
+    except Exception as erro:
+        logger.warning("Falha ao resolver caminho do storage local", extra={"erro": str(erro)})
+        return False
+
+    if raiz_resolvida not in caminho_resolvido.parents and caminho_resolvido != raiz_resolvida:
+        logger.warning("Remocao de storage local bloqueada fora da raiz configurada")
+        return False
+
+    if not caminho_resolvido.is_file():
+        return False
+
+    try:
+        caminho_resolvido.unlink()
+        return True
+    except Exception as erro:
+        logger.warning("Falha ao remover arquivo do storage local", extra={"erro": str(erro)})
+        return False
+
+
 def obter_origem_storage(caminho_storage: str) -> str:
     return "local"

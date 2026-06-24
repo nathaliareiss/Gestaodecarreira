@@ -635,7 +635,7 @@ export function HistoricoFuncionalView({
     arquivo,
     arquivoDownloadUrl,
     arquivoAfastamentos,
-    arquivoFerias,
+    arquivosFerias,
     anosCltAverbados,
     sexo,
     categoriaPrevidenciaria,
@@ -649,6 +649,7 @@ export function HistoricoFuncionalView({
     iniciarAnexoAfastamentos,
     iniciarAnexoFerias,
     iniciarAtualizacaoHistorico,
+    limparHistorico,
     recarregarHistorico,
     selecionarArquivo,
     selecionarArquivoAfastamentos,
@@ -664,7 +665,7 @@ export function HistoricoFuncionalView({
     historicoInicial,
   })
 
-  const painel = historico ?? historicoInicial
+  const painel = historico
   const resumo = painel?.resumo_grafico
   const resumoAposentadoria = painel?.resumo_aposentadoria
   const resumoAfastamentos = painel?.afastamentos_resumo
@@ -734,6 +735,15 @@ export function HistoricoFuncionalView({
                     onClick={iniciarAtualizacaoHistorico}
                   >
                     {t.updateCareerHistory}
+                  </button>
+                ) : null}
+                {painel ? (
+                  <button
+                    className="ghost-button ghost-button--compact"
+                    type="button"
+                    onClick={() => void limparHistorico()}
+                  >
+                    {t.clearCareerHistory}
                   </button>
                 ) : null}
                 {arquivoDownloadUrl ? (
@@ -841,11 +851,13 @@ export function HistoricoFuncionalView({
 
               <label className="field">
                 <span>{t.vacationRecordsPdf}</span>
-                <input type="file" accept="application/pdf" onChange={selecionarArquivoFerias} />
+                <input type="file" accept="application/pdf" multiple onChange={selecionarArquivoFerias} />
               </label>
 
-              {arquivoFerias ? (
-                <p className="helper">{`${t.selectedVacationRecordsFile}: ${arquivoFerias.name}`}</p>
+              {arquivosFerias.length > 0 ? (
+                <p className="helper">
+                  {`${t.selectedVacationRecordsFile}: ${arquivosFerias.map((item) => item.name).join(", ")}`}
+                </p>
               ) : null}
 
               <div className="upload-actions">
@@ -886,11 +898,13 @@ export function HistoricoFuncionalView({
             <div className="upload-shell__collapsed upload-shell__collapsed--compact">
               <label className="field">
                 <span>{t.vacationRecordsPdf}</span>
-                <input type="file" accept="application/pdf" onChange={selecionarArquivoFerias} />
+                <input type="file" accept="application/pdf" multiple onChange={selecionarArquivoFerias} />
               </label>
 
-              {arquivoFerias ? (
-                <p className="helper">{`${t.selectedVacationRecordsFile}: ${arquivoFerias.name}`}</p>
+              {arquivosFerias.length > 0 ? (
+                <p className="helper">
+                  {`${t.selectedVacationRecordsFile}: ${arquivosFerias.map((item) => item.name).join(", ")}`}
+                </p>
               ) : (
                 <p className="helper">{t.selectVacationPdfToAttach}</p>
               )}

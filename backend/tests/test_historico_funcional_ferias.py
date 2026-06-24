@@ -53,6 +53,31 @@ def test_extrai_ferias_premio_contando_dias_corridos(monkeypatch) -> None:
     assert resumo.dias_totais_usados == 48
 
 
+def test_analisa_ate_tres_pdfs_de_ferias_no_mesmo_resumo(monkeypatch) -> None:
+    textos = {
+        b"regular": """
+        Consultar ferias regulamentares
+        Ano Referencia Inicio Retorno Previsto Retorno Efetivo
+        2026 12/02/2026 26/02/2026 26/02/2026
+        """,
+        b"premio": """
+        Consultar ferias-premio
+        Solicitacao Periodo Tempo
+        - 17/04/2026 a
+        02/05/2026
+        15 dias
+        """,
+    }
+    monkeypatch.setattr(historico_funcional_service, "extrair_texto_pdf", lambda conteudo: textos[conteudo])
+
+    periodos, resumo = historico_funcional_service.analisar_ferias_pdfs([b"regular", b"premio"])
+
+    assert len(periodos) == 2
+    assert resumo.periodos_por_tipo == {"premium": 1, "regular": 1}
+    assert resumo.dias_por_tipo["premium"] == 16
+    assert resumo.dias_por_tipo["regular"] == periodos[0].dias_contabilizados
+
+
 def test_proximo_marco_suspende_intersticio_por_licenca_saude_maior_que_90_dias() -> None:
     evento_progressao = EventoHistorico(
         tipo="progressao",

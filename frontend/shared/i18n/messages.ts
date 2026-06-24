@@ -231,6 +231,7 @@ export type LocaleTexts = {
     attachLeaveRecords: string
     attachVacationRecords: string
     updateCareerHistory: string
+    clearCareerHistory: string
     downloadPdf: string
     demoDataLoaded: string
     openAccount: string
@@ -550,6 +551,7 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       attachLeaveRecords: "Anexar afastamentos",
       attachVacationRecords: "Anexar férias",
       updateCareerHistory: "Atualizar histórico funcional",
+      clearCareerHistory: "Limpar história",
       downloadPdf: "Baixar PDF",
       demoDataLoaded: "Os dados abaixo já estão carregados para a demo.",
       openAccount: "Abrir conta",
@@ -568,9 +570,9 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       recognizedCltYears: "Anos CLT reconhecidos",
       leaveRecordsPdf: "PDF de afastamentos",
       selectedLeaveRecordsFile: "Arquivo de afastamentos selecionado",
-      vacationRecordsPdf: "PDF de férias regulamentares ou prêmio",
+      vacationRecordsPdf: "PDFs de férias regulamentares ou prêmio (até 3)",
       selectedVacationRecordsFile: "Arquivo de férias selecionado",
-      selectVacationPdfToAttach: "Selecione o PDF de férias para anexar aos dados salvos.",
+      selectVacationPdfToAttach: "Selecione até 3 PDFs de férias para anexar aos dados salvos.",
       fill10CltYears: "Preencher 10 anos CLT",
       upTo10CltYears: "Você pode informar até 10 anos CLT. Se já tiver esse tempo, digite 10 ou use o atalho.",
       selectedFile: "Arquivo selecionado",
@@ -870,6 +872,7 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       attachLeaveRecords: "Attach Leave Records",
       attachVacationRecords: "Attach Vacation Records",
       updateCareerHistory: "Update Career History",
+      clearCareerHistory: "Clear history",
       downloadPdf: "Download PDF",
       demoDataLoaded: "The data below is already loaded for the demo.",
       openAccount: "Create Account",
@@ -888,9 +891,9 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       recognizedCltYears: "Recognized CLT Years",
       leaveRecordsPdf: "Leave Records PDF",
       selectedLeaveRecordsFile: "Selected leave records file",
-      vacationRecordsPdf: "Regular or premium vacation PDF",
+      vacationRecordsPdf: "Regular or premium vacation PDFs (up to 3)",
       selectedVacationRecordsFile: "Selected vacation file",
-      selectVacationPdfToAttach: "Select the vacation PDF to attach to the saved data.",
+      selectVacationPdfToAttach: "Select up to 3 vacation PDFs to attach to the saved data.",
       fill10CltYears: "Fill 10 CLT Years",
       upTo10CltYears: "You can enter up to 10 CLT years. If you already have that time, enter 10 or use the shortcut.",
       selectedFile: "Selected file",
