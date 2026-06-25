@@ -92,13 +92,13 @@ export function useHistoricoFuncionalController({
     }
   }
 
-  function limparEntradaArquivos() {
+  const limparEntradaArquivos = useCallback(() => {
     limparInput(arquivoInputRef)
     limparInput(afastamentosInputRef)
     limparInput(feriasInputRef)
-  }
+  }, [])
 
-  function resetarFormularioDeEnvio() {
+  const resetarFormularioDeEnvio = useCallback(() => {
     setArquivo(null)
     setArquivoAfastamentos(null)
     setArquivosFerias([])
@@ -110,9 +110,9 @@ export function useHistoricoFuncionalController({
     setMensagemProcessamento(null)
     setMensagemSucesso(null)
     limparEntradaArquivos()
-  }
+  }, [historicoInicial, limparEntradaArquivos])
 
-  function limparArquivosSelecionados() {
+  const limparArquivosSelecionados = useCallback(() => {
     setArquivo(null)
     setArquivoAfastamentos(null)
     setArquivosFerias([])
@@ -120,7 +120,7 @@ export function useHistoricoFuncionalController({
     setMensagemProcessamento(null)
     setMensagemSucesso(null)
     limparEntradaArquivos()
-  }
+  }, [limparEntradaArquivos])
 
   function arquivoEhPdf(arquivoSelecionado: File) {
     return arquivoSelecionado.type === "application/pdf" || arquivoSelecionado.name.toLowerCase().endsWith(".pdf")
@@ -257,7 +257,7 @@ export function useHistoricoFuncionalController({
       setMensagemProcessamento(null)
       setCarregando(false)
     }
-  }, [idioma, usuarioId])
+  }, [idioma, limparArquivosSelecionados, usuarioId])
 
   function usarCltMaximo() {
     setAnosCltAverbados(10)
@@ -352,6 +352,7 @@ export function useHistoricoFuncionalController({
     categoriaPrevidenciaria,
     dataNascimento,
     idioma,
+    limparArquivosSelecionados,
     sexo,
     usuarioId,
   ])

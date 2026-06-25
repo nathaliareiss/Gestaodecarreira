@@ -661,6 +661,7 @@ export function HistoricoFuncionalView({
     afastamentosInputRef,
     feriasInputRef,
     limparHistorico,
+    limparFormulario,
     selecionarArquivo,
     selecionarArquivoAfastamentos,
     selecionarArquivoFerias,
@@ -705,234 +706,294 @@ export function HistoricoFuncionalView({
       </div>
 
       <div className="analysis-stack">
-        <section className="upload-shell">
-          <div className="upload-shell__header">
+        <form className="upload-form history-upload-form" onSubmit={enviarFormulario} autoComplete="off">
+          <div className="card-header card-header--tight card-header--stacked history-upload-form__header">
             <div>
               <p className="eyebrow">{t.documents}</p>
-              <h3>{modoDemo ? t.demoDashboard : painel ? t.addDocuments : t.uploadDocuments}</h3>
+              <h3>{t.formTitle}</h3>
+              <p className="analysis-header__subtitle">{t.formSubtitle}</p>
             </div>
-
-            {modoDemo ? <span className="status-pill">{t.viewOnly}</span> : null}
-            {!modoDemo ? (
-              <div className="upload-shell__actions">
-                {!painel ? (
-                  <button
-                    className="ghost-button ghost-button--compact"
-                    type="button"
-                    onClick={iniciarAtualizacaoHistorico}
-                  >
-                    {t.uploadCareerHistory}
-                  </button>
-                ) : null}
-                {painel ? (
-                  <button
-                    className="ghost-button ghost-button--compact"
-                    type="button"
-                    onClick={iniciarAnexoAfastamentos}
-                  >
-                    {t.attachLeaveRecords}
-                  </button>
-                ) : null}
-                {painel ? (
-                  <button
-                    className="ghost-button ghost-button--compact"
-                    type="button"
-                    onClick={iniciarAnexoFerias}
-                  >
-                    {t.attachVacationRecords}
-                  </button>
-                ) : null}
-                {painel ? (
-                  <button
-                    className="ghost-button ghost-button--compact"
-                    type="button"
-                    onClick={iniciarAtualizacaoHistorico}
-                  >
-                    {t.updateCareerHistory}
-                  </button>
-                ) : null}
-                {painel ? (
-                  <button
-                    className="ghost-button ghost-button--compact"
-                    type="button"
-                    onClick={() => void limparHistorico()}
-                  >
-                    {t.clearCareerHistory}
-                  </button>
-                ) : null}
-                {arquivoDownloadUrl ? (
-                  <a
-                    className="ghost-button ghost-button--compact"
-                    download={arquivo?.name ?? "historico-funcional.pdf"}
-                    href={arquivoDownloadUrl}
-                  >
-                    {t.downloadPdf}
-                  </a>
-                ) : null}
-              </div>
-            ) : null}
+            <div className="history-upload-form__header-actions">
+              <span className="status-pill">{modoDemo ? t.viewOnly : painel ? t.statusSaved : t.waitingForPdf}</span>
+              {painel && !modoDemo ? (
+                <button
+                  className="ghost-button ghost-button--compact"
+                  type="button"
+                  onClick={() => void limparHistorico()}
+                >
+                  {t.clearCareerHistory}
+                </button>
+              ) : null}
+            </div>
           </div>
 
           {modoDemo ? (
-            <div className="upload-shell__collapsed">
+            <div className="history-upload-form__demo">
               <p className="helper">{t.demoDataLoaded}</p>
-              <div className="actions-row">
-                {onCreateAccount ? (
-                  <button
-                    className="ghost-button"
-                    type="button"
-                    onClick={onCreateAccount}
-                    disabled={criandoConta}
-                  >
-                    {criandoConta ? t.opening : t.openAccount}
-                  </button>
-                ) : null}
-              </div>
-            </div>
-          ) : !painel && !modoAtualizacaoHistorico ? (
-            <div className="upload-shell__collapsed">
-              <p className="helper">{t.clickUploadCareerHistory}</p>
-              {erro ? <p className="error-box">{erro}</p> : null}
-            </div>
-          ) : modoAtualizacaoHistorico ? (
-            <form className="upload-form" onSubmit={enviarFormulario}>
-              <label className="field">
-                <span>{t.careerHistoryPdf}</span>
-                <input type="file" accept="application/pdf" onChange={selecionarArquivo} />
-              </label>
-
-              <div className="field-grid">
-                <label className="field">
-                  <span>{t.dateOfBirth}</span>
-                  <input
-                    type="date"
-                    value={dataNascimento}
-                    onChange={(evento) => setDataNascimento(evento.target.value)}
-                    required
-                  />
-                </label>
-
-                <label className="field">
-                  <span>{t.sex}</span>
-                  <select
-                    value={sexo}
-                    onChange={(evento) => setSexo(evento.target.value as "feminino" | "masculino")}
-                    required
-                  >
-                    <option value="feminino">{t.female}</option>
-                    <option value="masculino">{t.male}</option>
-                  </select>
-                </label>
-
-                <label className="field">
-                  <span>{t.recognizedCltYears}</span>
-                  <input
-                    type="number"
-                    min={0}
-                    max={10}
-                    value={anosCltAverbados}
-                    onChange={(evento) => setAnosCltAverbados(Number(evento.target.value))}
-                  />
-                </label>
-
-                <label className="field">
-                  <span>{t.retirementCategory}</span>
-                  <select
-                    value={categoriaPrevidenciaria}
-                    onChange={(evento) =>
-                      setCategoriaPrevidenciaria(
-                        evento.target.value as "geral" | "professor" | "seguranca" | "saude_exposicao",
-                      )
-                    }
-                    required
-                  >
-                    <option value="geral">{t.categoryGeneral}</option>
-                    <option value="professor">{t.categoryTeacher}</option>
-                    <option value="seguranca">{t.categorySecurity}</option>
-                    <option value="saude_exposicao">{t.categoryHealthExposure}</option>
-                  </select>
-                </label>
-              </div>
-
-              <label className="field">
-                <span>{t.leaveRecordsPdf}</span>
-                <input type="file" accept="application/pdf" onChange={selecionarArquivoAfastamentos} />
-              </label>
-
-              {arquivoAfastamentos ? (
-                <p className="helper">{`${t.selectedLeaveRecordsFile}: ${arquivoAfastamentos.name}`}</p>
-              ) : null}
-
-              <label className="field">
-                <span>{t.vacationRecordsPdf}</span>
-                <input type="file" accept="application/pdf" multiple onChange={selecionarArquivoFerias} />
-              </label>
-
-              {arquivosFerias.length > 0 ? (
-                <p className="helper">
-                  {`${t.selectedVacationRecordsFile}: ${arquivosFerias.map((item) => item.name).join(", ")}`}
-                </p>
-              ) : null}
-
-              <div className="upload-actions">
-                <button className="ghost-button" type="button" onClick={usarCltMaximo}>
-                  {t.fill10CltYears}
+              {onCreateAccount ? (
+                <button className="ghost-button" type="button" onClick={onCreateAccount} disabled={criandoConta}>
+                  {criandoConta ? t.opening : t.openAccount}
                 </button>
-              </div>
+              ) : null}
+            </div>
+          ) : null}
 
+          {!usuarioId ? <p className="helper">{t.userRequiredForHistory}</p> : null}
+
+          <section className="history-upload-card">
+            <div className="history-upload-card__header">
+              <div>
+                <p className="eyebrow">{t.personalDataTitle}</p>
+                <h3>{t.personalDataTitle}</h3>
+              </div>
+            </div>
+
+            <div className="field-grid history-upload-card__grid">
+              <label className="field">
+                <span>{t.dateOfBirth}</span>
+                <input
+                  type="date"
+                  value={dataNascimento}
+                  onChange={(evento) => setDataNascimento(evento.target.value)}
+                  required
+                  disabled={modoDemo}
+                />
+              </label>
+
+              <label className="field">
+                <span>{t.sex}</span>
+                <select
+                  value={sexo}
+                  onChange={(evento) => setSexo(evento.target.value as "feminino" | "masculino")}
+                  required
+                  disabled={modoDemo}
+                >
+                  <option value="feminino">{t.female}</option>
+                  <option value="masculino">{t.male}</option>
+                </select>
+              </label>
+
+              <label className="field">
+                <span>{t.recognizedCltYears}</span>
+                <input
+                  type="number"
+                  min={0}
+                  max={10}
+                  value={anosCltAverbados}
+                  onChange={(evento) => setAnosCltAverbados(Number(evento.target.value))}
+                  disabled={modoDemo}
+                />
+              </label>
+
+              <label className="field">
+                <span>{t.retirementCategory}</span>
+                <select
+                  value={categoriaPrevidenciaria}
+                  onChange={(evento) =>
+                    setCategoriaPrevidenciaria(
+                      evento.target.value as "geral" | "professor" | "seguranca" | "saude_exposicao",
+                    )
+                  }
+                  required
+                  disabled={modoDemo}
+                >
+                  <option value="geral">{t.categoryGeneral}</option>
+                  <option value="professor">{t.categoryTeacher}</option>
+                  <option value="seguranca">{t.categorySecurity}</option>
+                  <option value="saude_exposicao">{t.categoryHealthExposure}</option>
+                </select>
+              </label>
+            </div>
+
+            <div className="history-upload-card__actions">
+              <button className="ghost-button ghost-button--compact" type="button" onClick={usarCltMaximo} disabled={modoDemo}>
+                {t.fill10CltYears}
+              </button>
               <p className="helper">{t.upTo10CltYears}</p>
+            </div>
+          </section>
 
-              {arquivo ? <p className="helper">{`${t.selectedFile}: ${arquivo.name}`}</p> : null}
-              {usuarioId ? (
-                <button className="ghost-button" type="button" onClick={() => void recarregarHistorico()}>
-                  {t.reloadLastSaved}
+          <section className="history-upload-card">
+            <div className="history-upload-card__header">
+              <div>
+                <p className="eyebrow">{t.documentsTitle}</p>
+                <h3>{t.documentsTitle}</h3>
+              </div>
+            </div>
+
+            <div className="history-upload-documents">
+              <div className={`history-upload-file ${arquivo ? "history-upload-file--selected" : ""}`}>
+                <div className="history-upload-file__header">
+                  <div>
+                    <span className="history-upload-file__title">{t.careerHistoryPdf}</span>
+                    <p className="helper">{t.required}</p>
+                  </div>
+                  <span className="upload-badge upload-badge--required">{t.required}</span>
+                </div>
+
+                <input
+                  ref={arquivoInputRef}
+                  className="history-upload-file__input"
+                  type="file"
+                  accept="application/pdf"
+                  onChange={selecionarArquivo}
+                  disabled={carregando || modoDemo || !usuarioId}
+                />
+
+                <button
+                  className="ghost-button history-upload-file__button"
+                  type="button"
+                  onClick={() => arquivoInputRef.current?.click()}
+                  disabled={carregando || modoDemo || !usuarioId}
+                >
+                  {arquivo ? t.choosePdf : t.choosePdf}
                 </button>
-              ) : null}
 
-              {mensagemProcessamento ? <p className="helper">{mensagemProcessamento}</p> : null}
-              {erro ? <p className="error-box">{erro}</p> : null}
-            </form>
-          ) : painel && modoAnexoAfastamentos ? (
-            <div className="upload-shell__collapsed upload-shell__collapsed--compact">
-              <label className="field">
-                <span>{t.leaveRecordsPdf}</span>
-                <input type="file" accept="application/pdf" onChange={selecionarArquivoAfastamentos} />
-              </label>
+                {arquivo ? (
+                  <div className="history-upload-file__selected">
+                    <div className="history-upload-file__selected-copy">
+                      <span className="upload-badge upload-badge--selected">{t.selected}</span>
+                      <strong>{arquivo.name}</strong>
+                      <span>{formatarTamanhoArquivo(arquivo.size)}</span>
+                    </div>
+                    <button
+                      className="ghost-button ghost-button--text"
+                      type="button"
+                      onClick={removerArquivoPrincipal}
+                      disabled={carregando || modoDemo || !usuarioId}
+                    >
+                      {t.removeFile}
+                    </button>
+                  </div>
+                ) : (
+                  <p className="helper">{t.chooseCareerHistoryPdf}</p>
+                )}
+              </div>
 
-              {arquivoAfastamentos ? (
-                <p className="helper">{`${t.selectedLeaveRecordsFile}: ${arquivoAfastamentos.name}`}</p>
-              ) : (
-                <p className="helper">{t.selectPdfToAttach}</p>
-              )}
+              <div className={`history-upload-file ${arquivoAfastamentos ? "history-upload-file--selected" : ""}`}>
+                <div className="history-upload-file__header">
+                  <div>
+                    <span className="history-upload-file__title">{t.leaveRecordsPdf}</span>
+                    <p className="helper">{t.optional}</p>
+                  </div>
+                  <span className="upload-badge upload-badge--optional">{t.optional}</span>
+                </div>
 
-              {mensagemProcessamento ? <p className="helper">{mensagemProcessamento}</p> : null}
-              {erro ? <p className="error-box">{erro}</p> : null}
+                <input
+                  ref={afastamentosInputRef}
+                  className="history-upload-file__input"
+                  type="file"
+                  accept="application/pdf"
+                  onChange={selecionarArquivoAfastamentos}
+                  disabled={carregando || modoDemo || !usuarioId}
+                />
+
+                <button
+                  className="ghost-button history-upload-file__button"
+                  type="button"
+                  onClick={() => afastamentosInputRef.current?.click()}
+                  disabled={carregando || modoDemo || !usuarioId}
+                >
+                  {t.choosePdf}
+                </button>
+
+                {arquivoAfastamentos ? (
+                  <div className="history-upload-file__selected">
+                    <div className="history-upload-file__selected-copy">
+                      <span className="upload-badge upload-badge--selected">{t.selected}</span>
+                      <strong>{arquivoAfastamentos.name}</strong>
+                      <span>{formatarTamanhoArquivo(arquivoAfastamentos.size)}</span>
+                    </div>
+                    <button
+                      className="ghost-button ghost-button--text"
+                      type="button"
+                      onClick={removerArquivoAfastamentos}
+                      disabled={carregando || modoDemo || !usuarioId}
+                    >
+                      {t.removeFile}
+                    </button>
+                  </div>
+                ) : (
+                  <p className="helper">{t.chooseLeaveRecordsPdf}</p>
+                )}
+              </div>
+
+              <div className={`history-upload-file history-upload-file--wide ${arquivosFerias.length > 0 ? "history-upload-file--selected" : ""}`}>
+                <div className="history-upload-file__header">
+                  <div>
+                    <span className="history-upload-file__title">{t.vacationRecordsPdf}</span>
+                    <p className="helper">{t.optional}</p>
+                  </div>
+                  <span className="upload-badge upload-badge--optional">{t.optional}</span>
+                </div>
+
+                <input
+                  ref={feriasInputRef}
+                  className="history-upload-file__input"
+                  type="file"
+                  accept="application/pdf"
+                  multiple
+                  onChange={selecionarArquivoFerias}
+                  disabled={carregando || modoDemo || !usuarioId}
+                />
+
+                <button
+                  className="ghost-button history-upload-file__button"
+                  type="button"
+                  onClick={() => feriasInputRef.current?.click()}
+                  disabled={carregando || modoDemo || !usuarioId}
+                >
+                  {t.choosePdfs}
+                </button>
+
+                {arquivosFerias.length > 0 ? (
+                  <div className="history-upload-file__list" aria-label={t.vacationRecordsPdf}>
+                    {arquivosFerias.map((arquivoFerias, indice) => (
+                      <div className="history-upload-file__item" key={`${arquivoFerias.name}-${arquivoFerias.lastModified}-${indice}`}>
+                        <div className="history-upload-file__selected-copy">
+                          <span className="upload-badge upload-badge--selected">{t.selected}</span>
+                          <strong>{arquivoFerias.name}</strong>
+                          <span>{formatarTamanhoArquivo(arquivoFerias.size)}</span>
+                        </div>
+                        <button
+                          className="ghost-button ghost-button--text"
+                          type="button"
+                          onClick={() => removerArquivoFerias(indice)}
+                          disabled={carregando || modoDemo || !usuarioId}
+                        >
+                          {t.removeFile}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="helper">{t.selectVacationPdfToAttach}</p>
+                )}
+              </div>
             </div>
-          ) : painel && modoAnexoFerias ? (
-            <div className="upload-shell__collapsed upload-shell__collapsed--compact">
-              <label className="field">
-                <span>{t.vacationRecordsPdf}</span>
-                <input type="file" accept="application/pdf" multiple onChange={selecionarArquivoFerias} />
-              </label>
+          </section>
 
-              {arquivosFerias.length > 0 ? (
-                <p className="helper">
-                  {`${t.selectedVacationRecordsFile}: ${arquivosFerias.map((item) => item.name).join(", ")}`}
-                </p>
-              ) : (
-                <p className="helper">{t.selectVacationPdfToAttach}</p>
-              )}
+          <p className="helper history-upload-form__hint">{t.formReadyHint}</p>
 
-              {mensagemProcessamento ? <p className="helper">{mensagemProcessamento}</p> : null}
-              {erro ? <p className="error-box">{erro}</p> : null}
-            </div>
-          ) : (
-            <div className="upload-shell__collapsed">
-              <p className="helper">{t.sendOtherFiles}</p>
-              {erro ? <p className="error-box">{erro}</p> : null}
-            </div>
-          )}
-        </section>
+          <div className="history-upload-form__feedback" aria-live="polite">
+            {mensagemProcessamento ? <p className="helper">{mensagemProcessamento}</p> : null}
+            {mensagemSucesso ? <p className="success-box" role="status">{mensagemSucesso}</p> : null}
+            {erro ? <p className="error-box" role="alert">{erro}</p> : null}
+          </div>
+
+          <div className="history-upload-form__actions">
+            <button className="ghost-button" type="button" onClick={limparFormulario} disabled={carregando}>
+              {t.clearForm}
+            </button>
+            <button
+              className="primary-button button--large"
+              type="submit"
+              disabled={carregando || modoDemo || !usuarioId}
+            >
+              {carregando ? t.sendingDocuments : t.sendDocuments}
+            </button>
+          </div>
+        </form>
 
         {painel && resumo ? (
           <section className="overview-panel">
