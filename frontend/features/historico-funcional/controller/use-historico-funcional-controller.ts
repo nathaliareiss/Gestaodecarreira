@@ -1,15 +1,14 @@
 ﻿"use client"
 
-import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from "react"
+import { useCallback, useEffect, useRef, useState, type ChangeEvent, type FormEvent, type RefObject } from "react"
 
 import { ApiResponseError } from "@/shared/api/client"
+import type { SiteLanguage } from "@/shared/i18n/messages"
 import type {
   HistoricoFuncionalAnalise,
   JobAgendadoResponse,
 } from "../model/historico-funcional.model"
 import {
-  anexarAfastamentosAoHistorico,
-  anexarFeriasAoHistorico,
   analisarHistoricoFuncional,
   consultarStatusJobHistorico,
   buscarUltimoHistoricoFuncional,
@@ -19,6 +18,7 @@ import {
 type UseHistoricoFuncionalControllerParams = {
   usuarioId: number | null
   historicoInicial: HistoricoFuncionalAnalise | null
+  idioma: SiteLanguage
 }
 
 function respostaEhJob(
@@ -62,6 +62,7 @@ function formatarErroHistorico(error: unknown, idioma: "pt-BR" | "en") {
 export function useHistoricoFuncionalController({
   usuarioId,
   historicoInicial,
+  idioma,
 }: UseHistoricoFuncionalControllerParams) {
   const [arquivo, setArquivo] = useState<File | null>(null)
   const [arquivoAfastamentos, setArquivoAfastamentos] = useState<File | null>(null)
@@ -80,17 +81,50 @@ export function useHistoricoFuncionalController({
   const [carregando, setCarregando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
   const [mensagemProcessamento, setMensagemProcessamento] = useState<string | null>(null)
-  const [modoAtualizacaoHistorico, setModoAtualizacaoHistorico] = useState(false)
-  const [modoAnexoAfastamentos, setModoAnexoAfastamentos] = useState(false)
-  const [modoAnexoFerias, setModoAnexoFerias] = useState(false)
-  const assinaturaEnvioAutomatico = useRef<string | null>(null)
-  const arquivoDownloadUrl = useMemo(() => {
-    if (!arquivo) {
-      return null
-    }
+  const [mensagemSucesso, setMensagemSucesso] = useState<string | null>(null)
+  const arquivoInputRef = useRef<HTMLInputElement | null>(null)
+  const afastamentosInputRef = useRef<HTMLInputElement | null>(null)
+  const feriasInputRef = useRef<HTMLInputElement | null>(null)
 
-    return URL.createObjectURL(arquivo)
-  }, [arquivo])
+  function limparInput(ref: RefObject<HTMLInputElement | null>) {
+    if (ref.current) {
+      ref.current.value = ""
+    }
+  }
+
+  function limparEntradaArquivos() {
+    limparInput(arquivoInputRef)
+    limparInput(afastamentosInputRef)
+    limparInput(feriasInputRef)
+  }
+
+  function resetarFormularioDeEnvio() {
+    setArquivo(null)
+    setArquivoAfastamentos(null)
+    setArquivosFerias([])
+    setDataNascimento(historicoInicial?.data_nascimento ?? "")
+    setSexo(historicoInicial?.sexo === "masculino" ? "masculino" : "feminino")
+    setCategoriaPrevidenciaria(historicoInicial?.categoria_previdenciaria ?? "geral")
+    setAnosCltAverbados(historicoInicial?.tempo_clt_averbado_anos ?? 0)
+    setErro(null)
+    setMensagemProcessamento(null)
+    setMensagemSucesso(null)
+    limparEntradaArquivos()
+  }
+
+  function limparArquivosSelecionados() {
+    setArquivo(null)
+    setArquivoAfastamentos(null)
+    setArquivosFerias([])
+    setErro(null)
+    setMensagemProcessamento(null)
+    setMensagemSucesso(null)
+    limparEntradaArquivos()
+  }
+
+  function arquivoEhPdf(arquivoSelecionado: File) {
+    return arquivoSelecionado.type === "application/pdf" || arquivoSelecionado.name.toLowerCase().endsWith(".pdf")
+  }
 
   async function aguardarResultadoJob(jobId: string) {
     for (let tentativas = 0; tentativas < 60; tentativas += 1) {
@@ -116,69 +150,91 @@ export function useHistoricoFuncionalController({
     throw new Error("O processamento demorou mais do que o esperado.")
   }
 
-  useEffect(() => {
-    return () => {
-      if (arquivoDownloadUrl) {
-        URL.revokeObjectURL(arquivoDownloadUrl)
-      }
-    }
-  }, [arquivoDownloadUrl])
-
   function selecionarArquivo(evento: ChangeEvent<HTMLInputElement>) {
     const selecionado = evento.target.files?.[0] ?? null
+    if (selecionado && !arquivoEhPdf(selecionado)) {
+      setArquivo(null)
+      limparInput(arquivoInputRef)
+      setErro(idioma === "en" ? "Select valid PDF files only." : "Selecione apenas arquivos PDF válidos.")
+      return
+    }
+
     setArquivo(selecionado)
-    setModoAtualizacaoHistorico(true)
-    setModoAnexoAfastamentos(false)
-    setModoAnexoFerias(false)
     setErro(null)
+    setMensagemSucesso(null)
   }
 
   function selecionarArquivoAfastamentos(evento: ChangeEvent<HTMLInputElement>) {
     const selecionado = evento.target.files?.[0] ?? null
+    if (selecionado && !arquivoEhPdf(selecionado)) {
+      setArquivoAfastamentos(null)
+      limparInput(afastamentosInputRef)
+      setErro(idioma === "en" ? "Select valid PDF files only." : "Selecione apenas arquivos PDF válidos.")
+      return
+    }
+
     setArquivoAfastamentos(selecionado)
-    setModoAnexoAfastamentos(true)
-    setModoAnexoFerias(false)
     setErro(null)
+    setMensagemSucesso(null)
   }
 
   function selecionarArquivoFerias(evento: ChangeEvent<HTMLInputElement>) {
-    const totalSelecionado = evento.target.files?.length ?? 0
-    const selecionados = Array.from(evento.target.files ?? []).slice(0, 3)
+    const selecionados = Array.from(evento.target.files ?? [])
+
+    if (selecionados.some((arquivoSelecionado) => !arquivoEhPdf(arquivoSelecionado))) {
+      setArquivosFerias([])
+      limparInput(feriasInputRef)
+      setErro(idioma === "en" ? "Select valid PDF files only." : "Selecione apenas arquivos PDF válidos.")
+      return
+    }
+
+    if (selecionados.length > 3) {
+      setArquivosFerias(selecionados.slice(0, 3))
+      setErro(
+        idioma === "en"
+          ? "Select at most 3 vacation PDFs at a time."
+          : "Selecione no máximo 3 PDFs de férias por vez.",
+      )
+      setMensagemSucesso(null)
+      return
+    }
+
     setArquivosFerias(selecionados)
-    setModoAnexoFerias(true)
-    setModoAnexoAfastamentos(false)
-    setErro(totalSelecionado > 3 ? "Envie no maximo 3 PDFs de ferias por vez." : null)
+    setErro(null)
+    setMensagemSucesso(null)
   }
 
-  function iniciarAnexoAfastamentos() {
-    setModoAnexoAfastamentos(true)
-    setModoAtualizacaoHistorico(false)
-    setModoAnexoFerias(false)
+  function removerArquivoPrincipal() {
+    setArquivo(null)
+    limparInput(arquivoInputRef)
     setErro(null)
+    setMensagemSucesso(null)
   }
 
-  function iniciarAnexoFerias() {
-    setModoAnexoFerias(true)
-    setModoAtualizacaoHistorico(false)
-    setModoAnexoAfastamentos(false)
+  function removerArquivoAfastamentos() {
+    setArquivoAfastamentos(null)
+    limparInput(afastamentosInputRef)
     setErro(null)
+    setMensagemSucesso(null)
   }
 
-  function iniciarAtualizacaoHistorico() {
-    setModoAtualizacaoHistorico(true)
-    setModoAnexoAfastamentos(false)
-    setModoAnexoFerias(false)
+  function removerArquivoFerias(indice: number) {
+    setArquivosFerias((atual) => atual.filter((_, indiceAtual) => indiceAtual !== indice))
+    limparInput(feriasInputRef)
     setErro(null)
+    setMensagemSucesso(null)
   }
 
   const limparHistorico = useCallback(async () => {
     if (!usuarioId) {
-      setErro("Crie um usuário antes de limpar o histórico.")
+      setErro(idioma === "en" ? "Create a user before clearing the history." : "Crie um usuário antes de limpar o histórico.")
       return
     }
 
     const confirmado = window.confirm(
-      "Apagar o histórico de carreira enviado? Esta ação remove a análise salva e os PDFs vinculados.",
+      idioma === "en"
+        ? "Delete the uploaded career history? This action removes the saved analysis and linked PDFs."
+        : "Apagar o histórico de carreira enviado? Esta ação remove a análise salva e os PDFs vinculados.",
     )
     if (!confirmado) {
       return
@@ -186,70 +242,27 @@ export function useHistoricoFuncionalController({
 
     setCarregando(true)
     setErro(null)
-    setMensagemProcessamento("Limpando histórico de carreira...")
+    setMensagemProcessamento(
+      idioma === "en" ? "Clearing the career history..." : "Limpando histórico de carreira...",
+    )
+    setMensagemSucesso(null)
 
     try {
       await limparHistoricoFuncional(usuarioId)
       setHistorico(null)
-      setArquivo(null)
-      setArquivoAfastamentos(null)
-      setArquivosFerias([])
-      setModoAtualizacaoHistorico(false)
-      setModoAnexoAfastamentos(false)
-      setModoAnexoFerias(false)
+      limparArquivosSelecionados()
     } catch (error) {
-      setErro(formatarErroHistorico(error, "pt-BR"))
+      setErro(formatarErroHistorico(error, idioma))
     } finally {
       setMensagemProcessamento(null)
       setCarregando(false)
     }
-  }, [usuarioId])
+  }, [idioma, usuarioId])
 
   function usarCltMaximo() {
     setAnosCltAverbados(10)
     setErro(null)
   }
-
-  const criarAssinaturaHistorico = useCallback(
-    () =>
-      [
-        arquivo?.name ?? "",
-        arquivo?.size ?? 0,
-        arquivo?.lastModified ?? 0,
-        dataNascimento,
-        sexo,
-        categoriaPrevidenciaria,
-        anosCltAverbados,
-        usuarioId ?? "",
-      ].join("|"),
-    [arquivo, dataNascimento, sexo, categoriaPrevidenciaria, anosCltAverbados, usuarioId],
-  )
-
-  const criarAssinaturaAfastamentos = useCallback(
-    () =>
-      [
-        arquivoAfastamentos?.name ?? "",
-        arquivoAfastamentos?.size ?? 0,
-        arquivoAfastamentos?.lastModified ?? 0,
-        historico?.historico_id ?? "",
-        usuarioId ?? "",
-      ].join("|"),
-    [arquivoAfastamentos, historico, usuarioId],
-  )
-
-  const criarAssinaturaFerias = useCallback(
-    () =>
-      [
-        ...arquivosFerias.flatMap((arquivoFerias) => [
-          arquivoFerias.name,
-          arquivoFerias.size,
-          arquivoFerias.lastModified,
-        ]),
-        historico?.historico_id ?? "",
-        usuarioId ?? "",
-      ].join("|"),
-    [arquivosFerias, historico, usuarioId],
-  )
 
   const recarregarHistorico = useCallback(async () => {
     if (!usuarioId) {
@@ -262,212 +275,95 @@ export function useHistoricoFuncionalController({
     try {
       const recarregado = await buscarUltimoHistoricoFuncional(usuarioId)
       setHistorico(recarregado)
-      setModoAtualizacaoHistorico(false)
-      setModoAnexoAfastamentos(false)
-      setModoAnexoFerias(false)
     } catch (error) {
-      setErro(formatarErroHistorico(error, "pt-BR"))
+      setErro(formatarErroHistorico(error, idioma))
     } finally {
       setCarregando(false)
     }
-  }, [usuarioId])
+  }, [idioma, usuarioId])
 
-  const submeterAnalise = useCallback(
-    async (assinatura?: string) => {
-      if (!usuarioId) {
-        setErro("Create a user before uploading the career history.")
-        return
+  const submeterAnalise = useCallback(async () => {
+    if (!usuarioId) {
+      setErro(idioma === "en" ? "Create a user before uploading the career history." : "Crie um usuário antes de enviar o histórico funcional.")
+      return
+    }
+
+    if (!arquivo) {
+      setErro(idioma === "en" ? "Select the career history PDF to continue." : "Selecione o PDF do histórico funcional para continuar.")
+      return
+    }
+
+    if (!dataNascimento) {
+      setErro(
+        idioma === "en"
+          ? "Fill in the date of birth before sending the documents."
+          : "Preencha a data de nascimento antes de enviar os documentos.",
+      )
+      return
+    }
+
+    if (arquivosFerias.length > 3) {
+      setErro(idioma === "en" ? "Select at most 3 vacation PDFs at a time." : "Selecione no máximo 3 PDFs de férias por vez.")
+      return
+    }
+
+    setCarregando(true)
+    setErro(null)
+    setMensagemSucesso(null)
+    setMensagemProcessamento(idioma === "en" ? "Sending documents..." : "Enviando documentos...")
+
+    try {
+      const payload = new FormData()
+      payload.append("arquivo", arquivo)
+      payload.append("data_nascimento", dataNascimento)
+      payload.append("sexo", sexo)
+      payload.append("categoria_previdenciaria", categoriaPrevidenciaria)
+      payload.append("anos_clt_averbados", String(Math.min(Math.max(anosCltAverbados, 0), 10)))
+
+      if (arquivoAfastamentos) {
+        payload.append("afastamentos_arquivo", arquivoAfastamentos)
       }
 
-      if (!arquivo) {
-        setErro("Choose a career history PDF.")
-        return
+      for (const arquivoFerias of arquivosFerias) {
+        payload.append("ferias_arquivos", arquivoFerias)
       }
 
-      if (!dataNascimento) {
-        setErro("Informe a data de nascimento para calcular a aposentadoria.")
-        return
-      }
+      const resposta = await analisarHistoricoFuncional(payload)
+      const analisado = respostaEhJob(resposta)
+        ? await aguardarResultadoJob(resposta.job_id)
+        : resposta
 
-      setCarregando(true)
-      setErro(null)
-      setMensagemProcessamento("Processing the career history PDF in the background...")
-
-      if (assinatura) {
-        assinaturaEnvioAutomatico.current = assinatura
-      }
-
-      try {
-        const payload = new FormData()
-        payload.append("arquivo", arquivo)
-        payload.append("data_nascimento", dataNascimento)
-        payload.append("sexo", sexo)
-        payload.append("categoria_previdenciaria", categoriaPrevidenciaria)
-        payload.append("anos_clt_averbados", String(Math.min(Math.max(anosCltAverbados, 0), 10)))
-        if (arquivoAfastamentos) {
-          payload.append("afastamentos_arquivo", arquivoAfastamentos)
-        }
-        for (const arquivoFerias of arquivosFerias) {
-          payload.append("ferias_arquivos", arquivoFerias)
-        }
-
-        const resposta = await analisarHistoricoFuncional(payload)
-        const analisado = respostaEhJob(resposta)
-          ? await aguardarResultadoJob(resposta.job_id)
-          : resposta
-
-        setHistorico(analisado)
-        setModoAtualizacaoHistorico(false)
-        setModoAnexoAfastamentos(false)
-        setModoAnexoFerias(false)
-      } catch (error) {
-        if (assinatura) {
-          assinaturaEnvioAutomatico.current = null
-        }
-        setErro(formatarErroHistorico(error, "pt-BR"))
-      } finally {
-        setMensagemProcessamento(null)
-        setCarregando(false)
-      }
-    },
-    [arquivo, arquivoAfastamentos, arquivosFerias, anosCltAverbados, categoriaPrevidenciaria, dataNascimento, sexo, usuarioId],
-  )
-
-  const submeterAfastamentos = useCallback(
-    async (assinatura?: string) => {
-      if (!usuarioId) {
-        setErro("Create a user before uploading leave records.")
-        return
-      }
-
-      if (!historico) {
-        setErro("Upload the career history first.")
-        return
-      }
-
-      if (!arquivoAfastamentos) {
-        setErro("Choose a leave records PDF.")
-        return
-      }
-
-      setCarregando(true)
-      setErro(null)
-      setMensagemProcessamento("Processing the leave records PDF in the background...")
-
-      if (assinatura) {
-        assinaturaEnvioAutomatico.current = assinatura
-      }
-
-      try {
-        const payload = new FormData()
-        payload.append("arquivo", arquivoAfastamentos)
-        const resposta = await anexarAfastamentosAoHistorico(usuarioId, payload)
-
-        const analisado = respostaEhJob(resposta)
-          ? await aguardarResultadoJob(resposta.job_id)
-          : resposta
-
-        setHistorico(analisado)
-        setArquivoAfastamentos(null)
-        setModoAnexoAfastamentos(false)
-      } catch (error) {
-        if (assinatura) {
-          assinaturaEnvioAutomatico.current = null
-        }
-        setErro(formatarErroHistorico(error, "pt-BR"))
-      } finally {
-        setMensagemProcessamento(null)
-        setCarregando(false)
-      }
-    },
-    [arquivoAfastamentos, historico, usuarioId],
-  )
-
-  const submeterFerias = useCallback(
-    async (assinatura?: string) => {
-      if (!usuarioId) {
-        setErro("Crie um usuario antes de enviar ferias.")
-        return
-      }
-
-      if (!historico) {
-        setErro("Envie o historico de carreira primeiro.")
-        return
-      }
-
-      if (arquivosFerias.length === 0) {
-        setErro("Escolha ao menos um PDF de ferias.")
-        return
-      }
-
-      if (arquivosFerias.length > 3) {
-        setErro("Envie no maximo 3 PDFs de ferias por vez.")
-        return
-      }
-
-      setCarregando(true)
-      setErro(null)
-      setMensagemProcessamento("Processando o PDF de ferias em segundo plano...")
-
-      if (assinatura) {
-        assinaturaEnvioAutomatico.current = assinatura
-      }
-
-      try {
-        const payload = new FormData()
-        for (const arquivoFerias of arquivosFerias) {
-          payload.append("arquivos", arquivoFerias)
-        }
-        const resposta = await anexarFeriasAoHistorico(usuarioId, payload)
-
-        const analisado = respostaEhJob(resposta)
-          ? await aguardarResultadoJob(resposta.job_id)
-          : resposta
-
-        setHistorico(analisado)
-        setArquivosFerias([])
-        setModoAnexoFerias(false)
-      } catch (error) {
-        if (assinatura) {
-          assinaturaEnvioAutomatico.current = null
-        }
-        setErro(formatarErroHistorico(error, "pt-BR"))
-      } finally {
-        setMensagemProcessamento(null)
-        setCarregando(false)
-      }
-    },
-    [arquivosFerias, historico, usuarioId],
-  )
+      setHistorico(analisado)
+      limparArquivosSelecionados()
+      setMensagemSucesso(
+        idioma === "en" ? "Documents sent successfully." : "Documentos enviados com sucesso.",
+      )
+    } catch (error) {
+      setErro(formatarErroHistorico(error, idioma))
+    } finally {
+      setMensagemProcessamento(null)
+      setCarregando(false)
+    }
+  }, [
+    arquivo,
+    arquivoAfastamentos,
+    arquivosFerias,
+    anosCltAverbados,
+    categoriaPrevidenciaria,
+    dataNascimento,
+    idioma,
+    sexo,
+    usuarioId,
+  ])
 
   async function enviarFormulario(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault()
+    if (!evento.currentTarget.checkValidity()) {
+      evento.currentTarget.reportValidity()
+      return
+    }
     await submeterAnalise()
   }
-
-  useEffect(() => {
-    if (!modoAtualizacaoHistorico || !arquivo || !dataNascimento || carregando) {
-      return
-    }
-
-    const assinatura = criarAssinaturaHistorico()
-    if (assinaturaEnvioAutomatico.current === assinatura) {
-      return
-    }
-
-    void submeterAnalise(assinatura)
-  }, [
-    arquivo,
-    dataNascimento,
-    anosCltAverbados,
-    sexo,
-    categoriaPrevidenciaria,
-    carregando,
-    usuarioId,
-    modoAtualizacaoHistorico,
-    criarAssinaturaHistorico,
-    submeterAnalise,
-  ])
 
   useEffect(() => {
     if (historicoInicial !== null || !usuarioId) {
@@ -481,51 +377,8 @@ export function useHistoricoFuncionalController({
     return () => window.clearTimeout(timer)
   }, [historicoInicial, recarregarHistorico, usuarioId])
 
-  useEffect(() => {
-    if (!modoAnexoAfastamentos || !historico || !arquivoAfastamentos || carregando) {
-      return
-    }
-
-    const assinatura = criarAssinaturaAfastamentos()
-    if (assinaturaEnvioAutomatico.current === assinatura) {
-      return
-    }
-
-    void submeterAfastamentos(assinatura)
-  }, [
-    arquivoAfastamentos,
-    carregando,
-    usuarioId,
-    historico,
-    modoAnexoAfastamentos,
-    criarAssinaturaAfastamentos,
-    submeterAfastamentos,
-  ])
-
-  useEffect(() => {
-    if (!modoAnexoFerias || !historico || arquivosFerias.length === 0 || carregando) {
-      return
-    }
-
-    const assinatura = criarAssinaturaFerias()
-    if (assinaturaEnvioAutomatico.current === assinatura) {
-      return
-    }
-
-    void submeterFerias(assinatura)
-  }, [
-    arquivosFerias,
-    carregando,
-    usuarioId,
-    historico,
-    modoAnexoFerias,
-    criarAssinaturaFerias,
-    submeterFerias,
-  ])
-
   return {
     arquivo,
-    arquivoDownloadUrl,
     arquivoAfastamentos,
     arquivosFerias,
     anosCltAverbados,
@@ -535,18 +388,19 @@ export function useHistoricoFuncionalController({
     dataNascimento,
     erro,
     mensagemProcessamento,
+    mensagemSucesso,
     historico,
-    modoAtualizacaoHistorico,
-    modoAnexoAfastamentos,
-    modoAnexoFerias,
-    iniciarAnexoAfastamentos,
-    iniciarAnexoFerias,
-    iniciarAtualizacaoHistorico,
     limparHistorico,
-    recarregarHistorico,
+    arquivoInputRef,
+    afastamentosInputRef,
+    feriasInputRef,
     selecionarArquivo,
     selecionarArquivoAfastamentos,
     selecionarArquivoFerias,
+    removerArquivoPrincipal,
+    removerArquivoAfastamentos,
+    removerArquivoFerias,
+    limparFormulario: resetarFormularioDeEnvio,
     setAnosCltAverbados,
     setDataNascimento,
     setSexo,

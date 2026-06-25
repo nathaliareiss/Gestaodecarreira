@@ -223,6 +223,24 @@ export type LocaleTexts = {
     statusSaved: string
     waitingForPdf: string
     documents: string
+    formTitle: string
+    formSubtitle: string
+    personalDataTitle: string
+    documentsTitle: string
+    required: string
+    optional: string
+    selected: string
+    choosePdf: string
+    choosePdfs: string
+    removeFile: string
+    clearForm: string
+    sendDocuments: string
+    sendingDocuments: string
+    documentsSentSuccess: string
+    missingCareerHistoryDocument: string
+    vacationFileLimitExceeded: string
+    invalidPdfFile: string
+    formReadyHint: string
     demoDashboard: string
     viewOnly: string
     addDocuments: string
@@ -540,10 +558,29 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       title: "História de carreira",
       subtitle:
         "Envie o histórico de carreira e complemente com PDFs de afastamentos e férias para revisar evolução, descanso e aposentadoria.",
-      statusSaved: "Salvo",
-      waitingForPdf: "Aguardando PDF",
-      documents: "Documentos",
-      demoDashboard: "Painel de demonstração",
+    statusSaved: "Salvo",
+    waitingForPdf: "Aguardando PDF",
+    documents: "Documentos",
+    formTitle: "Formulário de envio",
+    formSubtitle:
+      "Preencha os dados pessoais, anexe os PDFs e envie tudo em uma única submissão, sem processamento automático ao selecionar os arquivos.",
+    personalDataTitle: "Dados pessoais",
+    documentsTitle: "Documentos",
+    required: "Obrigatório",
+    optional: "Opcional",
+    selected: "Selecionado",
+    choosePdf: "Selecionar PDF",
+    choosePdfs: "Selecionar PDFs",
+    removeFile: "Remover arquivo",
+    clearForm: "Limpar formulário",
+    sendDocuments: "Enviar documentos",
+    sendingDocuments: "Enviando documentos...",
+    documentsSentSuccess: "Documentos enviados com sucesso.",
+    missingCareerHistoryDocument: "Selecione o PDF do histórico funcional para continuar.",
+    vacationFileLimitExceeded: "Selecione no máximo 3 PDFs de férias por vez.",
+    invalidPdfFile: "Selecione apenas arquivos PDF válidos.",
+    formReadyHint: "Os arquivos ficam apenas selecionados até você clicar em Enviar documentos.",
+    demoDashboard: "Painel de demonstração",
       viewOnly: "Somente visualização",
       addDocuments: "Adicionar documentos",
       uploadDocuments: "Enviar documentos",
@@ -861,10 +898,29 @@ export const LOCALE_TEXTS: Record<SiteLanguage, LocaleTexts> = {
       title: "Career History",
       subtitle:
         "Upload one or more pay stubs, then watch the batch progress as the files are processed.",
-      statusSaved: "Saved",
-      waitingForPdf: "Waiting for PDF",
-      documents: "Documents",
-      demoDashboard: "Demo Dashboard",
+    statusSaved: "Saved",
+    waitingForPdf: "Waiting for PDF",
+    documents: "Documents",
+    formTitle: "Upload form",
+    formSubtitle:
+      "Fill in the personal data, attach the PDFs, and send everything in one submission without automatic processing when files are selected.",
+    personalDataTitle: "Personal data",
+    documentsTitle: "Documents",
+    required: "Required",
+    optional: "Optional",
+    selected: "Selected",
+    choosePdf: "Choose PDF",
+    choosePdfs: "Choose PDFs",
+    removeFile: "Remove file",
+    clearForm: "Clear form",
+    sendDocuments: "Send documents",
+    sendingDocuments: "Sending documents...",
+    documentsSentSuccess: "Documents sent successfully.",
+    missingCareerHistoryDocument: "Select the career history PDF to continue.",
+    vacationFileLimitExceeded: "Select at most 3 vacation PDFs at a time.",
+    invalidPdfFile: "Select valid PDF files only.",
+    formReadyHint: "Files stay selected until you click Send documents.",
+    demoDashboard: "Demo Dashboard",
       viewOnly: "View Only",
       addDocuments: "Add Documents",
       uploadDocuments: "Upload Documents",

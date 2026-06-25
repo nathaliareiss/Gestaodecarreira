@@ -91,6 +91,20 @@ function formatarPorcentagem(valor: number) {
   return `${valor.toFixed(1).replace(".", ",")}%`
 }
 
+function formatarTamanhoArquivo(tamanhoEmBytes: number) {
+  if (tamanhoEmBytes <= 0) {
+    return "0 KB"
+  }
+
+  const megaBytes = tamanhoEmBytes / (1024 * 1024)
+  if (megaBytes >= 1) {
+    return `${megaBytes.toFixed(1).replace(".", ",")} MB`
+  }
+
+  const quiloBytes = tamanhoEmBytes / 1024
+  return `${Math.max(quiloBytes, 0.1).toFixed(1).replace(".", ",")} KB`
+}
+
 function corDoStatus(status: StatusEvento) {
   if (status === "atrasado") {
     return "#fb7185"
@@ -633,7 +647,6 @@ export function HistoricoFuncionalView({
   const t = texts.history
   const {
     arquivo,
-    arquivoDownloadUrl,
     arquivoAfastamentos,
     arquivosFerias,
     anosCltAverbados,
@@ -642,18 +655,18 @@ export function HistoricoFuncionalView({
     dataNascimento,
     erro,
     mensagemProcessamento,
+    mensagemSucesso,
     historico,
-    modoAtualizacaoHistorico,
-    modoAnexoAfastamentos,
-    modoAnexoFerias,
-    iniciarAnexoAfastamentos,
-    iniciarAnexoFerias,
-    iniciarAtualizacaoHistorico,
+    arquivoInputRef,
+    afastamentosInputRef,
+    feriasInputRef,
     limparHistorico,
-    recarregarHistorico,
     selecionarArquivo,
     selecionarArquivoAfastamentos,
     selecionarArquivoFerias,
+    removerArquivoPrincipal,
+    removerArquivoAfastamentos,
+    removerArquivoFerias,
     setAnosCltAverbados,
     setDataNascimento,
     setSexo,
@@ -663,6 +676,7 @@ export function HistoricoFuncionalView({
   } = useHistoricoFuncionalController({
     usuarioId,
     historicoInicial,
+    idioma: language,
   })
 
   const painel = historico
