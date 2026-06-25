@@ -20,6 +20,7 @@ h11==0.16.0
 httpx>=0.28,<0.29
 httplib2==0.31.2
 httptools==0.7.1
+holidays==0.98
 idna==3.13
 numpy==2.4.4
 oauthlib==3.3.1
