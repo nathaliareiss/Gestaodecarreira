@@ -79,7 +79,15 @@ export function UsuarioAccessGate() {
 
       try {
         const usuario = await carregarUsuarioAutenticado()
-        const historico = await buscarUltimoHistoricoFuncional(usuario.id)
+        let historico: HistoricoFuncionalAnalise | null = null
+
+        try {
+          historico = await buscarUltimoHistoricoFuncional(usuario.id)
+        } catch {
+          // O dashboard deve abrir mesmo se o histórico ainda não estiver disponível.
+          historico = null
+        }
+
         const usuarioComHistorico = {
           ...usuario,
           nome: historico?.nome?.trim() ? historico.nome.trim() : usuario.nome,
