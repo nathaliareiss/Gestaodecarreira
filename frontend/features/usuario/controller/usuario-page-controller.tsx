@@ -105,7 +105,6 @@ export function UsuarioPageController({
   const [saindo, setSaindo] = useState(false)
   const [indoParaCadastro, setIndoParaCadastro] = useState(false)
   const [historico, setHistorico] = useState<HistoricoFuncionalAnalise | null>(historicoInicial)
-  const [historicoTabVersao, setHistoricoTabVersao] = useState(0)
   const historicoExibido = historico ?? historicoInicial
   const nomeExibido = historicoExibido?.nome?.trim() || usuario?.nome || "-"
   const maspExibido = limparTextoExibicao(historicoExibido?.masp)
@@ -389,21 +388,13 @@ export function UsuarioPageController({
               )}
             </>
           ) : abaAtiva === "historico" ? (
-            <HistoricoTabBoundary
-              key={historicoTabVersao}
-              onRetry={() => setHistoricoTabVersao((atual) => atual + 1)}
-              title={texts.history.title}
-              description={texts.history.unexpectedReload}
-              retryLabel={texts.dashboard.tryAgain}
-            >
-              <HistoricoFuncionalView
-                usuarioId={usuario?.id ?? null}
-                historicoInicial={historicoExibido}
-                modoDemo={modoDemo}
-                onCreateAccount={() => void criarConta()}
-                criandoConta={indoParaCadastro}
-              />
-            </HistoricoTabBoundary>
+            <HistoricoFuncionalView
+              usuarioId={usuario?.id ?? null}
+              historicoInicial={historicoExibido}
+              modoDemo={modoDemo}
+              onCreateAccount={() => void criarConta()}
+              criandoConta={indoParaCadastro}
+            />
           ) : abaAtiva === "calendario" ? (
             <CalendarioView modoDemo={modoDemo} />
           ) : (
