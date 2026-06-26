@@ -203,6 +203,9 @@ export function UsuarioPageController({
   }
 
   function selecionarAba(aba: AbaDashboard) {
+    if (aba === "historico") {
+      console.log("clicou história de carreira")
+    }
     setAbaAtiva(aba)
     setErro(null)
 
@@ -221,6 +224,10 @@ export function UsuarioPageController({
     const abaDaUrl = normalizarAbaDashboard(searchParams.get("aba"), modoDemo)
     setAbaAtiva((atual) => (atual === abaDaUrl ? atual : abaDaUrl))
   }, [modoDemo, searchParams])
+
+  useEffect(() => {
+    console.log("activeTab:", abaAtiva)
+  }, [abaAtiva])
 
   return (
     <main className="page-shell">

@@ -1,7 +1,7 @@
 ﻿"use client"
 
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useHistoricoFuncionalController } from "../controller/use-historico-funcional-controller"
 import { formatarTipoEvento, type HistoricoFuncionalAnalise } from "../model/historico-funcional.model"
 import { useLanguage } from "@/shared/i18n/language-provider"
@@ -725,6 +725,10 @@ export function HistoricoFuncionalView({
     historicoInicial,
     idioma: language,
   })
+
+  useEffect(() => {
+    console.log("montou componente História de carreira")
+  }, [])
 
   const painel = historico
   const resumo = painel?.resumo_grafico
