@@ -45,9 +45,23 @@ function formatarData(valor: string | null, idioma: "pt-BR" | "en") {
     return "-"
   }
 
+  const data = new Date(`${valor}T00:00:00`)
+  if (Number.isNaN(data.getTime())) {
+    return "-"
+  }
+
   return new Intl.DateTimeFormat(idioma === "en" ? "en-US" : "pt-BR", { dateStyle: "medium" }).format(
-    new Date(`${valor}T00:00:00`),
+    data,
   )
+}
+
+function timestampDaData(valor: string | null | undefined) {
+  if (!valor) {
+    return null
+  }
+
+  const timestamp = new Date(`${valor}T00:00:00`).getTime()
+  return Number.isNaN(timestamp) ? null : timestamp
 }
 
 function formatarDuracaoEmAnos(dias: number, idioma: "pt-BR" | "en") {
@@ -63,6 +77,11 @@ function formatarAtraso(dataPrevista: string | null, dataEfetiva: string | null)
 
   const inicio = new Date(`${dataPrevista}T00:00:00`)
   const fim = new Date(`${dataEfetiva}T00:00:00`)
+
+  if (Number.isNaN(inicio.getTime()) || Number.isNaN(fim.getTime())) {
+    return null
+  }
+
   const diferencaDias = Math.max(Math.floor((fim.getTime() - inicio.getTime()) / 86400000), 0)
 
   if (diferencaDias <= 0) {
@@ -285,10 +304,21 @@ function LinhaDoTempoGrafica({
     )
   }
 
-  const ordenados = [...eventos].sort(
-    (a, b) => new Date(`${a.data_efetiva}T00:00:00`).getTime() - new Date(`${b.data_efetiva}T00:00:00`).getTime(),
-  )
-  const tempos = ordenados.map((evento) => new Date(`${evento.data_efetiva}T00:00:00`).getTime())
+  const ordenados = [...eventos]
+    .map((evento) => ({ evento, timestamp: timestampDaData(evento.data_efetiva) }))
+    .filter((item): item is { evento: HistoricoFuncionalAnalise["eventos"][number]; timestamp: number } => item.timestamp !== null)
+    .sort((a, b) => a.timestamp - b.timestamp)
+    .map((item) => item.evento)
+
+  if (ordenados.length === 0) {
+    return (
+      <div className="history-empty history-empty--compact">
+        <p>{idioma === "en" ? "The PDF did not bring enough events to draw the timeline." : "O PDF não trouxe eventos suficientes para desenhar a linha do tempo."}</p>
+      </div>
+    )
+  }
+
+  const tempos = ordenados.map((evento) => timestampDaData(evento.data_efetiva) ?? 0)
   const minimo = Math.min(...tempos)
   const maximo = Math.max(...tempos)
   const largura = 1000
@@ -412,9 +442,25 @@ function GraficoComparativoTempo({
     )
   }
 
-  const tempos = afastamentos.map(a => new Date(`${a.data_inicio}T00:00:00`).getTime())
+  const tempos = afastamentos
+    .map((a) => timestampDaData(a.data_inicio))
+    .filter((valor): valor is number => valor !== null)
 
-  const inicioCarreira = new Date(`${painel.data_exercicio}T00:00:00`).getTime()
+  if (tempos.length === 0) {
+    return (
+      <div className="career-bars">
+        <div className="career-bars__title">
+          <p className="eyebrow">{idioma === "en" ? "Comparison" : "Comparação"}</p>
+          <h3>{idioma === "en" ? "Time Worked and Leave" : "Tempo trabalhado e afastamento"}</h3>
+        </div>
+        <div className="history-empty history-empty--compact">
+          <p>{idioma === "en" ? "You do not have any recorded leave periods to draw the comparison." : "Você não possui períodos de afastamento registrados para desenhar a comparação."}</p>
+        </div>
+      </div>
+    )
+  }
+
+  const inicioCarreira = timestampDaData(painel.data_exercicio) ?? 0
   const agora = new Date().getTime()
 
   const minimo = inicioCarreira
@@ -436,7 +482,7 @@ function GraficoComparativoTempo({
   const xHoje = Math.max(margemX, Math.min(largura - margemX, xHojeRaw))
 
   const ordenados = [...afastamentos].sort((a, b) =>
-    new Date(`${a.data_inicio}T00:00:00`).getTime() - new Date(`${b.data_inicio}T00:00:00`).getTime()
+    (timestampDaData(a.data_inicio) ?? 0) - (timestampDaData(b.data_inicio) ?? 0)
   )
 
   function mostrarTooltip(
