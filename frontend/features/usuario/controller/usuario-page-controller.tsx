@@ -395,10 +395,13 @@ export function UsuarioPageController({
               )}
             </>
           ) : abaAtiva === "historico" ? (
-            <div style={{ padding: 24 }}>
-              <h2>História de carreira carregou</h2>
-              <p>Teste de renderização da aba.</p>
-            </div>
+            <HistoricoFuncionalView
+              usuarioId={usuario?.id ?? null}
+              historicoInicial={historicoExibido}
+              modoDemo={modoDemo}
+              onCreateAccount={() => void criarConta()}
+              criandoConta={indoParaCadastro}
+            />
           ) : abaAtiva === "calendario" ? (
             <CalendarioView modoDemo={modoDemo} />
           ) : (

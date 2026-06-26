@@ -735,7 +735,8 @@ export function HistoricoFuncionalView({
   const resumoAposentadoria = painel?.resumo_aposentadoria
   const resumoAfastamentos = painel?.afastamentos_resumo
   const resumoFerias = painel?.ferias_resumo
-  const afastamentoPericia = resumoAfastamentos?.dias_por_tipo.aguardando_resultado_conclusivo_de_exame_pericial ?? 0
+  const afastamentoPericia =
+    resumoAfastamentos?.dias_por_tipo?.aguardando_resultado_conclusivo_de_exame_pericial ?? 0
   const idadeLabel = language === "en" ? "years old" : "anos"
   const textoRestanteAposentadoria =
     language === "en"
