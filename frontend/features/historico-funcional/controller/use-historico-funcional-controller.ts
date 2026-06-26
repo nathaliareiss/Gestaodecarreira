@@ -1,6 +1,6 @@
 ﻿"use client"
 
-import { useCallback, useEffect, useRef, useState, type ChangeEvent, type FormEvent, type RefObject } from "react"
+import { useCallback, useRef, useState, type ChangeEvent, type FormEvent, type RefObject } from "react"
 
 import { ApiResponseError } from "@/shared/api/client"
 import type { SiteLanguage } from "@/shared/i18n/messages"
@@ -11,7 +11,6 @@ import type {
 import {
   analisarHistoricoFuncional,
   consultarStatusJobHistorico,
-  buscarUltimoHistoricoFuncional,
   limparHistoricoFuncional,
 } from "../model/historico-funcional.repository"
 
@@ -264,24 +263,6 @@ export function useHistoricoFuncionalController({
     setErro(null)
   }
 
-  const recarregarHistorico = useCallback(async () => {
-    if (!usuarioId) {
-      return
-    }
-
-    setCarregando(true)
-    setErro(null)
-
-    try {
-      const recarregado = await buscarUltimoHistoricoFuncional(usuarioId)
-      setHistorico(recarregado)
-    } catch (error) {
-      setErro(formatarErroHistorico(error, idioma))
-    } finally {
-      setCarregando(false)
-    }
-  }, [idioma, usuarioId])
-
   const submeterAnalise = useCallback(async () => {
     if (!usuarioId) {
       setErro(idioma === "en" ? "Create a user before uploading the career history." : "Crie um usuário antes de enviar o histórico funcional.")
@@ -365,18 +346,6 @@ export function useHistoricoFuncionalController({
     }
     await submeterAnalise()
   }
-
-  useEffect(() => {
-    if (historicoInicial !== null || !usuarioId) {
-      return
-    }
-
-    const timer = window.setTimeout(() => {
-      void recarregarHistorico()
-    }, 0)
-
-    return () => window.clearTimeout(timer)
-  }, [historicoInicial, recarregarHistorico, usuarioId])
 
   return {
     arquivo,

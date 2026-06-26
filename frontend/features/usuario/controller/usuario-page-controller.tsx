@@ -6,7 +6,6 @@ import { Component, useEffect, useState, type ReactNode } from "react"
 
 import { CalendarioView } from "@/features/calendario/view/calendario-view"
 import type { HistoricoFuncionalAnalise } from "@/features/historico-funcional/model/historico-funcional.model"
-import { buscarUltimoHistoricoFuncional } from "@/features/historico-funcional/model/historico-funcional.repository"
 import { HistoricoFuncionalView } from "@/features/historico-funcional/view/historico-funcional-view"
 import { FinanceiroView } from "@/features/financeiro/view/financeiro-view"
 import {
@@ -150,7 +149,6 @@ export function UsuarioPageController({
   const [saindo, setSaindo] = useState(false)
   const [indoParaCadastro, setIndoParaCadastro] = useState(false)
   const [historico, setHistorico] = useState<HistoricoFuncionalAnalise | null>(historicoInicial)
-  const [carregandoHistorico, setCarregandoHistorico] = useState(false)
   const [historicoTabVersao, setHistoricoTabVersao] = useState(0)
   const historicoExibido = historico ?? historicoInicial
   const nomeExibido = historicoExibido?.nome?.trim() || usuario?.nome || "-"
@@ -251,6 +249,7 @@ export function UsuarioPageController({
 
   function selecionarAba(aba: AbaDashboard) {
     setAbaAtiva(aba)
+    setErro(null)
 
     const params = new URLSearchParams(searchParams.toString())
     if (aba === "perfil") {
@@ -262,50 +261,6 @@ export function UsuarioPageController({
     const query = params.toString()
     router.replace(query ? `/usuario?${query}` : "/usuario", { scroll: false })
   }
-
-  useEffect(() => {
-    if (modoDemo || abaAtiva !== "perfil" || !usuario?.id) {
-      return
-    }
-
-    let ativo = true
-
-    void (async () => {
-      try {
-        if (ativo) {
-          setCarregandoHistorico(true)
-        }
-
-        const ultimoHistorico = await buscarUltimoHistoricoFuncional(usuario.id)
-        if (ativo) {
-          setHistorico(ultimoHistorico)
-          setUsuario((atual) => {
-            if (!atual) {
-              return atual
-            }
-
-            return {
-              ...atual,
-              nome: ultimoHistorico?.nome?.trim() ? ultimoHistorico.nome.trim() : atual.nome,
-              data_exercicio: atual.data_exercicio ?? ultimoHistorico?.data_exercicio ?? null,
-            }
-          })
-        }
-      } catch {
-        if (ativo) {
-          setHistorico(null)
-        }
-      } finally {
-        if (ativo) {
-          setCarregandoHistorico(false)
-        }
-      }
-    })()
-
-    return () => {
-      ativo = false
-    }
-  }, [abaAtiva, modoDemo, usuario?.id])
 
   useEffect(() => {
     const abaDaUrl = normalizarAbaDashboard(searchParams.get("aba"), modoDemo)
@@ -381,23 +336,24 @@ export function UsuarioPageController({
                 </span>
               </div>
 
-              {carregando || carregandoHistorico ? (
+              {carregando && !usuario ? (
                 <div className="empty-state">
                   <p>{texts.dashboard.loadingSessionData}</p>
                 </div>
-              ) : erro ? (
-                <div className="empty-state">
-                  <p>{erro}</p>
-                  <button
-                    className="primary-button"
-                    type="button"
-                    onClick={() => void recarregarUsuario()}
-                  >
-                    {texts.dashboard.tryAgain}
-                  </button>
-                </div>
               ) : usuario ? (
                 <>
+                  {erro ? (
+                    <div className="error-box" role="alert" style={{ marginBottom: "0.75rem" }}>
+                      <p>{erro}</p>
+                      <button
+                        className="ghost-button ghost-button--compact"
+                        type="button"
+                        onClick={() => void recarregarUsuario()}
+                      >
+                        {texts.dashboard.tryAgain}
+                      </button>
+                    </div>
+                  ) : null}
                   <div className="results-grid results-grid--profile">
                     <div className="result-block">
                       <span className="label">{texts.dashboard.fullName}</span>
@@ -456,6 +412,17 @@ export function UsuarioPageController({
                     </div>
                   </div>
                 </>
+              ) : erro ? (
+                <div className="empty-state">
+                  <p>{erro}</p>
+                  <button
+                    className="primary-button"
+                    type="button"
+                    onClick={() => void recarregarUsuario()}
+                  >
+                    {texts.dashboard.tryAgain}
+                  </button>
+                </div>
               ) : (
                 <div className="empty-state">
                   <p>{texts.dashboard.noSession}</p>
