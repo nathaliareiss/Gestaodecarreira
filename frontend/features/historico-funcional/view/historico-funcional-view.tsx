@@ -699,6 +699,7 @@ export function HistoricoFuncionalView({
     sexo,
     categoriaPrevidenciaria,
     dataNascimento,
+    carregando,
     erro,
     mensagemProcessamento,
     mensagemSucesso,
@@ -726,10 +727,6 @@ export function HistoricoFuncionalView({
     idioma: language,
   })
 
-  useEffect(() => {
-    console.log("montou componente História de carreira")
-  }, [])
-
   const painel = historico
   const resumo = painel?.resumo_grafico
   const resumoAposentadoria = painel?.resumo_aposentadoria
@@ -745,7 +742,6 @@ export function HistoricoFuncionalView({
   const rotuloNivelGrau = language === "en" ? "Level" : "Nível"
   const rotuloGrau = language === "en" ? "grade" : "grau"
   const carregandoInicial = carregando && !painel && !erro && !mensagemSucesso
-  const mostrarDetalhes = false
 
   return (
     <section className="analysis-card card">
@@ -1055,7 +1051,7 @@ export function HistoricoFuncionalView({
         </form>
         )}
 
-        {mostrarDetalhes && painel && resumo ? (
+        {painel && resumo ? (
           <section className="overview-panel">
             <div className="overview-panel__chart">
               <GraficoPizzaTempo
@@ -1130,7 +1126,7 @@ export function HistoricoFuncionalView({
           </div>
         )}
 
-        {mostrarDetalhes && painel && resumoAposentadoria ? (
+        {painel && resumoAposentadoria ? (
           <section className="timeline-panel retirement-summary-panel">
             <div className="career-bars__title">
               <p className="eyebrow">{t.retirementSummaryTitle}</p>
@@ -1175,7 +1171,7 @@ export function HistoricoFuncionalView({
           </section>
         ) : null}
 
-        {mostrarDetalhes && painel && resumo ? (
+        {painel && resumo ? (
           <section className="timeline-panel">
           <div className="career-bars__title" style={{ marginBottom: "1.5rem" }}>
               <p className="eyebrow">{t.chartTitle}</p>
@@ -1204,7 +1200,7 @@ export function HistoricoFuncionalView({
           </section>
         ) : null}
 
-        {mostrarDetalhes && Array.isArray(painel?.ferias) && painel.ferias.length ? (
+        {Array.isArray(painel?.ferias) && painel.ferias.length ? (
           <section className="timeline-panel">
             <div className="career-bars__title" style={{ marginBottom: "1rem" }}>
               <p className="eyebrow">{t.vacationHistory}</p>
