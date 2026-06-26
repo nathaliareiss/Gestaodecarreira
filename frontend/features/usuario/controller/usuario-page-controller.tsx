@@ -179,7 +179,6 @@ export function UsuarioPageController({
         await encerrarSessao()
       }
     } catch {
-      // Se a chamada remota falhar, a sessao local ainda pode ser encerrada.
     } finally {
       removerUsuarioAutenticadoId()
       setSaindo(false)
@@ -196,7 +195,6 @@ export function UsuarioPageController({
         removerSessaoDemo()
       }
     } catch {
-      // Se a limpeza local falhar, seguimos para a tela de cadastro.
     } finally {
       removerUsuarioAutenticadoId()
       setIndoParaCadastro(false)

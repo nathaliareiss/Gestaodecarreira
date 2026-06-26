@@ -84,7 +84,6 @@ export function UsuarioAccessGate() {
         try {
           historico = await buscarUltimoHistoricoFuncional(usuario.id)
         } catch {
-          // O dashboard deve abrir mesmo se o histórico ainda não estiver disponível.
           historico = null
         }
 
