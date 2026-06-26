@@ -20,15 +20,24 @@ import {
 } from "@/shared/auth/session"
 import { useLanguage } from "@/shared/i18n/language-provider"
 
-function formatarDataCurta(valor: string | null, idioma: "pt-BR" | "en") {
+function formatarDataSegura(valor: string | null, idioma: "pt-BR" | "en") {
   if (!valor) {
+    return "-"
+  }
+
+  const data = new Date(valor)
+  if (Number.isNaN(data.getTime())) {
     return "-"
   }
 
   return new Intl.DateTimeFormat(idioma === "en" ? "en-US" : "pt-BR", {
     dateStyle: "medium",
     timeZone: "UTC",
-  }).format(new Date(valor))
+  }).format(data)
+}
+
+function formatarDataCurta(valor: string | null, idioma: "pt-BR" | "en") {
+  return formatarDataSegura(valor, idioma)
 }
 
 function formatarDuracaoEmIngles(dias: number, idioma: "pt-BR" | "en") {
@@ -47,14 +56,7 @@ function formatarDuracaoEmIngles(dias: number, idioma: "pt-BR" | "en") {
 }
 
 function formatarDataEmIngles(valor: string | null, idioma: "pt-BR" | "en") {
-  if (!valor) {
-    return "-"
-  }
-
-  return new Intl.DateTimeFormat(idioma === "en" ? "en-US" : "pt-BR", {
-    dateStyle: "medium",
-    timeZone: "UTC",
-  }).format(new Date(valor))
+  return formatarDataSegura(valor, idioma)
 }
 
 function limparTextoExibicao(valor: string | null | undefined) {

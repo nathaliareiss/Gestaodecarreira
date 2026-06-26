@@ -1175,8 +1175,14 @@ export function HistoricoFuncionalView({
               <p className="eyebrow">{t.chartTitle}</p>
             </div>
 
+            {Array.isArray(painel.eventos) ? null : (
+              <div className="history-empty history-empty--compact">
+                <p>{language === "en" ? "The saved history data is incomplete, so the timeline cannot be shown yet." : "Os dados salvos do histórico estão incompletos, então a linha do tempo ainda não pode ser exibida."}</p>
+              </div>
+            )}
+
             <LinhaDoTempoGrafica
-              eventos={painel.eventos.filter((evento) => evento.tipo !== "promocao")}
+              eventos={(Array.isArray(painel.eventos) ? painel.eventos : []).filter((evento) => evento.tipo !== "promocao")}
               idioma={language}
             />
 
@@ -1192,7 +1198,7 @@ export function HistoricoFuncionalView({
           </section>
         ) : null}
 
-        {painel?.ferias?.length ? (
+        {Array.isArray(painel?.ferias) && painel.ferias.length ? (
           <section className="timeline-panel">
             <div className="career-bars__title" style={{ marginBottom: "1rem" }}>
               <p className="eyebrow">{t.vacationHistory}</p>
