@@ -739,6 +739,7 @@ export function HistoricoFuncionalView({
       : "para aposentar pela estimativa atual."
   const rotuloNivelGrau = language === "en" ? "Level" : "Nível"
   const rotuloGrau = language === "en" ? "grade" : "grau"
+  const carregandoInicial = carregando && !painel && !erro && !mensagemSucesso
 
   return (
     <section className="analysis-card card">
@@ -752,6 +753,12 @@ export function HistoricoFuncionalView({
       </div>
 
       <div className="analysis-stack">
+        {carregandoInicial ? (
+          <div className="empty-state">
+            <p>{language === "en" ? "Loading saved career history..." : "Carregando histórico de carreira salvo..."}</p>
+            <p>{language === "en" ? "Preparing the documents area." : "Preparando a área de documentos."}</p>
+          </div>
+        ) : (
         <form className="upload-form history-upload-form" onSubmit={enviarFormulario} autoComplete="off">
           <div className="card-header card-header--tight card-header--stacked history-upload-form__header">
             <div>
@@ -1040,6 +1047,7 @@ export function HistoricoFuncionalView({
             </button>
           </div>
         </form>
+        )}
 
         {painel && resumo ? (
           <section className="overview-panel">

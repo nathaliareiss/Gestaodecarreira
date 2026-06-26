@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
-import { useEffect, useState } from "react"
+import { Component, useEffect, useState, type ReactNode } from "react"
 
 import { CalendarioView } from "@/features/calendario/view/calendario-view"
 import type { HistoricoFuncionalAnalise } from "@/features/historico-funcional/model/historico-funcional.model"
@@ -72,6 +72,52 @@ type UsuarioPageControllerProps = {
 
 type AbaDashboard = "perfil" | "historico" | "financeiro" | "calendario"
 
+type HistoricoTabBoundaryProps = {
+  children: ReactNode
+  onRetry: () => void
+  title: string
+  description: string
+  retryLabel: string
+}
+
+type HistoricoTabBoundaryState = {
+  hasError: boolean
+}
+
+class HistoricoTabBoundary extends Component<
+  HistoricoTabBoundaryProps,
+  HistoricoTabBoundaryState
+> {
+  constructor(props: HistoricoTabBoundaryProps) {
+    super(props)
+    this.state = { hasError: false }
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true }
+  }
+
+  componentDidCatch(error: Error) {
+    console.error(error)
+  }
+
+  render() {
+    if (!this.state.hasError) {
+      return this.props.children
+    }
+
+    return (
+      <div className="empty-state">
+        <p>{this.props.title}</p>
+        <p>{this.props.description}</p>
+        <button className="primary-button" type="button" onClick={this.props.onRetry}>
+          {this.props.retryLabel}
+        </button>
+      </div>
+    )
+  }
+}
+
 function normalizarAbaDashboard(valor: string | null, modoDemo: boolean): AbaDashboard {
   switch (valor) {
     case "historico":
@@ -105,6 +151,7 @@ export function UsuarioPageController({
   const [indoParaCadastro, setIndoParaCadastro] = useState(false)
   const [historico, setHistorico] = useState<HistoricoFuncionalAnalise | null>(historicoInicial)
   const [carregandoHistorico, setCarregandoHistorico] = useState(false)
+  const [historicoTabVersao, setHistoricoTabVersao] = useState(0)
   const historicoExibido = historico ?? historicoInicial
   const nomeExibido = historicoExibido?.nome?.trim() || usuario?.nome || "-"
   const maspExibido = limparTextoExibicao(historicoExibido?.masp)
@@ -419,13 +466,21 @@ export function UsuarioPageController({
               )}
             </>
           ) : abaAtiva === "historico" ? (
-            <HistoricoFuncionalView
-              usuarioId={usuario?.id ?? null}
-              historicoInicial={historicoExibido}
-              modoDemo={modoDemo}
-              onCreateAccount={() => void criarConta()}
-              criandoConta={indoParaCadastro}
-            />
+            <HistoricoTabBoundary
+              key={historicoTabVersao}
+              onRetry={() => setHistoricoTabVersao((atual) => atual + 1)}
+              title={texts.history.title}
+              description={texts.history.unexpectedReload}
+              retryLabel={texts.dashboard.tryAgain}
+            >
+              <HistoricoFuncionalView
+                usuarioId={usuario?.id ?? null}
+                historicoInicial={historicoExibido}
+                modoDemo={modoDemo}
+                onCreateAccount={() => void criarConta()}
+                criandoConta={indoParaCadastro}
+              />
+            </HistoricoTabBoundary>
           ) : abaAtiva === "calendario" ? (
             <CalendarioView modoDemo={modoDemo} />
           ) : (
