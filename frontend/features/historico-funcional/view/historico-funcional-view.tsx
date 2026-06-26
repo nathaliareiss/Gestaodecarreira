@@ -745,6 +745,7 @@ export function HistoricoFuncionalView({
   const rotuloNivelGrau = language === "en" ? "Level" : "Nível"
   const rotuloGrau = language === "en" ? "grade" : "grau"
   const carregandoInicial = carregando && !painel && !erro && !mensagemSucesso
+  const mostrarDetalhes = false
 
   return (
     <section className="analysis-card card">
@@ -1054,7 +1055,7 @@ export function HistoricoFuncionalView({
         </form>
         )}
 
-        {painel && resumo ? (
+        {mostrarDetalhes && painel && resumo ? (
           <section className="overview-panel">
             <div className="overview-panel__chart">
               <GraficoPizzaTempo
@@ -1129,7 +1130,7 @@ export function HistoricoFuncionalView({
           </div>
         )}
 
-        {painel && resumoAposentadoria ? (
+        {mostrarDetalhes && painel && resumoAposentadoria ? (
           <section className="timeline-panel retirement-summary-panel">
             <div className="career-bars__title">
               <p className="eyebrow">{t.retirementSummaryTitle}</p>
@@ -1174,7 +1175,7 @@ export function HistoricoFuncionalView({
           </section>
         ) : null}
 
-        {painel && resumo ? (
+        {mostrarDetalhes && painel && resumo ? (
           <section className="timeline-panel">
           <div className="career-bars__title" style={{ marginBottom: "1.5rem" }}>
               <p className="eyebrow">{t.chartTitle}</p>
@@ -1203,7 +1204,7 @@ export function HistoricoFuncionalView({
           </section>
         ) : null}
 
-        {Array.isArray(painel?.ferias) && painel.ferias.length ? (
+        {mostrarDetalhes && Array.isArray(painel?.ferias) && painel.ferias.length ? (
           <section className="timeline-panel">
             <div className="career-bars__title" style={{ marginBottom: "1rem" }}>
               <p className="eyebrow">{t.vacationHistory}</p>
