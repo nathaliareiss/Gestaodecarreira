@@ -473,7 +473,7 @@ function GraficoComparativoTempo({
   const alcance = Math.max(maximo - minimo, 1)
 
   function posicaoX(data: string) {
-    const valor = new Date(`${data}T00:00:00`).getTime()
+    const valor = timestampDaData(data) ?? minimo
     const rawPos = margemX + ((valor - minimo) / alcance) * (largura - margemX * 2)
     return Math.max(margemX, Math.min(largura - margemX, rawPos))
   }
@@ -1194,7 +1194,7 @@ export function HistoricoFuncionalView({
             <div className="metric-strip">
               {painel.ferias
                 .slice()
-                .sort((a, b) => new Date(`${b.data_inicio}T00:00:00`).getTime() - new Date(`${a.data_inicio}T00:00:00`).getTime())
+                .sort((a, b) => (timestampDaData(b.data_inicio) ?? 0) - (timestampDaData(a.data_inicio) ?? 0))
                 .map((periodo) => (
                   <div
                     className="metric-line"
