@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
-import { Component, useEffect, useState, type ReactNode } from "react"
+import { useEffect, useState } from "react"
 
 import { CalendarioView } from "@/features/calendario/view/calendario-view"
 import type { HistoricoFuncionalAnalise } from "@/features/historico-funcional/model/historico-funcional.model"
@@ -70,52 +70,6 @@ type UsuarioPageControllerProps = {
 }
 
 type AbaDashboard = "perfil" | "historico" | "financeiro" | "calendario"
-
-type HistoricoTabBoundaryProps = {
-  children: ReactNode
-  onRetry: () => void
-  title: string
-  description: string
-  retryLabel: string
-}
-
-type HistoricoTabBoundaryState = {
-  hasError: boolean
-}
-
-class HistoricoTabBoundary extends Component<
-  HistoricoTabBoundaryProps,
-  HistoricoTabBoundaryState
-> {
-  constructor(props: HistoricoTabBoundaryProps) {
-    super(props)
-    this.state = { hasError: false }
-  }
-
-  static getDerivedStateFromError() {
-    return { hasError: true }
-  }
-
-  componentDidCatch(error: Error) {
-    console.error(error)
-  }
-
-  render() {
-    if (!this.state.hasError) {
-      return this.props.children
-    }
-
-    return (
-      <div className="empty-state">
-        <p>{this.props.title}</p>
-        <p>{this.props.description}</p>
-        <button className="primary-button" type="button" onClick={this.props.onRetry}>
-          {this.props.retryLabel}
-        </button>
-      </div>
-    )
-  }
-}
 
 function normalizarAbaDashboard(valor: string | null, modoDemo: boolean): AbaDashboard {
   switch (valor) {
