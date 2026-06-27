@@ -1,6 +1,6 @@
 ﻿# GestÃ£o de Carreira - Checklist
 
-Ãšltima atualizaÃ§Ã£o: 2026-05-14
+Ãšltima atualizaÃ§Ã£o: 2026-06-26
 
 ## Hoje
 
@@ -40,6 +40,10 @@
 - [x] Gerado o executÃ¡vel distribuÃ­vel `GestaoDeCarreira-Assistente.exe` a partir de `helper-contracheques/main.py` com PyInstaller.
 - [x] Preparado o helper com `playwright`, `requests`, `python-dotenv` e `pyinstaller`, alÃ©m de `build.bat`, `helper.spec` e README de build.
 - [x] Publicado o download do assistente em `backend/static/downloads/gestao-de-carreira-assistente.exe` para servir em `/downloads/gestao-de-carreira-assistente.exe`.
+- [x] Diagnosticado o crash da aba `História de carreira` por teste de isolamento no frontend.
+- [x] Corrigido o render da aba `História de carreira` ao restaurar o componente real e blindar acessos inseguros.
+- [x] Corrigido o estado `carregando` ausente no componente de histórico funcional.
+- [x] Validado o build do frontend após as correções da aba `História de carreira`.
 
 ### Em andamento
 
