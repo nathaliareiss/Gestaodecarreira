@@ -2068,6 +2068,8 @@ html[data-theme="light"] .history-upload-card {
   border-radius: 18px;
   border: 1px solid rgba(148, 163, 184, 0.12);
   background: rgba(15, 23, 42, 0.22);
+  min-width: 0;
+  overflow: hidden;
 }
 
 .history-upload-file--wide {
@@ -2123,7 +2125,12 @@ html[data-theme="light"] .history-upload-file__item {
 
 .history-upload-file__selected,
 .history-upload-file__item {
-  justify-content: space-between;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
   gap: 1rem;
   padding: 0.85rem 0.9rem;
   border-radius: 16px;
@@ -2133,10 +2140,18 @@ html[data-theme="light"] .history-upload-file__item {
 
 .history-upload-file__selected-copy {
   min-width: 0;
-  flex-wrap: wrap;
+  display: grid;
+  gap: 0.3rem;
+  align-content: start;
+}
+
+.history-upload-file__selected-copy .upload-badge {
+  justify-self: start;
 }
 
 .history-upload-file__selected-copy strong {
+  display: block;
+  max-width: 100%;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -3565,8 +3580,8 @@ html[data-theme="light"] .calendar-legend__item {
 
   .history-upload-file__selected,
   .history-upload-file__item {
-    flex-direction: column;
-    align-items: stretch;
+    grid-template-columns: 1fr;
+    justify-items: start;
   }
 
   .history-upload-file__selected-copy strong {
